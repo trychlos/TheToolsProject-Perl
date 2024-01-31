@@ -84,6 +84,7 @@ my $TTPVars = {
 		# some internally used constants
 		commentPreUsage => '^# @\(#\) ',
 		commentPostUsage => '^# @\(@\) ',
+		commentUsage => '^# @\(-\) ',
 		verbSufix => '.do.pl',
 		verbSed => '\.do\.pl'
 	},
@@ -96,38 +97,44 @@ my $TTPVars = {
 };
 
 # -------------------------------------------------------------------------------------------------
-# Display the one-liner command help
-# Extract lines from command script and list the header lines of the found verbs
+# Display the command help as:
+# - a one-liner from the command itself
+# - and the one-liner help of each available verb
 sub doHelpCommand {
-	#Mods::Toops::dump();
-	# display the command inline help
-	my $commandInline = Mods::Toops::getInlineHelp( $TTPVars->{run}{command}{path} );
-	print "$TTPVars->{run}{command}{basename}: $commandInline".EOL;
-	# display each verb inline help
+	# display the command one-line help
+	my @commandHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPreUsage} );
+	print "$TTPVars->{run}{command}{basename}: $commandHelp[0]".EOL;
+	# display each verb one-line help
 	my @verbs = Mods::Toops::getVerbs();
-	my $verbHelps = {};
+	my $verbsHelp = {};
 	foreach my $it ( @verbs ){
-		my $verbInline = Mods::Toops::getInlineHelp( $it, { warnIfSeveral => false });
+		my @fullHelp = Mods::Toops::grepFileByRegex( $it, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
 		my ( $volume, $directories, $file ) = File::Spec->splitpath( $it );
 		my $verb = $file;
 		$verb =~ s/$TTPVars->{Toops}{verbSed}$//;
-		$verbHelps->{$verb} = $verbInline;
+		$verbsHelp->{$verb} = $fullHelp[0];
 	}
-	@verbs = keys %{$verbHelps};
+	# verbs being alpha sorted
+	@verbs = keys %{$verbsHelp};
 	my @sorted = sort @verbs;
 	foreach my $it ( @sorted ){
-		print "  $it: $verbHelps->{$it}".EOL;
+		print "  $it: $verbsHelp->{$it}".EOL;
 	}
 }
 
 # -------------------------------------------------------------------------------------------------
 # Display the full verb help
-# Args are the options in Toops format (see Mods::Toops::getOptions)
+# - the one-liner help of the command
+# - the full help of the verb as:
+#   > a pre-usage help
+#   > the usage of the verb
+#   > a post-usage help
 sub doHelpVerb {
-	my $args = shift;
-	my $commandInline = Mods::Toops::getInlineHelp( $TTPVars->{run}{command}{path} );
-	print "$TTPVars->{run}{command}{basename}: $commandInline".EOL;
-	my @verbHelp = Mods::Toops::getInlineHelp( $TTPVars->{run}{verb}{path}, { warnIfSeveral => false, returnOne => false });
+	# display the command one-line help
+	my @commandHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPreUsage} );
+	print "$TTPVars->{run}{command}{basename}: $commandHelp[0]".EOL;
+	# verb pre-usage
+	my @verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
 	my $verbInline = '';
 	if( scalar @verbHelp ){
 		$verbInline = shift @verbHelp;
@@ -136,7 +143,22 @@ sub doHelpVerb {
 	foreach my $line ( @verbHelp ){
 		print "    $line".EOL;
 	}
-	#print Dumper( $TTPVars->{run} );
+	# verb usage
+	@verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
+	if( scalar @verbHelp ){
+		print "    Usage: $TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} [options]".EOL;
+		print "    where available options are:".EOL;
+		foreach my $line ( @verbHelp ){
+			print "      $line".EOL;
+		}
+	}
+	# verb post-usage
+	@verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false });
+	if( scalar @verbHelp ){
+		foreach my $line ( @verbHelp ){
+			print "    $line".EOL;
+		}
+	}
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -165,37 +187,6 @@ sub getDefaultTempDir {
 sub getHostConfig {
 	my $host = hostname;
 	return $TTPVars->{config}{$host};
-}
-
-# -------------------------------------------------------------------------------------------------
-# returns the one-line inline help for the file
-# (E):
-# - the filename to be parsed
-# - an optional options hash with following keys:
-#   > warnIfNone defaulting to true
-#   > warnIfSeveral defaulting to true
-sub getInlineHelp {
-	my ( $filename, $opts ) = @_;
-	$opts //= {};
-	local $/ = "\r\n";
-	my @content = path( $filename )->lines_utf8;
-	chomp @content;
-	my @help = grep( /$TTPVars->{Toops}{commentPreUsage}/, @content );
-	my $inline = undef;
-	my $warnIfNone = true;
-	$warnIfNone = $opts->{warnIfNone} if exists $opts->{warnIfNone};
-	if( scalar @help == 0 ){
-		Mods::Toops::msgWarn( "'$filename' doesn't have any inline help. This is bad!" ) if $warnIfNone;
-	} else {
-		my $warnIfSeveral = true;
-		$warnIfSeveral = $opts->{warnIfSeveral} if exists $opts->{warnIfSeveral};
-		if( scalar @help > 1 ){
-			Mods::Toops::msgWarn( "'$filename' has more than one inline help line. This is bad!" ) if $warnIfSeveral;
-		}
-		$inline = $help[0];
-		$inline =~ s/^$TTPVars->{Toops}{commentPreUsage}//;
-	}
-	return $inline;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -288,6 +279,53 @@ sub getOptionsToOpts {
 sub getVerbs {
 	my @verbs = glob( File::Spec->catdir( $TTPVars->{run}{command}{verbs_dir}, "*".$TTPVars->{Toops}{verbSufix} ));
 	return @verbs;
+}
+
+# -------------------------------------------------------------------------------------------------
+# greps a file with a regex
+# (E):
+# - the filename to be grep-ed
+# - the regex to apply
+# - an optional options hash with following keys:
+#   > warnIfNone defaulting to true
+#   > warnIfSeveral defaulting to true
+#   > replaceRegex defaulting to true
+#   > replaceValue, defaulting to empty
+# always returns an array, maybe empty
+sub grepFileByRegex {
+	my ( $filename, $regex, $opts ) = @_;
+	$opts //= {};
+	local $/ = "\r\n";
+	my @content = path( $filename )->lines_utf8;
+	chomp @content;
+	my @grepped = grep( /$regex/, @content );
+	# warn if grepped is empty ?
+	my $warnIfNone = true;
+	$warnIfNone = $opts->{warnIfNone} if exists $opts->{warnIfNone};
+	if( scalar @grepped == 0 ){
+		Mods::Toops::msgWarn( "'$filename' doesn't have any line with the searched content ('$regex')." ) if $warnIfNone;
+	} else {
+		# warn if there are several lines in the grepped result ?
+		my $warnIfSeveral = true;
+		$warnIfSeveral = $opts->{warnIfSeveral} if exists $opts->{warnIfSeveral};
+		if( scalar @grepped > 1 ){
+			Mods::Toops::msgWarn( "'$filename' has more than one line with the searched content ('$regex')." ) if $warnIfSeveral;
+		}
+	}
+	# replace the regex, and, if true, with what ?
+	my $replaceRegex = true;
+	$replaceRegex = $opts->{replaceRegex} if exists $opts->{replaceRegex};
+	if( $replaceRegex ){
+		my @temp = ();
+		my $replaceValue = '';
+		$replaceValue = $opts->{replaceValue} if exists $opts->{replaceValue};
+		foreach my $line ( @grepped ){
+			$line =~ s/$regex/$replaceValue/;
+			push( @temp, $line );
+		}
+		@grepped = @temp;
+	}
+	return @grepped;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -540,7 +578,7 @@ sub run {
 		$TTPVars->{run}{help} = scalar @ARGV ? false : true;
 		$TTPVars->{run}{verb}{path} = File::Spec->catdir( $TTPVars->{run}{command}{verbs_dir}, $TTPVars->{run}{verb}{name}.$TTPVars->{Toops}{verbSufix} );
 		if( -f $TTPVars->{run}{verb}{path} ){
-			do $TTPVars->{run}{verb}{path};
+			eval { do $TTPVars->{run}{verb}{path}; };
 		} else {
 			Mods::Toops::msgErr( "script not found or not readable: '$TTPVars->{run}{verb}{path}' (most probably, '$TTPVars->{run}{verb}{name}' is not a valid verb)" );
 		}

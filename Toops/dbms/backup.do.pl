@@ -1,19 +1,21 @@
 # @(#) run a database backup
 # Copyright (@) 2023-2024 PWI Consulting
 #
-# @(#) --help (managed by Toops)
-# @(#) --verbose
-# @(#) --dummy
-# @(#) --instance INSTANCE
-# @(#) --database DATABASE
-# @(#) --output OUTPUT | default
-# @(#) --full
-# @(#) --diff
+# @(-) --[no]help              print this message, and exit [${opt_help_def}]
+# @(-) --[no]dummy             dummy run [$opt_dummy_def]
+# @(-) --[no]verbose           run verbosely [$opt_verbose_def]
+# @(-) --instance=name         Sql Server instance name [${opt_instance_def}]
+# @(-) --database=name         database name [${opt_db_def}]
+# @(-) --[no]full              operate a full backup [${opt_full_def}]
+# @(-) --[no]diff              operate a differential backup [${opt_diff_def}]
+# @(-) --output=filename       target filename [${opt_fname_def}]
 
 use Mods::Dbms;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
+my $opt_help_def = 'no';
+my $opt_verbose_def = 'no';
 my $opt_dummy_def = 'no';
 my $opt_dummy = false;
 my $opt_instance_def = 'MSSQLSERVER';
