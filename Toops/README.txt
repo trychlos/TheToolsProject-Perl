@@ -9,6 +9,7 @@ Toops for Windows:
 - install and configure Toops for your site:
 	> set the PERL5LIB global environment variable to address the Toops directory
 	> set a TTP_SITE global environment variable to address the directory which contains your site configuration
+	> (optional) set a TTP_ROOT global environment variable in PATH-style like to address several Toops trees
 	> update the PATH to address Toops/bin directory
 
 Site configuration:

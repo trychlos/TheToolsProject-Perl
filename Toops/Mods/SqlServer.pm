@@ -35,6 +35,7 @@ my $systemDatabases = [
 # - database: mandatory
 # - output: mandatory
 # - mode: mandatory, full|diff
+# - dummy: true|false, defaulting to false
 # return true|false
 sub backupDatabase {
 	my ( $me, $dbms, $parms ) = @_;
@@ -152,6 +153,7 @@ sub getLiveDatabases {
 # parms is a hash ref with keys:
 # - instance|sqlsrv: mandatory
 # - sql: mandatory
+# - dummy: true|false, defaulting to false
 # return true|false
 sub sqlNoResult( $ ){
 	my ( $dbms, $parms ) = @_;
@@ -163,18 +165,23 @@ sub sqlNoResult( $ ){
 	}
 	if( !Mods::Toops::errs()){
 		Mods::Toops::msgVerbose( "SqlServer::sqlNoResult() executing '$parms->{sql}'" );
-		my $merged = capture_merged {
-			$sqlsrv->sql( $parms->{sql}, Win32::SqlServer::NORESULT );
-		};
-		$result = $sqlsrv->sql_has_errors() ? false : true;
-		my @merged = split( /[\r\n]/, $merged );
-		foreach my $line ( @merged ){
-			chomp( $line );
-			$line =~ s/^\s*//;
-			$line =~ s/\s*$//;
-			Mods::Toops::msgOut( "SS: $line" ) if length $line;
+		if( exists( $parms->{dummy} ) && $parms->{dummy} ){
+			Mods::Toops::msgDummy( "executing '$parms->{sql}'" );
+			$result = true;
+		} else {
+			my $merged = capture_merged {
+				$sqlsrv->sql( $parms->{sql}, Win32::SqlServer::NORESULT );
+			};
+			$result = $sqlsrv->sql_has_errors() ? false : true;
+			my @merged = split( /[\r\n]/, $merged );
+			foreach my $line ( @merged ){
+				chomp( $line );
+				$line =~ s/^\s*//;
+				$line =~ s/\s*$//;
+				print " $line".EOL if length $line;
+			}
+			delete $sqlsrv->{ErrInfo}{Messages};
 		}
-		delete $sqlsrv->{ErrInfo}{Messages};
 	}
 	Mods::Toops::msgVerbose( "SqlServer::sqlNoResult() returns '".( $result ? 'true':'false' )."'" );
 	return $result;

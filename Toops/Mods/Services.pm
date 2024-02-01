@@ -55,10 +55,11 @@ sub listDefinedDBMSInstances {
 # -------------------------------------------------------------------------------------------------
 # list the (sorted) defined services
 sub listDefinedServices {
+	Mods::Toops::msgOut( "displaying defined services..." );
 	my @list = Mods::Services::getDefinedServices();
 	my @sorted = sort @list;
 	foreach my $it ( @sorted ){
-		Mods::Toops::msgOut( PREFIX.$it );
+		print " $it".EOL;
 	}
 	Mods::Toops::msgOut( scalar @sorted." found defined service(s)" );
 }

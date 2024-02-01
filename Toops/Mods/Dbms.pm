@@ -19,7 +19,6 @@ use Mods::Toops;
 
 Sub::Exporter::setup_exporter({
 	exports => [ qw(
-		backupDatabase
 		checkDatabaseExists
 		checkInstanceOpt
 		computeDefaultBackupFilename
@@ -40,18 +39,23 @@ Sub::Exporter::setup_exporter({
 sub backupDatabase {
 	my ( $parms ) = @_;
 	my $result = false;
-	Mods::Toops::msgVerbose( "Dbms::backupDatabase() entering" );
+	my $dbms = Mods::Dbms::_buildDbms();
+	Mods::Toops::msgOut( "backuping database '$dbms->{config}{host}\\$dbms->{instance}{name}\\$parms->{database}'" );
 	Mods::Toops::msgErr( "Dbms::backupDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
 	Mods::Toops::msgErr( "Dbms::backupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
 	Mods::Toops::msgErr( "Dbms::backupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
 	if( !Mods::Toops::errs()){
 		if( !$parms->{output} ){
-			$parms->{output} = Mods::Dbms::computeDefaultBackupFilename( $parms );
+			$parms->{output} = Mods::Dbms::computeDefaultBackupFilename( $dbms, $parms );
 		}
-		Mods::Toops::msgOut( "backuping database='$parms->{database}' mode='$parms->{mode}' to output='$parms->{output}'" );
-		$result = Mods::Dbms::toPackage( 'backupDatabase', $parms );
+		Mods::Toops::msgOut( "to '$parms->{output}'" );
+		$result = Mods::Dbms::toPackage( 'backupDatabase', $dbms, $parms );
 	}
-	Mods::Toops::msgVerbose( "Dbms::backupDatabase() returns '".( $result ? 'true':'false' )."'" );
+	if( $result ){
+		Mods::Toops::msgOut( "success" );
+	} else {
+		Mods::Toops::msgErr( "NOT OK" );
+	}
 	return $result;
 }
 
@@ -153,7 +157,7 @@ sub checkInstanceOpt {
 # - database: mandatory
 # - mode: defaulting to 'full'
 sub computeDefaultBackupFilename {
-	my ( $parms ) = @_;
+	my ( $dbms, $parms ) = @_;
 	Mods::Toops::msgVerbose( "Dbms::computeDefaultBackupFilename() entering" );
 	my $output = undef;
 	my $config = Mods::Toops::getHostConfig();
@@ -161,7 +165,6 @@ sub computeDefaultBackupFilename {
 	Mods::Toops::msgErr( "Dbms::computeDefaultBackupFilename() instance is specified, but is not defined in host configuration" ) if !exists $config->{DBMSInstances}{$parms->{instance}};
 	Mods::Toops::msgErr( "Dbms::computeDefaultBackupFilename() database is mandatory, but is not specified" ) if !$parms->{database};
 	my $mode = 'full';
-	my $dbms = Mods::Dbms::_buildDbms();
 	$mode = $parms->{mode} if exists $parms->{mode};
 	Mods::Toops::msgErr( "Dbms::computeDefaultBackupFilename() mode must be 'full' or 'diff', found '$mode'" ) if $mode ne 'full' and $mode ne 'diff';
 	# compute the dir and make sure it exists
@@ -183,7 +186,8 @@ sub computeDefaultBackupFilename {
 # -------------------------------------------------------------------------------------------------
 # returns the list of instance live databases
 sub getLiveDatabases {
-	my $list = Mods::Dbms::toPackage( 'getLiveDatabases' );
+	my $dbms = Mods::Dbms::_buildDbms();
+	my $list = Mods::Dbms::toPackage( 'getLiveDatabases', $dbms );
 	return $list;
 }
 
@@ -227,9 +231,8 @@ sub setInstanceByName {
 # address a function in the package which deserves the named instance
 #  and returns the result
 sub toPackage {
-	my ( $fname, $parms ) = @_;
+	my ( $fname, $dbms, $parms ) = @_;
 	Mods::Toops::msgVerbose( "Dbms::toPackage() entering with fname='".( $fname || '(undef)' )."'" );
-	my $dbms = Mods::Dbms::_buildDbms();
 	my $package = $dbms->{config}{DBMSInstances}{$dbms->{instance}{name}}{package};
 	my $result = undef;
 	if( $package ){

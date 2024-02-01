@@ -1,11 +1,10 @@
 # @(#) list various services objects
-# Copyright (@) 2023-2024 PWI Consulting
 #
-# @(#) --help (managed by Toops)
-# @(#) --verbose
-# @(#) --services
-# @(#) --dbms
-# @(#) List defined objects
+# @(-) --[no]help              print this message, and exit [${opt_help_def}]
+# @(-) --[no]verbose           run verbosely [$opt_verbose_def]
+# @(-) --[no]services          list defined services [$opt_services_def]
+#
+# Copyright (@) 2023-2024 PWI Consulting
 #
 
 use Data::Dumper;

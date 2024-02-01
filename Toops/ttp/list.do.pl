@@ -1,35 +1,33 @@
 # @(#) list various TTP objects
+#
+# @(-) --[no]help              print this message, and exit [${opt_help_def}]
+# @(-) --[no]verbose           run verbosely [$opt_verbose_def]
+# @(-) --[no]commands          list the available commands [$opt_commands_def]
+# @(-) --[no]services          list the defined services on this host [$opt_services_def]
+#
 # Copyright (@) 2023-2024 PWI Consulting
-#
-# @(#) --help (managed by Toops)
-# @(#) --verbose
-# @(#) --services
-# @(#) --dbms
-# @(#) List defined objects
-#
 
 use Data::Dumper;
 
-use Mods::Dbms;
 use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
+my $opt_commands_def = 'no';
+my $opt_commands = false;
 my $opt_services_def = 'no';
 my $opt_services = false;
-my $opt_dbms_def = 'no';
-my $opt_dbms = false;
+
+# -------------------------------------------------------------------------------------------------
+# list the available commands
+sub listCommands(){
+	Mods::Toops::listAvailableCommands();
+}
 
 # -------------------------------------------------------------------------------------------------
 # list the defined services
 sub listServices(){
 	Mods::Services::listDefinedServices();
-}
-
-# -------------------------------------------------------------------------------------------------
-# list the defined DBMS instances (which may be not all the running instances)
-sub listDbms(){
-	Mods::Services::listDefinedDBMSInstances();
 }
 
 # =================================================================================================
@@ -39,8 +37,8 @@ sub listDbms(){
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"services!"			=> \$opt_services,
-	"dbms!"				=> \$opt_dbms	)){
+	"commands!"			=> \$opt_commands,
+	"services!"			=> \$opt_services )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -52,10 +50,12 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='true'" );
+Mods::Toops::msgVerbose( "found commands='$opt_commands'" );
+Mods::Toops::msgVerbose( "found services='$opt_services'" );
 
 if( !Mods::Toops::errs()){
+	listCommands() if $opt_commands;
 	listServices() if $opt_services;
-	listDbms() if $opt_dbms;
 }
 
 Mods::Toops::ttpExit();

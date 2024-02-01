@@ -31,6 +31,7 @@ Sub::Exporter::setup_exporter({
 		getHostConfig
 		getOptions
 		makeDirExist
+		msgDummy
 		msgErr
 		msgLog
 		msgOut
@@ -97,13 +98,28 @@ my $TTPVars = {
 };
 
 # -------------------------------------------------------------------------------------------------
+# Display the command one-liner help help
+# (E):
+# - the full path to the command
+# - an optional options hash with following keys:
+#   > prefix: the line prefix, defaulting to ''
+sub commandDisplayOneLineHelp {
+	my ( $command_path, $opts ) = @_;
+	$opts //= {};
+	my $prefix = '';
+	$prefix = $opts->{prefix} if exists( $opts->{prefix} );
+	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $command_path );
+	my @commandHelp = Mods::Toops::grepFileByRegex( $command_path, $TTPVars->{Toops}{commentPreUsage} );
+	print "$prefix$bname: $commandHelp[0]".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Display the command help as:
 # - a one-liner from the command itself
 # - and the one-liner help of each available verb
 sub doHelpCommand {
 	# display the command one-line help
-	my @commandHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPreUsage} );
-	print "$TTPVars->{run}{command}{basename}: $commandHelp[0]".EOL;
+	Mods::Toops::commandDisplayOneLineHelp( $TTPVars->{run}{command}{path} );
 	# display each verb one-line help
 	my @verbs = Mods::Toops::getVerbs();
 	my $verbsHelp = {};
@@ -131,8 +147,7 @@ sub doHelpCommand {
 #   > a post-usage help
 sub doHelpVerb {
 	# display the command one-line help
-	my @commandHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPreUsage} );
-	print "$TTPVars->{run}{command}{basename}: $commandHelp[0]".EOL;
+	Mods::Toops::commandDisplayOneLineHelp( $TTPVars->{run}{command}{path} );
 	# verb pre-usage
 	my @verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
 	my $verbInline = '';
@@ -174,6 +189,22 @@ sub dump {
 #  exit code may be seen as an error counter as it is incremented by msgErr
 sub errs {
 	return $TTPVars->{run}{exit_code};
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns array with the pathname of the available commands
+# if the user has added a tree of its own besides of Toops, it should have set a TTP_ROOT environment
+# variable - else just stay in this current tree...
+sub getAvailableCommands {
+	# compute a TTP_ROOT array of directories
+	my @roots = ();
+	if( $ENV{TTP_ROOT} ){
+		@roots = split( ':', $ENV{TTP_ROOT} );
+	} else {
+		push( @roots, $TTPVars->{run}{command}{directory} );
+	}
+	my @commands = glob( File::Spec->catdir( $TTPVars->{run}{command}{directory}, "*.pl" ));
+	return @commands;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -363,18 +394,29 @@ sub initLogs {
 # -------------------------------------------------------------------------------------------------
 # Make sure we have a site configuration JSON file and loads it
 sub initSiteConfiguration {
-		my $json_path = File::Spec->catdir( $ENV{TTP_SITE}, 'toops.json' );
-		if( -f $json_path ){
-			my $json_text = do {
-			   open( my $json_fh, "<:encoding(UTF-8)", $json_path ) or die( "Can't open '$json_path': $!".EOL );
-			   local $/;
-			   <$json_fh>
-			};
-			my $json = JSON->new;
-			$TTPVars->{config}{site} = $json->decode( $json_text );
-		} else {
-			Mods::Toops::msgWarn( "site configuration file '$json_path' not found or not readable" );
-		}
+	my $json_path = File::Spec->catdir( $ENV{TTP_SITE}, 'toops.json' );
+	if( -f $json_path ){
+		my $json_text = do {
+		   open( my $json_fh, "<:encoding(UTF-8)", $json_path ) or die( "Can't open '$json_path': $!".EOL );
+		   local $/;
+		   <$json_fh>
+		};
+		my $json = JSON->new;
+		$TTPVars->{config}{site} = $json->decode( $json_text );
+	} else {
+		Mods::Toops::msgWarn( "site configuration file '$json_path' not found or not readable" );
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# List the available commands
+sub listAvailableCommands {
+	Mods::Toops::msgOut( "displaying available commands..." );
+	my @commands = Mods::Toops::getAvailableCommands();
+	foreach my $it ( @commands ){
+		Mods::Toops::commandDisplayOneLineHelp( $it, { prefix => ' ' });
+	}
+	Mods::Toops::msgOut( scalar @commands." found command(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -403,6 +445,17 @@ sub makeDirExist {
 	} else {
 		make_path( $dir );
 	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# Dummy execution
+sub msgDummy {
+	my $msg = shift;
+	my $line = msgPrefix()."(dummy) $msg";
+	Mods::Toops::msgLogAppend( $line );
+	print color( 'cyan' );
+	print STDOUT $line.EOL;
+	print color( 'reset' );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -556,6 +609,7 @@ sub run {
 	my ( $volume, $directories, $file ) = File::Spec->splitpath( $TTPVars->{run}{command}{path} );
 	my $command = $file;
 	$TTPVars->{run}{command}{basename} = $command;
+	$TTPVars->{run}{command}{directory} = Mods::Toops::pathRemoveTrailingSeparator( $directories );
 	$command =~ s/\.[^.]+$//;
 	# make sure the command is not a reserved word
 	if( grep( /^$command$/, @{$TTPVars->{Toops}{ReservedWords}} )){
@@ -564,7 +618,7 @@ sub run {
 	}
 	$TTPVars->{run}{command}{name} = $command;
 	# the directory where are stored the verbs of the command
-	my @dirs = File::Spec->splitdir( Mods::Toops::pathRemoveTrailingSeparator( $directories ));
+	my @dirs = File::Spec->splitdir( $TTPVars->{run}{command}{directory} );
 	pop( @dirs );
 	$TTPVars->{run}{command}{verbs_dir} = File::Spec->catdir( $volume, @dirs, $command );
 	# prepare for the datas of the command

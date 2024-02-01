@@ -40,11 +40,6 @@ sub doBackup(){
 		mode => $opt_diff ? 'diff' : 'full',
 		dummy => $opt_dummy
 	});
-	if( $res ){
-		Mods::Toops::msgOut( "successfully done" );
-	} else {
-		Mods::Toops::msgErr( "erroneous!" );
-	}
 }
 
 # =================================================================================================
