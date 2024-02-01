@@ -25,13 +25,13 @@ my $opt_services = false;
 
 # -------------------------------------------------------------------------------------------------
 # list the available commands (same than services.pl list -services)
-sub listCommands(){
+sub listCommands {
 	Mods::Toops::listAvailableCommands();
 }
 
 # -------------------------------------------------------------------------------------------------
 # list the defined services
-sub listServices(){
+sub listServices {
 	Mods::Services::listDefinedServices();
 }
 

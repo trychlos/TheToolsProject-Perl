@@ -4,11 +4,11 @@
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
-# @(-) --instance=name         Sql Server instance name [${instance}]
-# @(-) --database=name         database name [${db}]
+# @(-) --instance=<name>       Sql Server instance name [${instance}]
+# @(-) --database=<name>       database name [${db}]
 # @(-) --[no]full              operate a full backup [${full}]
 # @(-) --[no]diff              operate a differential backup [${diff}]
-# @(-) --output=filename       target filename [${fname}]
+# @(-) --output=<filename>     target filename [${fname}]
 
 use Mods::Dbms;
 
@@ -34,7 +34,7 @@ my $opt_output ='';
 
 # -------------------------------------------------------------------------------------------------
 # backup the source database to the target backup file
-sub doBackup(){
+sub doBackup {
 	# do the backup
 	my $res = Mods::Dbms::backupDatabase({
 		instance => $opt_instance,

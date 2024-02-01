@@ -4,7 +4,7 @@
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]services          list defined services [${services}]
 # @(-) --[no]workloads         list used workloads [${workloads}]
-# @(-) --workload=s            display the tasks for the named workload [${workload}]
+# @(-) --workload=<name>       display the tasks for the named workload [${workload}]
 # @(-) --[no]commands          display the commands for the named workload [${commands}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
@@ -33,31 +33,31 @@ my $opt_commands = false;
 
 # -------------------------------------------------------------------------------------------------
 # list the defined DBMS instances (which may be not all the running instances)
-sub listDbms(){
+sub listDbms {
 	Mods::Services::listDefinedDBMSInstances();
 }
 
 # -------------------------------------------------------------------------------------------------
 # list the defined services (same than ttp.pl list -services)
-sub listServices(){
+sub listServices {
 	Mods::Services::listDefinedServices();
 }
 
 # -------------------------------------------------------------------------------------------------
 # list the workload tasks
-sub listWorkloadAll(){
+sub listWorkloadAll {
 	Mods::Services::listWorkloadTasksAll( $opt_workload );
 }
 
 # -------------------------------------------------------------------------------------------------
 # list the workload tasks commands
-sub listWorkloadCommands(){
+sub listWorkloadCommands {
 	Mods::Services::listWorkloadTasksCommands( $opt_workload );
 }
 
 # -------------------------------------------------------------------------------------------------
 # list the defined workloads
-sub listWorkloads(){
+sub listWorkloads {
 	Mods::Services::listUsedWorkloads();
 }
 

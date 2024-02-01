@@ -1,13 +1,10 @@
 # @(#) list various DBMS objects
+#
+# @(-) --[no]help              print this message, and exit [${help}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --instance=<name>       acts on the named instance [${instance}]
+#
 # Copyright (@) 2023-2024 PWI Consulting
-#
-# @(#) --help (managed by Toops)
-# @(#) --verbose
-# @(#) --service <service>
-# @(#) --instance <instance>
-# @(#) --databases
-# @(#) List live DBMS objects of the service (resp. of the DBMS instance)
-#
 
 use Data::Dumper;
 
@@ -16,16 +13,19 @@ use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
-my $opt_service_def = '';
-my $opt_service = $opt_service_def;
-my $opt_instance_def = '';
-my $opt_instance = $opt_instance_def;
-my $opt_databases_def = 'no';
-my $opt_databases = false;
+my $defaults = {
+	help => 'no',
+	verbose => 'no',
+	instance => 'MSSQLSERVER',
+	rc => 'rc',
+	count => 0
+};
+
+my $opt_instance = $defaults->{instance};
 
 # -------------------------------------------------------------------------------------------------
 # list the databases
-sub listDatabases(){
+sub listDatabases {
 	Mods::Dbms::listLiveDatabases();
 }
 
@@ -36,7 +36,6 @@ sub listDatabases(){
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"service=s"			=> \$opt_service,
 	"instance=s"		=> \$opt_instance,
 	"databases!"		=> \$opt_databases )){
 
@@ -45,7 +44,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::doHelpVerb();
+	Mods::Toops::doHelpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 

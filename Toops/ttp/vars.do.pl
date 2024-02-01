@@ -25,13 +25,13 @@ my $opt_logsroot = false;
 
 # -------------------------------------------------------------------------------------------------
 # list logsdir value - e.g. 'C:\INLINGUA\Logs\Toops\240201'
-sub listLogsdir(){
+sub listLogsdir {
 	print " $TTPVars->{dyn}{logs_dir}".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
 # list logsroot value - e.g. 'C:\INLINGUA\Logs\Toops'
-sub listLogsroot(){
+sub listLogsroot {
 	print " $TTPVars->{config}{site}{toops}{logsRoot}".EOL;
 }
 
