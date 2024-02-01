@@ -1,9 +1,9 @@
 # @(#) list various TTP objects
 #
-# @(-) --[no]help              print this message, and exit [${opt_help_def}]
-# @(-) --[no]verbose           run verbosely [$opt_verbose_def]
-# @(-) --[no]commands          list the available commands [$opt_commands_def]
-# @(-) --[no]services          list the defined services on this host [$opt_services_def]
+# @(-) --[no]help              print this message, and exit [${help}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]commands          list the available commands [${commands}]
+# @(-) --[no]services          list the defined services on this host [${services}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -13,9 +13,14 @@ use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
-my $opt_commands_def = 'no';
+my $defaults = {
+	help => 'no',
+	verbose => 'no',
+	commands => 'no',
+	services => 'no'
+};
+
 my $opt_commands = false;
-my $opt_services_def = 'no';
 my $opt_services = false;
 
 # -------------------------------------------------------------------------------------------------
@@ -45,7 +50,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::doHelpVerb();
+	Mods::Toops::doHelpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 

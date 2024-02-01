@@ -119,6 +119,7 @@ sub doHelpCommand {
 #   > the usage of the verb
 #   > a post-usage help
 sub doHelpVerb {
+	my ( $defaults ) = @_;
 	# display the command one-line help
 	Mods::Toops::commandDisplayOneLineHelp( $TTPVars->{run}{command}{path} );
 	# verb pre-usage
@@ -137,7 +138,8 @@ sub doHelpVerb {
 		print "    Usage: $TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} [options]".EOL;
 		print "    where available options are:".EOL;
 		foreach my $line ( @verbHelp ){
-			print "      ".eval( $line ).".EOL;
+			$line =~ s/\$\{?(\w+)}?/$defaults->{$1}/e;
+			print "      $line".EOL;
 		}
 	}
 	# verb post-usage

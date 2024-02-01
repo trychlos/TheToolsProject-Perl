@@ -1,11 +1,10 @@
 # @(#) list various services objects
 #
-# @(-) --[no]help              print this message, and exit [${opt_help_def}]
-# @(-) --[no]verbose           run verbosely [$opt_verbose_def]
-# @(-) --[no]services          list defined services [$opt_services_def]
-# @(-) --[no]workloads         list used workloads [$opt_workloads_def]
-# @(-) --workload=s            display the tasks for the named workload [$opt_workload_def]
-# @(@) Remind that specifying -workload without any argument means the boolean option, while -workload my-workload means the string option.
+# @(-) --[no]help              print this message, and exit [${help}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]services          list defined services [${services}]
+# @(-) --[no]workloads         list used workloads [${workloads}]
+# @(-) --workload=s            display the tasks for the named workload [${workload}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 #
@@ -17,12 +16,17 @@ use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
-my $opt_services_def = 'no';
+my $defaults = {
+	help => 'no',
+	verbose => 'no',
+	services => 'no',
+	workloads => 'no',
+	workload => ''
+};
+
 my $opt_services = false;
-my $opt_workloads_def = 'no';
 my $opt_workloads = false;
-my $opt_workload_def = '';
-my $opt_workload = $opt_workload_def;
+my $opt_workload = $defaults->{workload};
 
 # -------------------------------------------------------------------------------------------------
 # list the defined DBMS instances (which may be not all the running instances)
@@ -64,7 +68,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::doHelpVerb();
+	Mods::Toops::doHelpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 

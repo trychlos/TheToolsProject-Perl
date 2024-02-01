@@ -1,9 +1,9 @@
 # @(#) display internal TTP variables
 #
-# @(-) --[no]help              print this message, and exit [${opt_help_def}]
-# @(-) --[no]verbose           run verbosely [$opt_verbose_def]
-# @(-) --[no]logsdir           display the current Toops logs directory path [$opt_logsdir_def]
-# @(-) --[no]logsroot          display the site-defined logs root path [$opt_logsroot_def]
+# @(-) --[no]help              print this message, and exit [${help}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]logsdir           display the current Toops logs directory path [${logsdir}]
+# @(-) --[no]logsroot          display the site-defined logs root path [${logsroot}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -13,9 +13,14 @@ use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
-my $opt_logsdir_def = 'no';
+my $defaults = {
+	help => 'no',
+	verbose => 'no',
+	logsdir => 'no',
+	logsroot => 'no'
+};
+
 my $opt_logsdir = false;
-my $opt_logsroot_def = 'no';
 my $opt_logsroot = false;
 
 # -------------------------------------------------------------------------------------------------
@@ -45,7 +50,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::doHelpVerb();
+	Mods::Toops::doHelpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 

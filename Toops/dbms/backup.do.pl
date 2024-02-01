@@ -1,32 +1,35 @@
 # @(#) run a database backup
 # Copyright (@) 2023-2024 PWI Consulting
 #
-# @(-) --[no]help              print this message, and exit [${opt_help_def}]
-# @(-) --[no]dummy             dummy run [$opt_dummy_def]
-# @(-) --[no]verbose           run verbosely [$opt_verbose_def]
-# @(-) --instance=name         Sql Server instance name [${opt_instance_def}]
-# @(-) --database=name         database name [${opt_db_def}]
-# @(-) --[no]full              operate a full backup [${opt_full_def}]
-# @(-) --[no]diff              operate a differential backup [${opt_diff_def}]
-# @(-) --output=filename       target filename [${opt_fname_def}]
+# @(-) --[no]help              print this message, and exit [${help}]
+# @(-) --[no]dummy             dummy run [${dummy}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --instance=name         Sql Server instance name [${instance}]
+# @(-) --database=name         database name [${db}]
+# @(-) --[no]full              operate a full backup [${full}]
+# @(-) --[no]diff              operate a differential backup [${diff}]
+# @(-) --output=filename       target filename [${fname}]
 
 use Mods::Dbms;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
-my $opt_help_def = 'no';
-my $opt_verbose_def = 'no';
-my $opt_dummy_def = 'no';
+my $defaults = {
+	help => 'no',
+	verbose => 'no',
+	dummy => 'no',
+	instance => 'MSSQLSERVER',
+	database => '',
+	full => 'no',
+	diff => 'no',
+	output => 'DEFAUT'
+};
+
 my $opt_dummy = false;
-my $opt_instance_def = 'MSSQLSERVER';
-my $opt_instance = $opt_instance_def;
-my $opt_database_def = '';
-my $opt_database = $opt_database_def;
-my $opt_full_def = 'no';
+my $opt_instance = $defaults->{instance};
+my $opt_database = $defaults->{database};
 my $opt_full = false;
-my $opt_diff_def = 'no';
 my $opt_diff = false;
-my $opt_output_def = 'DEFAULT';
 my $opt_output ='';
 
 # -------------------------------------------------------------------------------------------------
