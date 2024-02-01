@@ -137,7 +137,7 @@ sub doHelpVerb {
 		print "    Usage: $TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} [options]".EOL;
 		print "    where available options are:".EOL;
 		foreach my $line ( @verbHelp ){
-			print "      $line".EOL;
+			print "      ".eval( $line ).".EOL;
 		}
 	}
 	# verb post-usage
