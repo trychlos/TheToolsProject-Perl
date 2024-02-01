@@ -615,6 +615,67 @@ sub run {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Recursively search the provided array to find all occurrences of provided key
+# (E):
+# - array to be searched for
+# - searched key
+# - an optional options hash, which may have following keys:
+#   > none at the moment
+# (S):
+# returns a hash whose keys are the found workload names, values being arrays of key paths
+sub searchRecArray {
+	my ( $array, $searched, $opts, $recData ) = @_;
+	$opts //= {};
+	$recData //= {};
+	$recData->{path} = [] if !exists $recData->{path};
+	$recData->{result} = {} if !exists $recData->{path};
+	foreach my $it ( @{$array} ){
+		my $type = ref( $it );
+		if( $type eq 'ARRAY' ){
+			push( @{$recData->{path}}, '' );
+			Mods::Toops::searchRecArray( $it, $searched, $opts, $recData );
+		} elsif( $type eq 'HASH' ){
+			push( @{$recData->{path}}, '' );
+			Mods::Toops::searchRecHash( $it, $searched, $opts, $recData );
+		}
+	}
+	return $recData;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Recursively search the provided hash to find all occurrences of provided key
+# (E):
+# - hash to be searche for
+# - searched key
+# - an optional options hash, which may have following keys:
+#   > none at the moment
+# (S):
+# returns a hash whose keys are the found workload names, values being arrays of key paths
+sub searchRecHash {
+	my ( $hash, $searched, $opts, $recData ) = @_;
+	$opts //= {};
+	$recData //= {};
+	$recData->{path} = [] if !exists $recData->{path};
+	$recData->{result} = [] if !exists $recData->{path};
+	foreach my $key ( keys %{$hash} ){
+		if( $key eq $searched ){
+			push( @{$recData->{result}}, { path => $recData->{path}, data => $hash->{$key} });
+		} else {
+			my $ref = $hash->{$key};
+			my $type = ref( $ref );
+			if( $type eq 'ARRAY' ){
+				push( @{$recData->{path}}, $key );
+				Mods::Toops::searchRecArray( $ref, $searched, $opts, $recData );
+			} elsif( $type eq 'HASH' ){
+				push( @{$recData->{path}}, $key );
+				Mods::Toops::searchRecHash( $ref, $searched, $opts, $recData );
+			}
+		}
+	}
+	return $recData;
+}
+
+# -------------------------------------------------------------------------------------------------
 # exit the command
 # Return code is optional, defaulting to exit_code
 sub ttpExit {

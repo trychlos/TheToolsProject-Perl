@@ -25,9 +25,31 @@ sub getDefinedDBMSInstances {
 # -------------------------------------------------------------------------------------------------
 # returns the defined services
 sub getDefinedServices {
-	my $config = Mods::Toops::getHostConfig();
+	my ( $config ) = @_;
 	my @list = keys %{$config->{Services}};
 	return @list;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the used workloads, i.e. the workloads of which at least one item is candidate to
+# we provide a hash where:
+# - keys are the workload name's
+# - values are an array of the found definitions
+sub getUsedWorkloads {
+	my ( $config ) = @_;
+	my @services = Mods::Services::getDefinedServices( $config );
+	my $list = {};
+	foreach my $service ( @services ){
+		my $res = Mods::Toops::searchRecHash( $config->{Services}{$service}, 'workloads' );
+		foreach my $it ( @{$res->{result}} ){
+			foreach my $key ( keys %{$it->{data}} ){
+				$list->{$key} = [] if !exists $list->{$key};
+				my @foo = ( @{$list->{$key}}, @{$it->{data}{$key}} );
+				$list->{$key} = \@foo;
+			}
+		}
+	}
+	return $list;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -44,13 +66,28 @@ sub listDefinedDBMSInstances {
 # -------------------------------------------------------------------------------------------------
 # list the (sorted) defined services
 sub listDefinedServices {
-	Mods::Toops::msgOut( "displaying defined services..." );
-	my @list = Mods::Services::getDefinedServices();
+	my $config = Mods::Toops::getHostConfig();
+	Mods::Toops::msgOut( "displaying services defined on $config->{host}..." );
+	my @list = Mods::Services::getDefinedServices( $config );
 	my @sorted = sort @list;
 	foreach my $it ( @sorted ){
 		print " $it".EOL;
 	}
 	Mods::Toops::msgOut( scalar @sorted." found defined service(s)" );
+}
+
+# -------------------------------------------------------------------------------------------------
+# list the (sorted) defined workloads
+sub listUsedWorkloads {
+	my $config = Mods::Toops::getHostConfig();
+	Mods::Toops::msgOut( "displaying workloads used on $config->{host}..." );
+	my $list = Mods::Services::getUsedWorkloads( $config );
+	my @names = keys %{$list};
+	my @sorted = sort @names;
+	foreach my $it ( @sorted ){
+		print " $it".EOL;
+	}
+	Mods::Toops::msgOut( scalar @sorted." found used workload(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
