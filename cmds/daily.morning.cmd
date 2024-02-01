@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 	rem daily.morning.cmd Workload tasks
 	set ME=%~n0
 	call :setLogFile
@@ -19,19 +19,6 @@ rem @echo off
 	call :logLine RC=%ERRORLEVEL%
 	set res_rc[%i%]=%ERRORLEVEL%
 	set res_end[%i%]=%DATE:~6,4%-%DATE:~3,2%-%DATE:~0,2% %TIME%
-	exit /b
-
-:doRecap
-	rem https://comp.os.ms-windows.programmer.win32.narkive.com/YIzuz12i/outputting-a-vertical-bar-on-the-commandline
-	call :logLine +==============================================================================================+
-	call :logLine § Summary                                                                                      §
-	call :logLine + ---------------------------------------------------------------------------------------------+
-	for /L %%j in (1,1,%i%) do (
-		setlocal EnableDelayedExpansion
-		call :logLine § + !command[%%j]!
-		call :logLine §   RC=!rc[%%j]!
-	)
-	call :logLine +==============================================================================================+
 	exit /b
 
 :logLine
