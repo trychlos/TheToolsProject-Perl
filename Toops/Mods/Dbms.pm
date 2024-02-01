@@ -68,7 +68,8 @@ sub checkDatabaseExists {
 	Mods::Toops::msgErr( "Dbms::checkDatabaseExists() instance is mandatory, but is not specified" ) if !$instance;
 	Mods::Toops::msgErr( "Dbms::checkDatabaseExists() database is mandatory, but is not specified" ) if !$database;
 	if( !Mods::Toops::errs()){
-		my $list = Mods::Dbms::getLiveDatabases();
+		my $dbms = Mods::Dbms::_buildDbms();
+		my $list = Mods::Dbms::getLiveDatabases( $dbms );
 		$exists = true if grep( /$database/, @{$list} );
 	}
 	Mods::Toops::msgVerbose( "checkDatabaseExists() returning ".( $exists ? 'true' : 'false' ));
@@ -126,7 +127,7 @@ sub checkInstanceOpt {
 		Mods::Toops::msgErr( "no 'DBMSInstances' key defined in host configuration" );
 	}
 	if( $instance ){
-	my $TTPVars = Mods::Toops::TTPVars();
+		my $TTPVars = Mods::Toops::TTPVars();
 		$TTPVars->{dbms}{instance} = {
 			name => $instance,
 			data => $config->{DBMSInstances}{$instance}
@@ -172,21 +173,52 @@ sub computeDefaultBackupFilename {
 }
 
 # -------------------------------------------------------------------------------------------------
+# returns the list of tables in the databases
+# the working-on instance has been set by checkInstanceOpt() function
+sub getDatabaseTables {
+	my ( $dbms, $database ) = @_;
+	my $list = Mods::Dbms::toPackage( 'getDatabaseTables', $dbms, $database );
+	return $list;
+}
+
+# -------------------------------------------------------------------------------------------------
 # returns the list of instance live databases
+# the working-on instance has been set by checkInstanceOpt() function
 sub getLiveDatabases {
-	my $dbms = Mods::Dbms::_buildDbms();
+	my ( $dbms ) = @_;
 	my $list = Mods::Dbms::toPackage( 'getLiveDatabases', $dbms );
 	return $list;
 }
 
 # -------------------------------------------------------------------------------------------------
 # list the instance live databases
-sub listLiveDatabases {
-	my $list = Mods::Dbms::getLiveDatabases();
-	foreach my $db ( @{$list} ){
-		Mods::Toops::msgOut( PREFIX.$db );
+# the working-on instance has been set by checkInstanceOpt() function
+sub listDatabaseTables {
+	my ( $database ) = @_;
+	my $dbms = Mods::Dbms::_buildDbms();
+	Mods::Toops::msgErr( "Dbms::listDatabaseTables() instance is mandatory, but is not specified" ) if !$dbms->{instance};
+	Mods::Toops::msgErr( "Dbms::listDatabaseTables() database is mandatory, but is not specified" ) if !$database;
+	if( !Mods::Toops::errs()){
+		Mods::Toops::msgOut( "displaying tables in '$dbms->{config}{host}\\$dbms->{instance}{name}\\$database'..." );
+		my $list = Mods::Dbms::getDatabaseTables( $dbms, $database );
+		foreach my $it ( @{$list} ){
+			print " $it".EOL;
+		}
+		Mods::Toops::msgOut( scalar @{$list}." found table(s)" );
 	}
-	Mods::Toops::msgOut( scalar @{$list}." found database(s)" );
+}
+
+# -------------------------------------------------------------------------------------------------
+# list the instance live databases
+# the working-on instance has been set by checkInstanceOpt() function
+sub listLiveDatabases {
+	my $dbms = Mods::Dbms::_buildDbms();
+	Mods::Toops::msgOut( "displaying databases in '$dbms->{config}{host}\\$dbms->{instance}{name}'..." );
+	my $list = Mods::Dbms::getLiveDatabases( $dbms );
+	foreach my $db ( @{$list} ){
+		print " $db".EOL;
+	}
+	Mods::Toops::msgOut( scalar @{$list}." found live database(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------

@@ -108,6 +108,27 @@ sub _getCredentials {
 	return ( $account, $passwd );
 }
 
+# ------------------------------------------------------------------------------------------------
+# returns the list of tables in the database
+sub getDatabaseTables {
+	my ( $me, $dbms, $database ) = @_;
+	my $result = undef;
+	my $instance = $dbms->{instance}{name};
+	Mods::Toops::msgVerbose( "SqlServer::getDatabaseTables() entering with instance='".( $instance || '(undef)' )."', database='".( $database || '(undef)' )."'" );
+	if( $instance && $database ){
+		my $sqlsrv = Mods::SqlServer::_connect( $dbms );
+		if( !Mods::Toops::errs() && $sqlsrv ){
+			$result = [];
+			# get an array of { TABLE_SCHEMA,TABLE_NAME } hashes
+			my $res = $sqlsrv->sql( "SELECT TABLE_SCHEMA,TABLE_NAME FROM $database.INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_SCHEMA,TABLE_NAME" );
+			foreach my $it ( @{$res} ){
+				push( @{$result}, "$it->{TABLE_SCHEMA}.$it->{TABLE_NAME}" );
+			}
+		}
+	}
+	return $result;
+}
+
 # -------------------------------------------------------------------------------------------------
 # get and returns the list of live databases
 # the passed-in object is a hash with following keys:
@@ -323,26 +344,6 @@ sub listTables( $ ){
 			$parms ->{'sqlsrv'} = $sqlsrv;
 			$list = listTablesWithConnect( $parms );
 		}
-	}
-	return $list;
-}
-
-# ------------------------------------------------------------------------------------------------
-# parms is a hash ref with keys:
-# - sqlsrv: mandatory
-# - db: mandatory
-# - verbose: default to false
-sub listTablesWithConnect( $ ){
-	my $parms = shift;
-	my $sqlsrv = $parms->{'sqlsrv'};
-	my $db = $parms->{'db'};
-	my $verbose = $parms->{'verbose'} || false;
-	my $list = [];
-	msgErr( "listTablesWithConnect() sqlsrv is mandatory, not specified" ) if !$sqlsrv;
-	msgErr( "listTablesWithConnect() db is mandatory, not specified" ) if !$db;
-	if( !errs()){
-		my $res = $sqlsrv->sql( "SELECT TABLE_SCHEMA,TABLE_NAME FROM $db.INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_SCHEMA,TABLE_NAME" );
-		return( $res );
 	}
 	return $list;
 }
