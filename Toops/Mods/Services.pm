@@ -135,4 +135,37 @@ sub checkServiceOpt {
 	return $service;
 }
 
+# -------------------------------------------------------------------------------------------------
+# list the tasks of the named workload
+# this is an array of task items where the exact content actually depends of the task type.
+# we so cannot really have a fun and always usable display
+sub listWorkloadTasks {
+	my ( $workload ) = @_;
+	my $config = Mods::Toops::getHostConfig();
+	Mods::Toops::msgOut( "displaying workload tasks defined for $config->{host}\\$workload..." );
+	my $list = Mods::Services::getUsedWorkloads( $config );
+	foreach my $it ( @{$list->{$workload}} ){
+		# if we have a name, make it the first line
+		if( exists( $it->{name} )){
+			print "+ $it->{name}".EOL;
+		} else {
+			print "+ (unnamed)".EOL;
+		}
+		# print other keys expecting values are all scalar
+		foreach my $key ( keys %{$it} ){
+			if( $key ne 'name' ){
+				my $type = ref( $it->{$key} );
+				if( !$type ){
+					print "  $key: $it->{$key}".EOL;
+				} elsif( $type eq 'ARRAY' ){
+					print "  $key: ".join( ', ', @{$it->{$key}} ).EOL;
+				} else {
+					print "  $key: <object reference>".EOL;
+				}
+			}
+		}
+	}
+	Mods::Toops::msgOut( scalar @{$list->{$workload}}." found defined task(s)" );
+}
+
 1;
