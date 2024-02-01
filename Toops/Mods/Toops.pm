@@ -13,39 +13,12 @@ use Getopt::Long;
 use JSON;
 use Mods::HostConf;
 use Path::Tiny qw( path );
-use Sub::Exporter;
 use Sys::Hostname qw( hostname );
 use Term::ANSIColor;
 use Time::Piece;
 use Win32::Console::ANSI;
 
 use Mods::Constants qw( :all );
-
-Sub::Exporter::setup_exporter({
-	exports => [ qw(
-		doHelpCommand
-		doHelpVerb
-		dump
-		errs
-		getDefaultTempDir
-		getHostConfig
-		getOptions
-		makeDirExist
-		msgDummy
-		msgErr
-		msgLog
-		msgOut
-		msgPrefix
-		msgVerbose
-		msgWarn
-		pathRemoveTrailingChar
-		pathRemoveTrailingSeparator
-		run
-		ttpExit
-		TTPVars
-		wantsHelp
-	)]
-});
 
 # autoflush STDOUT
 $| = 1;

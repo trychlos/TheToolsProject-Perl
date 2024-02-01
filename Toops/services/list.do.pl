@@ -20,7 +20,7 @@ my $opt_dbms_def = 'no';
 my $opt_dbms = false;
 
 # -------------------------------------------------------------------------------------------------
-# list the defined services
+# list the defined services (same than ttp.pl list -services)
 sub listServices(){
 	Mods::Services::listDefinedServices();
 }

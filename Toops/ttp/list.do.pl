@@ -19,7 +19,7 @@ my $opt_services_def = 'no';
 my $opt_services = false;
 
 # -------------------------------------------------------------------------------------------------
-# list the available commands
+# list the available commands (same than services.pl list -services)
 sub listCommands(){
 	Mods::Toops::listAvailableCommands();
 }
