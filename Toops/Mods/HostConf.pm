@@ -14,14 +14,7 @@ use Mods::Toops;
 
 use File::Spec;
 use JSON;
-use Sub::Exporter;
 use Sys::Hostname qw( hostname );
-
-Sub::Exporter::setup_exporter({
-	exports => [ qw(
-		init
-	)]
-});
 
 # -------------------------------------------------------------------------------------------------
 # returns the machine configuration object

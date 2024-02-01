@@ -10,20 +10,9 @@ use strict;
 use warnings;
 
 use Data::Dumper;
-use Sub::Exporter;
 
 use Mods::Constants qw( :all );
 use Mods::Toops;
-
-Sub::Exporter::setup_exporter({
-	exports => [ qw(
-		checkServiceOpt
-		getDefinedDBMSInstances
-		getDefinedServices
-		listDefinedDBMSInstances
-		listDefinedServices
-	)]
-});
 
 # -------------------------------------------------------------------------------------------------
 # returns the defined DBMS instances

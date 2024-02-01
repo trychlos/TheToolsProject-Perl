@@ -11,22 +11,10 @@ use Data::Dumper;
 use File::Path;
 use File::Spec;
 use Module::Load;
-use Sub::Exporter;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Toops;
-
-Sub::Exporter::setup_exporter({
-	exports => [ qw(
-		checkDatabaseExists
-		checkInstanceOpt
-		computeDefaultBackupFilename
-		getLiveDatabases
-		listLiveDatabases
-		setInstanceByName
-	)]
-});
 
 # ------------------------------------------------------------------------------------------------
 # parms is a hash ref with keys:

@@ -7,19 +7,11 @@ use warnings;
 
 use Capture::Tiny qw( :all );
 use Data::Dumper;
-use Sub::Exporter;
 use Time::Piece;
 use Win32::SqlServer qw( :DEFAULT :consts );
 
 use Mods::Constants qw( :all );
 use Mods::Toops;
-
-Sub::Exporter::setup_exporter({
-	exports => [ qw(
-		backupDatabase
-		getLiveDatabases
-	)]
-});
 
 # the list of system databases to be excluded
 my $systemDatabases = [
