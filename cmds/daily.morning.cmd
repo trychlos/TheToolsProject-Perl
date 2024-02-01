@@ -5,7 +5,7 @@
 	call :logLine %~dpn0
 	set i=0
 	for /f "tokens=*" %%C in ('services.pl list -workload %ME% -commands ^| findstr /V /B "["') do call :doCommand %%C
-	services.pl workload_summary -commands res_command -rc res_rc -start res_start -end res_end -count %i%
+	services.pl workload_summary -me ME -commands res_command -start res_start -end res_end -rc res_rc -count %i% >> %LOGFILE%
     exit /b
 
 :doCommand

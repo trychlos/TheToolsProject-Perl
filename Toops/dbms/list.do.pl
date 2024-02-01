@@ -3,6 +3,7 @@
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --instance=<name>       acts on the named instance [${instance}]
+# @(-) --[no]listdb            list the databases [${listdb}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -17,11 +18,11 @@ my $defaults = {
 	help => 'no',
 	verbose => 'no',
 	instance => 'MSSQLSERVER',
-	rc => 'rc',
-	count => 0
+	listdb => 'no'
 };
 
 my $opt_instance = $defaults->{instance};
+my $opt_listdb = $defaults->{listdb};
 
 # -------------------------------------------------------------------------------------------------
 # list the databases
@@ -37,7 +38,7 @@ if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"instance=s"		=> \$opt_instance,
-	"databases!"		=> \$opt_databases )){
+	"listdb!"			=> \$opt_listdb )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -49,31 +50,13 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='true'" );
+Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
+Mods::Toops::msgVerbose( "found listdb='$opt_listdb'" );
 
-Mods::Services::checkServiceOpt( $opt_service, { mandatory => false });
-Mods::Dbms::checkInstanceOpt( $opt_instance, { mandatory => false, single => false });
-
-# we want either a service or an instance (and not both)
-# if we have a service, setup the instance
-if( !$TTPVars->{dbms}{service} && !$TTPVars->{dbms}{instance} ){
-	Mods::Toops::msgErr( "one of '--service' or '--instance' options must be specified" );
-
-} elsif( $TTPVars->{dbms}{service} && $TTPVars->{dbms}{instance} ){
-	Mods::Toops::msgErr( "only one of '--service' or '--instance' optiosn must be specified" );
-
-} elsif( $TTPVars->{dbms}{service} ){
-	my $instance = $TTPVars->{dbms}{service}{data}{dbms};
-	if( $instance ){
-		Mods::Dbms::setInstanceByName( $instance );
-	} else {
-		Mods::Toops::msgWarn( "seems that the '$TTPVars->{dbms}{service}{name}' service doesn't have any 'dbms' information" );
-	}
-}
-
-#print Dumper( $TTPVars->{$TTPVars->{run}{command}{name}} );
+Mods::Dbms::checkInstanceOpt( $opt_instance );
 
 if( !Mods::Toops::errs()){
-	listDatabases() if $opt_databases;
+	listDatabases() if $opt_listdb;
 }
 
 Mods::Toops::ttpExit();
