@@ -139,7 +139,7 @@ sub checkServiceOpt {
 # list the tasks of the named workload
 # this is an array of task items where the exact content actually depends of the task type.
 # we so cannot really have a fun and always usable display
-sub listWorkloadTasks {
+sub listWorkloadTasksAll {
 	my ( $workload ) = @_;
 	my $config = Mods::Toops::getHostConfig();
 	Mods::Toops::msgOut( "displaying workload tasks defined for $config->{host}\\$workload..." );
@@ -166,6 +166,25 @@ sub listWorkloadTasks {
 		}
 	}
 	Mods::Toops::msgOut( scalar @{$list->{$workload}}." found defined task(s)" );
+}
+
+# -------------------------------------------------------------------------------------------------
+# list the commands of the named workload
+sub listWorkloadTasksCommands {
+	my ( $workload ) = @_;
+	my $config = Mods::Toops::getHostConfig();
+	Mods::Toops::msgOut( "displaying workload commands defined for $config->{host}\\$workload..." );
+	my $list = Mods::Services::getUsedWorkloads( $config );
+	my $count = 0;
+	foreach my $it ( @{$list->{$workload}} ){
+		if( exists( $it->{commands} )){
+			foreach my $command ( @{$it->{commands}} ){
+				print " $command".EOL;
+				$count += 1;
+			}
+		}
+	}
+	Mods::Toops::msgOut( "$count found defined command(s)" );
 }
 
 1;

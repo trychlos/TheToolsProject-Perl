@@ -5,6 +5,7 @@
 # @(-) --[no]services          list defined services [${services}]
 # @(-) --[no]workloads         list used workloads [${workloads}]
 # @(-) --workload=s            display the tasks for the named workload [${workload}]
+# @(-) --[no]commands          display the commands for the named workload [${commands}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 #
@@ -21,12 +22,14 @@ my $defaults = {
 	verbose => 'no',
 	services => 'no',
 	workloads => 'no',
-	workload => ''
+	workload => '',
+	commands => 'no'
 };
 
 my $opt_services = false;
 my $opt_workloads = false;
 my $opt_workload = $defaults->{workload};
+my $opt_commands = false;
 
 # -------------------------------------------------------------------------------------------------
 # list the defined DBMS instances (which may be not all the running instances)
@@ -42,8 +45,14 @@ sub listServices(){
 
 # -------------------------------------------------------------------------------------------------
 # list the workload tasks
-sub listWorkload(){
-	Mods::Services::listWorkloadTasks( $opt_workload );
+sub listWorkloadAll(){
+	Mods::Services::listWorkloadTasksAll( $opt_workload );
+}
+
+# -------------------------------------------------------------------------------------------------
+# list the workload tasks commands
+sub listWorkloadCommands(){
+	Mods::Services::listWorkloadTasksCommands( $opt_workload );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -61,7 +70,8 @@ if( !GetOptions(
 	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"services!"			=> \$opt_services,
 	"workloads!"		=> \$opt_workloads, 
-	"workload=s"		=> \$opt_workload )){
+	"workload=s"		=> \$opt_workload,
+	"commands!"			=> \$opt_commands )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -76,12 +86,14 @@ Mods::Toops::msgVerbose( "found verbose='true'" );
 Mods::Toops::msgVerbose( "found services='$opt_services'" );
 Mods::Toops::msgVerbose( "found workloads='$opt_workloads'" );
 Mods::Toops::msgVerbose( "found workload='$opt_workload'" );
+Mods::Toops::msgVerbose( "found commands='$opt_commands'" );
 
 if( !Mods::Toops::errs()){
 	listDbms() if $opt_dbms;
 	listServices() if $opt_services;
 	listWorkloads() if $opt_workloads;
-	listWorkload() if $opt_workload;
+	listWorkloadAll() if $opt_workload && !$opt_commands;
+	listWorkloadCommands() if $opt_workload && $opt_commands;
 }
 
 Mods::Toops::ttpExit();
