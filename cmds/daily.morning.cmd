@@ -15,7 +15,7 @@
 	set res_command[%i%]=%*
 	set res_start[%i%]=%DATE:~6,4%-%DATE:~3,2%-%DATE:~0,2% %TIME%
 	call :logLine %*
-	rem %* >> %LOGFILE% 2>&1
+	%* >> %LOGFILE% 2>&1
 	call :logLine RC=%ERRORLEVEL%
 	set res_rc[%i%]=%ERRORLEVEL%
 	set res_end[%i%]=%DATE:~6,4%-%DATE:~3,2%-%DATE:~0,2% %TIME%
