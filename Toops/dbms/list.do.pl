@@ -77,9 +77,9 @@ if( Mods::Toops::wantsHelp()){
 
 Mods::Toops::msgVerbose( "found verbose='true'" );
 Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
-Mods::Toops::msgVerbose( "found listdb='$opt_listdb'" );
+Mods::Toops::msgVerbose( "found listdb='".( $opt_listdb ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found database='$opt_database'" );
-Mods::Toops::msgVerbose( "found listtables='$opt_listtables'" );
+Mods::Toops::msgVerbose( "found listtables='".( $opt_listtables ? 'true':'false' )."'" );
 
 # instance is mandatory
 Mods::Dbms::checkInstanceOpt( $opt_instance );

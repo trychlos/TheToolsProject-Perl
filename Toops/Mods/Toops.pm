@@ -569,6 +569,16 @@ sub pathRemoveTrailingSeparator {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Make sure we returns a path with a traiing separator
+sub pathWithTrailingSeparator {
+	my $dir = shift;
+	$dir = Mods::Toops::pathRemoveTrailingSeparator( $dir );
+	my $sep = File::Spec->catdir( '' );
+	$dir .= $sep;
+	return $dir;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Run by the command
 # Expects $0 be the full path name to the command script (this is the case in Windows+Strawberry)
 # and @ARGV the command-line arguments

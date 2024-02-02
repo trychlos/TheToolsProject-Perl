@@ -55,8 +55,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='true'" );
-Mods::Toops::msgVerbose( "found logsdir='$opt_logsdir'" );
-Mods::Toops::msgVerbose( "found logsroot='$opt_logsroot'" );
+Mods::Toops::msgVerbose( "found logsdir='".( $opt_logsdir ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found logsroot='".( $opt_logsroot ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
 	listLogsdir() if $opt_logsdir;

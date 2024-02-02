@@ -76,9 +76,9 @@ if( Mods::Toops::wantsHelp()){
 
 Mods::Toops::msgVerbose( "found verbose='true'" );
 Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
-Mods::Toops::msgVerbose( "found stdin='$opt_stdin'" );
+Mods::Toops::msgVerbose( "found stdin='".( $opt_stdin ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found script='$opt_script'" );
-Mods::Toops::msgVerbose( "found tabular='$opt_tabular'" );
+Mods::Toops::msgVerbose( "found tabular='".( $opt_tabular ? 'true':'false' )."'" );
 
 # instance is mandatory
 Mods::Dbms::checkInstanceOpt( $opt_instance );

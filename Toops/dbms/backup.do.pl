@@ -1,14 +1,19 @@
 # @(#) run a database backup
-# Copyright (@) 2023-2024 PWI Consulting
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --instance=<name>       Sql Server instance name [${instance}]
-# @(-) --database=<name>       database name [${db}]
+# @(-) --database=<name>       database name [${database}]
 # @(-) --[no]full              operate a full backup [${full}]
 # @(-) --[no]diff              operate a differential backup [${diff}]
-# @(-) --output=<filename>     target filename [${fname}]
+# @(-) --output=<filename>     target filename [${output}]
+#
+# @(@) Note: remind that differential backup is the difference of the current state and the last full backup.
+# @(@) Note: the default output filename is computed as:
+# @(@)       <instance_backup_path>\<yymmdd>\<host>-<instance>-<database>-<yymmdd>-<hhmiss>-<mode>.backup
+#
+# Copyright (@) 2023-2024 PWI Consulting
 
 use Mods::Dbms;
 
@@ -30,13 +35,13 @@ my $opt_instance = $defaults->{instance};
 my $opt_database = $defaults->{database};
 my $opt_full = false;
 my $opt_diff = false;
-my $opt_output ='';
+my $opt_output = '';
 
 # -------------------------------------------------------------------------------------------------
 # backup the source database to the target backup file
 sub doBackup {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "backuping database '$hostConfig->{host}\\$opt_instance\\$opt_database" );
+	Mods::Toops::msgOut( "backuping database '$hostConfig->{host}\\$opt_instance\\$opt_database'" );
 	my $res = Mods::Dbms::backupDatabase({
 		instance => $opt_instance,
 		database => $opt_database,
@@ -110,7 +115,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::doHelpVerb();
+	Mods::Toops::doHelpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 

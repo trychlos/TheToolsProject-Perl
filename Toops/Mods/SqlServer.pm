@@ -7,6 +7,7 @@ use warnings;
 
 use Capture::Tiny qw( :all );
 use Data::Dumper;
+use File::Spec;
 use Time::Piece;
 use Win32::SqlServer qw( :DEFAULT :consts );
 
@@ -89,6 +90,20 @@ sub _connect {
 		}
 	}
 	return $sqlsrv;
+}
+
+# ------------------------------------------------------------------------------------------------
+# whether the named database exists ?
+# return true|false
+sub _databaseExists {
+	my ( $dbms, $database ) = @_;
+	my $result = false;
+	my $sql = "select name from sys.databases where name = '$database';";
+	my $sqlsrv = Mods::SqlServer::_connect( $dbms );
+	my $res = $sqlsrv->sql( $sql );
+	$result = scalar @{$res} == 1;
+	Mods::Toops::msgVerbose( "SqlServer::_databaseExists() database='$database' exists='".( $result ? 'true' : 'false' )."'" );
+	return $result;
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -179,13 +194,91 @@ sub getLiveDatabases {
 }
 
 # -------------------------------------------------------------------------------------------------
+# parms is a hash ref with keys:
+# - instance: mandatory
+# - database: mandatory
+# - full: mandatory
+# - diff: defaults to '' (full restore only)
+# - verbose: default to false
+# returns true|false
+sub restoreDatabase {
+	my ( $me, $dbms, $parms ) = @_;
+	my $instance = $parms->{instance};
+	my $database = $parms->{database};
+	my $full = $parms->{full};
+	my $diff = $parms->{diff} || '';
+	my $res = false;
+	my $sqlsrv = undef;
+	msgErr( "SqlServer::restoreDatabase() instance is mandatory, not specified" ) if !$instance;
+	msgErr( "SqlServer::restoreDatabase() database is mandatory, not specified" ) if !$database;
+	msgErr( "SqlServer::restoreDatabase() full is mandatory, not specified" ) if !$full;
+	if( !Mods::Toops::errs()){
+		if( _restoreDatabaseAlter( $dbms, $parms )){
+			$parms->{'file'} = $full;
+			$parms->{'last'} = length $diff == 0 ? true : false;
+			$res = _restoreDatabaseFile( $dbms, $parms );
+			if( $res && length $diff ){
+				$parms->{'file'} = $diff;
+				$parms->{'last'} = true;
+				$res &= _restoreDatabaseFile( $dbms, $parms ) if length $diff;
+			}
+		}
+	}
+	return $res;
+}
+
+# -------------------------------------------------------------------------------------------------
+# restore the target database from the specified backup file
+# in this first phase, set it first offline (if it exists)
+# return true|false
+sub _restoreDatabaseAlter {
+	my ( $dbms, $parms ) = @_;
+	my $database = $parms->{database};
+	my $result = true;
+	if( _databaseExists( $dbms, $database )){
+		$parms->{sql} = "ALTER DATABASE $database SET OFFLINE WITH ROLLBACK IMMEDIATE;";
+		$result = Mods::SqlServer::sqlNoResult( $dbms, $parms );
+	}
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# restore the target database from the specified backup file
+# return true|false
+sub _restoreDatabaseFile {
+	my ( $dbms, $parms ) = @_;
+	my $instance = $parms->{instance};
+	my $database = $parms->{database};
+	my $fname = $parms->{file};
+	my $last = $parms->{last};
+	#
+	Mods::Toops::msgVerbose( "SqlServer::restoreDatabaseFile() restoring $fname" );
+	my $content = $dbms->{instance}{sqlsrv}->sql( "RESTORE FILELISTONLY FROM DISK='$fname'" );
+	my $recovery = 'NORECOVERY';
+	if( $last ){
+		$recovery = 'RECOVERY';
+	}
+	my $move = '';
+	my $sqlDataPath = Mods::Toops::pathWithTrailingSeparator( $dbms->{config}{DBMSInstances}{$parms->{instance}}{dataPath} );
+	foreach( @{$content} ){
+		my $row = $_;
+		$move .= ', ' if length $move;
+		my ( $vol, $dirs, $fname ) = File::Spec->splitpath( $sqlDataPath );
+		my $target_file = File::Spec->catpath( $vol, $dirs, $database.( $row->{Type} eq 'D' ? '.mdf' : '.ldf' ));
+		$move .= "MOVE '".$row->{'LogicalName'}."' TO '$target_file'";
+	}
+	$parms->{'sql'} = "RESTORE DATABASE $database FROM DISK='$fname' WITH $recovery, $move;";
+	return Mods::SqlServer::sqlNoResult( $dbms, $parms );
+}
+
+# -------------------------------------------------------------------------------------------------
 # execute a SQL request with no output
 # parms is a hash ref with keys:
 # - instance|sqlsrv: mandatory
 # - sql: mandatory
 # - dummy: true|false, defaulting to false
 # return true|false
-sub sqlNoResult( $ ){
+sub sqlNoResult {
 	my ( $dbms, $parms ) = @_;
 	Mods::Toops::msgErr( "SqlServer::sqlNoResult() sql is mandatory, but is not specified" ) if !$parms->{sql};
 	my $result = false;
@@ -251,86 +344,6 @@ sub getCandidatesDatabases( $ ){
 		msgVerbose( "getCandidatesDatabases() host='$host' instance='$instance' action='$action' found ".scalar @{$list}." candidates: ".join( ',', @{$list} )) if $verbose;
 	}
 	return $list;
-}
-
-# ------------------------------------------------------------------------------------------------
-# parms is a hash ref with keys:
-# - instance: mandatory
-# - db: mandatory
-# - full: mandatory
-# - diff: defaults to '' (full restore only)
-# - verbose: default to false
-# returns true|false
-sub restoreDatabase( $ ){
-	my $parms = shift;
-	my $instance = $parms->{'instance'};
-	my $db = $parms->{'db'};
-	my $full = $parms->{'full'};
-	my $diff = $parms->{'diff'} || '';
-	my $verbose = $parms->{'verbose'} || false;
-	my $res = false;
-	msgErr( "restoreDatabase() instance is mandatory, not specified" ) if !$instance;
-	msgErr( "restoreDatabase() db is mandatory, not specified" ) if !$db;
-	msgErr( "restoreDatabase() full is mandatory, not specified" ) if !$full;
-	if( !errs()){
-		my $sqlsrv = Mods::SqlServer::connect( $parms );
-		if( $sqlsrv ){
-			$parms->{'sqlsrv'} = $sqlsrv;
-			if( _restoreDatabaseAlter( $parms )){
-				$parms->{'file'} = $full;
-				$parms->{'last'} = length $diff == 0 ? true : false;
-				$res = _restoreDatabaseFile( $parms );
-				if( $res && length $diff ){
-					$parms->{'file'} = $diff;
-					$parms->{'last'} = true;
-					$res &= _restoreDatabaseFile( $parms ) if length $diff;
-				}
-			}
-		}
-	}
-	return $res;
-}
-
-# ------------------------------------------------------------------------------------------------
-# restore the target database from the specified backup file
-# return true|false
-sub _restoreDatabaseAlter( $ ){
-	my $parms = shift;
-	my $db = $parms->{'db'};
-	$parms->{'sql'} = "ALTER DATABASE $db SET OFFLINE WITH ROLLBACK IMMEDIATE;";
-	return Mods::SqlServer::sqlNoResult( $parms );
-}
-
-# ------------------------------------------------------------------------------------------------
-# restore the target database from the specified backup file
-# return true|false
-sub _restoreDatabaseFile( $ ){
-	my $parms = shift;
-	my $instance = $parms->{'instance'};
-	my $db = $parms->{'db'};
-	my $sqlsrv = $parms->{'sqlsrv'};
-	my $fname = $parms->{'file'};
-	my $last = $parms->{'last'};
-	my $verbose = $parms->{'verbose'} || false;
-	#
-	msgVerbose( "restoreDatabaseFile() restoring $fname" ) if $verbose;
-	my $content = $sqlsrv->sql( "RESTORE FILELISTONLY FROM DISK='$fname'" );
-	#
-	my $recovery = 'NORECOVERY';
-	if( $last ){
-		$recovery = 'RECOVERY';
-	}
-	my $move = '';
-	my $Refs = Mods::Constants::Refs;
-	my $sqlDataPath = $Refs->{hostname()}{$instance}{'dataPath'};
-	foreach( @{$content} ){
-		my $row = $_;
-		$move .= ', ' if length $move;
-		my( $bname, $bdir, $ext ) = fileparse( $row->{'PhysicalName'}, '\.[^\.]*' );
-		$move .= "MOVE '".$row->{'LogicalName'}."' TO '".$sqlDataPath.$db.( lc $ext )."'";
-	}
-	$parms->{'sql'} = "RESTORE DATABASE $db FROM DISK='$fname' WITH $recovery, $move;";
-	return Mods::SqlServer::sqlNoResult( $parms );
 }
 
 # ------------------------------------------------------------------------------------------------

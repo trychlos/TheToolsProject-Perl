@@ -70,8 +70,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='true'" );
-Mods::Toops::msgVerbose( "found commands='$opt_commands'" );
-Mods::Toops::msgVerbose( "found services='$opt_services'" );
+Mods::Toops::msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
 	listCommands() if $opt_commands;
