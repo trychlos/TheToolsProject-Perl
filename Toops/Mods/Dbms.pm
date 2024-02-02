@@ -151,13 +151,13 @@ sub computeDefaultBackupFilename {
 	$mode = $parms->{mode} if exists $parms->{mode};
 	Mods::Toops::msgErr( "Dbms::computeDefaultBackupFilename() mode must be 'full' or 'diff', found '$mode'" ) if $mode ne 'full' and $mode ne 'diff';
 	# compute the dir and make sure it exists
-	my $rootdir = $config->{DBMSInstances}{$parms->{instance}}{backupPath};
-	Mods::Toops::msgVerbose( "Dbms::computeDefaultBackupFilename() found rootDir='$rootdir'" );
-	if( !$rootdir ){
+	my $backupPath = $config->{DBMSInstances}{$parms->{instance}}{backupPath};
+	Mods::Toops::msgVerbose( "Dbms::computeDefaultBackupFilename() found backupPath='$backupPath'" );
+	if( !$backupPath ){
 		Mods::Toops::msgWarn( "Dbms::computeDefaultBackupFilename() instance='$parms->{instance}' backupPath is not specified, set to default temp directory" );
-		$rootdir = Mods::Toops::getDefaultTempDir();
+		$backupPath = Mods::Toops::getDefaultTempDir();
 	}
-	my $dir = File::Spec->catdir( $rootdir, localtime->strftime( '%y%m%d' ));
+	my $dir = File::Spec->catdir( $backupPath, localtime->strftime( '%y%m%d' ));
 	Mods::Toops::makeDirExist( $dir );
 	# compute the filename
 	my $fname = $dbms->{config}{host}.'-'.$parms->{instance}.'-'.$parms->{database}.'-'.localtime->strftime( '%y%m%d' ).'-'.localtime->strftime( '%H%M%S' ).'-'.$mode.'.backup';

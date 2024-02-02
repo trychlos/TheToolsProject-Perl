@@ -351,67 +351,6 @@ sub sqlNoResult {
 =pod
 
 # ------------------------------------------------------------------------------------------------
-# returns list the list of databases for which the action is true
-# + filter by the actual user databases if we are on our current host
-# parms is a hash ref with keys:
-# - host: default to hostname
-# - instance: mandatory
-# - action: mandatory
-# - verbose: default to false
-sub getCandidatesDatabases( $ ){
-	my $parms = shift;
-	my $host = $parms->{'host'} || hostname();
-	my $instance = $parms->{'instance'};
-	my $action = $parms->{'action'};
-	my $verbose = $parms->{'verbose'} || false;
-	my $list = [];
-	msgErr( "getCandidatesDatabases() instance is mandatory, not specified" ) if !$instance;
-	msgErr( "getCandidatesDatabases() action is mandatory, not specified" ) if !$action;
-	if( !errs()){
-		my $local_host = hostname();
-		my $userDBs = $host eq $local_host ? Mods::SqlServer::listUserDatabasesForInstance( $parms ) : ();
-		my $Refs = Mods::Constants::Refs;
-		foreach( sort { lc($a) cmp lc($b) } keys %{$Refs->{$host}{$instance}{'DBs'}} ){
-			if( $Refs->{$host}{$instance}{'DBs'}{$_}{$action} ){
-				my $name = $_;
-				if( $host ne $local_host || grep( /^$name$/, @{$userDBs} )){
-					push( @{$list}, $name );
-				}
-			}
-		}
-		msgVerbose( "getCandidatesDatabases() host='$host' instance='$instance' action='$action' found ".scalar @{$list}." candidates: ".join( ',', @{$list} )) if $verbose;
-	}
-	return $list;
-}
-
-# ------------------------------------------------------------------------------------------------
-# execute a SQL request with output
-# parms is a hash ref with keys:
-# - instance|sqlsrv: mandatory
-# - sql: mandatory
-# - verbose: default to false
-# return true|false
-sub sqlWithResult( $ ){
-	my $parms = shift;
-	my $instance = $parms->{'instance'};
-	my $sqlsrv = $parms->{'sqlsrv'};
-	my $sql = $parms->{'sql'};
-	my $verbose = $parms->{'verbose'} || false;
-	msgErr( "sqlWithResult() one of instance or sqlsrv must be specified, none found" ) if !$instance && !$sqlsrv;
-	msgErr( "sqlWithResult() sql is mandatory, not specified" ) if !$sql;
-	my $res = false;
-	if( !errs() && !$sqlsrv ){
-		$sqlsrv = Mods::SqlServer::connect( $parms );
-	}
-	if( !errs()){
-		msgVerbose( $sql ) if $verbose;
-		$res = $sqlsrv->sql( $sql );
-	}
-	msgVerbose( "sqlWithResult() returns ".scalar( @{$res} )." rows" ) if $verbose;
-	return $res;
-}
-
-# ------------------------------------------------------------------------------------------------
 # update database statistics
 # parms is a hash ref with keys:
 # - instance: mandatory
