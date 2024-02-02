@@ -262,14 +262,14 @@ sub pad {
 # - database: mandatory
 # - full: mandatory, the full backup file
 # - diff: optional, the diff backup file
-# - checkonly: whether we want only check the restorability of the provided file
+# - verifyonly: whether we want only check the restorability of the provided file
 # return true|false
 sub restoreDatabase {
 	my ( $parms ) = @_;
 	my $result = false;
 	my $dbms = Mods::Dbms::_buildDbms();
 	Mods::Toops::msgErr( "Dbms::restoreDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
-	Mods::Toops::msgErr( "Dbms::restoreDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
+	Mods::Toops::msgErr( "Dbms::restoreDatabase() database is mandatory, but is not specified" ) if !$parms->{database} && !$parms->{verifyonly};
 	Mods::Toops::msgErr( "Dbms::restoreDatabase() full backup is mandatory, but is not specified" ) if !$parms->{full};
 	Mods::Toops::msgErr( "Dbms::restoreDatabase() $parms->{diff}: file not found or not readable" ) if $parms->{diff} && ! -f $parms->{diff};
 	if( !Mods::Toops::errs()){

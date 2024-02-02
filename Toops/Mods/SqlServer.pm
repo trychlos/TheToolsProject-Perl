@@ -199,28 +199,39 @@ sub getLiveDatabases {
 # - database: mandatory
 # - full: mandatory
 # - diff: defaults to '' (full restore only)
-# - verbose: default to false
+# - verifyonly, defaulting to false
 # returns true|false
 sub restoreDatabase {
 	my ( $me, $dbms, $parms ) = @_;
+	Mods::Toops::msgVerbose( "SqlServer::restoreDatabase() entering..." );
 	my $instance = $parms->{instance};
 	my $database = $parms->{database};
 	my $full = $parms->{full};
 	my $diff = $parms->{diff} || '';
 	my $res = false;
 	my $sqlsrv = undef;
+	my $verifyonly = false;
+	$verifyonly = $parms->{verifyonly} if exists $parms->{verifyonly};
 	msgErr( "SqlServer::restoreDatabase() instance is mandatory, not specified" ) if !$instance;
-	msgErr( "SqlServer::restoreDatabase() database is mandatory, not specified" ) if !$database;
+	msgErr( "SqlServer::restoreDatabase() database is mandatory, not specified" ) if !$database && !$verifyonly;
 	msgErr( "SqlServer::restoreDatabase() full is mandatory, not specified" ) if !$full;
 	if( !Mods::Toops::errs()){
-		if( _restoreDatabaseAlter( $dbms, $parms )){
+		if( $verifyonly || _restoreDatabaseSetOffline( $dbms, $parms )){
 			$parms->{'file'} = $full;
 			$parms->{'last'} = length $diff == 0 ? true : false;
-			$res = _restoreDatabaseFile( $dbms, $parms );
+			if( $verifyonly ){
+				$res = _restoreDatabaseVerify( $dbms, $parms );
+			} else {
+				$res = _restoreDatabaseFile( $dbms, $parms );
+			}
 			if( $res && length $diff ){
 				$parms->{'file'} = $diff;
 				$parms->{'last'} = true;
-				$res &= _restoreDatabaseFile( $dbms, $parms ) if length $diff;
+				if( $verifyonly ){
+					$res &= _restoreDatabaseVerify( $dbms, $parms );
+				} else {
+					$res &= _restoreDatabaseFile( $dbms, $parms );
+				}
 			}
 		}
 	}
@@ -231,7 +242,7 @@ sub restoreDatabase {
 # restore the target database from the specified backup file
 # in this first phase, set it first offline (if it exists)
 # return true|false
-sub _restoreDatabaseAlter {
+sub _restoreDatabaseSetOffline {
 	my ( $dbms, $parms ) = @_;
 	my $database = $parms->{database};
 	my $result = true;
@@ -253,11 +264,25 @@ sub _restoreDatabaseFile {
 	my $last = $parms->{last};
 	#
 	Mods::Toops::msgVerbose( "SqlServer::restoreDatabaseFile() restoring $fname" );
-	my $content = $dbms->{instance}{sqlsrv}->sql( "RESTORE FILELISTONLY FROM DISK='$fname'" );
+	my $sqlsrv = _connect( $dbms );
 	my $recovery = 'NORECOVERY';
 	if( $last ){
 		$recovery = 'RECOVERY';
 	}
+	my $move = _restoreDatabaseMove( $dbms, $parms );
+	$parms->{'sql'} = "RESTORE DATABASE $database FROM DISK='$fname' WITH $recovery, $move;";
+	return Mods::SqlServer::sqlNoResult( $dbms, $parms );
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the move option in case of the datapath is different from the source or the target database has changed
+sub _restoreDatabaseMove {
+	my ( $dbms, $parms ) = @_;
+	my $instance = $parms->{instance};
+	my $database = $parms->{database};
+	my $fname = $parms->{file};
+	my $sqlsrv = _connect( $dbms );
+	my $content = $sqlsrv->sql( "RESTORE FILELISTONLY FROM DISK='$fname'" );
 	my $move = '';
 	my $sqlDataPath = Mods::Toops::pathWithTrailingSeparator( $dbms->{config}{DBMSInstances}{$parms->{instance}}{dataPath} );
 	foreach( @{$content} ){
@@ -267,7 +292,20 @@ sub _restoreDatabaseFile {
 		my $target_file = File::Spec->catpath( $vol, $dirs, $database.( $row->{Type} eq 'D' ? '.mdf' : '.ldf' ));
 		$move .= "MOVE '".$row->{'LogicalName'}."' TO '$target_file'";
 	}
-	$parms->{'sql'} = "RESTORE DATABASE $database FROM DISK='$fname' WITH $recovery, $move;";
+	return $move;
+}
+
+# -------------------------------------------------------------------------------------------------
+# verify the restorability of the file
+# return true|false
+sub _restoreDatabaseVerify {
+	my ( $dbms, $parms ) = @_;
+	my $instance = $parms->{instance};
+	my $database = $parms->{database};
+	my $fname = $parms->{file};
+	Mods::Toops::msgVerbose( "SqlServer::restoreDatabaseVerify() verifying $fname" );
+	my $move = _restoreDatabaseMove( $dbms, $parms );
+	$parms->{'sql'} = "RESTORE VERIFYONLY FROM DISK='$fname' WITH $move;";
 	return Mods::SqlServer::sqlNoResult( $dbms, $parms );
 }
 
