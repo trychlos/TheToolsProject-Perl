@@ -6,6 +6,7 @@
 # @(-) --[no]workloads         list used workloads [${workloads}]
 # @(-) --workload=<name>       display the detailed tasks for the named workload [${workload}]
 # @(-) --[no]commands          display only the commands for the named workload [${commands}]
+# @(-) --[no]hidden            also display hidden services [${hidden}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 #
@@ -22,13 +23,15 @@ my $defaults = {
 	services => 'no',
 	workloads => 'no',
 	workload => '',
-	commands => 'no'
+	commands => 'no',
+	hidden => 'no'
 };
 
 my $opt_services = false;
 my $opt_workloads = false;
 my $opt_workload = $defaults->{workload};
 my $opt_commands = false;
+my $opt_hidden = false;
 
 # -------------------------------------------------------------------------------------------------
 # list the defined DBMS instances (which may be not all the running instances)
@@ -51,7 +54,7 @@ sub listDbms {
 sub listServices {
 	my $hostConfig = Mods::Toops::getHostConfig();
 	Mods::Toops::msgOut( "displaying services defined on $hostConfig->{host}..." );
-	my @list = Mods::Services::getDefinedServices( $hostConfig );
+	my @list = Mods::Services::getDefinedServices( $hostConfig, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
@@ -157,7 +160,8 @@ if( !GetOptions(
 	"services!"			=> \$opt_services,
 	"workloads!"		=> \$opt_workloads, 
 	"workload=s"		=> \$opt_workload,
-	"commands!"			=> \$opt_commands )){
+	"commands!"			=> \$opt_commands,
+	"hidden!"			=> \$opt_hidden )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -173,6 +177,7 @@ Mods::Toops::msgVerbose( "found services='$opt_services'" );
 Mods::Toops::msgVerbose( "found workloads='".( $opt_workloads ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found workload='$opt_workload'" );
 Mods::Toops::msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found hidden='".( $opt_hidden ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
 	listDbms() if $opt_dbms;

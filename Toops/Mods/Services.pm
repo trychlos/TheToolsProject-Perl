@@ -76,11 +76,23 @@ sub getDefinedDBMSInstances {
 # returns the sorted list of defined service's names
 # (E):
 # - host configuration
+# - optional options hash with the following keys:
+#   > hidden: whether to also return hidden services, defaulting to false
 # (S):
 # - an array of strings
 sub getDefinedServices {
-	my ( $config ) = @_;
-	my @list = keys %{$config->{Services}};
+	my ( $config, $opts ) = @_;
+	$opts //= {};
+	my $returnHiddens = false;
+	$returnHiddens = $opts->{hidden} if exists $opts->{hidden};
+	my @list = ();
+	foreach my $service ( keys %{$config->{Services}} ){
+		my $hidden = false;
+		$hidden = $config->{Services}{$service}{hidden} if exists $config->{Services}{$service}{hidden};
+		if( !$hidden || $returnHiddens ){
+			push( @list, $service );
+		}
+	}
 	return sort @list;
 }
 
