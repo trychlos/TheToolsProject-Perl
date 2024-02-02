@@ -34,7 +34,7 @@ my $opt_listtables = false;
 # list the databases
 sub listDatabases {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying databases in '$hostConfig->{host}\\$opt_instance'..." );
+	Mods::Toops::msgOut( "displaying databases in '$hostConfig->{name}\\$opt_instance'..." );
 	my $list = Mods::Dbms::getLiveDatabases();
 	foreach my $db ( @{$list} ){
 		print " $db".EOL;
@@ -46,7 +46,7 @@ sub listDatabases {
 # list the tables
 sub listTables {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying tables in '$hostConfig->{host}\\$opt_instance\\$opt_database'..." );
+	Mods::Toops::msgOut( "displaying tables in '$hostConfig->{name}\\$opt_instance\\$opt_database'..." );
 	my $list = Mods::Dbms::getDatabaseTables( $opt_database );
 	foreach my $it ( @{$list} ){
 		print " $it".EOL;
@@ -71,7 +71,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::doHelpVerb( $defaults );
+	Mods::Toops::helpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 

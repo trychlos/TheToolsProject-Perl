@@ -36,19 +36,26 @@ sub backupDatabase {
 			$parms->{output} = Mods::Dbms::computeDefaultBackupFilename( $dbms, $parms );
 		}
 		Mods::Toops::msgOut( "backuping to '$parms->{output}'" );
-		$result = Mods::Dbms::toPackage( 'backupDatabase', $dbms, $parms );
+		$result = Mods::Dbms::toPackage( 'apiBackupDatabase', $dbms, $parms );
 	}
 	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------
 # returns the DBMS object passed to underlying packages
+# which gives dbms:
+# - config
+#   > DBMSInstances
+#   > ...
+# - instance
+#   > name
+#   > data -> $hostConfig->{DBMSInstances}{<name>}
+# - \exitCode
 sub _buildDbms {
 	my $TTPVars = Mods::Toops::TTPVars();
-	my $config = Mods::Toops::getHostConfig();
 	my $dbms = $TTPVars->{dbms};
-	$dbms->{config} = $config;
-	$dbms->{exitCode} = \$TTPVars->{run}{exit_code};
+	$dbms->{config} = Mods::Toops::getHostConfig();
+	$dbms->{exitCode} = \$TTPVars->{run}{exitCode};
 	return $dbms;
 }
 
@@ -160,7 +167,7 @@ sub computeDefaultBackupFilename {
 	my $dir = File::Spec->catdir( $backupPath, localtime->strftime( '%y%m%d' ));
 	Mods::Toops::makeDirExist( $dir );
 	# compute the filename
-	my $fname = $dbms->{config}{host}.'-'.$parms->{instance}.'-'.$parms->{database}.'-'.localtime->strftime( '%y%m%d' ).'-'.localtime->strftime( '%H%M%S' ).'-'.$mode.'.backup';
+	my $fname = $dbms->{config}{name}.'-'.$parms->{instance}.'-'.$parms->{database}.'-'.localtime->strftime( '%y%m%d' ).'-'.localtime->strftime( '%H%M%S' ).'-'.$mode.'.backup';
 	$output = File::Spec->catdir( $dir, $fname );
 	Mods::Toops::msgVerbose( "Dbms::computeDefaultBackupFilename() computing output default as '$output'" );
 	return $output;
@@ -224,7 +231,7 @@ sub execSqlCommand {
 	my ( $command, $opts ) = @_;
 	$opts //= {};
 	my $dbms = Mods::Dbms::_buildDbms();
-	my $result = Mods::Dbms::toPackage( 'execSqlCommand', $dbms, $command );
+	my $result = Mods::Dbms::toPackage( 'apiExecSqlCommand', $dbms, $command );
 	my $tabular = true;
 	$tabular = $opts->{tabular} if exists $opts->{tabular};
 	displayTabularSql( $result ) if $tabular;
@@ -236,7 +243,7 @@ sub execSqlCommand {
 # the working-on instance has been set by checkInstanceOpt() function
 sub getDatabaseTables {
 	my ( $database ) = @_;
-	my $list = Mods::Dbms::toPackage( 'getDatabaseTables', undef, $database );
+	my $list = Mods::Dbms::toPackage( 'apiGetDatabaseTables', undef, $database );
 	return $list;
 }
 
@@ -245,7 +252,7 @@ sub getDatabaseTables {
 # the working-on instance has been set by checkInstanceOpt() function
 sub getLiveDatabases {
 	my ( $dbms ) = @_;
-	my $list = Mods::Dbms::toPackage( 'getLiveDatabases', $dbms );
+	my $list = Mods::Dbms::toPackage( 'apiGetInstanceDatabases', $dbms );
 	return $list;
 }
 
@@ -273,7 +280,7 @@ sub restoreDatabase {
 	Mods::Toops::msgErr( "Dbms::restoreDatabase() full backup is mandatory, but is not specified" ) if !$parms->{full};
 	Mods::Toops::msgErr( "Dbms::restoreDatabase() $parms->{diff}: file not found or not readable" ) if $parms->{diff} && ! -f $parms->{diff};
 	if( !Mods::Toops::errs()){
-		$result = Mods::Dbms::toPackage( 'restoreDatabase', $dbms, $parms );
+		$result = Mods::Dbms::toPackage( 'apiRestoreDatabase', $dbms, $parms );
 	}
 	return $result;
 }

@@ -42,7 +42,7 @@ sub listCommands {
 # this code is so duplicated..
 sub listServices {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying services defined on $hostConfig->{host}..." );
+	Mods::Toops::msgOut( "displaying services defined on $hostConfig->{name}..." );
 	my @list = Mods::Services::getDefinedServices( $hostConfig );
 	foreach my $it ( @list ){
 		print " $it".EOL;
@@ -65,7 +65,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::doHelpVerb( $defaults );
+	Mods::Toops::helpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 

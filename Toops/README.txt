@@ -10,7 +10,7 @@ Toops for Windows:
 	> set the PERL5LIB global environment variable to address the Toops directory
 	> set a TTP_SITE global environment variable to address the directory which contains your site configuration
 	> (optional) set a TTP_ROOT global environment variable in PATH-style like to address several Toops trees
-	> update the PATH to address Toops/bin directory
+	> update the PATH to address all your Toops/bin directories
 
 Site configuration:
 Install in TTP_SITE/:
@@ -26,6 +26,39 @@ Install in TTP_SITE/ as <hostname>.json:
 Windows Note:
 	We do not know at the moment how to ssh into a remote host to exec a remote script.
 	We so get stuck in our machine.
+
+TTPVars:
+	config
+		site					the computed site configuration after variables interpretation
+			toops
+				logsDir
+			site
+				rootDir
+		<hostname>
+			Services
+			DBMSInstances
+			...
+			name: <hostname>
+	run
+		exitCode
+		help
+		verbose
+		logsMain
+		command
+			path
+			args
+			basename
+			directory
+			name
+			verbsDir
+		verb
+			name
+			args
+			path
+		<command>
+			instance
+				name
+				data: $hostConfig->{DBMSInstances}{$instance}
 
 TODO
     1 24- 1-29 Toops::getOptions doesn't work as we do not know how to pass arguments to GetOptions()

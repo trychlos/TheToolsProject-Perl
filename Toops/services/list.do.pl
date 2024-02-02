@@ -37,7 +37,7 @@ my $opt_hidden = false;
 # list the defined DBMS instances (which may be not all the running instances)
 sub listDbms {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying DBMS instances defined on $hostConfig->{host}..." );
+	Mods::Toops::msgOut( "displaying DBMS instances defined on $hostConfig->{name}..." );
 	my @list = Mods::Services::getDefinedDBMSInstances( $config );
 	foreach my $it ( @list ){
 		Mods::Toops::msgOut( PREFIX.$it );
@@ -53,7 +53,7 @@ sub listDbms {
 # this code is so duplicated..
 sub listServices {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying services defined on $hostConfig->{host}..." );
+	Mods::Toops::msgOut( "displaying services defined on $hostConfig->{name}..." );
 	my @list = Mods::Services::getDefinedServices( $hostConfig, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		print " $it".EOL;
@@ -65,7 +65,7 @@ sub listServices {
 # list all the workloads used on this host
 sub listWorkloads {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying workloads used on $hostConfig->{host}..." );
+	Mods::Toops::msgOut( "displaying workloads used on $hostConfig->{name}..." );
 	my $list = Mods::Services::getUsedWorkloads( $hostConfig );
 	my @names = keys %{$list};
 	my @sorted = sort @names;
@@ -80,7 +80,7 @@ sub listWorkloads {
 sub listWorkloadCommands {
 	#Mods::Services::listWorkloadTasksCommands( $opt_workload );
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying workload commands defined in $hostConfig->{host}\\$opt_workload..." );
+	Mods::Toops::msgOut( "displaying workload commands defined in $hostConfig->{name}\\$opt_workload..." );
 	my $list = Mods::Services::getUsedWorkloads( $hostConfig );
 	my $count = 0;
 	foreach my $it ( @{$list->{$opt_workload}} ){
@@ -98,7 +98,7 @@ sub listWorkloadCommands {
 # list the detailed tasks for the specified workload
 sub listWorkloadDetails {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying detailed workload tasks defined in $hostConfig->{host}\\$opt_workload..." );
+	Mods::Toops::msgOut( "displaying detailed workload tasks defined in $hostConfig->{name}\\$opt_workload..." );
 	my $list = Mods::Services::getUsedWorkloads( $hostConfig );
 	foreach my $it ( @{$list->{$opt_workload}} ){
 		printWorkloadTask( $it );
@@ -168,7 +168,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::doHelpVerb( $defaults );
+	Mods::Toops::helpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 

@@ -70,7 +70,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::doHelpVerb( $defaults );
+	Mods::Toops::helpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 

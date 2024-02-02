@@ -11,7 +11,6 @@ use File::Path qw( make_path );
 use File::Spec;
 use Getopt::Long;
 use JSON;
-use Mods::HostConf;
 use Path::Tiny qw( path );
 use Sys::Hostname qw( hostname );
 use Term::ANSIColor;
@@ -27,20 +26,17 @@ $| = 1;
 $Term::ANSIColor::EACHLINE = EOL;
 
 # store here our Toops variables
-my $TTPVars = {
+our $TTPVars = {
 	Toops => {
 		# defaults which depend of the host OS
 		defaults => {
 			darwin => {
-				logsRoot => '/tmp',
 				tempDir => '/tmp'
 			},
 			linux => {
-				logsRoot => '/tmp',
 				tempDir => '/tmp'
 			},
 			MSWin32 => {
-				logsRoot => 'C:\\Temp',
 				tempDir => 'C:\\Temp'
 			}
 		},
@@ -64,92 +60,11 @@ my $TTPVars = {
 	},
 	# initialize some run variables
 	run => {
-		exit_code => 0,
+		exitCode => 0,
 		help => false,
 		verbose => false
 	}
 };
-
-# -------------------------------------------------------------------------------------------------
-# Display the command one-liner help help
-# (E):
-# - the full path to the command
-# - an optional options hash with following keys:
-#   > prefix: the line prefix, defaulting to ''
-sub commandDisplayOneLineHelp {
-	my ( $command_path, $opts ) = @_;
-	$opts //= {};
-	my $prefix = '';
-	$prefix = $opts->{prefix} if exists( $opts->{prefix} );
-	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $command_path );
-	my @commandHelp = Mods::Toops::grepFileByRegex( $command_path, $TTPVars->{Toops}{commentPreUsage} );
-	print "$prefix$bname: $commandHelp[0]".EOL;
-}
-
-# -------------------------------------------------------------------------------------------------
-# Display the command help as:
-# - a one-liner from the command itself
-# - and the one-liner help of each available verb
-sub doHelpCommand {
-	# display the command one-line help
-	Mods::Toops::commandDisplayOneLineHelp( $TTPVars->{run}{command}{path} );
-	# display each verb one-line help
-	my @verbs = Mods::Toops::getVerbs();
-	my $verbsHelp = {};
-	foreach my $it ( @verbs ){
-		my @fullHelp = Mods::Toops::grepFileByRegex( $it, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
-		my ( $volume, $directories, $file ) = File::Spec->splitpath( $it );
-		my $verb = $file;
-		$verb =~ s/$TTPVars->{Toops}{verbSed}$//;
-		$verbsHelp->{$verb} = $fullHelp[0];
-	}
-	# verbs being alpha sorted
-	@verbs = keys %{$verbsHelp};
-	my @sorted = sort @verbs;
-	foreach my $it ( @sorted ){
-		print "  $it: $verbsHelp->{$it}".EOL;
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# Display the full verb help
-# - the one-liner help of the command
-# - the full help of the verb as:
-#   > a pre-usage help
-#   > the usage of the verb
-#   > a post-usage help
-sub doHelpVerb {
-	my ( $defaults ) = @_;
-	# display the command one-line help
-	Mods::Toops::commandDisplayOneLineHelp( $TTPVars->{run}{command}{path} );
-	# verb pre-usage
-	my @verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
-	my $verbInline = '';
-	if( scalar @verbHelp ){
-		$verbInline = shift @verbHelp;
-	}
-	print "  $TTPVars->{run}{verb}{name}: $verbInline".EOL;
-	foreach my $line ( @verbHelp ){
-		print "    $line".EOL;
-	}
-	# verb usage
-	@verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
-	if( scalar @verbHelp ){
-		print "    Usage: $TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} [options]".EOL;
-		print "    where available options are:".EOL;
-		foreach my $line ( @verbHelp ){
-			$line =~ s/\$\{?(\w+)}?/$defaults->{$1}/e;
-			print "      $line".EOL;
-		}
-	}
-	# verb post-usage
-	@verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
-	if( scalar @verbHelp ){
-		foreach my $line ( @verbHelp ){
-			print "    $line".EOL;
-		}
-	}
-}
 
 # -------------------------------------------------------------------------------------------------
 # Dump the internal variables
@@ -163,7 +78,42 @@ sub dump {
 # is there any error
 #  exit code may be seen as an error counter as it is incremented by msgErr
 sub errs {
-	return $TTPVars->{run}{exit_code};
+	return $TTPVars->{run}{exitCode};
+}
+
+# -------------------------------------------------------------------------------------------------
+# recursively interpret the provided data for variables and computings
+sub evaluateRec {
+	my ( $value ) = @_;
+	my $result = '';
+	my $type = ref( $value );
+	if( !$type ){
+		$result = evaluateScalar( $value );
+	} elsif( $type eq 'ARRAY' ){
+		$result = [];
+		foreach my $it ( @{$value} ){
+			push( @{$result}, evaluateRec( $it ));
+		}
+	} elsif( $type eq 'HASH' ){
+		$result = {};
+		foreach my $key ( keys %{$value} ){
+			$result->{$key} = evaluateRec( $value->{$key} );
+		}
+	} else {
+		$result = $value;
+	}
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# element interpretation - must have a scalar here
+sub evaluateScalar {
+	my ( $value ) = @_;
+	my $type = ref( $value );
+	msgErr( "scalar expected, but '$type' found" ) if $type;
+	my $result = $value || '';
+	$result =~ s/\[eval:([^\]]+)\]/eval $1/eg;
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -235,7 +185,7 @@ sub getOptions {
 		$TTPVars->{help} = true;
 	}
 	if( $TTPVars->{help} ){
-		Mods::Toops::doHelpVerb();
+		Mods::Toops::helpVerb();
 		Mods::Toops::ttpExit();
 	}
 	Mods::Toops::msgVerbose( "found verbose='true'" );
@@ -283,7 +233,7 @@ sub getOptionsToOpts {
 # -------------------------------------------------------------------------------------------------
 # returns the available verbs for the current command
 sub getVerbs {
-	my @verbs = glob( File::Spec->catdir( $TTPVars->{run}{command}{verbs_dir}, "*".$TTPVars->{Toops}{verbSufix} ));
+	my @verbs = glob( File::Spec->catdir( $TTPVars->{run}{command}{verbsDir}, "*".$TTPVars->{Toops}{verbSufix} ));
 	return @verbs;
 }
 
@@ -335,52 +285,145 @@ sub grepFileByRegex {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Display the command help as:
+# - a one-liner from the command itself
+# - and the one-liner help of each available verb
+sub helpCommand {
+	# display the command one-line help
+	Mods::Toops::helpCommandOneline( $TTPVars->{run}{command}{path} );
+	# display each verb one-line help
+	my @verbs = Mods::Toops::getVerbs();
+	my $verbsHelp = {};
+	foreach my $it ( @verbs ){
+		my @fullHelp = Mods::Toops::grepFileByRegex( $it, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
+		my ( $volume, $directories, $file ) = File::Spec->splitpath( $it );
+		my $verb = $file;
+		$verb =~ s/$TTPVars->{Toops}{verbSed}$//;
+		$verbsHelp->{$verb} = $fullHelp[0];
+	}
+	# verbs being alpha sorted
+	@verbs = keys %{$verbsHelp};
+	my @sorted = sort @verbs;
+	foreach my $it ( @sorted ){
+		print "  $it: $verbsHelp->{$it}".EOL;
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# Display the command one-liner help help
+# (E):
+# - the full path to the command
+# - an optional options hash with following keys:
+#   > prefix: the line prefix, defaulting to ''
+sub helpCommandOneline {
+	my ( $command_path, $opts ) = @_;
+	$opts //= {};
+	my $prefix = '';
+	$prefix = $opts->{prefix} if exists( $opts->{prefix} );
+	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $command_path );
+	my @commandHelp = Mods::Toops::grepFileByRegex( $command_path, $TTPVars->{Toops}{commentPreUsage} );
+	print "$prefix$bname: $commandHelp[0]".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Display the full verb help
+# - the one-liner help of the command
+# - the full help of the verb as:
+#   > a pre-usage help
+#   > the usage of the verb
+#   > a post-usage help
+sub helpVerb {
+	my ( $defaults ) = @_;
+	# display the command one-line help
+	Mods::Toops::helpCommandOneline( $TTPVars->{run}{command}{path} );
+	# verb pre-usage
+	my @verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
+	my $verbInline = '';
+	if( scalar @verbHelp ){
+		$verbInline = shift @verbHelp;
+	}
+	print "  $TTPVars->{run}{verb}{name}: $verbInline".EOL;
+	foreach my $line ( @verbHelp ){
+		print "    $line".EOL;
+	}
+	# verb usage
+	@verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
+	if( scalar @verbHelp ){
+		print "    Usage: $TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} [options]".EOL;
+		print "    where available options are:".EOL;
+		foreach my $line ( @verbHelp ){
+			$line =~ s/\$\{?(\w+)}?/$defaults->{$1}/e;
+			print "      $line".EOL;
+		}
+	}
+	# verb post-usage
+	@verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
+	if( scalar @verbHelp ){
+		foreach my $line ( @verbHelp ){
+			print "    $line".EOL;
+		}
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
 # get the machine services configuration as a hash indexed by hostname
 #  HostConf::init() is expected to return a hash with a single top key which is the hostname
 #  we check and force that here
 #  + set the host as a value to be more easily available
 sub initHostConfiguration {
 	my $host = hostname;
-	$TTPVars->{config}{$host} = Mods::HostConf::init()->{$host};
-	$TTPVars->{config}{$host}{host} = $host;
+	my $conf = File::Spec->catdir( $ENV{TTP_SITE}, $host.'.json' );
+	my $hash = jsonRead( $conf );
+	my $hash_host = ( keys %{$hash} )[0];
+	msgErr( "hostname '$host' expected, found 'hash_host'" ) if $hash_host ne $host;
+	if( !errs()){
+		# rationale: evaluateRec() may want take advantage of the TTPVars content, so must be set before evaluation
+		$TTPVars->{config}{$host} = $hash->{$host};
+		$TTPVars->{config}{$host} = evaluateRec( $TTPVars->{config}{$host} );
+		$TTPVars->{config}{$host}{name} = $host;
+	}
 }
 
 # -------------------------------------------------------------------------------------------------
 # Initialize the logs
-# Expects the site configuration has a 'toops/logsRoot' variable, defaulting to /tmp/Toops/logs in unix and C:\Temps\Toops\logs in Windows
+# Expects the site configuration has a 'toops/logsDir' variable, defaulting to /tmp/Toops/logs in unix and C:\Temps\Toops\logs in Windows
 # Make sure the daily directory exists
 sub initLogs {
-	my $logs_root = undef;
-	if( $TTPVars->{config} && $TTPVars->{config}{site} && $TTPVars->{config}{site}{toops} ){
-		$logs_root = $TTPVars->{config}{site}{toops}{logsRoot};
-	}
-	if( !$logs_root ){
-		$logs_root = File::Spec->catdir( $TTPVars->{Toops}{defaults}{$Config{osname}}{logsRoot}, 'Toops', 'logs' );
-		Mods::Toops::msgWarn( "'logsRoot' not found in site configuration, defaulting to '$logs_root'" );
-	}
-	$TTPVars->{dyn}{logs_root} = $logs_root;
-	$TTPVars->{dyn}{daily_8} = localtime->strftime( '%Y%m%d' );
-	$TTPVars->{dyn}{daily_6} = localtime->strftime( '%y%m%d' );
-	$TTPVars->{dyn}{logs_dir} = File::Spec->catdir( $logs_root, $TTPVars->{dyn}{daily_6} );
-	make_path( $TTPVars->{dyn}{logs_dir} );
-	$TTPVars->{dyn}{logs_main} = File::Spec->catdir( $TTPVars->{dyn}{logs_dir}, 'main.log' );
+	my $logsDir = File::Spec->catdir( $TTPVars->{Toops}{defaults}{$Config{osname}}{tempDir}, 'Toops', 'logs' );
+	$logsDir = $TTPVars->{config}{site}{toops}{logsDir} if exists $TTPVars->{config}{site}{toops}{logsDir};
+	make_path( $logsDir );
+	$TTPVars->{run}{logsMain} = File::Spec->catdir( $logsDir, 'main.log' );
 }
 
 # -------------------------------------------------------------------------------------------------
-# Make sure we have a site configuration JSON file and loads it
+# Make sure we have a site configuration JSON file and loads and interprets it
 sub initSiteConfiguration {
-	my $json_path = File::Spec->catdir( $ENV{TTP_SITE}, 'toops.json' );
-	if( -f $json_path ){
-		my $json_text = do {
-		   open( my $json_fh, "<:encoding(UTF-8)", $json_path ) or die( "Can't open '$json_path': $!".EOL );
+	my $conf = File::Spec->catdir( $ENV{TTP_SITE}, 'toops.json' );
+	$TTPVars->{config}{site} = jsonRead( $conf );
+	# rationale: evaluateRec() may want take advantage of the TTPVars content, so must be set before evaluation
+	$TTPVars->{config}{site} = evaluateRec( $TTPVars->{config}{site} );
+}
+
+# -------------------------------------------------------------------------------------------------
+# Read a JSON file into a hash
+# All Toops JSON configuration files may take advantage of dynamic eval here
+# (E):
+# - the full path to the to-be-loaded-and-interpreted json file
+sub jsonRead {
+	my ( $conf ) = @_;
+	my $result = undef;
+	if( -f $conf ){
+		my $content = do {
+		   open( my $fh, "<:encoding(UTF-8)", $conf ) or msgErr( "Can't open '$conf': $!".EOL );
 		   local $/;
-		   <$json_fh>
+		   <$fh>
 		};
 		my $json = JSON->new;
-		$TTPVars->{config}{site} = $json->decode( $json_text );
+		$result = $json->decode( $content );
 	} else {
-		Mods::Toops::msgWarn( "site configuration file '$json_path' not found or not readable" );
+		Mods::Toops::msgWarn( "site configuration file '$conf' not found or not readable" );
 	}
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -431,7 +474,7 @@ sub msgErr {
 	print color( 'bold red' );
 	print STDERR $line.EOL;
 	print color( 'reset' );
-	$TTPVars->{run}{exit_code} += 1;
+	$TTPVars->{run}{exitCode} += 1;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -446,11 +489,11 @@ sub msgLog {
 # do not try to write in logs while they are not initialized
 sub msgLogAppend {
 	my $msg = shift;
-	if( $TTPVars->{dyn}{logs_main} ){
+	if( $TTPVars->{run}{logsMain} ){
 		my $host = hostname;
 		my $username = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME} || 'unknown'; #getpwuid( $< );
 		my $line = localtime->strftime( '%Y-%m-%d %H:%M:%S' )." $host $username $msg";
-		path( $TTPVars->{dyn}{logs_main} )->append_utf8( $line.EOL );
+		path( $TTPVars->{run}{logsMain} )->append_utf8( $line.EOL );
 	}
 }
 
@@ -468,14 +511,9 @@ sub msgLogIf {
 	my $key = shift || '';
 	# where default is true
 	my $withLog = true;
-	if( exists( $opts->{withLog} )){
-		$withLog = $opts->{withLog};
-	} elsif( $key && $TTPVars->{config} && $TTPVars->{config}{site} && $TTPVars->{config}{site}{toops} && exists( $TTPVars->{config}{site}{toops}{$key} )){
-		$withLog = $TTPVars->{config}{site}{toops}{$key};
-	}
-	if( $withLog ){
-		Mods::Toops::msgLog( $msg );
-	}
+	$withLog = $TTPVars->{config}{site}{toops}{$key} if $key and exists $TTPVars->{config}{site}{toops}{$key};
+	$withLog = $opts->{withLog} if exists $opts->{withLog};
+	Mods::Toops::msgLog( $msg ) if $withLog;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -605,7 +643,7 @@ sub run {
 	# the directory where are stored the verbs of the command
 	my @dirs = File::Spec->splitdir( $TTPVars->{run}{command}{directory} );
 	pop( @dirs );
-	$TTPVars->{run}{command}{verbs_dir} = File::Spec->catdir( $volume, @dirs, $command );
+	$TTPVars->{run}{command}{verbsDir} = File::Spec->catdir( $volume, @dirs, $command );
 	# prepare for the datas of the command
 	$TTPVars->{$command} = {};
 	# first argument is supposed to be the verb
@@ -615,14 +653,14 @@ sub run {
 		# as verbs are written as Perl scripts, they are dynamically ran from here
 		local @ARGV = @command_args;
 		$TTPVars->{run}{help} = scalar @ARGV ? false : true;
-		$TTPVars->{run}{verb}{path} = File::Spec->catdir( $TTPVars->{run}{command}{verbs_dir}, $TTPVars->{run}{verb}{name}.$TTPVars->{Toops}{verbSufix} );
+		$TTPVars->{run}{verb}{path} = File::Spec->catdir( $TTPVars->{run}{command}{verbsDir}, $TTPVars->{run}{verb}{name}.$TTPVars->{Toops}{verbSufix} );
 		if( -f $TTPVars->{run}{verb}{path} ){
 			eval { do $TTPVars->{run}{verb}{path}; };
 		} else {
 			Mods::Toops::msgErr( "script not found or not readable: '$TTPVars->{run}{verb}{path}' (most probably, '$TTPVars->{run}{verb}{name}' is not a valid verb)" );
 		}
 	} else {
-		Mods::Toops::doHelpCommand();
+		Mods::Toops::helpCommand();
 	}
 }
 
@@ -689,9 +727,9 @@ sub searchRecHash {
 
 # -------------------------------------------------------------------------------------------------
 # exit the command
-# Return code is optional, defaulting to exit_code
+# Return code is optional, defaulting to exitCode
 sub ttpExit {
-	my $rc = shift || $TTPVars->{run}{exit_code};
+	my $rc = shift || $TTPVars->{run}{exitCode};
 	Mods::Toops::msgVerbose( "exiting with code $rc" );
 	exit $rc;
 }

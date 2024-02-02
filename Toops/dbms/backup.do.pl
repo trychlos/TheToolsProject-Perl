@@ -41,7 +41,7 @@ my $opt_output = '';
 # backup the source database to the target backup file
 sub doBackup {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "backuping database '$hostConfig->{host}\\$opt_instance\\$opt_database'" );
+	Mods::Toops::msgOut( "backuping database '$hostConfig->{name}\\$opt_instance\\$opt_database'" );
 	my $res = Mods::Dbms::backupDatabase({
 		instance => $opt_instance,
 		database => $opt_database,
@@ -115,7 +115,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::doHelpVerb( $defaults );
+	Mods::Toops::helpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 

@@ -42,7 +42,7 @@ sub doRestore {
 	if( $opt_verifyonly ){
 		Mods::Toops::msgOut( "verifying the restorability of '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
 	} else {
-		Mods::Toops::msgOut( "restoring database '$hostConfig->{host}\\$opt_instance\\$opt_database' from '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
+		Mods::Toops::msgOut( "restoring database '$hostConfig->{name}\\$opt_instance\\$opt_database' from '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
 	}
 	my $res = Mods::Dbms::restoreDatabase({
 		instance => $opt_instance,
@@ -76,7 +76,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::doHelpVerb( $defaults );
+	Mods::Toops::helpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 

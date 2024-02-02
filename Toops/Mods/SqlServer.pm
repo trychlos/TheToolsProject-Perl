@@ -30,7 +30,7 @@ my $systemDatabases = [
 # - mode: mandatory, full|diff
 # - dummy: true|false, defaulting to false
 # return true|false
-sub backupDatabase {
+sub apiBackupDatabase {
 	my ( $me, $dbms, $parms ) = @_;
 	my $result = false;
 	Mods::Toops::msgErr( "SqlServer::backupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
@@ -56,6 +56,121 @@ BACKUP DATABASE $parms->{database} TO DISK='$parms->{output}' WITH $options, NAM
 }
 
 # ------------------------------------------------------------------------------------------------
+# returns the first account defined for the named instance
+sub apiExecSqlCommand {
+	my ( $me, $dbms, $sql ) = @_;
+	my $result = undef;
+	my $sqlsrv = undef;
+	Mods::Toops::msgErr( "SqlServer::execSqlCommand() instance is mandaotry, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
+	if( !Mods::Toops::errs()){
+		Mods::Toops::msgVerbose( "SqlServer::execSqlCommand() entering with instance='$dbms->{instance}{name}'" );
+		$sqlsrv = Mods::SqlServer::_connect( $dbms );
+	}
+	if( !Mods::Toops::errs() && $sqlsrv ){
+		$result = $sqlsrv->sql( $sql );
+	}
+	return $result;
+}
+
+# ------------------------------------------------------------------------------------------------
+# returns the list of tables in the database
+sub apiGetDatabaseTables {
+	my ( $me, $dbms, $database ) = @_;
+	my $result = undef;
+	my $instance = $dbms->{instance}{name};
+	Mods::Toops::msgVerbose( "SqlServer::getDatabaseTables() entering with instance='".( $instance || '(undef)' )."', database='".( $database || '(undef)' )."'" );
+	if( $instance && $database ){
+		my $sqlsrv = Mods::SqlServer::_connect( $dbms );
+		if( !Mods::Toops::errs() && $sqlsrv ){
+			$result = [];
+			# get an array of { TABLE_SCHEMA,TABLE_NAME } hashes
+			my $res = $sqlsrv->sql( "SELECT TABLE_SCHEMA,TABLE_NAME FROM $database.INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_SCHEMA,TABLE_NAME" );
+			foreach my $it ( @{$res} ){
+				push( @{$result}, "$it->{TABLE_SCHEMA}.$it->{TABLE_NAME}" );
+			}
+		}
+	}
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# get and returns the list of live databases
+# the passed-in object is a hash with following keys:
+# - config: a reference to the host config
+# - instance: a hash with:
+#   > name: the name of the addressed instance
+#   > data: the host configuration for this instance
+# - exitCode: a reference to the global exit code
+sub apiGetInstanceDatabases {
+	my ( $me, $dbms ) = @_;
+	my $result = undef;
+	my $instance = $dbms->{instance}{name};
+	Mods::Toops::msgVerbose( "SqlServer::getLiveDatabases() entering with instance='".$instance || '(undef)'."'" );
+	if( $instance ){
+		my $sqlsrv = Mods::SqlServer::_connect( $dbms );
+		if( !Mods::Toops::errs() && $sqlsrv ){
+			$result = [];
+			my $res = $sqlsrv->sql( "select name from master.sys.databases order by name" );
+			foreach( @{$res} ){
+				my $dbname = $_->{'name'};
+				if( !grep( /^$dbname$/, @{$systemDatabases} )){
+					push( @{$result}, $dbname );
+				}
+			}
+			Mods::Toops::msgVerbose( "SqlServer::getLiveDatabases() found ".scalar @{$result}." databases: ".join( ', ', @{$result} ));
+		}
+	} else {
+		Mods::Toops::msgErr( "SqlServer::getLiveDatabases() instance is mandatory, not specified" );
+	}
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# parms is a hash ref with keys:
+# - instance: mandatory
+# - database: mandatory
+# - full: mandatory
+# - diff: defaults to '' (full restore only)
+# - verifyonly, defaulting to false
+# returns true|false
+sub apiRestoreDatabase {
+	my ( $me, $dbms, $parms ) = @_;
+	Mods::Toops::msgVerbose( "SqlServer::restoreDatabase() entering..." );
+	my $instance = $parms->{instance};
+	my $database = $parms->{database};
+	my $full = $parms->{full};
+	my $diff = $parms->{diff} || '';
+	my $res = false;
+	my $sqlsrv = undef;
+	my $verifyonly = false;
+	$verifyonly = $parms->{verifyonly} if exists $parms->{verifyonly};
+	msgErr( "SqlServer::restoreDatabase() instance is mandatory, not specified" ) if !$instance;
+	msgErr( "SqlServer::restoreDatabase() database is mandatory, not specified" ) if !$database && !$verifyonly;
+	msgErr( "SqlServer::restoreDatabase() full is mandatory, not specified" ) if !$full;
+	if( !Mods::Toops::errs()){
+		if( $verifyonly || _restoreDatabaseSetOffline( $dbms, $parms )){
+			$parms->{'file'} = $full;
+			$parms->{'last'} = length $diff == 0 ? true : false;
+			if( $verifyonly ){
+				$res = _restoreDatabaseVerify( $dbms, $parms );
+			} else {
+				$res = _restoreDatabaseFile( $dbms, $parms );
+			}
+			if( $res && length $diff ){
+				$parms->{'file'} = $diff;
+				$parms->{'last'} = true;
+				if( $verifyonly ){
+					$res &= _restoreDatabaseVerify( $dbms, $parms );
+				} else {
+					$res &= _restoreDatabaseFile( $dbms, $parms );
+				}
+			}
+		}
+	}
+	return $res;
+}
+
+# ------------------------------------------------------------------------------------------------
 # get a connection to a local SqlServer instance
 sub _connect {
 	my ( $dbms ) = @_;
@@ -68,7 +183,7 @@ sub _connect {
 			Win32::SqlServer::SetDefaultForEncryption( 'Optional', true );
 			my( $account, $passwd ) = Mods::SqlServer::_getCredentials( $dbms );
 			if( length $account && length $passwd ){
-				my $server = $dbms->{config}{host}."\\".$instance;
+				my $server = $dbms->{config}{name}."\\".$instance;
 				Mods::Toops::msgVerbose( "SqlServer::connect() calling sql_init with server='$server', account='$account'..." );
 				$sqlsrv = Win32::SqlServer::sql_init( $server, $account, $passwd );
 				Mods::Toops::msgVerbose( "SqlServer::connect() sqlsrv->isconnected()=".$sqlsrv->isconnected());
@@ -108,23 +223,6 @@ sub _databaseExists {
 
 # ------------------------------------------------------------------------------------------------
 # returns the first account defined for the named instance
-sub execSqlCommand {
-	my ( $me, $dbms, $sql ) = @_;
-	my $result = undef;
-	my $sqlsrv = undef;
-	Mods::Toops::msgErr( "SqlServer::execSqlCommand() instance is mandaotry, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
-	if( !Mods::Toops::errs()){
-		Mods::Toops::msgVerbose( "SqlServer::execSqlCommand() entering with instance='$dbms->{instance}{name}'" );
-		$sqlsrv = Mods::SqlServer::_connect( $dbms );
-	}
-	if( !Mods::Toops::errs() && $sqlsrv ){
-		$result = $sqlsrv->sql( $sql );
-	}
-	return $result;
-}
-
-# ------------------------------------------------------------------------------------------------
-# returns the first account defined for the named instance
 sub _getCredentials {
 	my ( $dbms ) = @_;
 	my $account = undef;
@@ -138,104 +236,6 @@ sub _getCredentials {
 		Mods::Toops::msgErr( "SqlServer::getCredentials() instance is mandatory, not specified" );
 	}
 	return ( $account, $passwd );
-}
-
-# ------------------------------------------------------------------------------------------------
-# returns the list of tables in the database
-sub getDatabaseTables {
-	my ( $me, $dbms, $database ) = @_;
-	my $result = undef;
-	my $instance = $dbms->{instance}{name};
-	Mods::Toops::msgVerbose( "SqlServer::getDatabaseTables() entering with instance='".( $instance || '(undef)' )."', database='".( $database || '(undef)' )."'" );
-	if( $instance && $database ){
-		my $sqlsrv = Mods::SqlServer::_connect( $dbms );
-		if( !Mods::Toops::errs() && $sqlsrv ){
-			$result = [];
-			# get an array of { TABLE_SCHEMA,TABLE_NAME } hashes
-			my $res = $sqlsrv->sql( "SELECT TABLE_SCHEMA,TABLE_NAME FROM $database.INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_SCHEMA,TABLE_NAME" );
-			foreach my $it ( @{$res} ){
-				push( @{$result}, "$it->{TABLE_SCHEMA}.$it->{TABLE_NAME}" );
-			}
-		}
-	}
-	return $result;
-}
-
-# -------------------------------------------------------------------------------------------------
-# get and returns the list of live databases
-# the passed-in object is a hash with following keys:
-# - config: a reference to the host config
-# - instance: a hash with:
-#   > name: the name of the addressed instance
-#   > data: the host configuration for this instance
-# - exitCode: a reference to the global exit code
-sub getLiveDatabases {
-	my ( $me, $dbms ) = @_;
-	my $result = undef;
-	my $instance = $dbms->{instance}{name};
-	Mods::Toops::msgVerbose( "SqlServer::getLiveDatabases() entering with instance='".$instance || '(undef)'."'" );
-	if( $instance ){
-		my $sqlsrv = Mods::SqlServer::_connect( $dbms );
-		if( !Mods::Toops::errs() && $sqlsrv ){
-			$result = [];
-			my $res = $sqlsrv->sql( "select name from master.sys.databases order by name" );
-			foreach( @{$res} ){
-				my $dbname = $_->{'name'};
-				if( !grep( /^$dbname$/, @{$systemDatabases} )){
-					push( @{$result}, $dbname );
-				}
-			}
-			Mods::Toops::msgVerbose( "SqlServer::getLiveDatabases() found ".scalar @{$result}." databases: ".join( ', ', @{$result} ));
-		}
-	} else {
-		Mods::Toops::msgErr( "SqlServer::getLiveDatabases() instance is mandatory, not specified" );
-	}
-	return $result;
-}
-
-# -------------------------------------------------------------------------------------------------
-# parms is a hash ref with keys:
-# - instance: mandatory
-# - database: mandatory
-# - full: mandatory
-# - diff: defaults to '' (full restore only)
-# - verifyonly, defaulting to false
-# returns true|false
-sub restoreDatabase {
-	my ( $me, $dbms, $parms ) = @_;
-	Mods::Toops::msgVerbose( "SqlServer::restoreDatabase() entering..." );
-	my $instance = $parms->{instance};
-	my $database = $parms->{database};
-	my $full = $parms->{full};
-	my $diff = $parms->{diff} || '';
-	my $res = false;
-	my $sqlsrv = undef;
-	my $verifyonly = false;
-	$verifyonly = $parms->{verifyonly} if exists $parms->{verifyonly};
-	msgErr( "SqlServer::restoreDatabase() instance is mandatory, not specified" ) if !$instance;
-	msgErr( "SqlServer::restoreDatabase() database is mandatory, not specified" ) if !$database && !$verifyonly;
-	msgErr( "SqlServer::restoreDatabase() full is mandatory, not specified" ) if !$full;
-	if( !Mods::Toops::errs()){
-		if( $verifyonly || _restoreDatabaseSetOffline( $dbms, $parms )){
-			$parms->{'file'} = $full;
-			$parms->{'last'} = length $diff == 0 ? true : false;
-			if( $verifyonly ){
-				$res = _restoreDatabaseVerify( $dbms, $parms );
-			} else {
-				$res = _restoreDatabaseFile( $dbms, $parms );
-			}
-			if( $res && length $diff ){
-				$parms->{'file'} = $diff;
-				$parms->{'last'} = true;
-				if( $verifyonly ){
-					$res &= _restoreDatabaseVerify( $dbms, $parms );
-				} else {
-					$res &= _restoreDatabaseFile( $dbms, $parms );
-				}
-			}
-		}
-	}
-	return $res;
 }
 
 # -------------------------------------------------------------------------------------------------
