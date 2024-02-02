@@ -143,7 +143,7 @@ sub doHelpVerb {
 		}
 	}
 	# verb post-usage
-	@verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false });
+	@verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
 	if( scalar @verbHelp ){
 		foreach my $line ( @verbHelp ){
 			print "    $line".EOL;
@@ -551,6 +551,16 @@ sub msgWarn {
 }
 
 # -------------------------------------------------------------------------------------------------
+# pad the provided string until the specified length with the provided char
+sub pad {
+	my( $str, $length, $pad ) = @_;
+	while( length( $str ) < $length ){
+		$str .= $pad;
+	}
+	return $str;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Remove the trailing character
 sub pathRemoveTrailingChar {
 	my $line = shift;
@@ -574,6 +584,7 @@ sub pathRemoveTrailingSeparator {
 # Expects $0 be the full path name to the command script (this is the case in Windows+Strawberry)
 # and @ARGV the command-line arguments
 sub run {
+	print color( 'reset' );
 	Mods::Toops::initSiteConfiguration();
 	Mods::Toops::initLogs();
 	Mods::Toops::msgLog( "executing $0 ".join( ' ', @ARGV ));

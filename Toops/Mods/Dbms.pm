@@ -11,6 +11,7 @@ use Data::Dumper;
 use File::Path;
 use File::Spec;
 use Module::Load;
+use Path::Tiny;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
@@ -173,6 +174,83 @@ sub computeDefaultBackupFilename {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Display a variable starting with its reference
+# expects a data variable (not a reference to code, or so)
+# a SqlResult is just an array of hashes
+sub displayTabularSql {
+	my ( $ref ) = @_;
+	# first compute the max length of each field name + keep the same field order
+	my $lengths = {};
+	my @fields = ();
+	foreach my $key ( keys %{@{$ref}[0]} ){
+		push( @fields, $key );
+		$lengths->{$key} = length $key;
+	}
+	# and for each field, compute the max length content
+	foreach my $it ( @{$ref} ){
+		foreach my $key ( keys %{$it} ){
+			if( $it->{$key} && length $it->{$key} > $lengths->{$key} ){
+				$lengths->{$key} = length $it->{$key};
+			}
+		}
+	}
+	# and last display the full resulting array
+	foreach my $key ( @fields ){
+		print pad( "+", $lengths->{$key}+3, '-' );
+	}
+	print "+".EOL;
+	foreach my $key ( @fields ){
+		print pad( "| $key", $lengths->{$key}+3, ' ' );
+	}
+	print "|".EOL;
+	foreach my $key ( @fields ){
+		print pad( "+", $lengths->{$key}+3, '-' );
+	}
+	print "+".EOL;
+	foreach my $it ( @{$ref} ){
+		foreach my $key ( @fields ){
+			print pad( "| ".( $it->{$key} || "" ), $lengths->{$key}+3, ' ' );
+		}
+		print "|".EOL;
+	}
+	foreach my $key ( @fields ){
+		print pad( "+", $lengths->{$key}+3, '-' );
+	}
+	print "+".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
+# execute a sql command
+# (E):
+# - the command string to be executed
+# - an optional options hash wwhich maty contain following keys:
+#   > tabular: whether to format data as tabular data, defaulting to true
+sub execSqlCommand {
+	my ( $command, $opts ) = @_;
+	$opts //= {};
+	my $dbms = Mods::Dbms::_buildDbms();
+	my $result = Mods::Dbms::toPackage( 'execSqlCommand', $dbms, $command );
+	my $tabular = true;
+	$tabular = $opts->{tabular} if exists $opts->{tabular};
+	displayTabularSql( $result ) if $tabular;
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# execute a sql script
+# the working-on instance has been set by checkInstanceOpt() function
+# (E):
+# - the command string to be executed
+# - an optional options hash wwhich maty contain following keys:
+#   > tabular: whether to format data as tabular data, defaulting to true
+sub execSqlScript {
+	my ( $script, $opts ) = @_;
+	$opts //= {};
+	my $sql = path( $script )->slurp_utf8;
+	return Mods::Dbms::execSqlCommand( $sql, $opts );
+}
+
+# -------------------------------------------------------------------------------------------------
 # returns the list of tables in the databases
 # the working-on instance has been set by checkInstanceOpt() function
 sub getDatabaseTables {
@@ -219,6 +297,13 @@ sub listLiveDatabases {
 		print " $db".EOL;
 	}
 	Mods::Toops::msgOut( scalar @{$list}." found live database(s)" );
+}
+
+# -------------------------------------------------------------------------------------------------
+# pad the provided string until the specified length
+sub pad {
+	my( $str, $length, $pad ) = @_;
+	return Mods::Toops::pad( $str, $length, $pad );
 }
 
 # -------------------------------------------------------------------------------------------------

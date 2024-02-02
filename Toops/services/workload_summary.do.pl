@@ -42,10 +42,7 @@ my $opt_count = $defaults->{count};
 # pad the provided string until the specified length
 sub pad {
 	my( $str, $length, $pad ) = @_;
-	while( length( $str ) < $length ){
-		$str .= $pad;
-	}
-	return $str;
+	return Mods::Toops::pad( $str, $length, $pad );
 }
 
 # -------------------------------------------------------------------------------------------------

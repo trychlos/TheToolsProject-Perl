@@ -93,6 +93,23 @@ sub _connect {
 
 # ------------------------------------------------------------------------------------------------
 # returns the first account defined for the named instance
+sub execSqlCommand {
+	my ( $me, $dbms, $sql ) = @_;
+	my $result = undef;
+	my $sqlsrv = undef;
+	Mods::Toops::msgErr( "SqlServer::execSqlCommand() instance is mandaotry, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
+	if( !Mods::Toops::errs()){
+		Mods::Toops::msgVerbose( "SqlServer::execSqlCommand() entering with instance='$dbms->{instance}{name}'" );
+		$sqlsrv = Mods::SqlServer::_connect( $dbms );
+	}
+	if( !Mods::Toops::errs() && $sqlsrv ){
+		$result = $sqlsrv->sql( $sql );
+	}
+	return $result;
+}
+
+# ------------------------------------------------------------------------------------------------
+# returns the first account defined for the named instance
 sub _getCredentials {
 	my ( $dbms ) = @_;
 	my $account = undef;
@@ -201,85 +218,6 @@ sub sqlNoResult( $ ){
 }
 
 =pod
-Sub::Exporter::setup_exporter({
-	exports => [ qw(
-		backupDatabase
-		checkInstance
-		computeDefaultBackup
-		connect
-		getBackupFilename
-		getCandidatesDatabases
-		getCredentials
-		getInstancesCount
-		listTables
-		listUserDatabasesForInstance
-		listUserDatabasesForSqlSrv
-		restoreDatabase
-		sqlNoResult
-		sqlWithResult
-		updateStatistics
-	)]
-});
-
-# ------------------------------------------------------------------------------------------------
-# parms is a hash ref with keys:
-# - instance: mandatory
-# - db: mandatory
-# - fname: output file
-# - verbose: default to false
-# return true|false
-sub dumpDatabase( $ ){
-	my $parms = shift;
-	my $instance = $parms->{'instance'};
-	my $db = $parms->{'db'};
-	my $fname = $parms->{'fname'};
-	my $verbose = $parms->{'verbose'} || false;
-	my $res = false;
-	msgErr( "dumpDatabase() instance is mandatory, not specified" ) if !$instance;
-	msgErr( "dumpDatabase() db is mandatory, not specified" ) if !$db;
-	msgErr( "dumpDatabase() fname is mandatory, not specified" ) if !$fname;
-	if( !errs()){
-		my $sqlsrv = Mods::SqlServer::connect( $parms );
-		$parms->{'sqlsrv'} = $sqlsrv;
-		if( $sqlsrv ){
-			my $tables = listTablesWithConnect( $parms );
-			foreach my $table ( @{$tables} ){
-				$parms->{'table'} = $table;
-				Mods::SqlServer::dumpTableWithConnect( $parms );
-			}
-		}
-	}
-	msgVerbose( "backupDatabase() returns '".( $res ? 'true':'false' )."'" ) if $verbose;
-	return $res;
-}
-
-# ------------------------------------------------------------------------------------------------
-# parms is a hash ref with keys:
-# - sqlsrv: mandatory
-# - db: mandatory, as a string
-# - table: mandatory, as a hash { TABLE_SCHEMA, TABLE_NAME }
-# - fname: output file
-# - verbose: default to false
-# return true|false
-sub dumpTableWithConnect( $ ){
-	my $parms = shift;
-	my $sqlsrv = $parms->{'sqlsrv'};
-	my $db = $parms->{'db'};
-	my $table = $parms->{'table'};
-	my $fname = $parms->{'fname'};
-	my $verbose = $parms->{'verbose'} || false;
-	msgErr( "dumpTableWithConnect() sqlsrv is mandatory, not specified" ) if !$sqlsrv;
-	msgErr( "dumpTableWithConnect() db is mandatory, not specified" ) if !$db;
-	msgErr( "dumpTableWithConnect() table is mandatory, not specified" ) if !$table;
-	msgErr( "dumpTableWithConnect() fname is mandatory, not specified" ) if !$fname;
-	my $count = 0;
-	if( !errs()){
-		my $res = $sqlsrv->sql( "SELECT * FROM $db.".$table->{'TABLE_SCHEMA'}.".".$table->{'TABLE_NAME'} );
-	}
-	return $count;
-	msgVerbose( "dumpTableWithConnec() found $count rows" ) if $verbose;
-	return $count;
-}
 
 # ------------------------------------------------------------------------------------------------
 # returns list the list of databases for which the action is true
@@ -311,82 +249,6 @@ sub getCandidatesDatabases( $ ){
 			}
 		}
 		msgVerbose( "getCandidatesDatabases() host='$host' instance='$instance' action='$action' found ".scalar @{$list}." candidates: ".join( ',', @{$list} )) if $verbose;
-	}
-	return $list;
-}
-
-# ------------------------------------------------------------------------------------------------
-# returns the count of instance in the current machine
-sub getInstancesCount(){
-	my $count = 0;
-	my $host = hostname;
-	$count = scalar keys %{$TTPVars->{machine_confif}{$host}{DBMSInstances}};
-	msgVerbose( "getInstancesCount() on $host: found $count" );
-	return $count;
-}
-
-# ------------------------------------------------------------------------------------------------
-# parms is a hash ref with keys:
-# - instance: mandatory
-# - database: mandatory
-# - verbose: default to false
-sub listTables( $ ){
-	my $parms = shift;
-	my $instance = $parms->{'instance'};
-	my $db = $parms->{'db'};
-	my $verbose = $parms->{'verbose'} || false;
-	my $list = [];
-	msgErr( "listTables() instance is mandatory, not specified" ) if !$instance;
-	msgErr( "listTables() db is mandatory, not specified" ) if !$db;
-	if( !errs()){
-		my $sqlsrv = Mods::SqlServer::connect( $parms );
-		if( $sqlsrv ){
-			$parms ->{'sqlsrv'} = $sqlsrv;
-			$list = listTablesWithConnect( $parms );
-		}
-	}
-	return $list;
-}
-
-# ------------------------------------------------------------------------------------------------
-# parms is a hash ref with keys:
-# - instance: mandatory
-# - verbose: default to false
-sub listUserDatabasesForInstance( $ ){
-	my $parms = shift;
-	my $instance = $parms->{'instance'};
-	my $verbose = $parms->{'verbose'} || false;
-	my $list = [];
-	msgErr( "listUserDatabasesForInstance() instance is mandatory, not specified" ) if !$instance;
-	if( !errs()){
-		my $sqlsrv = Mods::SqlServer::connect( $parms );
-		if( $sqlsrv ){
-			$parms ->{'sqlsrv'} = $sqlsrv;
-			$list = listUserDatabasesForSqlSrv( $parms );
-		}
-	}
-	return $list;
-}
-
-# ------------------------------------------------------------------------------------------------
-# parms is a hash ref with keys:
-# - sqlsrv: mandatory
-# - verbose: default to false
-sub listUserDatabasesForSqlSrv( $ ){
-	my $parms = shift;
-	my $sqlsrv = $parms->{'sqlsrv'};
-	my $verbose = $parms->{'verbose'} || false;
-	my $list = [];
-	msgErr( "listUserDatabasesForSqlSrv() sqlsrv is mandatory, not specified" ) if !$sqlsrv;
-	if( !errs()){
-		my $res = $sqlsrv->sql( "SELECT name FROM master.sys.databases" );
-		foreach( @{$res} ){
-			my $dbname = $_->{'name'};
-			if( !grep( /^$dbname$/, @{$systemDatabases} )){
-				push( @{$list}, $dbname );
-			}
-		}
-		msgVerbose( "listUserDatabasesForSqlSrv() found ".scalar @{$list}." databases: ".join( ',', @{$list} )) if $verbose;
 	}
 	return $list;
 }
