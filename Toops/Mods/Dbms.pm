@@ -142,6 +142,7 @@ sub checkInstanceOpt {
 # compute the default backup output filename for the current machine/intance/database
 # making sure the output directory exists
 # As of 2024 -1-31, default output filename is <host>-<instance>-<database>-<date>-<time>-<mode>.backup
+# As of 2024 -2- 2, thge backupPath is expected to be daily-ised, ie to contain a date part
 # parms is a hash ref with keys:
 # - instance: mandatory
 # - database: mandatory
@@ -164,11 +165,10 @@ sub computeDefaultBackupFilename {
 		Mods::Toops::msgWarn( "Dbms::computeDefaultBackupFilename() instance='$parms->{instance}' backupPath is not specified, set to default temp directory" );
 		$backupPath = Mods::Toops::getDefaultTempDir();
 	}
-	my $dir = File::Spec->catdir( $backupPath, localtime->strftime( '%y%m%d' ));
-	Mods::Toops::makeDirExist( $dir );
+	Mods::Toops::makeDirExist( $backupPath );
 	# compute the filename
 	my $fname = $dbms->{config}{name}.'-'.$parms->{instance}.'-'.$parms->{database}.'-'.localtime->strftime( '%y%m%d' ).'-'.localtime->strftime( '%H%M%S' ).'-'.$mode.'.backup';
-	$output = File::Spec->catdir( $dir, $fname );
+	$output = File::Spec->catdir( $backupPath, $fname );
 	Mods::Toops::msgVerbose( "Dbms::computeDefaultBackupFilename() computing output default as '$output'" );
 	return $output;
 }
