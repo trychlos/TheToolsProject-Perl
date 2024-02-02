@@ -163,7 +163,7 @@ sub getLiveDatabases {
 		my $sqlsrv = Mods::SqlServer::_connect( $dbms );
 		if( !Mods::Toops::errs() && $sqlsrv ){
 			$result = [];
-			my $res = $sqlsrv->sql( "SELECT name FROM master.sys.databases" );
+			my $res = $sqlsrv->sql( "select name from master.sys.databases order by name" );
 			foreach( @{$res} ){
 				my $dbname = $_->{'name'};
 				if( !grep( /^$dbname$/, @{$systemDatabases} )){

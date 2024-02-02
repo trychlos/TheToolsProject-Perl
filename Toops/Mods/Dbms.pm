@@ -11,7 +11,6 @@ use Data::Dumper;
 use File::Path;
 use File::Spec;
 use Module::Load;
-use Path::Tiny;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
@@ -29,7 +28,6 @@ sub backupDatabase {
 	my ( $parms ) = @_;
 	my $result = false;
 	my $dbms = Mods::Dbms::_buildDbms();
-	Mods::Toops::msgOut( "backuping database '$dbms->{config}{host}\\$dbms->{instance}{name}\\$parms->{database}'" );
 	Mods::Toops::msgErr( "Dbms::backupDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
 	Mods::Toops::msgErr( "Dbms::backupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
 	Mods::Toops::msgErr( "Dbms::backupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
@@ -37,13 +35,8 @@ sub backupDatabase {
 		if( !$parms->{output} ){
 			$parms->{output} = Mods::Dbms::computeDefaultBackupFilename( $dbms, $parms );
 		}
-		Mods::Toops::msgOut( "to '$parms->{output}'" );
+		Mods::Toops::msgOut( "backuping to '$parms->{output}'" );
 		$result = Mods::Dbms::toPackage( 'backupDatabase', $dbms, $parms );
-	}
-	if( $result ){
-		Mods::Toops::msgOut( "success" );
-	} else {
-		Mods::Toops::msgErr( "NOT OK" );
 	}
 	return $result;
 }
@@ -223,7 +216,7 @@ sub displayTabularSql {
 # execute a sql command
 # (E):
 # - the command string to be executed
-# - an optional options hash wwhich maty contain following keys:
+# - an optional options hash which may contain following keys:
 #   > tabular: whether to format data as tabular data, defaulting to true
 sub execSqlCommand {
 	my ( $command, $opts ) = @_;
@@ -237,25 +230,11 @@ sub execSqlCommand {
 }
 
 # -------------------------------------------------------------------------------------------------
-# execute a sql script
-# the working-on instance has been set by checkInstanceOpt() function
-# (E):
-# - the command string to be executed
-# - an optional options hash wwhich maty contain following keys:
-#   > tabular: whether to format data as tabular data, defaulting to true
-sub execSqlScript {
-	my ( $script, $opts ) = @_;
-	$opts //= {};
-	my $sql = path( $script )->slurp_utf8;
-	return Mods::Dbms::execSqlCommand( $sql, $opts );
-}
-
-# -------------------------------------------------------------------------------------------------
 # returns the list of tables in the databases
 # the working-on instance has been set by checkInstanceOpt() function
 sub getDatabaseTables {
-	my ( $dbms, $database ) = @_;
-	my $list = Mods::Dbms::toPackage( 'getDatabaseTables', $dbms, $database );
+	my ( $database ) = @_;
+	my $list = Mods::Dbms::toPackage( 'getDatabaseTables', undef, $database );
 	return $list;
 }
 
@@ -266,37 +245,6 @@ sub getLiveDatabases {
 	my ( $dbms ) = @_;
 	my $list = Mods::Dbms::toPackage( 'getLiveDatabases', $dbms );
 	return $list;
-}
-
-# -------------------------------------------------------------------------------------------------
-# list the instance live databases
-# the working-on instance has been set by checkInstanceOpt() function
-sub listDatabaseTables {
-	my ( $database ) = @_;
-	my $dbms = Mods::Dbms::_buildDbms();
-	Mods::Toops::msgErr( "Dbms::listDatabaseTables() instance is mandatory, but is not specified" ) if !$dbms->{instance};
-	Mods::Toops::msgErr( "Dbms::listDatabaseTables() database is mandatory, but is not specified" ) if !$database;
-	if( !Mods::Toops::errs()){
-		Mods::Toops::msgOut( "displaying tables in '$dbms->{config}{host}\\$dbms->{instance}{name}\\$database'..." );
-		my $list = Mods::Dbms::getDatabaseTables( $dbms, $database );
-		foreach my $it ( @{$list} ){
-			print " $it".EOL;
-		}
-		Mods::Toops::msgOut( scalar @{$list}." found table(s)" );
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# list the instance live databases
-# the working-on instance has been set by checkInstanceOpt() function
-sub listLiveDatabases {
-	my $dbms = Mods::Dbms::_buildDbms();
-	Mods::Toops::msgOut( "displaying databases in '$dbms->{config}{host}\\$dbms->{instance}{name}'..." );
-	my $list = Mods::Dbms::getLiveDatabases( $dbms );
-	foreach my $db ( @{$list} ){
-		print " $db".EOL;
-	}
-	Mods::Toops::msgOut( scalar @{$list}." found live database(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -338,6 +286,7 @@ sub setInstanceByName {
 sub toPackage {
 	my ( $fname, $dbms, $parms ) = @_;
 	Mods::Toops::msgVerbose( "Dbms::toPackage() entering with fname='".( $fname || '(undef)' )."'" );
+	$dbms = Mods::Dbms::_buildDbms() if !$dbms;
 	my $package = $dbms->{config}{DBMSInstances}{$dbms->{instance}{name}}{package};
 	my $result = undef;
 	if( $package ){

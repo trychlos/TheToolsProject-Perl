@@ -35,7 +35,8 @@ my $opt_output ='';
 # -------------------------------------------------------------------------------------------------
 # backup the source database to the target backup file
 sub doBackup {
-	# do the backup
+	my $hostConfig = Mods::Toops::getHostConfig();
+	Mods::Toops::msgOut( "backuping database '$hostConfig->{host}\\$opt_instance\\$opt_database" );
 	my $res = Mods::Dbms::backupDatabase({
 		instance => $opt_instance,
 		database => $opt_database,
@@ -43,6 +44,11 @@ sub doBackup {
 		mode => $opt_diff ? 'diff' : 'full',
 		dummy => $opt_dummy
 	});
+	if( $res ){
+		Mods::Toops::msgOut( "success" );
+	} else {
+		Mods::Toops::msgErr( "NOT OK" );
+	}
 }
 
 # =================================================================================================

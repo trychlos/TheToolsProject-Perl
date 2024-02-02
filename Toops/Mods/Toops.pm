@@ -384,17 +384,6 @@ sub initSiteConfiguration {
 }
 
 # -------------------------------------------------------------------------------------------------
-# List the available commands
-sub listAvailableCommands {
-	Mods::Toops::msgOut( "displaying available commands..." );
-	my @commands = Mods::Toops::getAvailableCommands();
-	foreach my $it ( @commands ){
-		Mods::Toops::commandDisplayOneLineHelp( $it, { prefix => ' ' });
-	}
-	Mods::Toops::msgOut( scalar @commands." found command(s)" );
-}
-
-# -------------------------------------------------------------------------------------------------
 # make sure a directory exist
 sub makeDirExist {
 	my ( $dir ) = @_;

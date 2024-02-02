@@ -15,89 +15,14 @@ use Mods::Constants qw( :all );
 use Mods::Toops;
 
 # -------------------------------------------------------------------------------------------------
-# returns the defined DBMS instances
-sub getDefinedDBMSInstances {
-	my $config = Mods::Toops::getHostConfig();
-	my @list = keys %{$config->{DBMSInstances}};
-	return @list;
-}
-
-# -------------------------------------------------------------------------------------------------
-# returns the defined services
-sub getDefinedServices {
-	my ( $config ) = @_;
-	my @list = keys %{$config->{Services}};
-	return @list;
-}
-
-# -------------------------------------------------------------------------------------------------
-# returns the used workloads, i.e. the workloads of which at least one item is candidate to
-# we provide a hash where:
-# - keys are the workload name's
-# - values are an array of the found definitions
-sub getUsedWorkloads {
-	my ( $config ) = @_;
-	my @services = Mods::Services::getDefinedServices( $config );
-	my $list = {};
-	foreach my $service ( @services ){
-		my $res = Mods::Toops::searchRecHash( $config->{Services}{$service}, 'workloads' );
-		foreach my $it ( @{$res->{result}} ){
-			foreach my $key ( keys %{$it->{data}} ){
-				$list->{$key} = [] if !exists $list->{$key};
-				my @foo = ( @{$list->{$key}}, @{$it->{data}{$key}} );
-				$list->{$key} = \@foo;
-			}
-		}
-	}
-	return $list;
-}
-
-# -------------------------------------------------------------------------------------------------
-# list the (sorted) defined DBMS instances
-sub listDefinedDBMSInstances {
-	my @list = Mods::Services::getDefinedDBMSInstances();
-	my @sorted = sort @list;
-	foreach my $it ( @sorted ){
-		Mods::Toops::msgOut( PREFIX.$it );
-	}
-	Mods::Toops::msgOut( scalar @sorted." found defined DBMS instance(s)" );
-}
-
-# -------------------------------------------------------------------------------------------------
-# list the (sorted) defined services
-sub listDefinedServices {
-	my $config = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying services defined on $config->{host}..." );
-	my @list = Mods::Services::getDefinedServices( $config );
-	my @sorted = sort @list;
-	foreach my $it ( @sorted ){
-		print " $it".EOL;
-	}
-	Mods::Toops::msgOut( scalar @sorted." found defined service(s)" );
-}
-
-# -------------------------------------------------------------------------------------------------
-# list the (sorted) defined workloads
-sub listUsedWorkloads {
-	my $config = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying workloads used on $config->{host}..." );
-	my $list = Mods::Services::getUsedWorkloads( $config );
-	my @names = keys %{$list};
-	my @sorted = sort @names;
-	foreach my $it ( @sorted ){
-		print " $it".EOL;
-	}
-	Mods::Toops::msgOut( scalar @sorted." found used workload(s)" );
-}
-
-# -------------------------------------------------------------------------------------------------
 # check that the provided service name is valid on this machine
 # if found and valid, set it in the current command data
 # (E):
 # - candidate service name
-# - options, which may have:
+# - options, which can be:
 #   > mandatory: true|false, defaulting to true
-# returns the found and checked service, or undef in case of an error
+# (S):
+# returns the found and checked service object, or undef in case of an error
 # if found, set up service -> { name, data } in TTPVars
 sub checkServiceOpt {
 	my ( $name, $opts ) = @_;
@@ -136,55 +61,52 @@ sub checkServiceOpt {
 }
 
 # -------------------------------------------------------------------------------------------------
-# list the tasks of the named workload
-# this is an array of task items where the exact content actually depends of the task type.
-# we so cannot really have a fun and always usable display
-sub listWorkloadTasksAll {
-	my ( $workload ) = @_;
-	my $config = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying workload tasks defined for $config->{host}\\$workload..." );
-	my $list = Mods::Services::getUsedWorkloads( $config );
-	foreach my $it ( @{$list->{$workload}} ){
-		# if we have a name, make it the first line
-		if( exists( $it->{name} )){
-			print "+ $it->{name}".EOL;
-		} else {
-			print "+ (unnamed)".EOL;
-		}
-		# print other keys expecting values are all scalar
-		foreach my $key ( keys %{$it} ){
-			if( $key ne 'name' ){
-				my $type = ref( $it->{$key} );
-				if( !$type ){
-					print "  $key: $it->{$key}".EOL;
-				} elsif( $type eq 'ARRAY' ){
-					print "  $key: ".join( ', ', @{$it->{$key}} ).EOL;
-				} else {
-					print "  $key: <object reference>".EOL;
-				}
-			}
-		}
-	}
-	Mods::Toops::msgOut( scalar @{$list->{$workload}}." found defined task(s)" );
+# returns the (sorted) list if defined DBMS instance's names
+# (E):
+# - host configuration
+# (S):
+# - an array of strings
+sub getDefinedDBMSInstances {
+	my ( $config ) = @_;
+	my @list = keys %{$config->{DBMSInstances}};
+	return sort @list;
 }
 
 # -------------------------------------------------------------------------------------------------
-# list the commands of the named workload
-sub listWorkloadTasksCommands {
-	my ( $workload ) = @_;
-	my $config = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying workload commands defined for $config->{host}\\$workload..." );
-	my $list = Mods::Services::getUsedWorkloads( $config );
-	my $count = 0;
-	foreach my $it ( @{$list->{$workload}} ){
-		if( exists( $it->{commands} )){
-			foreach my $command ( @{$it->{commands}} ){
-				print " $command".EOL;
-				$count += 1;
+# returns the sorted list of defined service's names
+# (E):
+# - host configuration
+# (S):
+# - an array of strings
+sub getDefinedServices {
+	my ( $config ) = @_;
+	my @list = keys %{$config->{Services}};
+	return sort @list;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the used workloads, i.e. the workloads to which at least one item is candidate to.
+# (E):
+# - host configuration
+# (S):
+# - a hash where:
+#   > keys are the workload names
+#   > values are an array of the found definitions hashes
+sub getUsedWorkloads {
+	my ( $config ) = @_;
+	my @services = Mods::Services::getDefinedServices( $config );
+	my $list = {};
+	foreach my $service ( @services ){
+		my $res = Mods::Toops::searchRecHash( $config->{Services}{$service}, 'workloads' );
+		foreach my $it ( @{$res->{result}} ){
+			foreach my $key ( keys %{$it->{data}} ){
+				$list->{$key} = [] if !exists $list->{$key};
+				my @foo = ( @{$list->{$key}}, @{$it->{data}{$key}} );
+				$list->{$key} = \@foo;
 			}
 		}
 	}
-	Mods::Toops::msgOut( "$count found defined command(s)" );
+	return $list;
 }
 
 1;

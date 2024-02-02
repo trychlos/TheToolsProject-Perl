@@ -14,6 +14,7 @@
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
+use Path::Tiny;
 
 use Mods::Dbms;
 use Mods::Services;
@@ -48,7 +49,8 @@ sub execSqlCommand {
 # -------------------------------------------------------------------------------------------------
 # execute the sql script
 sub execSqlScript {
-	Mods::Dbms::execSqlScript( $opt_script, { tabular => $opt_tabular });
+	my $sql = path( $opt_script )->slurp_utf8;
+	Mods::Dbms::execSqlCommand( $sql, { tabular => $opt_tabular });
 }
 
 # =================================================================================================

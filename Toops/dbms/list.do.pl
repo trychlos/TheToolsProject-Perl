@@ -3,9 +3,9 @@
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --instance=<name>       acts on the named instance [${instance}]
-# @(-) --[no]listdb            list the databases [${listdb}]
+# @(-) --[no]listdb            list the databases of the named instance [${listdb}]
 # @(-) --database=<name>       acts on the named database [${database}]
-# @(-) --[no]listtables        list the tables [${listtables}]
+# @(-) --[no]listtables        list the tables of the named database [${listtables}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -26,20 +26,32 @@ my $defaults = {
 };
 
 my $opt_instance = $defaults->{instance};
-my $opt_listdb = $defaults->{listdb};
+my $opt_listdb = false;
 my $opt_database = $defaults->{database};
-my $opt_listtables = $defaults->{listtables};
+my $opt_listtables = false;
 
 # -------------------------------------------------------------------------------------------------
 # list the databases
 sub listDatabases {
-	Mods::Dbms::listLiveDatabases();
+	my $hostConfig = Mods::Toops::getHostConfig();
+	Mods::Toops::msgOut( "displaying databases in '$hostConfig->{host}\\$opt_instance'..." );
+	my $list = Mods::Dbms::getLiveDatabases();
+	foreach my $db ( @{$list} ){
+		print " $db".EOL;
+	}
+	Mods::Toops::msgOut( scalar @{$list}." found live database(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
 # list the tables
 sub listTables {
-	Mods::Dbms::listDatabaseTables( $opt_database );
+	my $hostConfig = Mods::Toops::getHostConfig();
+	Mods::Toops::msgOut( "displaying tables in '$hostConfig->{host}\\$opt_instance\\$opt_database'..." );
+	my $list = Mods::Dbms::getDatabaseTables( $opt_database );
+	foreach my $it ( @{$list} ){
+		print " $it".EOL;
+	}
+	Mods::Toops::msgOut( scalar @{$list}." found table(s)" );
 }
 
 # =================================================================================================

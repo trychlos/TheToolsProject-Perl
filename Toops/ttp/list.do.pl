@@ -26,13 +26,28 @@ my $opt_services = false;
 # -------------------------------------------------------------------------------------------------
 # list the available commands (same than services.pl list -services)
 sub listCommands {
-	Mods::Toops::listAvailableCommands();
+	Mods::Toops::msgOut( "displaying available commands..." );
+	my @commands = Mods::Toops::getAvailableCommands();
+	foreach my $it ( @commands ){
+		Mods::Toops::commandDisplayOneLineHelp( $it, { prefix => ' ' });
+	}
+	Mods::Toops::msgOut( scalar @commands." found command(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
 # list the defined services
+# note: this is  design decision that this sort of display at the beginning and at the end of the verb
+# execution must be done in the verb script.
+# in this particular case of listing services, which is handled both as services.pl list and as ttp.pl list,
+# this code is so duplicated..
 sub listServices {
-	Mods::Services::listDefinedServices();
+	my $hostConfig = Mods::Toops::getHostConfig();
+	Mods::Toops::msgOut( "displaying services defined on $hostConfig->{host}..." );
+	my @list = Mods::Services::getDefinedServices( $hostConfig );
+	foreach my $it ( @list ){
+		print " $it".EOL;
+	}
+	Mods::Toops::msgOut( scalar @list." found defined service(s)" );
 }
 
 # =================================================================================================

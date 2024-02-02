@@ -5,11 +5,11 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
-# @(-) --me=<name>             the environment variable name which holds the workload name [${me}]
-# @(-) --commands=<name>       the environment variable name which holds the commands [${commands}]
-# @(-) --start=<name>          the environment variable name which holds the starting timestamp [${start}]
-# @(-) --end=<name>            the environment variable name which holds the ending timestamp [${end}]
-# @(-) --rc=<name>             the environment variable name which holds the return codes [${rc}]
+# @(-) --me=<name>             the name of the environment variable which holds the workload name [${me}]
+# @(-) --commands=<name>       the name of the environment variable which holds the commands [${commands}]
+# @(-) --start=<name>          the name of the environment variable which holds the starting timestamp [${start}]
+# @(-) --end=<name>            the name of the environment variable which holds the ending timestamp [${end}]
+# @(-) --rc=<name>             the name of the environment variable which holds the return codes [${rc}]
 # @(-) --count=<count>         the count of commands to deal with [${count}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
