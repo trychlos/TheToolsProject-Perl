@@ -7,7 +7,8 @@ use warnings;
 
 use Config;
 use Data::Dumper;
-use File::Path qw( make_path );
+use File::Copy qw( move );
+use File::Path qw( make_path remove_tree );
 use File::Spec;
 use Getopt::Long;
 use JSON;
@@ -479,6 +480,33 @@ sub makeDirExist {
 }
 
 # -------------------------------------------------------------------------------------------------
+# (recursively) move a directory from a source to a target
+# 
+sub moveDir {
+	my ( $source, $target ) = @_;
+	opendir( FD, "$source" ) || msgErr( "unable to open directory $source: $!" );
+	if( !errs()){
+		msgVerbose( "Toops::moveDir() moving '$source' to 'target'" );
+		my @list = ();
+		makeDirExist( $target );
+		while ( my $it = readdir( FD )){
+			next if $it eq "." or $it eq "..";
+			my $srcpath = File::Spec->catdir( $source, $it );
+			my $dstpath = File::Spec->catdir( $target, $it );
+			if( -d $srcpath ){
+				moveDir( $srcpath, $dstpath );
+				next;
+			}
+			msgVerbose( "Toops::moveDir() moving '$srcpath' to '$dstpath'" );
+			move( $srcpath, $dstpath );
+		}
+		closedir( FD );
+		msgVerbose( "Toops::moveDir() removing '$source'" );
+		remove_tree( $source );
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
 # Dummy execution
 sub msgDummy {
 	my $msg = shift;
@@ -609,6 +637,34 @@ sub pad {
 		$str .= $pad;
 	}
 	return $str;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the path requested by the given command
+# (E):
+# - the command to be executed
+# - an optional options hash with following keys:
+#   > mustExists, defaulting to false
+sub pathFromCommand {
+	my( $cmd, $opts ) = @_;
+	$opts //= {};
+	msgErr( "Toops::pathFromCmd() command is not specified" ) if !$cmd;
+	my $path = undef;
+	if( !errs()){
+		$path = `$cmd`;
+		msgErr( "Toops::pathFromCmd() command doesn't output anything" ) if !$path;
+	}
+	if( !errs()){
+		my @words = split( /\s+/, $path );
+		$path = $words[scalar @words - 1];
+	}
+	my $mustExists = false;
+	$mustExists = $opts->{mustExists} if exists $opts->{mustExists};
+	if( $mustExists && !-r $path ){
+		msgErr( "Toops::pathFromCmd() path='$path' doesn't exist or is not readable" );
+		$path = undef;
+	}
+	return $path;
 }
 
 # -------------------------------------------------------------------------------------------------
