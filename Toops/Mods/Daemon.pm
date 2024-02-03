@@ -26,6 +26,7 @@ use warnings;
 use Data::Dumper;
 use File::Spec;
 use IO::Socket::INET;
+use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Toops;
@@ -38,14 +39,40 @@ use constant {
 # the daemon answers to the client
 sub daemonAnswer {
 	my ( $req, $answer ) = @_;
+	Mods::Toops::msgLog( "answering '$answer'" );
 	$req->{socket}->send( "$answer\n" );
 	$req->{socket}->shutdown( true );
 }
 
 # ------------------------------------------------------------------------------------------------
+# the daemon deals with the received command
+# - we are able to answer here to 'help', 'status' and 'terminate' commands and the daemon doesn't need to declare them.
+sub daemonCommand {
+	my ( $req, $commands ) = @_;
+	my $answer = undef;
+	my $TTPVars = Mods::Toops::TTPVars();
+	if( $req->{command} eq "help" ){
+		$commands->{help} = 1;
+		$commands->{status} = 1;
+		$commands->{terminate} = 1;
+		$answer = join( ', ', sort keys %{$commands} )."\nOK";
+	} elsif( $req->{command} eq "status" ){
+		$answer = "running since $TTPVars->{run}{daemon}{started}\nOK";
+	} elsif( $req->{command} eq "terminate" ){
+		$TTPVars->{run}{daemon}{terminating} = true;
+		$answer = "OK";
+	} elsif( exists( $commands->{$req->{command}} )){
+		$answer = $commands->{$req->{command}}( $req );
+	} else {
+		$answer = "unknowned command '$req->{command}'";
+	}
+	return $answer;
+}
+
+# ------------------------------------------------------------------------------------------------
 # periodically listen on the TCP port
 sub daemonListen {
-	my ( $socket ) = @_;
+	my ( $socket, $commands ) = @_;
 	my $client = $socket->accept();
 	my $result = undef;
 	my $data = "";
@@ -59,9 +86,14 @@ sub daemonListen {
 		$client->recv( $data, BUFSIZE );
 	}
 	if( $result ){
+		Mods::Toops::msgLog( "received '$data' from '$result->{peerhost}':'$result->{peeraddr}':'$result->{peerport}'" );
 		my @words = split( /\s+/, $data );
 		$result->{command} = shift( @words );
 		$result->{args} = \@words;
+		if( $commands ){
+			my $answer = daemonCommand( $result, $commands );
+			daemonAnswer( $result, $answer );
+		}
 	}
 	return $result;
 }
@@ -97,6 +129,8 @@ sub daemonInitToops {
 	$file =~ s/\.[^.]+$//;
 	my $TTPVars = Mods::Toops::TTPVars();
 	$TTPVars->{run}{daemon}{name} = $file;
+	$TTPVars->{run}{daemon}{started} = localtime->strftime( '%Y-%m-%d %H:%M:%S' );
+	$TTPVars->{run}{daemon}{terminating} = false;
 	Mods::Toops::msgLog( "executing $program ".join( ' ', @ARGV ));
 }
 
