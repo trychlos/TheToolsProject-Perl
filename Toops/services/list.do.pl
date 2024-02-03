@@ -84,7 +84,7 @@ sub listWorkloads {
 sub listWorkloadCommands {
 	my $hostConfig = Mods::Toops::getHostConfig();
 	Mods::Toops::msgOut( "displaying workload commands defined in $hostConfig->{name}\\$opt_workload..." );
-	my @list = Mods::Services::getDefinedWorktasks( $hostConfig, $opt_workload );
+	my @list = Mods::Services::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
 	my $count = 0;
 	foreach my $it ( @list ){
 		if( exists( $it->{commands} )){
@@ -103,7 +103,7 @@ sub listWorkloadCommands {
 sub listWorkloadDetails {
 	my $hostConfig = Mods::Toops::getHostConfig();
 	Mods::Toops::msgOut( "displaying detailed workload tasks defined in $hostConfig->{name}\\$opt_workload..." );
-	my @list = Mods::Services::getDefinedWorktasks( $hostConfig, $opt_workload );
+	my @list = Mods::Services::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		printWorkloadTask( $it );
 	}

@@ -83,17 +83,17 @@ sub getDefinedDBMSInstances {
 sub getDefinedServices {
 	my ( $config, $opts ) = @_;
 	$opts //= {};
-	my $returnHiddens = false;
-	$returnHiddens = $opts->{hidden} if exists $opts->{hidden};
+    my $returnHiddens = false;
+    $returnHiddens = $opts->{hidden} if exists $opts->{hidden};
 	my @list = ();
-	foreach my $service ( keys %{$config->{Services}} ){
+    foreach my $service ( keys %{$config->{Services}} ){
 		my $hidden = false;
-		$hidden = $config->{Services}{$service}{hidden} if exists $config->{Services}{$service}{hidden};
-		if( !$hidden || $returnHiddens ){
+        $hidden = $config->{Services}{$service}{hidden} if exists $config->{Services}{$service}{hidden};
+        if( !$hidden || $returnHiddens ){
 			push( @list, $service );
-		}
-	}
-	return sort @list;
+	   }
+   }
+   return sort @list;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -103,31 +103,38 @@ sub getDefinedServices {
 # (E):
 # - host configuration
 # - wanted workload name
+# - optional options hash with the following keys:
+#   > hidden: whether to also scan for hidden services, defaulting to false
 # (S):
-# - an array of task objects in their canonical order
+# - an array of task objects in the above canonical order
 sub getDefinedWorktasks {
-	my ( $config, $workload ) = @_;
+	my ( $config, $workload, $opts ) = @_;
+	$opts //= {};
+	my $displayHiddens = false;
+	$displayHiddens = $opts->{hidden} if exists $opts->{hidden};
 	my @services = sort keys %{$config->{Services}};
 	# build here the to be sorted array and a hash which will be used to build the result
 	my @list = ();
 	foreach my $service ( @services ){
-		if( exists( $config->{Services}{$service}{workloads}{$workload} )){
-			my @tasks = @{$config->{Services}{$service}{workloads}{$workload}};
-			foreach my $t ( @tasks ){
-				$t->{service} = $service;
+		my $isHidden = false;
+		$isHidden = $config->{Services}{$service}{hidden} if exists $config->{Services}{$service}{hidden};
+		if( !$isHidden || $displayHiddens ){
+			if( exists( $config->{Services}{$service}{workloads}{$workload} )){
+				my @tasks = @{$config->{Services}{$service}{workloads}{$workload}};
+				foreach my $t ( @tasks ){
+					$t->{service} = $service;
+				}
+				@list = ( @list, @tasks );
 			}
-			@list = ( @list, @tasks );
 		}
 	}
-	return sort _sortTasks( a, b ) @list;
+	return sort { _taskOrder( $a ) cmp _taskOrder( $b ) } @list;
 }
 
 # sort tasks in their specified order, defaulting to the 'added' service name
-sub _sortTasks {
-	my( $a, $b ) = @_;
-	my $akey = exists $a->{order} ? $a->{order} : $a->{service};
-	my $bkey = exists $b->{order} ? $b->{order} : $b->{service};
-	return $akey cmp $bkey;
+sub _taskOrder {
+	my( $it ) = @_;
+	return exists $it->{order} ? $it->{order} : $it->{service};
 }
 
 # -------------------------------------------------------------------------------------------------
