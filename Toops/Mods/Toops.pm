@@ -590,6 +590,8 @@ sub msgPrefix {
 		$prefix = "[$TTPVars->{run}{command}{basename}";
 		$prefix .= ' '.$TTPVars->{run}{verb}{name} if $TTPVars->{run}{verb}{name};
 		$prefix.= '] ';
+	} elsif( $TTPVars->{run}{daemon}{name} ){
+		$prefix = "[$TTPVars->{run}{daemon}{name}] ";
 	}
 	return $prefix;
 }

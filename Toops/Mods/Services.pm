@@ -161,7 +161,7 @@ sub getDefinedWorktasks {
 	return sort { _taskOrder( $a ) cmp _taskOrder( $b ) } @list;
 }
 
-# sort tasks in their specified order, defaulting to the 'added' service name
+# sort tasks in their specified order, defaulting to the added service name
 sub _taskOrder {
 	my( $it ) = @_;
 	return exists $it->{order} ? $it->{order} : $it->{service};

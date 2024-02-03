@@ -11,6 +11,8 @@ Toops for Windows:
 	> set a TTP_SITE global environment variable to address the directory which contains your site configuration
 	> (optional) set a TTP_ROOT global environment variable in PATH-style like to address several Toops trees
 	> update the PATH to address all your Toops/bin directories
+	> install CPAN packages
+	  Proc::Background
 
 Site configuration:
 Install in TTP_SITE/:
@@ -59,6 +61,8 @@ TTPVars:
 			instance
 				name
 				data: $hostConfig->{DBMSInstances}{$instance}
+		daemon
+			name
 
 TODO
     1 24- 1-29 Toops::getOptions doesn't work as we do not know how to pass arguments to GetOptions()

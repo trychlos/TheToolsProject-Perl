@@ -16,7 +16,9 @@
 
 use Data::Dumper;
 
+use Mods::Constants;
 use Mods::Services;
+use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -112,18 +114,25 @@ sub listWorkloadDetails {
 
 # -------------------------------------------------------------------------------------------------
 # print the detail of a task
+# - begin with preferably a name, defaulting to a label, defaulting to 'unnamed'
 sub printWorkloadTask {
 	my ( $task ) = @_;
-	# if we have a name, make it the first line
+	# if we have a name or label, make it the first line
 	if( exists( $task->{name} )){
 		print "+ $task->{name}".EOL;
+	} elsif( exists( $task->{label} )){
+		print "+ $task->{label}".EOL;
 	} else {
 		print "+ (unnamed)".EOL;
+	}
+	# if we have both a name and an label, print the label now
+	if( exists( $task->{name} ) && exists( $task->{label} )){
+		print "  $task->{label}".EOL;
 	}
 	# print other keys
 	# we manage one level array/hash to be able to display at least commands (sorted to have a predictable display)
 	foreach my $key ( sort keys %{$task} ){
-		if( $key ne 'name' ){
+		if( $key ne 'name' && $key ne 'label' ){
 			printWorkloadTaskData( $key, $task->{$key}, { prefix => "  " });
 		}
 	}
