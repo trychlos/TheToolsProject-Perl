@@ -142,7 +142,7 @@ sub checkInstanceOpt {
 # compute the default backup output filename for the current machine/intance/database
 # making sure the output directory exists
 # As of 2024 -1-31, default output filename is <host>-<instance>-<database>-<date>-<time>-<mode>.backup
-# As of 2024 -2- 2, thge backupPath is expected to be daily-ised, ie to contain a date part
+# As of 2024 -2- 2, the backupPath is expected to be daily-ised, ie to contain a date part
 # parms is a hash ref with keys:
 # - instance: mandatory
 # - database: mandatory
@@ -159,7 +159,7 @@ sub computeDefaultBackupFilename {
 	$mode = $parms->{mode} if exists $parms->{mode};
 	Mods::Toops::msgErr( "Dbms::computeDefaultBackupFilename() mode must be 'full' or 'diff', found '$mode'" ) if $mode ne 'full' and $mode ne 'diff';
 	# compute the dir and make sure it exists
-	my $backupPath = $config->{DBMSInstances}{$parms->{instance}}{backupPath};
+	my $backupPath = $config->{backupPath};
 	Mods::Toops::msgVerbose( "Dbms::computeDefaultBackupFilename() found backupPath='$backupPath'" );
 	if( !$backupPath ){
 		Mods::Toops::msgWarn( "Dbms::computeDefaultBackupFilename() instance='$parms->{instance}' backupPath is not specified, set to default temp directory" );

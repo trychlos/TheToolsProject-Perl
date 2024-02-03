@@ -14,6 +14,7 @@ use JSON;
 use Path::Tiny qw( path );
 use Sys::Hostname qw( hostname );
 use Term::ANSIColor;
+use Test::Deep;
 use Time::Piece;
 use Win32::Console::ANSI;
 
@@ -83,21 +84,33 @@ sub errs {
 
 # -------------------------------------------------------------------------------------------------
 # recursively interpret the provided data for variables and computings
-sub evaluateRec {
+#  and restart until all references have been replaced
+sub evaluate {
+	my ( $value ) = @_;
+	my $prev = undef;
+	my $result = _evaluateRec( $value );
+	while( !eq_deeply( $result, $prev )){
+		$prev = $result;
+		$result = _evaluateRec( $prev );
+	}
+	return $result;
+}
+
+sub _evaluateRec {
 	my ( $value ) = @_;
 	my $result = '';
 	my $type = ref( $value );
 	if( !$type ){
-		$result = evaluateScalar( $value );
+		$result = _evaluateScalar( $value );
 	} elsif( $type eq 'ARRAY' ){
 		$result = [];
 		foreach my $it ( @{$value} ){
-			push( @{$result}, evaluateRec( $it ));
+			push( @{$result}, _evaluateRec( $it ));
 		}
 	} elsif( $type eq 'HASH' ){
 		$result = {};
 		foreach my $key ( keys %{$value} ){
-			$result->{$key} = evaluateRec( $value->{$key} );
+			$result->{$key} = _evaluateRec( $value->{$key} );
 		}
 	} else {
 		$result = $value;
@@ -105,14 +118,25 @@ sub evaluateRec {
 	return $result;
 }
 
-# -------------------------------------------------------------------------------------------------
-# element interpretation - must have a scalar here
-sub evaluateScalar {
+sub _evaluateScalar {
 	my ( $value ) = @_;
 	my $type = ref( $value );
 	msgErr( "scalar expected, but '$type' found" ) if $type;
 	my $result = $value || '';
-	$result =~ s/\[eval:([^\]]+)\]/eval $1/eg;
+	# this weird code to let us manage some level of pseudo recursivity
+	$result =~ s/\[eval:([^\]]+)\]/_evaluatePrint( $1 )/eg;
+	$result =~ s/\[_eval:/[eval:/g;
+	$result =~ s/\[__eval:/[_eval:/g;
+	$result =~ s/\[___eval:/[__eval:/g;
+	$result =~ s/\[____eval:/[___eval:/g;
+	$result =~ s/\[_____eval:/[____eval:/g;
+	return $result;
+}
+
+sub _evaluatePrint {
+	my ( $value ) = @_;
+	my $result = eval $value;
+	#print "value='$value' result='$result'".EOL;
 	return $result;
 }
 
@@ -377,9 +401,9 @@ sub initHostConfiguration {
 	my $hash_host = ( keys %{$hash} )[0];
 	msgErr( "hostname '$host' expected, found 'hash_host'" ) if $hash_host ne $host;
 	if( !errs()){
-		# rationale: evaluateRec() may want take advantage of the TTPVars content, so must be set before evaluation
+		# rationale: evaluate() may want take advantage of the TTPVars content, so must be set before evaluation
 		$TTPVars->{config}{$host} = $hash->{$host};
-		$TTPVars->{config}{$host} = evaluateRec( $TTPVars->{config}{$host} );
+		$TTPVars->{config}{$host} = evaluate( $TTPVars->{config}{$host} );
 		$TTPVars->{config}{$host}{name} = $host;
 	}
 }
@@ -400,8 +424,8 @@ sub initLogs {
 sub initSiteConfiguration {
 	my $conf = File::Spec->catdir( $ENV{TTP_SITE}, 'toops.json' );
 	$TTPVars->{config}{site} = jsonRead( $conf );
-	# rationale: evaluateRec() may want take advantage of the TTPVars content, so must be set before evaluation
-	$TTPVars->{config}{site} = evaluateRec( $TTPVars->{config}{site} );
+	# rationale: evaluate() may want take advantage of the TTPVars content, so must be set before evaluation
+	$TTPVars->{config}{site} = evaluate( $TTPVars->{config}{site} );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -621,7 +645,6 @@ sub pathWithTrailingSeparator {
 # Expects $0 be the full path name to the command script (this is the case in Windows+Strawberry)
 # and @ARGV the command-line arguments
 sub run {
-	print color( 'reset' );
 	Mods::Toops::initSiteConfiguration();
 	Mods::Toops::initLogs();
 	Mods::Toops::msgLog( "executing $0 ".join( ' ', @ARGV ));
@@ -695,12 +718,12 @@ sub searchRecArray {
 # -------------------------------------------------------------------------------------------------
 # Recursively search the provided hash to find all occurrences of provided key
 # (E):
-# - hash to be searche for
+# - hash to be searched for
 # - searched key
 # - an optional options hash, which may have following keys:
 #   > none at the moment
 # (S):
-# returns a hash whose keys are the found workload names, values being arrays of key paths
+# returns a hash whose keys are the found names, values being arrays of key paths
 sub searchRecHash {
 	my ( $hash, $searched, $opts, $recData ) = @_;
 	$opts //= {};

@@ -65,7 +65,7 @@ sub checkServiceOpt {
 # (E):
 # - host configuration
 # (S):
-# - an array of strings
+# - an ascii-sorted [0-9A-Za-z] array of strings
 sub getDefinedDBMSInstances {
 	my ( $config ) = @_;
 	my @list = keys %{$config->{DBMSInstances}};
@@ -79,7 +79,7 @@ sub getDefinedDBMSInstances {
 # - optional options hash with the following keys:
 #   > hidden: whether to also return hidden services, defaulting to false
 # (S):
-# - an array of strings
+# - an ascii-sorted [0-9A-Za-z] array of strings
 sub getDefinedServices {
 	my ( $config, $opts ) = @_;
 	$opts //= {};
@@ -97,16 +97,61 @@ sub getDefinedServices {
 }
 
 # -------------------------------------------------------------------------------------------------
+# returns the worktasks defined for the specified workload in the order of the service names
+# (E):
+# - host configuration
+# - wanted workload name
+# (S):
+# - an array of task objects in the order of the service name
+sub getDefinedWorktasks {
+	my ( $config, $workload ) = @_;
+	my @services = sort keys %{$config->{Services}};
+	my @list = ();
+	foreach my $service ( @services ){
+		if( exists( $config->{Services}{$service}{workloads}{$workload} )){
+			@list = ( @list, @{$config->{Services}{$service}{workloads}{$workload}} );
+		}
+	}
+	return @list;
+}
+
+# -------------------------------------------------------------------------------------------------
 # returns the used workloads, i.e. the workloads to which at least one item is candidate to.
 # (E):
 # - host configuration
+# - optional options hash with the following keys:
+#   > hidden: whether to also scan for hidden services, defaulting to false
+# (S):
+# - an ascii-sorted [0-9A-Za-z] array of strings
+sub getUsedWorkloads {
+	my ( $config, $opts ) = @_;
+	my @services = Mods::Services::getDefinedServices( $config, $opts );
+	my $list = {};
+	foreach my $service ( @services ){
+		if( exists( $config->{Services}{$service}{workloads} )){
+			foreach my $workload ( keys %{$config->{Services}{$service}{workloads}} ){
+				$list->{$workload} = 1;
+			}
+		}
+	}
+	my @names = keys %{$list};
+	return sort @names;
+}
+
+=pod
+# -------------------------------------------------------------------------------------------------
+# returns the used workloads, i.e. the workloads to which at least one item is candidate to.
+# (E):
+# - host configuration
+# - optional options hash with the following keys:
+#   > hidden: whether to also return hidden services, defaulting to false
 # (S):
 # - a hash where:
 #   > keys are the workload names
 #   > values are an array of the found definitions hashes
-sub getUsedWorkloads {
-	my ( $config ) = @_;
-	my @services = Mods::Services::getDefinedServices( $config );
+sub getUsedWorkloads_old {
+	my ( $config, $opts ) = @_;
+	my @services = Mods::Services::getDefinedServices( $config, $opts );
 	my $list = {};
 	foreach my $service ( @services ){
 		my $res = Mods::Toops::searchRecHash( $config->{Services}{$service}, 'workloads' );
@@ -120,5 +165,6 @@ sub getUsedWorkloads {
 	}
 	return $list;
 }
+=cut
 
 1;

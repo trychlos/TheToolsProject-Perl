@@ -26,6 +26,6 @@
 	exit /b
 
 :setLogFile
-	for /f "delims=" %%a in ('ttp.pl vars -logsdir ^| perl -pe "s/^\s+|\s+$//;"') do @set _logsdir=%%a
+	for /f "tokens=2" %%a in ('ttp.pl vars -logsdir') do @set _logsdir=%%a
 	set LOGFILE=%_logsdir%\\%COMPUTERNAME%-%ME%-%DATE:~6,4%%DATE:~3,2%%DATE:~0,2%-%TIME:~0,2%%TIME:~3,2%%TIME:~6,2%.log
 	exit /b

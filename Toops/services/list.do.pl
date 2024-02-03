@@ -2,11 +2,14 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]dbms              list defined DBMS instances [${dbms}]
 # @(-) --[no]services          list defined services [${services}]
+# @(-) --[no]hidden            also display hidden services [${hidden}]
 # @(-) --[no]workloads         list used workloads [${workloads}]
 # @(-) --workload=<name>       display the detailed tasks for the named workload [${workload}]
 # @(-) --[no]commands          display only the commands for the named workload [${commands}]
-# @(-) --[no]hidden            also display hidden services [${hidden}]
+#
+# @(@) Displayed lists are sorted in ASCII order, i.e. in [0-9A-Za-z] order.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 #
@@ -20,27 +23,29 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	dbms => 'no',
 	services => 'no',
+	hidden => 'no',
 	workloads => 'no',
 	workload => '',
-	commands => 'no',
-	hidden => 'no'
+	commands => 'no'
 };
 
+my $opt_dbms = false;
 my $opt_services = false;
+my $opt_hidden = false;
 my $opt_workloads = false;
 my $opt_workload = $defaults->{workload};
 my $opt_commands = false;
-my $opt_hidden = false;
 
 # -------------------------------------------------------------------------------------------------
 # list the defined DBMS instances (which may be not all the running instances)
 sub listDbms {
 	my $hostConfig = Mods::Toops::getHostConfig();
 	Mods::Toops::msgOut( "displaying DBMS instances defined on $hostConfig->{name}..." );
-	my @list = Mods::Services::getDefinedDBMSInstances( $config );
+	my @list = Mods::Services::getDefinedDBMSInstances( $hostConfig );
 	foreach my $it ( @list ){
-		Mods::Toops::msgOut( PREFIX.$it );
+		print " $it".EOL;
 	}
 	Mods::Toops::msgOut( scalar @list." found defined DBMS instance(s)" );
 }
@@ -62,14 +67,12 @@ sub listServices {
 }
 
 # -------------------------------------------------------------------------------------------------
-# list all the workloads used on this host
+# list all the workloads used on this host with names sorted in ascii order
 sub listWorkloads {
 	my $hostConfig = Mods::Toops::getHostConfig();
 	Mods::Toops::msgOut( "displaying workloads used on $hostConfig->{name}..." );
-	my $list = Mods::Services::getUsedWorkloads( $hostConfig );
-	my @names = keys %{$list};
-	my @sorted = sort @names;
-	foreach my $it ( @sorted ){
+	my @list = Mods::Services::getUsedWorkloads( $hostConfig, { hidden => $opt_hidden });
+	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
 	Mods::Toops::msgOut( scalar @sorted." found used workload(s)" );
@@ -77,13 +80,13 @@ sub listWorkloads {
 
 # -------------------------------------------------------------------------------------------------
 # list all (but only) the commands in this workload
+# the commands are listed in the order if their service name
 sub listWorkloadCommands {
-	#Mods::Services::listWorkloadTasksCommands( $opt_workload );
 	my $hostConfig = Mods::Toops::getHostConfig();
 	Mods::Toops::msgOut( "displaying workload commands defined in $hostConfig->{name}\\$opt_workload..." );
-	my $list = Mods::Services::getUsedWorkloads( $hostConfig );
+	my @list = Mods::Services::getDefinedWorktasks( $hostConfig, $opt_workload );
 	my $count = 0;
-	foreach my $it ( @{$list->{$opt_workload}} ){
+	foreach my $it ( @list ){
 		if( exists( $it->{commands} )){
 			foreach my $command ( @{$it->{commands}} ){
 				print " $command".EOL;
@@ -96,14 +99,15 @@ sub listWorkloadCommands {
 
 # -------------------------------------------------------------------------------------------------
 # list the detailed tasks for the specified workload
+# They are displayed in the order of their service name
 sub listWorkloadDetails {
 	my $hostConfig = Mods::Toops::getHostConfig();
 	Mods::Toops::msgOut( "displaying detailed workload tasks defined in $hostConfig->{name}\\$opt_workload..." );
-	my $list = Mods::Services::getUsedWorkloads( $hostConfig );
-	foreach my $it ( @{$list->{$opt_workload}} ){
+	my @list = Mods::Services::getDefinedWorktasks( $hostConfig, $opt_workload );
+	foreach my $it ( @list ){
 		printWorkloadTask( $it );
 	}
-	Mods::Toops::msgOut( scalar @{$list->{$opt_workload}}." found defined task(s)" );
+	Mods::Toops::msgOut( scalar @list." found defined task(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -117,10 +121,10 @@ sub printWorkloadTask {
 		print "+ (unnamed)".EOL;
 	}
 	# print other keys
-	# we manage one level array/hash to be able to display at least commands
+	# we manage one level array/hash to be able to display at least commands (sorted to have a predictable display)
 	foreach my $key ( sort keys %{$task} ){
 		if( $key ne 'name' ){
-			listWorkloadTaskData( $task, $key, "  " );
+			printWorkloadTaskData( $key, $task->{$key}, { prefix => "  " });
 		}
 	}
 }
@@ -128,22 +132,28 @@ sub printWorkloadTask {
 # -------------------------------------------------------------------------------------------------
 # recursively print arrays/hashes
 # item is a hash and we want print the value associated with the key in the item hash
-sub listWorkloadTaskData {
-	my ( $item, $key, $prefix ) = @_;
-	my $type = ref( $item->{$key} );
+sub printWorkloadTaskData {
+	my ( $key, $value, $recData ) = @_;
+	my $type = ref( $value );
+	my $displayKey = true;
+	$displayKey = $recData->{displayKey} if exists $recData->{displayKey};
 	# simplest: a scalar value
 	if( !$type ){
-		print "$prefix$key: $item->{$key}".EOL;
-	# if a the key points to an array, the display array items
+		if( $displayKey ){
+			print "$recData->{prefix}$key: $value".EOL;
+		} else {
+			print "$recData->{prefix}$value".EOL;
+		}
+	# if value is an array, then display key and recurse on array items (do not re-display key)
 	} elsif( $type eq 'ARRAY' ){
-		print "$prefix$key:".EOL;
-		foreach my $it ( @{$item->{$key}} ){
-			print "$prefix  $it".EOL;
+		print "$recData->{prefix}$key:".EOL;
+		foreach my $it ( @{$value} ){
+			printWorkloadTaskData( $key, $it, { prefix => "$recData->{prefix}  ", displayKey => false });
 		}
 	} elsif( $type eq 'HASH' ){
-		print "$prefix$key:".EOL;
-		foreach my $k ( keys %{$item->{$key}} ){
-			listWorkloadDetailsRec( $item->{$key}, $k, "$prefix  " );
+		print "$recData->{prefix}$key:".EOL;
+		foreach my $k ( keys %{$value} ){
+			printWorkloadTaskData( $k, $value->{$k}, { prefix => "$recData->{prefix}  " });
 		}
 	} else {
 		print "  $key: <object reference>".EOL;
@@ -157,11 +167,12 @@ sub listWorkloadTaskData {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"dbms!"				=> \$opt_dbms,
 	"services!"			=> \$opt_services,
+	"hidden!"			=> \$opt_hidden,
 	"workloads!"		=> \$opt_workloads, 
 	"workload=s"		=> \$opt_workload,
-	"commands!"			=> \$opt_commands,
-	"hidden!"			=> \$opt_hidden )){
+	"commands!"			=> \$opt_commands )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -173,11 +184,12 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='true'" );
-Mods::Toops::msgVerbose( "found services='$opt_services'" );
+Mods::Toops::msgVerbose( "found dbms='".( $opt_dbms ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found hidden='".( $opt_hidden ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found workloads='".( $opt_workloads ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found workload='$opt_workload'" );
 Mods::Toops::msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found hidden='".( $opt_hidden ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
 	listDbms() if $opt_dbms;
