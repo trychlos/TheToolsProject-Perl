@@ -97,22 +97,37 @@ sub getDefinedServices {
 }
 
 # -------------------------------------------------------------------------------------------------
-# returns the worktasks defined for the specified workload in the order of the service names
+# returns the worktasks defined for the specified workload in the order:
+#  - specified by "order" key of the work task 
+#  - defaulting to the service names
 # (E):
 # - host configuration
 # - wanted workload name
 # (S):
-# - an array of task objects in the order of the service name
+# - an array of task objects in their canonical order
 sub getDefinedWorktasks {
 	my ( $config, $workload ) = @_;
 	my @services = sort keys %{$config->{Services}};
+	# build here the to be sorted array and a hash which will be used to build the result
 	my @list = ();
 	foreach my $service ( @services ){
 		if( exists( $config->{Services}{$service}{workloads}{$workload} )){
-			@list = ( @list, @{$config->{Services}{$service}{workloads}{$workload}} );
+			my @tasks = @{$config->{Services}{$service}{workloads}{$workload}};
+			foreach my $t ( @tasks ){
+				$t->{service} = $service;
+			}
+			@list = ( @list, @tasks );
 		}
 	}
-	return @list;
+	return sort _sortTasks( a, b ) @list;
+}
+
+# sort tasks in their specified order, defaulting to the 'added' service name
+sub _sortTasks {
+	my( $a, $b ) = @_;
+	my $akey = exists $a->{order} ? $a->{order} : $a->{service};
+	my $bkey = exists $b->{order} ? $b->{order} : $b->{service};
+	return $akey cmp $bkey;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -137,34 +152,5 @@ sub getUsedWorkloads {
 	my @names = keys %{$list};
 	return sort @names;
 }
-
-=pod
-# -------------------------------------------------------------------------------------------------
-# returns the used workloads, i.e. the workloads to which at least one item is candidate to.
-# (E):
-# - host configuration
-# - optional options hash with the following keys:
-#   > hidden: whether to also return hidden services, defaulting to false
-# (S):
-# - a hash where:
-#   > keys are the workload names
-#   > values are an array of the found definitions hashes
-sub getUsedWorkloads_old {
-	my ( $config, $opts ) = @_;
-	my @services = Mods::Services::getDefinedServices( $config, $opts );
-	my $list = {};
-	foreach my $service ( @services ){
-		my $res = Mods::Toops::searchRecHash( $config->{Services}{$service}, 'workloads' );
-		foreach my $it ( @{$res->{result}} ){
-			foreach my $key ( keys %{$it->{data}} ){
-				$list->{$key} = [] if !exists $list->{$key};
-				my @foo = ( @{$list->{$key}}, @{$it->{data}{$key}} );
-				$list->{$key} = \@foo;
-			}
-		}
-	}
-	return $list;
-}
-=cut
 
 1;
