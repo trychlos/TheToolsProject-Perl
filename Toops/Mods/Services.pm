@@ -85,8 +85,8 @@ sub enumerateServices {
 	foreach my $service ( @list ){
 		my $isHidden = false;
 		$isHidden = $config->{Services}{$service}{hidden} if exists $config->{Services}{$service}{hidden};
-		if( !$isHidden || $useHidden ){
-			$callback( $service, $config->{Services}{$service, $opts );
+		if( !$isHidden || $useHiddens ){
+			$callback->( $service, $config->{Services}{$service}, $opts );
 			$count += 1;
 		}
 	}
@@ -116,17 +116,14 @@ sub getDefinedDBMSInstances {
 sub getDefinedServices {
 	my ( $config, $opts ) = @_;
 	$opts //= {};
-    my $returnHiddens = false;
-    $returnHiddens = $opts->{hidden} if exists $opts->{hidden};
-	my @list = ();
-    foreach my $service ( keys %{$config->{Services}} ){
-		my $hidden = false;
-        $hidden = $config->{Services}{$service}{hidden} if exists $config->{Services}{$service}{hidden};
-        if( !$hidden || $returnHiddens ){
-			push( @list, $service );
-	   }
-   }
-   return sort @list;
+	$opts->{definedServices} = [];
+	enumerateServices( $config, \&_getDefinedServices_cb, $opts );
+	return @{$opts->{definedServices}};
+}
+
+sub _getDefinedServices_cb {
+	my ( $service, $definition, $opts ) = @_;
+	push( @{$opts->{definedServices}}, $service );
 }
 
 # -------------------------------------------------------------------------------------------------
