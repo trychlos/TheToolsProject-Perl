@@ -61,6 +61,39 @@ sub checkServiceOpt {
 }
 
 # -------------------------------------------------------------------------------------------------
+# enumerate the services names 
+# - in ascii-sorted order [0-9A-Za-z]
+# - considering the 'hidden' option
+# - and call the provided sub for each found
+# (E):
+# - host configuration
+# - reference to a sub to be called on each enumerated service with:
+#   > the service name
+#   > the full service definition
+#   > the options object
+# - optional options hash with the following keys:
+#   > hidden: whether to also return hidden services, defaulting to false
+# (S):
+# - a count of enumerated services
+sub enumerateServices {
+	my ( $config, $callback, $opts ) = @_;
+	$opts //= {};
+	my $useHiddens = false;
+	$useHiddens = $opts->{hidden} if exists $opts->{hidden};
+	my @list = sort keys %{$config->{Services}};
+	my $count = 0;
+	foreach my $service ( @list ){
+		my $isHidden = false;
+		$isHidden = $config->{Services}{$service}{hidden} if exists $config->{Services}{$service}{hidden};
+		if( !$isHidden || $useHidden ){
+			$callback( $service, $config->{Services}{$service, $opts );
+			$count += 1;
+		}
+	}
+	return $count;
+}
+
+# -------------------------------------------------------------------------------------------------
 # returns the (sorted) list if defined DBMS instance's names
 # (E):
 # - host configuration
