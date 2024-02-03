@@ -46,6 +46,8 @@ TTPVars:
 		help
 		verbose
 		logsMain
+		
+		# when run as a command.pl verb
 		command
 			path
 			args
@@ -53,6 +55,7 @@ TTPVars:
 			directory
 			name
 			verbsDir
+			started
 		verb
 			name
 			args
@@ -61,8 +64,10 @@ TTPVars:
 			instance
 				name
 				data: $hostConfig->{DBMSInstances}{$instance}
-		daemon
 			name
+		
+		# when run by a daemon
+		daemon
 
 TODO
     1 24- 1-29 Toops::getOptions doesn't work as we do not know how to pass arguments to GetOptions()

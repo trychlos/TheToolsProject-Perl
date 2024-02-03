@@ -16,6 +16,7 @@ use Path::Tiny qw( path );
 use Sys::Hostname qw( hostname );
 use Term::ANSIColor;
 use Test::Deep;
+use Time::Moment;
 use Time::Piece;
 use Win32::Console::ANSI;
 
@@ -139,6 +140,27 @@ sub _evaluatePrint {
 	my $result = eval $value;
 	#print "value='$value' result='$result'".EOL;
 	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# append a record to our daily executions report
+# (E):
+# - the data provided to be recorded
+# This function automatically appends:
+# - hostname
+# - start timestamp
+# - end timestamp
+# - return code
+# - full run command
+sub execReportAppend {
+	my ( $data ) = @_;
+	$data->{command} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
+	$data->{host} = hostname;
+	$data->{code} = $TTPVars->{run}{exitCode};
+	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
+	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
+	my $path = $TTPVars->{config}{site}{toops}{execReport};
+	jsonAppend( $data, $path );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -430,6 +452,22 @@ sub initSiteConfiguration {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Append a JSON element to a file
+# (E):
+# - the hash to be written into
+# - the full path to be created
+sub jsonAppend {
+	my ( $hash, $path ) = @_;
+	msgVerbose( "jsonAppend().. to '$path'" );
+	my $json = JSON->new;
+	my $str = $json->encode( $hash );
+	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
+	makeDirExist( File::Spec->catdir( $vol, $dirs ));
+	# some daemons may monitor this file in order to be informed of various executions - make sure each record has an EOL
+	path( $path )->append_utf8( $str.EOL );
+}
+
+# -------------------------------------------------------------------------------------------------
 # Read a JSON file into a hash
 # All Toops JSON configuration files may take advantage of dynamic eval here
 # (E):
@@ -449,6 +487,15 @@ sub jsonRead {
 		Mods::Toops::msgWarn( "site configuration file '$conf' not found or not readable" );
 	}
 	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Write a hash to a JSON file
+# (E):
+# - the hash to be written into
+# - the full path to be created
+sub jsonWrite {
+	my ( $hash, $path ) = @_;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -708,6 +755,7 @@ sub run {
 	Mods::Toops::msgLog( "executing $0 ".join( ' ', @ARGV ));
 	Mods::Toops::initHostConfiguration();
 	$TTPVars->{run}{command}{path} = $0;
+	$TTPVars->{run}{command}{started} = Time::Moment->now;
 	my @command_args = @ARGV;
 	$TTPVars->{run}{command}{args} = \@command_args;
 	my ( $volume, $directories, $file ) = File::Spec->splitpath( $TTPVars->{run}{command}{path} );

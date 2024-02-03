@@ -15,6 +15,9 @@
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
+use File::Spec;
+use Time::Piece;
+
 use Mods::Dbms;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -42,14 +45,21 @@ my $opt_output = '';
 sub doBackup {
 	my $hostConfig = Mods::Toops::getHostConfig();
 	Mods::Toops::msgOut( "backuping database '$hostConfig->{name}\\$opt_instance\\$opt_database'" );
+	my $mode = $opt_full ? 'full' : 'diff';
 	my $res = Mods::Dbms::backupDatabase({
 		instance => $opt_instance,
 		database => $opt_database,
 		output => $opt_output,
-		mode => $opt_diff ? 'diff' : 'full',
+		mode => $mode,
 		dummy => $opt_dummy
 	});
-	if( $res ){
+	Mods::Toops::execReportAppend({
+		instance => $opt_instance,
+		database => $opt_database,
+		mode => $mode,
+		backup => $res->{output}
+	});
+	if( $res->{status} ){
 		Mods::Toops::msgOut( "success" );
 	} else {
 		Mods::Toops::msgErr( "NOT OK" );
@@ -59,46 +69,6 @@ sub doBackup {
 # =================================================================================================
 # MAIN
 # =================================================================================================
-
-=pod
-Mods::Toops::getOptions([
-	{
-		key	 => 'instance',
-		help => "address named instance",
-		opt	 => '=s',
-		var	 => \$opt_instance,
-		def	 => $opt_instance_def
-	},
-	{
-		key	 => 'database',
-		help => "backup named database",
-		opt	 => '=s',
-		var	 => \$opt_database,
-		def	 => $opt_database_def
-	},
-	{
-		key	 => 'full',
-		help => "whether to do a full backup",
-		opt	 => '!',
-		var	 => \$opt_full,
-		def	 => $opt_full_def
-	},
-	{
-		key	 => 'diff',
-		help => "whether to do a differential backup",
-		opt	 => '!',
-		var	 => \$opt_diff,
-		def	 => $opt_diff_def
-	},
-	{
-		key	 => 'output',
-		help => "output filename",
-		opt	 => '=s',
-		var	 => \$opt_output,
-		def	 => $opt_output_def
-	}
-]);
-=cut
 
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},

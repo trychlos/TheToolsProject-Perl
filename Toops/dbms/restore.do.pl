@@ -51,6 +51,14 @@ sub doRestore {
 		diff => $opt_diff,
 		verifyonly => $opt_verifyonly
 	});
+	if( !$opt_verifyonly ){
+		Mods::Toops::execReportAppend({
+			instance => $opt_instance,
+			database => $opt_database,
+			restore => $opt_full,
+			diff => $opt_diff
+		});
+	}
 	if( $res ){
 		Mods::Toops::msgOut( "success" );
 	} else {

@@ -24,10 +24,12 @@ use Mods::Toops;
 # - output: optional
 # - mode: full-diff, defaulting to 'full'
 # - dummy: true|false, defaulting to false
-# return true|false
+# return a hash reference with:
+# - status: true|false
+# - output: the output filename (even if provided on input)
 sub backupDatabase {
 	my ( $parms ) = @_;
-	my $result = false;
+	my $result = { status => false };
 	my $dbms = Mods::Dbms::_buildDbms();
 	Mods::Toops::msgErr( "Dbms::backupDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
 	Mods::Toops::msgErr( "Dbms::backupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
@@ -37,8 +39,10 @@ sub backupDatabase {
 			$parms->{output} = Mods::Dbms::computeDefaultBackupFilename( $dbms, $parms );
 		}
 		Mods::Toops::msgOut( "backuping to '$parms->{output}'" );
-		$result = Mods::Dbms::toPackage( 'apiBackupDatabase', $dbms, $parms );
+		$result->{status} = Mods::Dbms::toPackage( 'apiBackupDatabase', $dbms, $parms );
 	}
+	$result->{output} = $parms->{output};
+	Mods::Toops::msgVerbose( "Dbms::backupDatabase() returning $result" );
 	return $result;
 }
 
