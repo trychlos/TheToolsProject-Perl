@@ -177,17 +177,20 @@ sub _taskOrder {
 # - an ascii-sorted [0-9A-Za-z] array of strings
 sub getUsedWorkloads {
 	my ( $config, $opts ) = @_;
-	my @services = Mods::Services::getDefinedServices( $config, $opts );
-	my $list = {};
-	foreach my $service ( @services ){
-		if( exists( $config->{Services}{$service}{workloads} )){
-			foreach my $workload ( keys %{$config->{Services}{$service}{workloads}} ){
-				$list->{$workload} = 1;
-			}
+	$opts //= {};
+	$opts->{usedWorkloads} = {};
+	enumerateServices( $config, \&_getUsedWorkloads_cb, $opts );
+	my @names = keys %{$opts->{usedWorkloads}};
+	return sort @names;
+}
+
+sub _getUsedWorkloads_cb {
+	my ( $service, $definition, $opts ) = @_;
+	if( exists( $definition->{workloads} )){
+		foreach my $workload ( keys %{$definition->{workloads}} ){
+			$opts->{usedWorkloads}{$workload} = 1;
 		}
 	}
-	my @names = keys %{$list};
-	return sort @names;
 }
 
 1;

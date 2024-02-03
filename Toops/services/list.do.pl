@@ -75,7 +75,7 @@ sub listWorkloads {
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
-	Mods::Toops::msgOut( scalar @sorted." found used workload(s)" );
+	Mods::Toops::msgOut( scalar @list." found used workload(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
