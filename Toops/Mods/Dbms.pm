@@ -11,7 +11,6 @@ use Data::Dumper;
 use File::Path;
 use File::Spec;
 use Module::Load;
-use Sys::Hostname qw( hostname );
 use Time::Piece;
 
 use Mods::Constants qw( :all );

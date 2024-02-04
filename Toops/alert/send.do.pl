@@ -6,54 +6,48 @@
 # @(-) --level=<name>          the alert level [${level}]
 # @(-) --message=<name>        the alert message [${message}]
 #
-# @(x) --dest=<name>           set the alert destination in replacement of the defaults [${dest}]
-# @(x) --adddest=<name>        add an alert destination to the defaults [${add}]
+# @(xxx) --setdest=<name>        set the alert destination in replacement of the defaults [${setdest}]
+# @(xxx) --adddest=<name>        add an alert destination to the defaults [${adddest}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
+use Sys::Hostname qw( hostname );
+use Time::Moment;
 
-use Mods::Dbms;
-use Mods::Services;
+use Mods::Constants qw( :all );
 
 my $TTPVars = Mods::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
-	instance => 'MSSQLSERVER',
-	listdb => 'no',
-	database => '',
-	listtables => 'no'
+	emitter => '',
+	level => 'INFO',
+	message => ''
 };
 
-my $opt_instance = $defaults->{instance};
-my $opt_listdb = false;
-my $opt_database = $defaults->{database};
-my $opt_listtables = false;
+my $opt_emitter = $defaults->{emitter};
+my $opt_level = INFO;
+my $opt_message = $defaults->{message};
 
 # -------------------------------------------------------------------------------------------------
-# list the databases
-sub listDatabases {
-	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying databases in '$hostConfig->{host}\\$opt_instance'..." );
-	my $list = Mods::Dbms::getLiveDatabases();
-	foreach my $db ( @{$list} ){
-		print " $db".EOL;
-	}
-	Mods::Toops::msgOut( scalar @{$list}." found live database(s)" );
-}
+# send the alert
+# as far as we are concerned here, this is just writing a json file in a special directory
+sub doSend {
+	Mods::Toops::msgOut( "sending a '$opt_level' alert..." );
 
-# -------------------------------------------------------------------------------------------------
-# list the tables
-sub listTables {
-	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying tables in '$hostConfig->{host}\\$opt_instance\\$opt_database'..." );
-	my $list = Mods::Dbms::getDatabaseTables( $opt_database );
-	foreach my $it ( @{$list} ){
-		print " $it".EOL;
-	}
-	Mods::Toops::msgOut( scalar @{$list}." found table(s)" );
+	my $path = File::Spec->catdir( $TTPVars->{config}{site}{toops}{alerts}{dropDir}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
+
+	Mods::Toops::jsonWrite({
+		emitter => $opt_emitter,
+		level => $opt_level,
+		message => $opt_message,
+		host => uc hostname,
+		stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
+	}, $path );
+
+	Mods::Toops::msgOut( "success" );
 }
 
 # =================================================================================================
@@ -63,10 +57,9 @@ sub listTables {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"instance=s"		=> \$opt_instance,
-	"listdb!"			=> \$opt_listdb,
-	"database=s"		=> \$opt_database,
-	"listtables!"		=> \$opt_listtables )){
+	"emitter=s"			=> \$opt_emitter,
+	"level=s"			=> \$opt_level,
+	"message=s"			=> \$opt_message )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -78,20 +71,19 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
-Mods::Toops::msgVerbose( "found listdb='".( $opt_listdb ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found database='$opt_database'" );
-Mods::Toops::msgVerbose( "found listtables='".( $opt_listtables ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found emitter='$opt_emitter'" );
+Mods::Toops::msgVerbose( "found level='$opt_level'" );
+Mods::Toops::msgVerbose( "found message='$opt_message'" );
 
-# instance is mandatory
-Mods::Dbms::checkInstanceOpt( $opt_instance );
+# we accept empty vars here, but still emit a warn
+Mods::Toops::msgWarn( "emitter is empty, but shouldn't" ) if !$opt_emitter;
+Mods::Toops::msgWarn( "message is empty, but shouldn't" ) if !$opt_message;
 
-# check that the database exists if it is specified
-Mods::Dbms::checkDatabaseExists( $opt_instance, $opt_database ) if $opt_instance && $opt_database;
+# level is mandatory (and we provide a default value)
+Mods::Toops::msgErr( "level is empty, but shouldn't" ) if !$opt_level;
 
 if( !Mods::Toops::errs()){
-	listDatabases() if $opt_listdb;
-	listTables() if $opt_database && $opt_listtables;
+	doSend();
 }
 
 Mods::Toops::ttpExit();

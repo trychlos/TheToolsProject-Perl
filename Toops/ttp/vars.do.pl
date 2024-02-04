@@ -51,7 +51,7 @@ sub listSiteroot {
 # -------------------------------------------------------------------------------------------------
 # list siteroot value - e.g. 'C:\INLINGUA'
 sub listArchivepath {
-	my $host = hostname;
+	my $host = uc hostname;
 	print " archivePath: $TTPVars->{config}{$host}{archivePath}".EOL;
 }
 

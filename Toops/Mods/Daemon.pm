@@ -125,6 +125,7 @@ sub daemonInitToops {
 	my ( $program ) = @_;
 	Mods::Toops::initSiteConfiguration();
 	Mods::Toops::initLogs();
+	Mods::Toops::msgLog( "executing $program ".join( ' ', @ARGV ));
 	my ( $volume, $directories, $file ) = File::Spec->splitpath( $program );
 	# keep the sufix when advertizing about the daemon
 	#$file =~ s/\.[^.]+$//;
@@ -132,7 +133,6 @@ sub daemonInitToops {
 	$TTPVars->{run}{daemon}{name} = $file;
 	$TTPVars->{run}{daemon}{started} = localtime->strftime( '%Y-%m-%d %H:%M:%S' );
 	$TTPVars->{run}{daemon}{terminating} = false;
-	Mods::Toops::msgLog( "executing $program ".join( ' ', @ARGV ));
 }
 
 # ------------------------------------------------------------------------------------------------

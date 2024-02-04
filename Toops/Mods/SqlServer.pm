@@ -33,9 +33,9 @@ my $systemDatabases = [
 sub apiBackupDatabase {
 	my ( $me, $dbms, $parms ) = @_;
 	my $result = false;
-	Mods::Toops::msgErr( "SqlServer::backupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
-	Mods::Toops::msgErr( "SqlServer::backupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
-	Mods::Toops::msgErr( "SqlServer::backupDatabase() output is mandatory, but is not specified" ) if !$parms->{output};
+	Mods::Toops::msgErr( "SqlServer::apiBackupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
+	Mods::Toops::msgErr( "SqlServer::apiBackupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
+	Mods::Toops::msgErr( "SqlServer::apiBackupDatabase() output is mandatory, but is not specified" ) if !$parms->{output};
 	if( !Mods::Toops::errs()){
 		my $tstring = localtime->strftime( '%Y-%m-%d %H:%M:%S' );
 		# if full
@@ -48,10 +48,10 @@ sub apiBackupDatabase {
 		}
 		$parms->{sql} = "USE master;
 BACKUP DATABASE $parms->{database} TO DISK='$parms->{output}' WITH $options, NAME='$parms->{database} $label Backup $tstring';";
-		Mods::Toops::msgVerbose( "SqlServer::backupDatabase() sql='$parms->{sql}'" );
+		Mods::Toops::msgVerbose( "SqlServer::apiBackupDatabase() sql='$parms->{sql}'" );
 		$result = Mods::SqlServer::sqlNoResult( $dbms, $parms );
 	}
-	Mods::Toops::msgVerbose( "SqlServer::backupDatabase() returns '".( $result ? 'true':'false' )."'" );
+	Mods::Toops::msgVerbose( "SqlServer::apiBackupDatabase() returns '".( $result ? 'true':'false' )."'" );
 	return $result;
 }
 
@@ -61,9 +61,9 @@ sub apiExecSqlCommand {
 	my ( $me, $dbms, $sql ) = @_;
 	my $result = undef;
 	my $sqlsrv = undef;
-	Mods::Toops::msgErr( "SqlServer::execSqlCommand() instance is mandaotry, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
+	Mods::Toops::msgErr( "SqlServer::apiExecSqlCommand() instance is mandaotry, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
 	if( !Mods::Toops::errs()){
-		Mods::Toops::msgVerbose( "SqlServer::execSqlCommand() entering with instance='$dbms->{instance}{name}'" );
+		Mods::Toops::msgVerbose( "SqlServer::apiExecSqlCommand() entering with instance='$dbms->{instance}{name}'" );
 		$sqlsrv = Mods::SqlServer::_connect( $dbms );
 	}
 	if( !Mods::Toops::errs() && $sqlsrv ){
@@ -78,7 +78,7 @@ sub apiGetDatabaseTables {
 	my ( $me, $dbms, $database ) = @_;
 	my $result = undef;
 	my $instance = $dbms->{instance}{name};
-	Mods::Toops::msgVerbose( "SqlServer::getDatabaseTables() entering with instance='".( $instance || '(undef)' )."', database='".( $database || '(undef)' )."'" );
+	Mods::Toops::msgVerbose( "SqlServer::apiGetDatabaseTables() entering with instance='".( $instance || '(undef)' )."', database='".( $database || '(undef)' )."'" );
 	if( $instance && $database ){
 		my $sqlsrv = Mods::SqlServer::_connect( $dbms );
 		if( !Mods::Toops::errs() && $sqlsrv ){
@@ -105,7 +105,7 @@ sub apiGetInstanceDatabases {
 	my ( $me, $dbms ) = @_;
 	my $result = undef;
 	my $instance = $dbms->{instance}{name};
-	Mods::Toops::msgVerbose( "SqlServer::getLiveDatabases() entering with instance='".$instance || '(undef)'."'" );
+	Mods::Toops::msgVerbose( "SqlServer::apiGetInstanceDatabases() entering with instance='".$instance || '(undef)'."'" );
 	if( $instance ){
 		my $sqlsrv = Mods::SqlServer::_connect( $dbms );
 		if( !Mods::Toops::errs() && $sqlsrv ){
@@ -117,10 +117,10 @@ sub apiGetInstanceDatabases {
 					push( @{$result}, $dbname );
 				}
 			}
-			Mods::Toops::msgVerbose( "SqlServer::getLiveDatabases() found ".scalar @{$result}." databases: ".join( ', ', @{$result} ));
+			Mods::Toops::msgVerbose( "SqlServer::apiGetInstanceDatabases() found ".scalar @{$result}." databases: ".join( ', ', @{$result} ));
 		}
 	} else {
-		Mods::Toops::msgErr( "SqlServer::getLiveDatabases() instance is mandatory, not specified" );
+		Mods::Toops::msgErr( "SqlServer::apiGetInstanceDatabases() instance is mandatory, not specified" );
 	}
 	return $result;
 }
@@ -135,7 +135,7 @@ sub apiGetInstanceDatabases {
 # returns true|false
 sub apiRestoreDatabase {
 	my ( $me, $dbms, $parms ) = @_;
-	Mods::Toops::msgVerbose( "SqlServer::restoreDatabase() entering..." );
+	Mods::Toops::msgVerbose( "SqlServer::apiRestoreDatabase() entering..." );
 	my $instance = $parms->{instance};
 	my $database = $parms->{database};
 	my $full = $parms->{full};
@@ -144,9 +144,9 @@ sub apiRestoreDatabase {
 	my $sqlsrv = undef;
 	my $verifyonly = false;
 	$verifyonly = $parms->{verifyonly} if exists $parms->{verifyonly};
-	msgErr( "SqlServer::restoreDatabase() instance is mandatory, not specified" ) if !$instance;
-	msgErr( "SqlServer::restoreDatabase() database is mandatory, not specified" ) if !$database && !$verifyonly;
-	msgErr( "SqlServer::restoreDatabase() full is mandatory, not specified" ) if !$full;
+	msgErr( "SqlServer::apiRestoreDatabase() instance is mandatory, not specified" ) if !$instance;
+	msgErr( "SqlServer::apiRestoreDatabase() database is mandatory, not specified" ) if !$database && !$verifyonly;
+	msgErr( "SqlServer::apiRestoreDatabase() full is mandatory, not specified" ) if !$full;
 	if( !Mods::Toops::errs()){
 		if( $verifyonly || _restoreDatabaseSetOffline( $dbms, $parms )){
 			$parms->{'file'} = $full;
@@ -176,7 +176,7 @@ sub _connect {
 	my ( $dbms ) = @_;
 	my $sqlsrv = $dbms->{instance}{sqlsrv};
 	if( $sqlsrv ){
-		Mods::Toops::msgVerbose( "SqlServer::connect() instance already connected" );
+		Mods::Toops::msgVerbose( "SqlServer::_connect() instance already connected" );
 	} else {
 		my $instance = $dbms->{instance}{name};
 		if( $instance ){
@@ -184,24 +184,26 @@ sub _connect {
 			my( $account, $passwd ) = Mods::SqlServer::_getCredentials( $dbms );
 			if( length $account && length $passwd ){
 				my $server = $dbms->{config}{name}."\\".$instance;
-				Mods::Toops::msgVerbose( "SqlServer::connect() calling sql_init with server='$server', account='$account'..." );
+				# SQLServer 2008R2 doesn't like have a server connection string with MSSQLSERVER default instance
+				$server = undef if $instance eq "MSSQLSERVER";
+				Mods::Toops::msgVerbose( "SqlServer::_connect() calling sql_init with server='".( $server || '(undef)' )."', account='$account'..." );
 				$sqlsrv = Win32::SqlServer::sql_init( $server, $account, $passwd );
-				Mods::Toops::msgVerbose( "SqlServer::connect() sqlsrv->isconnected()=".$sqlsrv->isconnected());
+				Mods::Toops::msgVerbose( "SqlServer::_connect() sqlsrv->isconnected()=".$sqlsrv->isconnected());
 				#print Dumper( $sqlsrv );
 				if( $sqlsrv && $sqlsrv->isconnected()){
 					$sqlsrv->{ErrInfo}{MaxSeverity} = 17;
 					$sqlsrv->{ErrInfo}{SaveMessages} = 1;
-					Mods::Toops::msgVerbose( "SqlServer::connect() successfully connected" );
+					Mods::Toops::msgVerbose( "SqlServer::_connect() successfully connected" );
 					$dbms->{instance}{sqlsrv} = $sqlsrv;
 				} else {
-					Mods::Toops::msgErr( "SqlServer::connect() unable to connect to '$instance' instance" );
+					Mods::Toops::msgErr( "SqlServer::_connect() unable to connect to '$instance' instance" );
 					$sqlsrv = undef;
 				}
 			} else {
-				Mods::Toops::msgErr( "SqlServer::connect() unable to get account/password couple" );
+				Mods::Toops::msgErr( "SqlServer::_connect() unable to get account/password couple" );
 			}
 		} else {
-			Mods::Toops::msgErr( "SqlServer::connect() instance is mandatory, not specified" );
+			Mods::Toops::msgErr( "SqlServer::_connect() instance is mandatory, not specified" );
 		}
 	}
 	return $sqlsrv;
@@ -231,9 +233,9 @@ sub _getCredentials {
 	if( $instance ){
 		$account = ( keys %{$dbms->{instance}{data}{accounts}} )[0];
 		$passwd = $dbms->{instance}{data}{accounts}{$account};
-		Mods::Toops::msgVerbose( "SqlServer::getCredentials() got account='".( $account || '(undef)' )."'" );
+		Mods::Toops::msgVerbose( "SqlServer::_getCredentials() got account='".( $account || '(undef)' )."'" );
 	} else {
-		Mods::Toops::msgErr( "SqlServer::getCredentials() instance is mandatory, not specified" );
+		Mods::Toops::msgErr( "SqlServer::_getCredentials() instance is mandatory, not specified" );
 	}
 	return ( $account, $passwd );
 }
@@ -263,7 +265,7 @@ sub _restoreDatabaseFile {
 	my $fname = $parms->{file};
 	my $last = $parms->{last};
 	#
-	Mods::Toops::msgVerbose( "SqlServer::restoreDatabaseFile() restoring $fname" );
+	Mods::Toops::msgVerbose( "SqlServer::_restoreDatabaseFile() restoring $fname" );
 	my $sqlsrv = _connect( $dbms );
 	my $recovery = 'NORECOVERY';
 	if( $last ){
@@ -289,7 +291,7 @@ sub _restoreDatabaseMove {
 	my $content = $sqlsrv->sql( "RESTORE FILELISTONLY FROM DISK='$fname'" );
 	my $move = undef;
 	if( !scalar @{$content} ){
-		Mods::Toops::msgErr( "unable to get the files list of the backup set" );
+		Mods::Toops::msgErr( "SqlServer::_restoreDatabaseMove() unable to get the files list of the backup set" );
 	} else {
 		my $sqlDataPath = Mods::Toops::pathWithTrailingSeparator( $dbms->{config}{DBMSInstances}{$parms->{instance}}{dataPath} );
 		foreach( @{$content} ){
@@ -311,7 +313,7 @@ sub _restoreDatabaseVerify {
 	my $instance = $parms->{instance};
 	my $database = $parms->{database};
 	my $fname = $parms->{file};
-	Mods::Toops::msgVerbose( "SqlServer::restoreDatabaseVerify() verifying $fname" );
+	Mods::Toops::msgVerbose( "SqlServer::_restoreDatabaseVerify() verifying $fname" );
 	my $move = _restoreDatabaseMove( $dbms, $parms );
 	$parms->{'sql'} = "RESTORE VERIFYONLY FROM DISK='$fname' WITH $move;";
 	return Mods::SqlServer::sqlNoResult( $dbms, $parms );

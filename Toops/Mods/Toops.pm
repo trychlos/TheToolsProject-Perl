@@ -158,7 +158,7 @@ sub execReportAppend {
 	$data->{cmdline} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
 	$data->{command} = $TTPVars->{run}{command}{basename};
 	$data->{verb} = $TTPVars->{run}{verb}{name};
-	$data->{host} = hostname;
+	$data->{host} = uc hostname;
 	$data->{code} = $TTPVars->{run}{exitCode};
 	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
@@ -192,8 +192,16 @@ sub getDefaultTempDir {
 # -------------------------------------------------------------------------------------------------
 # returns the host config
 sub getHostConfig {
-	my $host = hostname;
+	my $host = uc hostname;
 	return $TTPVars->{config}{$host};
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the list of JSON configuration full pathnames for defined hosts (including this one)
+sub getJsonHosts {
+	my $dir = File::Spec->catdir( $ENV{TTP_SITE}, "machines" );
+	my @hosts = glob( $dir."/*.json" );
+	return @hosts;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -422,11 +430,11 @@ sub helpVerb {
 #  we check and force that here
 #  + set the host as a value to be more easily available
 sub initHostConfiguration {
-	my $host = hostname;
-	my $conf = File::Spec->catdir( $ENV{TTP_SITE}, $host.'.json' );
+	my $host = uc hostname;
+	my $conf = File::Spec->catdir( $ENV{TTP_SITE}, "machines", $host.'.json' );
 	my $hash = jsonRead( $conf );
-	my $hash_host = ( keys %{$hash} )[0];
-	msgErr( "hostname '$host' expected, found 'hash_host'" ) if $hash_host ne $host;
+	my $hash_host = uc (( keys %{$hash} )[0] );
+	msgErr( "hostname '$host' expected, found '$hash_host'" ) if $hash_host ne $host;
 	if( !errs()){
 		# rationale: evaluate() may want take advantage of the TTPVars content, so must be set before evaluation
 		$TTPVars->{config}{$host} = $hash->{$host};
@@ -600,7 +608,7 @@ sub msgLog {
 sub msgLogAppend {
 	my $msg = shift;
 	if( $TTPVars->{run}{logsMain} ){
-		my $host = hostname;
+		my $host = uc hostname;
 		my $username = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME} || 'unknown'; #getpwuid( $< );
 		my $line = localtime->strftime( '%Y-%m-%d %H:%M:%S' )." $host $username $msg";
 		path( $TTPVars->{run}{logsMain} )->append_utf8( $line.EOL );
