@@ -12,7 +12,9 @@ use strict;
 use warnings;
 
 use Data::Dumper;
+use File::Copy;
 use File::Find;
+use File::Spec;
 use File::stat;
 use Time::Piece;
 
@@ -41,6 +43,37 @@ my @runningScan = ();
 my $full = {};
 
 # -------------------------------------------------------------------------------------------------
+# source file is file on the source host, specified in the source language (aka a local path rather than a network path)
+# we want here:
+# - copy the remote file on the local host
+# - returns the local path
+sub syncedPath {
+	my ( $report, $sourceLocal ) = @_;
+	#print "report='$report'".EOL;
+	#print "sourceLocal='$sourceLocal'".EOL;
+	my ( $rep_volume, $rep_directories, $rep_file ) = File::Spec->splitpath( $report );
+	my ( $bck_volume, $bck_directories, $bck_file ) = File::Spec->splitpath( $sourceLocal );
+	my $sourceNet = File::Spec->catpath( $rep_volume, $bck_directories, $bck_file );
+	#print "sourceNet='$sourceNet'".EOL;
+	my $localTarget = undef;
+	if( ! -r $sourceNet ){
+		Mods::Toops::msgWarn( "$sourceNet: file not found or not readable" );
+	} else {
+		$localTarget =  File::Spec->catpath( Mods::Toops::pathWithTrailingSeparator( $daemonConfig->{localDir} ), $bck_file );
+		#print "localTarget='$localTarget'".EOL;
+		Mods::Toops::makeDirExist( $daemonConfig->{localDir} );
+		my $res = copy( $sourceNet, $localTarget );
+		if( $res ){
+			Mods::Toops::msgVerbose( "successfully copied '$sourceNet' to '$localTarget'" );
+		} else {
+			Mods::Toops::msgVerbose( "unable to copy '$sourceNet' to '$localTarget'" );
+			$localTarget = undef;
+		}
+	}
+	return $localTarget;
+}
+
+# -------------------------------------------------------------------------------------------------
 # new execution reports
 # we are tracking backup databases with dbms.pl backup -nodummy
 # warning when we have a diff without a previous full
@@ -56,30 +89,42 @@ sub doWithNew {
 			my $mode = $data->{mode};
 			my $output = $data->{output};
 
-			if( $mode eq "full" ){
-				$full->{$instance}{$database} = $output;
-			}
 			my $executable = true;
-			if( $mode eq "diff" ){
-				if( !exists( $full->{$instance}{$database} )){
-					Mods::Toops::msgWarn( "host='$data->{host}' instance='$instance' database='$database' found diff backup, but no previous full" );
-					$executable = false;
-				}
-			}
 			my $candidates = [];
+			my $local = undef;
 			$candidates = $daemonConfig->{databases} if exists $daemonConfig->{databases};
 			if( scalar @{$candidates} && !grep( /$database/i, @{$candidates} )){
 				Mods::Toops::msgVerbose( "backuped database is '$database' while configured are [".join( ', ', @{$candidates} )."]: ignored" );
 				$executable = false;
+			} else {
+				$local = syncedPath( $report, $output );
+				if( $local ){
+					if( $mode eq "full" ){
+						$full->{$instance}{$database} = $local;
+					} elsif( $mode eq "diff" ){
+						if( !exists( $full->{$instance}{$database} ) || !$full->{$instance}{$database} || !length( $full->{$instance}{$database} )){
+							Mods::Toops::msgWarn( "host='$data->{host}' instance='$instance' database='$database' found diff backup, but no previous full" );
+							$executable = false;
+						}
+					} else {
+						Mods::Toops::msgErr( "host='$data->{host}' instance='$instance' database='$database' mode='$mode': mode is unknown" );
+						$executable = false;
+					}
+				} else {
+					$executable = false;
+				}
 			}
 			if( $executable ){
 				my $restoreInstance = $instance;
-				$restoreInstance = $daemonConfig->{restoreInstance} if exists $daemonConfig->{restoreInstance};
-				my $command = "dbms.pl restore -instance $restoreInstance -database $database -full $full->{$instance}{$database}";
-				if( $mode eq "diff" ){
-					$command .= " -diff $data->{output}";
+				$restoreInstance = $daemonConfig->{restoreInstance} if exists $daemonConfig->{restoreInstance} && length $daemonConfig->{restoreInstance};
+				my $command = "dbms.pl restore -instance $restoreInstance -database $database ";
+				if( $mode eq "full" ){
+					$command .= " -full $local";
+				} else {
+					$command .= " -full $full->{$instance}{$database} -diff $local";
 				}
 				Mods::Toops::msgVerbose( "executing $command" );
+				print `$command`;
 			}
 
 		} else {

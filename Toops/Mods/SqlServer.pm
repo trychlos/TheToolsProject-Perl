@@ -270,8 +270,12 @@ sub _restoreDatabaseFile {
 		$recovery = 'RECOVERY';
 	}
 	my $move = _restoreDatabaseMove( $dbms, $parms );
-	$parms->{'sql'} = "RESTORE DATABASE $database FROM DISK='$fname' WITH $recovery, $move;";
-	return Mods::SqlServer::sqlNoResult( $dbms, $parms );
+	my $result = undef;
+	if( $move ){
+		$parms->{'sql'} = "RESTORE DATABASE $database FROM DISK='$fname' WITH $recovery, $move;";
+		$result = Mods::SqlServer::sqlNoResult( $dbms, $parms );
+	}
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -283,14 +287,18 @@ sub _restoreDatabaseMove {
 	my $fname = $parms->{file};
 	my $sqlsrv = _connect( $dbms );
 	my $content = $sqlsrv->sql( "RESTORE FILELISTONLY FROM DISK='$fname'" );
-	my $move = '';
-	my $sqlDataPath = Mods::Toops::pathWithTrailingSeparator( $dbms->{config}{DBMSInstances}{$parms->{instance}}{dataPath} );
-	foreach( @{$content} ){
-		my $row = $_;
-		$move .= ', ' if length $move;
-		my ( $vol, $dirs, $fname ) = File::Spec->splitpath( $sqlDataPath );
-		my $target_file = File::Spec->catpath( $vol, $dirs, $database.( $row->{Type} eq 'D' ? '.mdf' : '.ldf' ));
-		$move .= "MOVE '".$row->{'LogicalName'}."' TO '$target_file'";
+	my $move = undef;
+	if( !scalar @{$content} ){
+		Mods::Toops::msgErr( "unable to get the files list of the backup set" );
+	} else {
+		my $sqlDataPath = Mods::Toops::pathWithTrailingSeparator( $dbms->{config}{DBMSInstances}{$parms->{instance}}{dataPath} );
+		foreach( @{$content} ){
+			my $row = $_;
+			$move .= ', ' if length $move;
+			my ( $vol, $dirs, $fname ) = File::Spec->splitpath( $sqlDataPath );
+			my $target_file = File::Spec->catpath( $vol, $dirs, $database.( $row->{Type} eq 'D' ? '.mdf' : '.ldf' ));
+			$move .= "MOVE '".$row->{'LogicalName'}."' TO '$target_file'";
+		}
 	}
 	return $move;
 }
