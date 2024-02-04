@@ -192,7 +192,7 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='true'" );
+Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found dbms='".( $opt_dbms ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found hidden='".( $opt_hidden ? 'true':'false' )."'" );

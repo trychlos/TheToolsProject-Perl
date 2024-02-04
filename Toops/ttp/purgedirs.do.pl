@@ -104,7 +104,7 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='true'" );
+Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found dirpath='$opt_dirpath'" );
 Mods::Toops::msgVerbose( "found dircmd='$opt_dircmd'" );
 Mods::Toops::msgVerbose( "found keep='$opt_keep'" );

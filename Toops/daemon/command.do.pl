@@ -73,7 +73,7 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='true'" );
+Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found json='$opt_json'" );
 Mods::Toops::msgVerbose( "found command='$opt_command'" );
 

@@ -76,7 +76,7 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='true'" );
+Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found logsdir='".( $opt_logsdir ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found logsroot='".( $opt_logsroot ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found siteroot='".( $opt_siteroot ? 'true':'false' )."'" );

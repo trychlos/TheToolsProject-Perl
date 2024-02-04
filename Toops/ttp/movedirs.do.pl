@@ -117,7 +117,7 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='true'" );
+Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found sourcepath='$opt_sourcepath'" );
 Mods::Toops::msgVerbose( "found sourcecmd='$opt_sourcecmd'" );
 Mods::Toops::msgVerbose( "found targetpath='$opt_targetpath'" );

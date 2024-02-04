@@ -60,7 +60,7 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='true'" );
+Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found backuproot='".( $opt_backuproot ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found archiveroot='".( $opt_archiveroot ? 'true':'false' )."'" );
 

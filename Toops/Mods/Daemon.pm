@@ -126,7 +126,8 @@ sub daemonInitToops {
 	Mods::Toops::initSiteConfiguration();
 	Mods::Toops::initLogs();
 	my ( $volume, $directories, $file ) = File::Spec->splitpath( $ARGV[0] );
-	$file =~ s/\.[^.]+$//;
+	# keep the sufix when advertizing about the daemon
+	#$file =~ s/\.[^.]+$//;
 	my $TTPVars = Mods::Toops::TTPVars();
 	$TTPVars->{run}{daemon}{name} = $file;
 	$TTPVars->{run}{daemon}{started} = localtime->strftime( '%Y-%m-%d %H:%M:%S' );
@@ -139,7 +140,9 @@ sub daemonInitToops {
 sub getConfigByPath {
 	my ( $json ) = @_;
 	#Mods::Toops::msgVerbose( "Daemon::getConfigByPath() json='$json'" );
-	return Mods::Toops::evaluate( Mods::Toops::jsonRead( $json ));
+	my $res = Mods::Toops::evaluate( Mods::Toops::jsonRead( $json ));
+	return undef if ref( $res ) ne 'HASH' || !scalar keys %{$res};
+	return $res;
 }
 
 1;

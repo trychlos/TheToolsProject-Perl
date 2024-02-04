@@ -90,7 +90,7 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='true'" );
+Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
 Mods::Toops::msgVerbose( "found database='$opt_database'" );
 Mods::Toops::msgVerbose( "found full='".( $opt_full ? 'true':'false' )."'" );

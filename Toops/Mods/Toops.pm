@@ -623,7 +623,7 @@ sub msgLogIf {
 	my $withLog = true;
 	$withLog = $TTPVars->{config}{site}{toops}{$key} if $key and exists $TTPVars->{config}{site}{toops}{$key};
 	$withLog = $opts->{withLog} if exists $opts->{withLog};
-	Mods::Toops::msgLog( $msg ) if $withLog;
+	Mods::Toops::msgLogAppend( $msg ) if $withLog;
 }
 
 # -------------------------------------------------------------------------------------------------

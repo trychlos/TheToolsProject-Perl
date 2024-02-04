@@ -69,7 +69,7 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='true'" );
+Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 
