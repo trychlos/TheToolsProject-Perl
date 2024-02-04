@@ -55,7 +55,7 @@ sub doRestore {
 		Mods::Toops::execReportAppend({
 			instance => $opt_instance,
 			database => $opt_database,
-			restore => $opt_full,
+			full => $opt_full,
 			diff => $opt_diff
 		});
 	}

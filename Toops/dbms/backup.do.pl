@@ -57,7 +57,8 @@ sub doBackup {
 		instance => $opt_instance,
 		database => $opt_database,
 		mode => $mode,
-		backup => $res->{output}
+		output => $res->{output},
+		dummy => $opt_dummy
 	});
 	if( $res->{status} ){
 		Mods::Toops::msgOut( "success" );

@@ -154,13 +154,17 @@ sub _evaluatePrint {
 # - full run command
 sub execReportAppend {
 	my ( $data ) = @_;
-	$data->{command} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
+	# add some auto elements
+	$data->{cmdline} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
+	$data->{command} = $TTPVars->{run}{command}{basename};
+	$data->{verb} = $TTPVars->{run}{verb}{name};
 	$data->{host} = hostname;
 	$data->{code} = $TTPVars->{run}{exitCode};
 	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
-	my $path = $TTPVars->{config}{site}{toops}{execReport};
-	jsonAppend( $data, $path );
+	# and build the target full path
+	my $path = File::Spec->catdir( $TTPVars->{config}{site}{toops}{execReports}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
+	jsonWrite( $data, $path );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -496,6 +500,13 @@ sub jsonRead {
 # - the full path to be created
 sub jsonWrite {
 	my ( $hash, $path ) = @_;
+	msgVerbose( "jsonWrite().. to '$path'" );
+	my $json = JSON->new;
+	my $str = $json->encode( $hash );
+	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
+	makeDirExist( File::Spec->catdir( $vol, $dirs ));
+	# some daemons may monitor this file in order to be informed of various executions - make sure each record has an EOL
+	path( $path )->spew_utf8( $str.EOL );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -757,7 +768,7 @@ sub run {
 	$TTPVars->{run}{command}{path} = $0;
 	$TTPVars->{run}{command}{started} = Time::Moment->now;
 	my @command_args = @ARGV;
-	$TTPVars->{run}{command}{args} = \@command_args;
+	$TTPVars->{run}{command}{args} = \@ARGV;
 	my ( $volume, $directories, $file ) = File::Spec->splitpath( $TTPVars->{run}{command}{path} );
 	my $command = $file;
 	$TTPVars->{run}{command}{basename} = $command;

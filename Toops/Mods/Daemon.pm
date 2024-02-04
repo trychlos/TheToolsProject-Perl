@@ -138,7 +138,7 @@ sub daemonInitToops {
 # read the daemon configuration
 sub getConfigByPath {
 	my ( $json ) = @_;
-	Mods::Toops::msgVerbose( "Daemon::getConfigByPath() json='$json'" );
+	#Mods::Toops::msgVerbose( "Daemon::getConfigByPath() json='$json'" );
 	return Mods::Toops::evaluate( Mods::Toops::jsonRead( $json ));
 }
 
