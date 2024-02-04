@@ -6,6 +6,8 @@
 # Command-line arguments:
 # - the full path to the JSON configuration file
 #
+# Makes use of Toops, but is not part itself of Toops (though a not so bad example of application).
+#
 # Copyright (@) 2023-2024 PWI Consulting
 
 use strict;
@@ -41,6 +43,49 @@ my @runningScan = ();
 
 # store here the last found full database backup
 my $full = {};
+
+# -------------------------------------------------------------------------------------------------
+# happens that there are lot of situations where we will not be able to keep in memory the last full backup of a database
+# the first of these being the case where the daemon is restarted after a full backup has occured.
+# it we do not do something, it will not be able to restore anything until another full backup pass here..
+# we have two options:
+# - search locally for the last full backup
+# - or search remotely
+# Returns true if we have found (and made available) the last full backup, or false if we must give up
+my $searchForLastFull_data = {};
+
+sub searchForLastFull {
+	my ( $report, $content ) = @_;
+	my $res = false;
+
+	# search locally, based on TTP configuration
+	# hardcoding the expected format file name as host-instance-database ... -mode.backup
+	# this should be enough in most situations
+	my $dir = $daemonConfig->{localDir};
+	$searchForLastFull_data = {};
+	$searchForLastFull_data->{host} = $content->{host};
+	$searchForLastFull_data->{instance} = $content->{instance};
+	$searchForLastFull_data->{database} = $content->{database};
+	$searchForLastFull_data->{found} = [];
+	find( \&searchForLastFull_wanted, $dir );
+	if( scalar @{$searchForLastFull_data->{found}} ){
+		my @candidates = sort @{$searchForLastFull_data->{found}};
+		my $better = pop( @candidates );
+		Mods::Toops::msgVerbose( "found candidate for full backup '$better'" );
+		$full->{$content->{instance}}{$content->{database}} = $better;
+		$res = true;
+	}
+	if( !$res ){
+		Mods::Toops::msgLog( "CAUTION: unable to locally find a full backup for host='$content->{host}' instance='$content->{instance}' database='$content->{database}'" );
+	}
+
+	return $res;
+}
+
+sub searchForLastFull_wanted {
+	return unless /^$searchForLastFull_data->{host}-$searchForLastFull_data->{instance}-$searchForLastFull_data->{database}-[0-9]{6,6}-[0-9]{6,6}-full\.backup$/;
+	push( @{$searchForLastFull_data->{found}}, $File::Find::name );
+}
 
 # -------------------------------------------------------------------------------------------------
 # source file is file on the source host, specified in the source language (aka a local path rather than a network path)
@@ -103,8 +148,8 @@ sub doWithNew {
 						$full->{$instance}{$database} = $local;
 					} elsif( $mode eq "diff" ){
 						if( !exists( $full->{$instance}{$database} ) || !$full->{$instance}{$database} || !length( $full->{$instance}{$database} )){
-							Mods::Toops::msgWarn( "host='$data->{host}' instance='$instance' database='$database' found diff backup, but no previous full" );
-							$executable = false;
+							Mods::Toops::msgWarn( "host='$data->{host}' instance='$instance' database='$database' found diff backup, but no previous full is recorded" );
+							$executable = searchForLastFull( $report, $data );
 						}
 					} else {
 						Mods::Toops::msgErr( "host='$data->{host}' instance='$instance' database='$database' mode='$mode': mode is unknown" );
