@@ -125,7 +125,7 @@ sub daemonInitToops {
 	my ( $program ) = @_;
 	Mods::Toops::initSiteConfiguration();
 	Mods::Toops::initLogs();
-	my ( $volume, $directories, $file ) = File::Spec->splitpath( $ARGV[0] );
+	my ( $volume, $directories, $file ) = File::Spec->splitpath( $program );
 	# keep the sufix when advertizing about the daemon
 	#$file =~ s/\.[^.]+$//;
 	my $TTPVars = Mods::Toops::TTPVars();
