@@ -71,6 +71,7 @@ our $TTPVars = {
 # exec or dummy exec depending of the global dummy flag
 sub dummyExec {
 	my ( $command ) = @_;
+	msgVerbose( "dummyExec() command='$command'" );
 	my $res = undef;
 	if( $TTPVars->{run}{dummy} ){
 		Mods::MessageLevel::print({
@@ -80,6 +81,7 @@ sub dummyExec {
 		});
 		$res = true;
 	} else {
+		print "eval command".EOL;
 		$res = eval { $command };
 	}
 	return $res;
@@ -569,7 +571,7 @@ sub moveDir {
 	if( !errs()){
 		msgVerbose( "Toops::moveDir() moving '$source' to 'target'" );
 		my @list = ();
-		dummyExec( makeDirExist( $target ));
+		dummyExec( \&makeDirExist( $target ));
 		while ( my $it = readdir( FD )){
 			next if $it eq "." or $it eq "..";
 			my $srcpath = File::Spec->catdir( $source, $it );
@@ -579,7 +581,7 @@ sub moveDir {
 				next;
 			}
 			msgVerbose( "Toops::moveDir() moving '$srcpath' to '$dstpath'" );
-			dummyExec( move( $srcpath, $dstpath ));
+			dummyExec( \&move( $srcpath, $dstpath ));
 		}
 		closedir( FD );
 		msgVerbose( "Toops::moveDir() removing '$source'" );

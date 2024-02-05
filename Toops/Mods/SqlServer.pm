@@ -55,18 +55,24 @@ BACKUP DATABASE $parms->{database} TO DISK='$parms->{output}' WITH $options, NAM
 }
 
 # ------------------------------------------------------------------------------------------------
-# returns the first account defined for the named instance
+# execute a SQL command and returns its result
+# doesn't try to capture the output at the moment
+# doesn't honor '--dummy' option when the command is a SELECT sentence
 sub apiExecSqlCommand {
 	my ( $me, $dbms, $sql ) = @_;
 	my $result = undef;
 	my $sqlsrv = undef;
-	Mods::Toops::msgErr( "SqlServer::apiExecSqlCommand() instance is mandaotry, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
+	Mods::Toops::msgErr( "SqlServer::apiExecSqlCommand() instance is mandatory, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
 	if( !Mods::Toops::errs()){
 		Mods::Toops::msgVerbose( "SqlServer::apiExecSqlCommand() entering with instance='$dbms->{instance}{name}'" );
 		$sqlsrv = Mods::SqlServer::_connect( $dbms );
 	}
 	if( !Mods::Toops::errs() && $sqlsrv ){
-		$result = $sqlsrv->sql( $sql );
+		if( $sql =~ /^SELECT /i ){
+			$result = $sqlsrv->sql( $sql );
+		} else {
+			$result = sqlNoResult( $dbms, { sql => $sql });
+		}
 	}
 	return $result;
 }
@@ -334,14 +340,12 @@ sub sqlNoResult {
 	}
 	if( !Mods::Toops::errs()){
 		Mods::Toops::msgVerbose( "SqlServer::sqlNoResult() executing '$parms->{sql}'" );
-		#if( exists( $parms->{dummy} ) && $parms->{dummy} ){
-		#	Mods::Toops::dummyRun( "executing '$parms->{sql}'" );
-		#	$result = true;
-		#} else {
-		$result = Mods::Toops::dummyRun {
-			my $merged = capture_merged {
-				$sqlsrv->sql( $parms->{sql}, Win32::SqlServer::NORESULT );
-			};
+		my $TTPVars = Mods::Toops::TTPVars();
+		if( $TTPVars->{run}{dummy} ){
+			Mods::Toops::dummyExec( $parms->{sql} );
+			$result = true;
+		} else {
+			my $merged = capture_merged { $sqlsrv->sql( $parms->{sql}, Win32::SqlServer::NORESULT )};
 			my @merged = split( /[\r\n]/, $merged );
 			foreach my $line ( @merged ){
 				chomp( $line );
@@ -350,8 +354,8 @@ sub sqlNoResult {
 				print " $line".EOL if length $line;
 			}
 			delete $sqlsrv->{ErrInfo}{Messages};
-			return $sqlsrv->sql_has_errors() ? false : true;
-		};
+			$result = $sqlsrv->sql_has_errors() ? false : true;
+		}
 	}
 	Mods::Toops::msgVerbose( "SqlServer::sqlNoResult() returns '".( $result ? 'true':'false' )."'" );
 	return $result;

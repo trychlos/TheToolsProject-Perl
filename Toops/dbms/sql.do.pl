@@ -3,7 +3,7 @@
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
-# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --instance=<name>       acts on the named instance [${instance}]
 # @(-) --[no]stdin             whether the sql command has to be read from stdin [${stdin}]
 # @(-) --script=<filename>     the sql script filename [${script}]
@@ -12,6 +12,7 @@
 # @(@) The provided SQL script may or may not have a displayable result. Nonetheless, this verb will always display all the script output.
 # @(@) In a Windows command prompt, use Ctrl+Z to terminate the stdin stream (or use a HERE document).
 # @(@) Use Ctrl+D in a Unix terminal.
+# @(@) '--dummy' option is ignored when SQL command is a SELECT sentence.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 

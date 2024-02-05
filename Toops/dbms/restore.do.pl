@@ -3,7 +3,7 @@
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
-# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --instance=<name>       Sql Server instance name [${instance}]
 # @(-) --database=<name>       target database name [${database}]
 # @(-) --full=<filename>       restore from this full backup [${full}]
@@ -11,7 +11,7 @@
 # @(-) --[no]verifyonly        only check the backup restorability [${verifyonly}]
 #
 # @(@) You must at least provide a full backup to restore, and may also provide an additional differential backup file.
-# @(@) Target database is mandatory unless you just want a backup restorability check.
+# @(@) Target database is mandatory unless you just want a backup restorability check, in which case '--dummy' option is not honored.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
