@@ -340,11 +340,8 @@ sub sqlNoResult {
 	}
 	if( !Mods::Toops::errs()){
 		Mods::Toops::msgVerbose( "SqlServer::sqlNoResult() executing '$parms->{sql}'" );
-		my $TTPVars = Mods::Toops::TTPVars();
-		if( $TTPVars->{run}{dummy} ){
-			Mods::Toops::dummyExec( $parms->{sql} );
-			$result = true;
-		} else {
+		$result = Mods::Toops::msgDummy( $parms->{sql} );
+		if( !Mods::Toops::wantsDummy()){
 			my $merged = capture_merged { $sqlsrv->sql( $parms->{sql}, Win32::SqlServer::NORESULT )};
 			my @merged = split( /[\r\n]/, $merged );
 			foreach my $line ( @merged ){

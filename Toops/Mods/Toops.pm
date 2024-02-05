@@ -68,26 +68,6 @@ our $TTPVars = {
 };
 
 # -------------------------------------------------------------------------------------------------
-# exec or dummy exec depending of the global dummy flag
-sub dummyExec {
-	my ( $command ) = @_;
-	msgVerbose( "dummyExec() command='$command'" );
-	my $res = undef;
-	if( $TTPVars->{run}{dummy} ){
-		Mods::MessageLevel::print({
-			msg => $command,
-			level => DUMMY,
-			withColor => $TTPVars->{run}{colored}
-		});
-		$res = true;
-	} else {
-		print "eval command".EOL;
-		$res = eval { $command };
-	}
-	return $res;
-}
-
-# -------------------------------------------------------------------------------------------------
 # Dump the internal variables
 sub dump {
 	foreach my $key ( keys %{$TTPVars} ){
@@ -590,6 +570,19 @@ sub moveDir {
 }
 
 # -------------------------------------------------------------------------------------------------
+# dummy message
+sub msgDummy {
+	if( $TTPVars->{run}{dummy} ){
+		Mods::MessageLevel::print({
+			msg => shift,
+			level => DUMMY,
+			withColor => $TTPVars->{run}{colored}
+		});
+	}
+	return true;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Error message - always logged
 sub msgErr {
 	Mods::MessageLevel::print({
@@ -900,6 +893,12 @@ sub ttpExit {
 # Used by verbs to access our global variables
 sub TTPVars {
 	return $TTPVars;
+}
+
+# -------------------------------------------------------------------------------------------------
+# whether we are running in dummy mode
+sub wantsDummy {
+	return $TTPVars->{run}{dummy};
 }
 
 # -------------------------------------------------------------------------------------------------
