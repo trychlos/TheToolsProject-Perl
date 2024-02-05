@@ -75,7 +75,7 @@ sub checkDatabaseExists {
 	if( !Mods::Toops::errs()){
 		my $dbms = Mods::Dbms::_buildDbms();
 		my $list = Mods::Dbms::getLiveDatabases( $dbms );
-		$exists = true if grep( /$database/, @{$list} );
+		$exists = true if grep( /$database/i, @{$list} );
 	}
 	Mods::Toops::msgVerbose( "checkDatabaseExists() returning ".( $exists ? 'true' : 'false' ));
 	return $exists;
