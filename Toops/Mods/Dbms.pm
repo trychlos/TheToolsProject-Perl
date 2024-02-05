@@ -328,6 +328,8 @@ sub toPackage {
 		Module::Load::load( $package );
 		if( $package->can( $fname )){
 			$result = $package->$fname( $dbms, $parms );
+		} else {
+			Mods::Toops::msgWarn( "Dbms::toPackage() package '$package' says it cannot '$fname'" );
 		}
 	} else {
 		Mods::Toops::msgErr( "unable to find a package to address '$dbms->{instance}{name}' instance" );

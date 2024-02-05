@@ -803,7 +803,9 @@ sub run {
 		$TTPVars->{run}{help} = scalar @ARGV ? false : true;
 		$TTPVars->{run}{verb}{path} = File::Spec->catdir( $TTPVars->{run}{command}{verbsDir}, $TTPVars->{run}{verb}{name}.$TTPVars->{Toops}{verbSufix} );
 		if( -f $TTPVars->{run}{verb}{path} ){
-			eval { do $TTPVars->{run}{verb}{path}; };
+			unless( defined do $TTPVars->{run}{verb}{path} ){
+				msgErr( "do $TTPVars->{run}{verb}{path}: ".( $! || $@ ));
+			}
 		} else {
 			Mods::Toops::msgErr( "script not found or not readable: '$TTPVars->{run}{verb}{path}' (most probably, '$TTPVars->{run}{verb}{name}' is not a valid verb)" );
 		}
