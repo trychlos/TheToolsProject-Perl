@@ -2,6 +2,8 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
 #
 # @(@) The Tools Project is able to manage any daemons with these very same verbs.
@@ -21,6 +23,8 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
 	json => ''
 };
 
@@ -44,6 +48,8 @@ sub doStop {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"json=s"			=> \$opt_json )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
@@ -56,6 +62,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found json='$opt_json'" );
 
 # the json is mandatory

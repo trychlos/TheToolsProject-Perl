@@ -11,6 +11,7 @@ use Data::Dumper;
 use File::Path;
 use File::Spec;
 use Module::Load;
+#use Module::Runtime;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
@@ -22,7 +23,6 @@ use Mods::Toops;
 # - database: mandatory
 # - output: optional
 # - mode: full-diff, defaulting to 'full'
-# - dummy: true|false, defaulting to false
 # return a hash reference with:
 # - status: true|false
 # - output: the output filename (even if provided on input)
@@ -320,21 +320,26 @@ sub setInstanceByName {
 #  and returns the result
 sub toPackage {
 	my ( $fname, $dbms, $parms ) = @_;
-	Mods::Toops::msgVerbose( "Dbms::toPackage() entering with fname='".( $fname || '(undef)' )."'" );
-	$dbms = Mods::Dbms::_buildDbms() if !$dbms;
-	my $package = $dbms->{config}{DBMSInstances}{$dbms->{instance}{name}}{package};
 	my $result = undef;
-	if( $package ){
-		Module::Load::load( $package );
-		if( $package->can( $fname )){
-			$result = $package->$fname( $dbms, $parms );
+	Mods::Toops::msgErr( "Dbms::toPackage() function name must be specified" ) if !$fname;
+	if( !Mods::Toops::errs()){
+		Mods::Toops::msgVerbose( "Dbms::toPackage() entering with fname='".( $fname || '(undef)' )."'" );
+		$dbms = Mods::Dbms::_buildDbms() if !$dbms;
+		my $package = $dbms->{config}{DBMSInstances}{$dbms->{instance}{name}}{package};
+		Mods::Toops::msgVerbose( "Dbms::toPackage() package='".( $package || '(undef)' )."'" );
+		if( $package ){
+			Module::Load::load( $package );
+			#Module::Runtime::use_module( $package );
+			if( $package->can( $fname )){
+				$result = $package->$fname( $dbms, $parms );
+			} else {
+				Mods::Toops::msgWarn( "Dbms::toPackage() package '$package' says it cannot '$fname'" );
+			}
 		} else {
-			Mods::Toops::msgWarn( "Dbms::toPackage() package '$package' says it cannot '$fname'" );
+			Mods::Toops::msgErr( "unable to find a package to address '$dbms->{instance}{name}' instance" );
 		}
-	} else {
-		Mods::Toops::msgErr( "unable to find a package to address '$dbms->{instance}{name}' instance" );
+		Mods::Toops::msgVerbose( "Dbms::toPackage() returning with result='".( $result || '(undef)' )."'" );
 	}
-	Mods::Toops::msgVerbose( "Dbms::toPackage() returning with result='".( $result || '(undef)' )."'" );
 	return $result;
 }
 

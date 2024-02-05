@@ -1,8 +1,9 @@
 # @(#) run a database backup
 #
 # @(-) --[no]help              print this message, and exit [${help}]
-# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --instance=<name>       Sql Server instance name [${instance}]
 # @(-) --database=<name>       database name [${database}]
 # @(-) --[no]full              operate a full backup [${full}]
@@ -25,6 +26,7 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
 	dummy => 'no',
 	instance => 'MSSQLSERVER',
 	database => '',
@@ -33,7 +35,6 @@ my $defaults = {
 	output => 'DEFAUT'
 };
 
-my $opt_dummy = false;
 my $opt_instance = $defaults->{instance};
 my $opt_database = $defaults->{database};
 my $opt_full = false;
@@ -50,15 +51,14 @@ sub doBackup {
 		instance => $opt_instance,
 		database => $opt_database,
 		output => $opt_output,
-		mode => $mode,
-		dummy => $opt_dummy
+		mode => $mode
 	});
 	Mods::Toops::execReportAppend({
 		instance => $opt_instance,
 		database => $opt_database,
 		mode => $mode,
 		output => $res->{output},
-		dummy => $opt_dummy
+		dummy => $TTPVars->{run}{dummy}
 	});
 	if( $res->{status} ){
 		Mods::Toops::msgOut( "success" );
@@ -74,7 +74,8 @@ sub doBackup {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"dummy!"			=> \$opt_dummy,
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"instance=s"		=> \$opt_instance,
 	"database=s"		=> \$opt_database,
 	"full!"				=> \$opt_full,
@@ -91,6 +92,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
 Mods::Toops::msgVerbose( "found database='$opt_database'" );
 Mods::Toops::msgVerbose( "found full='".( $opt_full ? 'true':'false' )."'" );

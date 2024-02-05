@@ -2,6 +2,8 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]commands          list the available commands [${commands}]
 # @(-) --[no]services          list the defined services on this host [${services}]
 #
@@ -16,6 +18,8 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
 	commands => 'no',
 	services => 'no'
 };
@@ -29,7 +33,7 @@ sub listCommands {
 	Mods::Toops::msgOut( "displaying available commands..." );
 	my @commands = Mods::Toops::getAvailableCommands();
 	foreach my $it ( @commands ){
-		Mods::Toops::commandDisplayOneLineHelp( $it, { prefix => ' ' });
+		Mods::Toops::helpCommandOneline( $it, { prefix => ' ' });
 	}
 	Mods::Toops::msgOut( scalar @commands." found command(s)" );
 }
@@ -57,6 +61,8 @@ sub listServices {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"commands!"			=> \$opt_commands,
 	"services!"			=> \$opt_services )){
 
@@ -70,6 +76,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 

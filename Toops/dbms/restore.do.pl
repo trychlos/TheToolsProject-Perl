@@ -2,6 +2,8 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --instance=<name>       Sql Server instance name [${instance}]
 # @(-) --database=<name>       target database name [${database}]
 # @(-) --full=<filename>       restore from this full backup [${full}]
@@ -20,6 +22,8 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
 	instance => 'MSSQLSERVER',
 	database => '',
 	full => '',
@@ -73,6 +77,8 @@ sub doRestore {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"instance=s"		=> \$opt_instance,
 	"database=s"		=> \$opt_database,
 	"full=s"			=> \$opt_full,
@@ -89,6 +95,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
 Mods::Toops::msgVerbose( "found database='$opt_database'" );
 Mods::Toops::msgVerbose( "found full='$opt_full'" );

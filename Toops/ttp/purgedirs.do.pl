@@ -2,6 +2,8 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --dirpath=s             the source path [${dirpath}]
 # @(-) --dircmd=s              the command which will give the source path [${dircmd}]
 # @(-) --keep=s                count of to-be-kept directories [${keep}]
@@ -17,6 +19,8 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
 	dirpath => '',
 	dircmd => '',
 	keep => '0'
@@ -91,6 +95,8 @@ sub _targetPath {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"dirpath=s"			=> \$opt_dirpath,
 	"dircmd=s"			=> \$opt_dircmd,
 	"keep=s"			=> \$opt_keep )){
@@ -105,6 +111,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found dirpath='$opt_dirpath'" );
 Mods::Toops::msgVerbose( "found dircmd='$opt_dircmd'" );
 Mods::Toops::msgVerbose( "found keep='$opt_keep'" );

@@ -5,7 +5,9 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
-# @(-) --me=<name>             the name of the environment variable which holds the workload name [${me}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --workload=<name>       the workload name [${workload}]
 # @(-) --commands=<name>       the name of the environment variable which holds the commands [${commands}]
 # @(-) --start=<name>          the name of the environment variable which holds the starting timestamp [${start}]
 # @(-) --end=<name>            the name of the environment variable which holds the ending timestamp [${end}]
@@ -23,7 +25,9 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
-	me => 'ME',
+	colored => 'no',
+	dummy => 'no',
+	workload => '',
 	commands => 'command',
 	start => 'start',
 	end => 'end',
@@ -31,7 +35,7 @@ my $defaults = {
 	count => 0
 };
 
-my $opt_me = $defaults->{me};
+my $opt_workload = $defaults->{workload};
 my $opt_commands = $defaults->{commands};
 my $opt_start = $defaults->{start};
 my $opt_end = $defaults->{end};
@@ -40,9 +44,8 @@ my $opt_count = $defaults->{count};
 
 # -------------------------------------------------------------------------------------------------
 # pad the provided string until the specified length
-sub pad {
-	my( $str, $length, $pad ) = @_;
-	return Mods::Toops::pad( $str, $length, $pad );
+sub _pad {
+	return Mods::Toops::pad( @_ );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -53,6 +56,7 @@ sub printSummary {
 	my $maxLength = 0;
 	for( my $i=1 ; $i<=$opt_count ; ++$i ){
 		my $command = $ENV{$opt_commands.'['.$i.']'};
+		Mods::Toops::msgVerbose( "pushing i=$i command='$command'" );
 		push( @results, {
 			command => $command,
 			start => $ENV{$opt_start.'['.$i.']'},
@@ -65,14 +69,15 @@ sub printSummary {
 	}
 	# display the summary
 	my $totLength = $maxLength + 63;
-	print pad( "+", $totLength-1, '=' )."+".EOL;
-	print pad( "| $ENV{$opt_me} WORKLOAD SUMMARY", $totLength-1, ' ' )."|".EOL;
-	print pad( "|", $maxLength+8, ' ' ).pad( "started at", 25, ' ' ).pad( "ended at", 25, ' ' )." RC |".EOL;
-	print pad( "+", $maxLength+6, '-' ).pad( "+", 25, '-' ).pad( "+", 25, '-' )."+-----+".EOL;
+	print _pad( "+", $totLength-1, '=' )."+".EOL;
+	print _pad( "| $ENV{$opt_me} WORKLOAD SUMMARY", $totLength-1, ' ' )."|".EOL;
+	print _pad( "|", $maxLength+8, ' ' )._pad( "started at", 25, ' ' )._pad( "ended at", 25, ' ' )." RC |".EOL;
+	print _pad( "+", $maxLength+6, '-' )._pad( "+", 25, '-' )._pad( "+", 25, '-' )."+-----+".EOL;
 	foreach my $it ( @results ){
-		print pad( "| $it->{command}", $maxLength+6, ' ' ).pad( "| $it->{start}", 25, ' ' ).pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
+		Mods::Toops::msgVerbose( "printing i=$i execution report" );
+		print _pad( "| $it->{command}", $maxLength+6, ' ' )._pad( "| $it->{start}", 25, ' ' )._pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
 	}
-	print "+".pad( "", $totLength-2, '=' )."+".EOL;
+	print "+"._pad( "", $totLength-2, '=' )."+".EOL;
 }
 
 # =================================================================================================
@@ -82,7 +87,9 @@ sub printSummary {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"me=s"				=> \$opt_me,
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"workload=s"		=> \$opt_workload,
 	"commands=s"		=> \$opt_commands,
 	"start=s"			=> \$opt_start,
 	"end=s"				=> \$opt_end,
@@ -99,7 +106,9 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found me='$opt_me'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found workload='$opt_workload'" );
 Mods::Toops::msgVerbose( "found commands='$opt_commands'" );
 Mods::Toops::msgVerbose( "found start='$opt_start'" );
 Mods::Toops::msgVerbose( "found end='$opt_end'" );

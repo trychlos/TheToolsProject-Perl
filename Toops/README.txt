@@ -69,6 +69,11 @@ TTPVars:
 		# when run by a daemon
 		daemon
 
+# when writing and using new commands or verbs
+# --------------------------------------------
+For debugging purposes workload.cmd may take additional arguments, sayf or example -dummy, -verbose, -nocolored
+As these additional arguments will be passed to each and every executed TTP command/verb, all these must at least *support* (if not honor) these standard arguments.
+
 TODO
     1 24- 1-29 Toops::getOptions doesn't work as we do not know how to pass arguments to GetOptions()
 	

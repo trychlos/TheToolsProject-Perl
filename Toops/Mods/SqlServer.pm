@@ -28,7 +28,6 @@ my $systemDatabases = [
 # - database: mandatory
 # - output: mandatory
 # - mode: mandatory, full|diff
-# - dummy: true|false, defaulting to false
 # return true|false
 sub apiBackupDatabase {
 	my ( $me, $dbms, $parms ) = @_;
@@ -324,7 +323,6 @@ sub _restoreDatabaseVerify {
 # parms is a hash ref with keys:
 # - instance|sqlsrv: mandatory
 # - sql: mandatory
-# - dummy: true|false, defaulting to false
 # return true|false
 sub sqlNoResult {
 	my ( $dbms, $parms ) = @_;
@@ -336,14 +334,14 @@ sub sqlNoResult {
 	}
 	if( !Mods::Toops::errs()){
 		Mods::Toops::msgVerbose( "SqlServer::sqlNoResult() executing '$parms->{sql}'" );
-		if( exists( $parms->{dummy} ) && $parms->{dummy} ){
-			Mods::Toops::msgDummy( "executing '$parms->{sql}'" );
-			$result = true;
-		} else {
+		#if( exists( $parms->{dummy} ) && $parms->{dummy} ){
+		#	Mods::Toops::dummyRun( "executing '$parms->{sql}'" );
+		#	$result = true;
+		#} else {
+		$result = Mods::Toops::dummyRun {
 			my $merged = capture_merged {
 				$sqlsrv->sql( $parms->{sql}, Win32::SqlServer::NORESULT );
 			};
-			$result = $sqlsrv->sql_has_errors() ? false : true;
 			my @merged = split( /[\r\n]/, $merged );
 			foreach my $line ( @merged ){
 				chomp( $line );
@@ -352,7 +350,8 @@ sub sqlNoResult {
 				print " $line".EOL if length $line;
 			}
 			delete $sqlsrv->{ErrInfo}{Messages};
-		}
+			return $sqlsrv->sql_has_errors() ? false : true;
+		};
 	}
 	Mods::Toops::msgVerbose( "SqlServer::sqlNoResult() returns '".( $result ? 'true':'false' )."'" );
 	return $result;

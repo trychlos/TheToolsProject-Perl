@@ -2,6 +2,8 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --instance=<name>       acts on the named instance [${instance}]
 # @(-) --[no]stdin             whether the sql command has to be read from stdin [${stdin}]
 # @(-) --script=<filename>     the sql script filename [${script}]
@@ -24,6 +26,8 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
 	instance => 'MSSQLSERVER',
 	stdin => 'no',
 	script => '',
@@ -60,6 +64,8 @@ sub execSqlScript {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"instance=s"		=> \$opt_instance,
 	"stdin!"			=> \$opt_stdin,
 	"script=s"			=> \$opt_script,
@@ -75,6 +81,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
 Mods::Toops::msgVerbose( "found stdin='".( $opt_stdin ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found script='$opt_script'" );

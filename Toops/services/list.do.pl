@@ -2,6 +2,8 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]dbms              list defined DBMS instances [${dbms}]
 # @(-) --[no]services          list defined services [${services}]
 # @(-) --[no]hidden            also display hidden services [${hidden}]
@@ -25,6 +27,8 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
 	dbms => 'no',
 	services => 'no',
 	hidden => 'no',
@@ -176,6 +180,8 @@ sub printWorkloadTaskData {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"dbms!"				=> \$opt_dbms,
 	"services!"			=> \$opt_services,
 	"hidden!"			=> \$opt_hidden,
@@ -193,6 +199,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found dbms='".( $opt_dbms ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found hidden='".( $opt_hidden ? 'true':'false' )."'" );

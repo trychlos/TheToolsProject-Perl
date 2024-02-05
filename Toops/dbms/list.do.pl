@@ -2,6 +2,8 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --instance=<name>       acts on the named instance [${instance}]
 # @(-) --[no]listdb            list the databases of the named instance [${listdb}]
 # @(-) --database=<name>       acts on the named database [${database}]
@@ -19,6 +21,8 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
 	instance => 'MSSQLSERVER',
 	listdb => 'no',
 	database => '',
@@ -61,6 +65,8 @@ sub listTables {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"instance=s"		=> \$opt_instance,
 	"listdb!"			=> \$opt_listdb,
 	"database=s"		=> \$opt_database,
@@ -76,6 +82,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
 Mods::Toops::msgVerbose( "found listdb='".( $opt_listdb ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found database='$opt_database'" );

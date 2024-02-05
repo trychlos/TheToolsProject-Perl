@@ -2,6 +2,8 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]backuproot        display the root (non daily) of the DBMS backup path [${backuproot}]
 # @(-) --[no]archiveroot       display the root (non daily) of the DBMS archive path [${archiveroot}]
 #
@@ -17,6 +19,8 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
 	backuproot => 'no',
 	archiveroot => 'no'
 };
@@ -48,6 +52,8 @@ sub listBackuproot {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"backuproot!"		=> \$opt_backuproot,
 	"archiveroot!"		=> \$opt_archiveroot )){
 
@@ -61,6 +67,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found backuproot='".( $opt_backuproot ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found archiveroot='".( $opt_archiveroot ? 'true':'false' )."'" );
 

@@ -14,19 +14,15 @@ use Getopt::Long;
 use JSON;
 use Path::Tiny qw( path );
 use Sys::Hostname qw( hostname );
-use Term::ANSIColor;
 use Test::Deep;
 use Time::Moment;
 use Time::Piece;
-use Win32::Console::ANSI;
 
 use Mods::Constants qw( :all );
+use Mods::MessageLevel qw( :all );
 
 # autoflush STDOUT
 $| = 1;
-
-# make sure colors are resetted after end of line
-$Term::ANSIColor::EACHLINE = EOL;
 
 # store here our Toops variables
 our $TTPVars = {
@@ -65,9 +61,29 @@ our $TTPVars = {
 	run => {
 		exitCode => 0,
 		help => false,
-		verbose => false
+		verbose => false,
+		dummy => false,
+		colored => true
 	}
 };
+
+# -------------------------------------------------------------------------------------------------
+# exec or dummy exec depending of the global dummy flag
+sub dummyExec {
+	my ( $command ) = @_;
+	my $res = undef;
+	if( $TTPVars->{run}{dummy} ){
+		Mods::MessageLevel::print({
+			msg => $command,
+			level => DUMMY,
+			withColor => $TTPVars->{run}{colored}
+		});
+		$res = true;
+	} else {
+		$res = eval { $command };
+	}
+	return $res;
+}
 
 # -------------------------------------------------------------------------------------------------
 # Dump the internal variables
@@ -537,7 +553,7 @@ sub makeDirExist {
 		while( scalar @levels ){
 			my $level = shift @levels;
 			my $dir = File::Spec->catpath( $volume, $candidate, $level );
-			mkdir $dir;
+			dummyExec( mkdir $dir );
 			$candidate = File::Spec->catdir(  $candidate, $level );
 		}
 	} else {
@@ -547,14 +563,13 @@ sub makeDirExist {
 
 # -------------------------------------------------------------------------------------------------
 # (recursively) move a directory from a source to a target
-# 
 sub moveDir {
 	my ( $source, $target ) = @_;
 	opendir( FD, "$source" ) || msgErr( "unable to open directory $source: $!" );
 	if( !errs()){
 		msgVerbose( "Toops::moveDir() moving '$source' to 'target'" );
 		my @list = ();
-		makeDirExist( $target );
+		dummyExec( makeDirExist( $target ));
 		while ( my $it = readdir( FD )){
 			next if $it eq "." or $it eq "..";
 			my $srcpath = File::Spec->catdir( $source, $it );
@@ -564,7 +579,7 @@ sub moveDir {
 				next;
 			}
 			msgVerbose( "Toops::moveDir() moving '$srcpath' to '$dstpath'" );
-			move( $srcpath, $dstpath );
+			dummyExec( move( $srcpath, $dstpath ));
 		}
 		closedir( FD );
 		msgVerbose( "Toops::moveDir() removing '$source'" );
@@ -573,25 +588,14 @@ sub moveDir {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Dummy execution
-sub msgDummy {
-	my $msg = shift;
-	my $line = msgPrefix()."(dummy) $msg";
-	Mods::Toops::msgLogAppend( $line );
-	print color( 'cyan' );
-	print STDOUT $line.EOL;
-	print color( 'reset' );
-}
-
-# -------------------------------------------------------------------------------------------------
 # Error message - always logged
 sub msgErr {
-	my $msg = shift;
-	my $line = msgPrefix()."(ERR) $msg";
-	Mods::Toops::msgLogAppend( $line );
-	print color( 'bold red' );
-	print STDERR $line.EOL;
-	print color( 'reset' );
+	Mods::MessageLevel::print({
+		msg => shift,
+		level => ERR,
+		handle => \*STDERR,
+		withColor => $TTPVars->{run}{colored}
+	});
 	$TTPVars->{run}{exitCode} += 1;
 }
 
@@ -674,27 +678,33 @@ sub msgPrefix {
 sub msgVerbose {
 	my $msg = shift;
 	my $opts = shift || {};
-	my $line = Mods::Toops::msgPrefix()."(VERB) $msg";
+	#my $line = Mods::Toops::msgPrefix()."(VERB) $msg";
+	# be verbose to console ?
 	my $verbose = false;
 	$verbose = $TTPVars->{run}{verbose} if exists( $TTPVars->{run}{verbose} );
 	$verbose = $opts->{verbose} if exists( $opts->{verbose} );
-	if( $verbose ){
-		print color( 'bright_blue' );
-		print $line.EOL;
-		print color( 'reset' );
-	}
-	Mods::Toops::msgLogIf( $line, $opts, 'msgVerbose' );
+	# be verbose in log ?
+	my $withLog = true;
+	$withLog = $TTPVars->{config}{site}{toops}{msgVerbose}{withLog} if exists $TTPVars->{config}{site}{toops}{msgVerbose}{withLog};
+	$withLog = $opts->{withLog} if exists $opts->{withLog};
+	Mods::MessageLevel::print({
+		msg => $msg,
+		level => VERBOSE,
+		withConsole => $verbose,
+		withColor => $TTPVars->{run}{colored},
+		withLog => $withLog
+	});
 }
 
 # -------------------------------------------------------------------------------------------------
 # Warning message - always logged
+# (E):
+# - the single warning message
 sub msgWarn {
-	my $msg = shift;
-	my $line = Mods::Toops::msgPrefix()."(WARN) $msg";
-	Mods::Toops::msgLogAppend( $line );
-	print color( 'bright_yellow' );
-	print STDERR $line.EOL;
-	print color( 'reset' );
+	Mods::MessageLevel::print({
+		msg => shift,
+		level => WARN
+	});
 }
 
 # -------------------------------------------------------------------------------------------------

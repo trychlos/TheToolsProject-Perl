@@ -2,6 +2,8 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --emitter=<name>        the emitter's name [${emitter}]
 # @(-) --level=<name>          the alert level [${level}]
 # @(-) --message=<name>        the alert message [${message}]
@@ -22,6 +24,8 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
 	emitter => '',
 	level => 'INFO',
 	message => ''
@@ -57,6 +61,8 @@ sub doSend {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"emitter=s"			=> \$opt_emitter,
 	"level=s"			=> \$opt_level,
 	"message=s"			=> \$opt_message )){
@@ -71,6 +77,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found emitter='$opt_emitter'" );
 Mods::Toops::msgVerbose( "found level='$opt_level'" );
 Mods::Toops::msgVerbose( "found message='$opt_message'" );

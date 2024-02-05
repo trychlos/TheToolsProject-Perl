@@ -2,6 +2,8 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]logsdir           display the current Toops logs directory [${logsdir}]
 # @(-) --[no]logsroot          display the Toops logs Root (not daily) [${logsroot}]
 # @(-) --[no]siteroot          display the site-defined root path [${siteroot}]
@@ -19,6 +21,8 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
 	logsdir => 'no',
 	logsroot => 'no',
 	siteroot => 'no',
@@ -62,6 +66,8 @@ sub listArchivepath {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"logsdir!"			=> \$opt_logsdir,
 	"logsroot!"			=> \$opt_logsroot,
 	"siteroot!"			=> \$opt_siteroot,
@@ -77,6 +83,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found logsdir='".( $opt_logsdir ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found logsroot='".( $opt_logsroot ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found siteroot='".( $opt_siteroot ? 'true':'false' )."'" );

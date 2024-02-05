@@ -2,6 +2,8 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --sourcepath=s          the source path [${sourcepath}]
 # @(-) --sourcecmd=s           the command which will give the source path [${sourcecmd}]
 # @(-) --targetpath=s          the target path [${targetpath}]
@@ -19,6 +21,8 @@ my $TTPVars = Mods::Toops::TTPVars();
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
 	sourcepath => '',
 	sourcecmd => '',
 	targetpath => '',
@@ -64,6 +68,8 @@ sub doMoveDirs {
 		my @keep = ();
 		if( $opt_keep >= scalar @list ){
 			msgOut( "found ".scalar @list." item(s) in '$opt_sourcepath' while wanting keep $opt_keep: nothing to do" );
+		} elsif( !$opt_keep ){
+				msgVerbose( "keep='$opt_keep': doesn't keep anything in the source" );
 		} else {
 			for( my $i=0 ; $i<$opt_keep ; ++$i ){
 				my $it = shift( @list );
@@ -101,6 +107,8 @@ sub _targetPath {
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"sourcepath=s"		=> \$opt_sourcepath,
 	"sourcecmd=s"		=> \$opt_sourcecmd,
 	"targetpath=s"		=> \$opt_targetpath,
@@ -118,6 +126,8 @@ if( Mods::Toops::wantsHelp()){
 }
 
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found sourcepath='$opt_sourcepath'" );
 Mods::Toops::msgVerbose( "found sourcecmd='$opt_sourcecmd'" );
 Mods::Toops::msgVerbose( "found targetpath='$opt_targetpath'" );
