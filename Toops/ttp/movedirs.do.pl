@@ -68,6 +68,8 @@ sub doMoveDirs {
 		my @keep = ();
 		if( $opt_keep >= scalar @list ){
 			msgOut( "found ".scalar @list." item(s) in '$opt_sourcepath' while wanting keep $opt_keep: nothing to do" );
+			@keep = @list;
+			@list = ();
 		} elsif( !$opt_keep ){
 				msgVerbose( "keep='$opt_keep': doesn't keep anything in the source" );
 		} else {
@@ -76,14 +78,18 @@ sub doMoveDirs {
 				msgVerbose( "keeping "._sourcePath( $it ));
 				push( @keep, $it );
 			}
-			# and move the rest, making sure the initial path at least exists
-			Mods::Toops::makeDirExist( $opt_targetpath );
-			foreach my $it ( @list ){
-				my $source = _sourcePath( $it );
-				my $target = _targetPath( $it );
-				Mods::Toops::msgOut( " moving '$source' to '$target'" );
-				Mods::Toops::moveDir( $source, $target );
+		}
+		# and move the rest, making sure the initial path at least exists
+		Mods::Toops::makeDirExist( $opt_targetpath );
+		foreach my $it ( @list ){
+			my $source = _sourcePath( $it );
+			my $target = _targetPath( $it );
+			Mods::Toops::msgOut( " moving '$source' to '$target'" );
+			my $res = Mods::Toops::moveDir( $source, $target );
+			if( $res ){
 				$count += 1;
+			} else {
+				Mods::Toops::msgErr( "error detected" );
 			}
 		}
 	}

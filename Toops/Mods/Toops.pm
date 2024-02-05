@@ -7,7 +7,7 @@ use warnings;
 
 use Config;
 use Data::Dumper;
-use File::Copy qw( move );
+use File::Copy qw( copy move );
 use File::Path qw( make_path remove_tree );
 use File::Spec;
 use Getopt::Long;
@@ -519,8 +519,13 @@ sub jsonWrite {
 # make sure a directory exist
 sub makeDirExist {
 	my ( $dir ) = @_;
+	my $result = false;
+	if( -d $dir ){
+		msgVerbose( "Toops::makeDirExist() dir='$dir' already exists" );
+		$result = true;
 	# seems that make_path is not easy with UNC path (actually seems that make_path just dies)
-	if( $dir =~ /^\\\\/ ){
+	} elsif( $dir =~ /^\\\\/ ){
+		msgVerbose( "Toops::makeDirExist() dir='$dir' is a UNC path, recursing by level" );
 		my @levels = ();
 		my $candidate = $dir;
 		my ( $volume, $directories, $file ) = File::Spec->splitpath( $candidate );
@@ -532,41 +537,101 @@ sub makeDirExist {
 			unshift( @levels, $file );
 		}
 		$candidate = '';
+		$result = true;
 		while( scalar @levels ){
 			my $level = shift @levels;
 			my $dir = File::Spec->catpath( $volume, $candidate, $level );
-			dummyExec( mkdir $dir );
+			$result &= msgDummy( "mkdir $dir" );
+			if( !wantsDummy()){
+				$result &= mkdir $dir;
+			}
 			$candidate = File::Spec->catdir(  $candidate, $level );
 		}
 	} else {
-		make_path( $dir );
+		msgVerbose( "Toops::makeDirExist() dir='$dir' tries make_path()" );
+		$result &= msgDummy( "make_path( $dir )" );
+		if( !wantsDummy()){
+			my $error;
+			make_path( $dir, {
+				verbose => $TTPVars->{run}{verbose},
+				error => \$error
+			});
+			# https://perldoc.perl.org/File::Path#make_path%28-%24dir1%2C-%24dir2%2C-....-%29
+			if( $error && @$error ){
+				for my $diag ( @$error ){
+					my ( $file, $message ) = %$diag;
+					if( $file eq '' ){
+						msgErr( $message );
+					} else {
+						msgErr( "$file: $message" );
+					}
+				}
+				$result = false;
+			}
+		}
 	}
+	msgVerbose( "Toops::makeDirExist() dir='$dir' result=$result" );
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------
-# (recursively) move a directory from a source to a target
+# (recursively) move a directory and its content from a source to a target
+# this is a design decision to make this recursive copy file by file in order to have full logs
+# Toops allows to provide a system-specific command in its configuration file
+# well suited for example to move big files to network storage
 sub moveDir {
 	my ( $source, $target ) = @_;
+	my $result = false;
+	msgVerbose( "Toops::moveDir() source='$source' target='$target'" );
+	if( ! -d $source ){
+		msgWarn( "$source: directory doesn't exist" );
+		$result = true;
+	} else {
+		my $command = undef;
+		$command = $TTPVars->{config}{site}{toops}{moveDir}{$Config{osname}}{command} if exists $TTPVars->{config}{site}{toops}{moveDir}{$Config{osname}}{command};
+		if( $command ){
+			msgVerbose( "found command='$command'" );
+			$result = eval $command;
+		} else {
+			$result = moveDirFC( $source, $target );
+		}
+	}
+	msgVerbose( "Toops::moveDir() result=$result" );
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# standard File::Copy version - only suitable with standard (not too big with reasonably available target space) files
+sub moveDirFC {
+	my ( $source, $target ) = @_;
+	my $result = false;
+	msgVerbose( "Toops::moveDir() source='$source' target='$target'" );
 	opendir( FD, "$source" ) || msgErr( "unable to open directory $source: $!" );
-	if( !errs()){
-		msgVerbose( "Toops::moveDir() moving '$source' to 'target'" );
-		my @list = ();
-		dummyExec( \&makeDirExist( $target ));
-		while ( my $it = readdir( FD )){
+	$result = makeDirExist( $target ) if !errs();
+	if( $result ){
+		while( my $it = readdir( FD )){
 			next if $it eq "." or $it eq "..";
 			my $srcpath = File::Spec->catdir( $source, $it );
 			my $dstpath = File::Spec->catdir( $target, $it );
 			if( -d $srcpath ){
-				moveDir( $srcpath, $dstpath );
+				$result &= moveDir( $srcpath, $dstpath );
 				next;
 			}
 			msgVerbose( "Toops::moveDir() moving '$srcpath' to '$dstpath'" );
-			dummyExec( \&move( $srcpath, $dstpath ));
+			msgDummy( "move( $srcpath, $dstpath )" );
+			if( !wantsDummy()){
+				$result = move( $srcpath, $dstpath );
+				msgVerbose( "Toops::moveDir() result=$result" );
+			}
+			last if !$result;
 		}
-		closedir( FD );
-		msgVerbose( "Toops::moveDir() removing '$source'" );
-		remove_tree( $source );
 	}
+	closedir( FD );
+	if( !errs() && $result ){
+		$result = removeTree( $source );
+	}
+	msgVerbose( "Toops::moveDir() result=$result" );
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -770,6 +835,33 @@ sub pathWithTrailingSeparator {
 }
 
 # -------------------------------------------------------------------------------------------------
+# delete a directory and all its content
+sub removeTree {
+	my ( $dir ) = @_;
+	my $result = false;
+	msgVerbose( "Toops::removeTree() removing '$dir'" );
+	my $error;
+	remove_tree( $dir, {
+		verbose => $TTPVars->{run}{verbose},
+		error => \$error
+	});
+	# https://perldoc.perl.org/File::Path#make_path%28-%24dir1%2C-%24dir2%2C-....-%29
+	if( $error && @$error ){
+		for my $diag ( @$error ){
+			my ( $file, $message ) = %$diag;
+			if( $file eq '' ){
+				msgErr( $message );
+			} else {
+				msgErr( "$file: $message" );
+			}
+		}
+		$result = false;
+	}
+	msgVerbose( "Toops::removeTree() dir='$dir' result=$result" );
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Run by the command
 # Expects $0 be the full path name to the command script (this is the case in Windows+Strawberry)
 # and @ARGV the command-line arguments
@@ -885,7 +977,11 @@ sub searchRecHash {
 # Return code is optional, defaulting to exitCode
 sub ttpExit {
 	my $rc = shift || $TTPVars->{run}{exitCode};
-	Mods::Toops::msgVerbose( "exiting with code $rc" );
+	if( $rc ){
+		msgOut( "exiting with code $rc" );
+	} else {
+		Mods::Toops::msgVerbose( "exiting with code $rc" );
+	}
 	exit $rc;
 }
 
