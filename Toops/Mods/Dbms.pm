@@ -23,6 +23,7 @@ use Mods::Toops;
 # - database: mandatory
 # - output: optional
 # - mode: full-diff, defaulting to 'full'
+# - compress: true|false
 # return a hash reference with:
 # - status: true|false
 # - output: the output filename (even if provided on input)

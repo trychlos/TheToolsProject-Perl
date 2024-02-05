@@ -28,6 +28,7 @@ my $systemDatabases = [
 # - database: mandatory
 # - output: mandatory
 # - mode: mandatory, full|diff
+# - compress: true|false
 # return true|false
 sub apiBackupDatabase {
 	my ( $me, $dbms, $parms ) = @_;
@@ -45,6 +46,7 @@ sub apiBackupDatabase {
 			$options .= ", DIFFERENTIAL";
 			$label = "Differential";
 		}
+		$options .= ", COMPRESSION" if exists $parms->{compress} && $parms->{compress};
 		$parms->{sql} = "USE master;
 BACKUP DATABASE $parms->{database} TO DISK='$parms->{output}' WITH $options, NAME='$parms->{database} $label Backup $tstring';";
 		Mods::Toops::msgVerbose( "SqlServer::apiBackupDatabase() sql='$parms->{sql}'" );

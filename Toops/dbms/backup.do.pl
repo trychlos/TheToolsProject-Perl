@@ -8,6 +8,7 @@
 # @(-) --database=<name>       database name [${database}]
 # @(-) --[no]full              operate a full backup [${full}]
 # @(-) --[no]diff              operate a differential backup [${diff}]
+# @(-) --[no]compress          compress the outputed backup [${compress}]
 # @(-) --output=<filename>     target filename [${output}]
 #
 # @(@) Note: remind that differential backup is the difference of the current state and the last full backup.
@@ -32,6 +33,7 @@ my $defaults = {
 	database => '',
 	full => 'no',
 	diff => 'no',
+	compress => 'no',
 	output => 'DEFAUT'
 };
 
@@ -39,6 +41,7 @@ my $opt_instance = $defaults->{instance};
 my $opt_database = $defaults->{database};
 my $opt_full = false;
 my $opt_diff = false;
+my $opt_compress = false;
 my $opt_output = '';
 
 # -------------------------------------------------------------------------------------------------
@@ -51,7 +54,8 @@ sub doBackup {
 		instance => $opt_instance,
 		database => $opt_database,
 		output => $opt_output,
-		mode => $mode
+		mode => $mode,
+		compress => $opt_compress
 	});
 	Mods::Toops::execReportAppend({
 		instance => $opt_instance,
@@ -80,6 +84,7 @@ if( !GetOptions(
 	"database=s"		=> \$opt_database,
 	"full!"				=> \$opt_full,
 	"diff!"				=> \$opt_diff,
+	"compress!"			=> \$opt_compress,
 	"output=s"			=> \$opt_output )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
@@ -98,6 +103,7 @@ Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
 Mods::Toops::msgVerbose( "found database='$opt_database'" );
 Mods::Toops::msgVerbose( "found full='".( $opt_full ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found diff='".( $opt_diff ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found compress='".( $opt_compress ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found output='$opt_output'" );
 
 my $instance = Mods::Dbms::checkInstanceOpt( $opt_instance );
