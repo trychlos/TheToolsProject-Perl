@@ -838,7 +838,7 @@ sub pathWithTrailingSeparator {
 # delete a directory and all its content
 sub removeTree {
 	my ( $dir ) = @_;
-	my $result = false;
+	my $result = true;
 	msgVerbose( "Toops::removeTree() removing '$dir'" );
 	my $error;
 	remove_tree( $dir, {
@@ -850,9 +850,9 @@ sub removeTree {
 		for my $diag ( @$error ){
 			my ( $file, $message ) = %$diag;
 			if( $file eq '' ){
-				msgErr( $message );
+				msgErr( "remove_tree() $message" );
 			} else {
-				msgErr( "$file: $message" );
+				msgErr( "remove_tree() $file: $message" );
 			}
 		}
 		$result = false;
