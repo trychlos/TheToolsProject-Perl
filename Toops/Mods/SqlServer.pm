@@ -73,7 +73,10 @@ sub apiExecSqlCommand {
 		if( $sql =~ /^SELECT /i ){
 			$result = $sqlsrv->sql( $sql );
 		} else {
-			$result = sqlNoResult( $dbms, { sql => $sql });
+			Mods::Toops::msgDummy( $sql );
+			if( !Mods::Toops::wantsDummy()){
+				$result = $sqlsrv->sql( $sql );
+			}
 		}
 	}
 	return $result;
@@ -352,8 +355,8 @@ sub sqlNoResult {
 				$line =~ s/\s*$//;
 				print " $line".EOL if length $line;
 			}
-			delete $sqlsrv->{ErrInfo}{Messages};
 			$result = $sqlsrv->sql_has_errors() ? false : true;
+			delete $sqlsrv->{ErrInfo}{Messages};
 		}
 	}
 	Mods::Toops::msgVerbose( "SqlServer::sqlNoResult() returns '".( $result ? 'true':'false' )."'" );
