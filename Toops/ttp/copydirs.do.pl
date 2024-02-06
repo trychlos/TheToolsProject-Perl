@@ -73,7 +73,7 @@ sub doCopyDirs {
 			}
 		}
 	}
-	Mods::Toops::msgOut( "$count moved directory(ies)" );
+	Mods::Toops::msgOut( "$count copied directory(ies)" );
 }
 
 sub _sourcePath {
