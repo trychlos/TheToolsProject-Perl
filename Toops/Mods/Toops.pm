@@ -591,7 +591,12 @@ sub moveDir {
 		$command = $TTPVars->{config}{site}{toops}{moveDir}{$Config{osname}}{command} if exists $TTPVars->{config}{site}{toops}{moveDir}{$Config{osname}}{command};
 		if( $command ){
 			msgVerbose( "found command='$command'" );
-			$result = eval $command;
+			my $evaluated = $command;
+			$evaluated =~ s/<source>/$source/;
+			$evaluated =~ s/<target>/$target/;
+			msgVerbose( "evaluating to '$evaluated'" );
+			`$evaluated`;
+			$result = $?;
 		} else {
 			$result = moveDirFC( $source, $target );
 		}
