@@ -79,4 +79,7 @@ As these additional arguments will be passed to each and every executed TTP comm
 
 TODO
     1 24- 1-29 Toops::getOptions doesn't work as we do not know how to pass arguments to GetOptions()
-	
+
+Published topics
+
+	<emitter_host> / executionReport / <command> / <verb> / 
