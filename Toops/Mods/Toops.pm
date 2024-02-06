@@ -7,7 +7,9 @@ use warnings;
 
 use Config;
 use Data::Dumper;
+use Data::UUID;
 use File::Copy qw( copy move );
+use File::Copy::Recursive qw( dircopy );
 use File::Path qw( make_path remove_tree );
 use File::Spec;
 use Getopt::Long;
@@ -66,6 +68,87 @@ our $TTPVars = {
 		colored => true
 	}
 };
+
+# -------------------------------------------------------------------------------------------------
+# Execute a command dependant of the running OS.
+# This is expected to be configured in TOOPS.json as TOOPS => {<key>} => {command}
+# where command may have some keywords to be remplaced before execution
+# (E):
+# argument is a hash with following keys:
+# - command: the command to be evaluated and executed, may be undef
+# - macros: a hash of the macros to be replaced where:
+#   > key is the macro name, must be labeled in the toops.json as '<macro>' (i.e. between angle brackets)
+#   > value is the value to be replaced
+# (S):
+# return a hash with following keys:
+# - evaluated: the evaluated command after macros replacements
+# - return: original exit code of the command
+# - result: true|false
+sub commandByOs {
+	my ( $args ) = @_;
+	my $result = {};
+	$result->{result} = false;
+	msgVerbose( "Toops::commandByOs() evaluating and executing command='".( $args->{command} || '(undef)' )."'" );
+	if( defined $args->{command} ){
+		$result->{evaluated} = $args->{command};
+		foreach my $key ( keys %{$args->{macros}} ){
+			$result->{evaluated} =~ s/<$key>/$args->{macros}{$key}/;
+		}
+		msgVerbose( "Toops::commandByOs() evaluated to '$result->{evaluated}'" );
+		print `$result->{evaluated}`;
+		# https://www.perlmonks.org/?node_id=81640
+		# Thus, the exit value of the subprocess is actually ($? >> 8), and $? & 127 gives which signal, if any, the
+		# process died from, and $? & 128 reports whether there was a core dump.
+		# https://ss64.com/nt/robocopy-exit.html
+		# 0 and 1 are ok
+		my $res = $?;
+		$result->{result} = ( $res == 0 ) ? true : false;
+		if( $args->{command} =~ /robocopy/i ){
+			$res = ( $res >> 8 );
+			$result->{result} = ( $res <= 7 ) ? true : false;
+		}
+	}
+	msgVerbose( "Toops::commandByOs() result=$result" );
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# (recursively) move a directory and its content from a source to a target
+# this is a design decision to make this recursive copy file by file in order to have full logs
+# Toops allows to provide a system-specific command in its configuration file
+# well suited for example to move big files to network storage
+# return true|false
+sub copyDir {
+	my ( $source, $target ) = @_;
+	my $result = false;
+	msgVerbose( "Toops::copyDir() source='$source' target='$target'" );
+	if( ! -d $source ){
+		msgErr( "$source: source directory doesn't exist" );
+		return false;
+	}
+	my $cmdres = commandByOs({
+		command => $TTPVars->{config}{site}{toops}{copyDir}{$Config{osname}}{command},
+		macros => {
+			source => $source,
+			target => $target
+		}
+	});
+	if( defined $cmdres->{command} ){
+		$result = $cmdres->{result};
+	} else {
+		msgDummy( "dircopy( $source, $target )" );
+		if( !wantsDummy()){
+			# https://metacpan.org/pod/File::Copy::Recursive
+			# This function returns true or false: for true in scalar context it returns the number of files and directories copied,
+			# whereas in list context it returns the number of files and directories, number of directories only, depth level traversed.
+			my $res = dircopy( $source, $target );
+			msgVerbose( "Toops::copyDir() result=$result" );
+			$result = $res ? true : false;
+		}
+	}
+	msgVerbose( "Toops::copyDir() result=$result" );
+	return $result;
+}
 
 # -------------------------------------------------------------------------------------------------
 # Dump the internal variables
@@ -288,6 +371,18 @@ sub getOptionsToOpts {
 =cut
 
 # -------------------------------------------------------------------------------------------------
+# returns a new unique temp filename
+sub getTempFileName {
+	my $fname = $TTPVars->{run}{command}{name}.'-'.$TTPVars->{run}{verb}{name};
+	my $ug = new Data::UUID;
+	my $uuid = lc $ug->create_str();
+	$uuid =~ s/-//g;
+	my $tempfname = File::Spec->catdir( $TTPVars->{run}{logsDir}, "$fname-$uuid.tmp" );
+	msgVerbose( "getTempFileName() tempfname='$tempfname'" );
+	return $tempfname;
+}
+
+# -------------------------------------------------------------------------------------------------
 # returns the available verbs for the current command
 sub getVerbs {
 	my @verbs = glob( File::Spec->catdir( $TTPVars->{run}{command}{verbsDir}, "*".$TTPVars->{Toops}{verbSufix} ));
@@ -449,6 +544,7 @@ sub initLogs {
 	my $logsDir = File::Spec->catdir( $TTPVars->{Toops}{defaults}{$Config{osname}}{tempDir}, 'Toops', 'logs' );
 	$logsDir = $TTPVars->{config}{site}{toops}{logsDir} if exists $TTPVars->{config}{site}{toops}{logsDir};
 	make_path( $logsDir );
+	$TTPVars->{run}{logsDir} = $logsDir;
 	$TTPVars->{run}{logsMain} = File::Spec->catdir( $logsDir, 'main.log' );
 }
 
@@ -585,55 +681,19 @@ sub moveDir {
 	msgVerbose( "Toops::moveDir() source='$source' target='$target'" );
 	if( ! -d $source ){
 		msgWarn( "$source: directory doesn't exist" );
-		$result = true;
+		return true;
+	}
+	my $cmdres = commandByOs({
+		command => $TTPVars->{config}{site}{toops}{moveDir}{$Config{osname}}{command},
+		macros => {
+			source => $source,
+			target => $target
+		}
+	});
+	if( defined $cmdres->{command} ){
+		$result = $cmdres->{result};
 	} else {
-		my $command = undef;
-		$command = $TTPVars->{config}{site}{toops}{moveDir}{$Config{osname}}{command} if exists $TTPVars->{config}{site}{toops}{moveDir}{$Config{osname}}{command};
-		if( $command ){
-			msgVerbose( "found command='$command'" );
-			my $evaluated = $command;
-			$evaluated =~ s/<source>/$source/;
-			$evaluated =~ s/<target>/$target/;
-			msgVerbose( "evaluating to '$evaluated'" );
-			`$evaluated`;
-			$result = $?;
-		} else {
-			$result = moveDirFC( $source, $target );
-		}
-	}
-	msgVerbose( "Toops::moveDir() result=$result" );
-	return $result;
-}
-
-# -------------------------------------------------------------------------------------------------
-# standard File::Copy version - only suitable with standard (not too big with reasonably available target space) files
-sub moveDirFC {
-	my ( $source, $target ) = @_;
-	my $result = false;
-	msgVerbose( "Toops::moveDir() source='$source' target='$target'" );
-	opendir( FD, "$source" ) || msgErr( "unable to open directory $source: $!" );
-	$result = makeDirExist( $target ) if !errs();
-	if( $result ){
-		while( my $it = readdir( FD )){
-			next if $it eq "." or $it eq "..";
-			my $srcpath = File::Spec->catdir( $source, $it );
-			my $dstpath = File::Spec->catdir( $target, $it );
-			if( -d $srcpath ){
-				$result &= moveDir( $srcpath, $dstpath );
-				next;
-			}
-			msgVerbose( "Toops::moveDir() moving '$srcpath' to '$dstpath'" );
-			msgDummy( "move( $srcpath, $dstpath )" );
-			if( !wantsDummy()){
-				$result = move( $srcpath, $dstpath );
-				msgVerbose( "Toops::moveDir() result=$result" );
-			}
-			last if !$result;
-		}
-	}
-	closedir( FD );
-	if( !errs() && $result ){
-		$result = removeTree( $source );
+		$result = copyDir( $source, $target ) && removeTree( $source );
 	}
 	msgVerbose( "Toops::moveDir() result=$result" );
 	return $result;

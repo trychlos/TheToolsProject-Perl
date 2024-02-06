@@ -8,6 +8,7 @@ use warnings;
 use Capture::Tiny qw( :all );
 use Data::Dumper;
 use File::Spec;
+use Path::Tiny;
 use Time::Piece;
 use Win32::SqlServer qw( :DEFAULT :consts );
 
@@ -63,22 +64,30 @@ BACKUP DATABASE $parms->{database} TO DISK='$parms->{output}' WITH $options, NAM
 sub apiExecSqlCommand {
 	my ( $me, $dbms, $sql ) = @_;
 	my $result = undef;
-	my $sqlsrv = undef;
 	Mods::Toops::msgErr( "SqlServer::apiExecSqlCommand() instance is mandatory, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
 	if( !Mods::Toops::errs()){
-		Mods::Toops::msgVerbose( "SqlServer::apiExecSqlCommand() entering with instance='$dbms->{instance}{name}'" );
-		$sqlsrv = Mods::SqlServer::_connect( $dbms );
-	}
-	if( !Mods::Toops::errs() && $sqlsrv ){
+		Mods::Toops::msgVerbose( "SqlServer::apiExecSqlCommand() entering with instance='$dbms->{instance}{name}' sql='$sql'" );
 		if( $sql =~ /^SELECT /i ){
+			my $sqlsrv = Mods::SqlServer::_connect( $dbms );
 			$result = $sqlsrv->sql( $sql );
+			$result = $sqlsrv->sql_has_errors() ? false : true;
 		} else {
-			Mods::Toops::msgDummy( $sql );
-			if( !Mods::Toops::wantsDummy()){
-				$result = $sqlsrv->sql( $sql );
+			my( $account, $passwd ) = Mods::SqlServer::_getCredentials( $dbms );
+			if( length $account && length $passwd ){
+				my $server = $dbms->{config}{name}."\\".$dbms->{instance}{name};
+				my $tempfname = Mods::Toops::getTempFileName();
+				my $command = "sqlcmd -q $sql -S $server -U $account -P $passwd -V16";
+				Mods::Toops::msgVerbose( "executing 'sqlcmd -q $sql -S $server -U $account -P xxxxxx -V16'" );
+				print `$command -o $tempfname`;
+				$result = ( $? == 0 ) ? true : false;
+				Mods::Toops::msgVerbose( "result=$result" );
+				Mods::Toops::msgOut( "result stored in '$tempfname'" );
+				my $temp = path( $tempfname );
+				print $temp->slurp_utf8;
 			}
 		}
 	}
+	Mods::Toops::msgVerbose( "SqlServer::apiExecSqlCommand() result=$result" );
 	return $result;
 }
 

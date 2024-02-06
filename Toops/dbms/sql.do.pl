@@ -7,6 +7,7 @@
 # @(-) --instance=<name>       acts on the named instance [${instance}]
 # @(-) --[no]stdin             whether the sql command has to be read from stdin [${stdin}]
 # @(-) --script=<filename>     the sql script filename [${script}]
+# @(-) --command=<filename>    the sql command as a string [${command}]
 # @(-) --[no]tabular           format the output as tabular data [${tabular}]
 #
 # @(@) The provided SQL script may or may not have a displayable result. Nonetheless, this verb will always display all the script output.
@@ -32,30 +33,56 @@ my $defaults = {
 	instance => 'MSSQLSERVER',
 	stdin => 'no',
 	script => '',
-	tabular => 'yes'
+	command => '',
+	tabular => 'no'
 };
 
 my $opt_instance = $defaults->{instance};
 my $opt_stdin = false;
 my $opt_script = $defaults->{script};
-my $opt_tabular = true;
+my $opt_command = $defaults->{command};
+my $opt_tabular = false;
 
 # -------------------------------------------------------------------------------------------------
 # execute the sql command to be read from stdin
-sub execSqlCommand {
+sub _result {
+	my ( $res ) = @_;
+	if( $res ){
+		Mods::Toops::msgOut( "success" );
+	} else {
+		Mods::Toops::msgErr( "NOT OK" );
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# execute the sql command to be read from stdin
+sub execSqlStdin {
 	my $command = '';
 	while( <> ){
 		$command .= $_;
 	}
-	Mods::Toops::msgVerbose( "got command='$command'" );
-	Mods::Dbms::execSqlCommand( $command, { tabular => $opt_tabular });
+	chomp $command;
+	Mods::Toops::msgVerbose( "executing '$command' from stdin" );
+	my $res = Mods::Dbms::execSqlCommand( $command, { tabular => $opt_tabular });
+	_result( $res );
 }
 
 # -------------------------------------------------------------------------------------------------
 # execute the sql script
 sub execSqlScript {
+	Mods::Toops::msgVerbose( "executing from '$opt_script'" );
 	my $sql = path( $opt_script )->slurp_utf8;
-	Mods::Dbms::execSqlCommand( $sql, { tabular => $opt_tabular });
+	Mods::Toops::msgVerbose( "sql='$sql'" );
+	my $res = Mods::Dbms::execSqlCommand( $sql, { tabular => $opt_tabular });
+	_result( $res );
+}
+
+# -------------------------------------------------------------------------------------------------
+# execute the sql command to be read from stdin
+sub execSqlCommand {
+	Mods::Toops::msgVerbose( "executing command='$opt_command'" );
+	my $res = Mods::Dbms::execSqlCommand( $opt_command, { tabular => $opt_tabular });
+	_result( $res );
 }
 
 # =================================================================================================
@@ -70,6 +97,7 @@ if( !GetOptions(
 	"instance=s"		=> \$opt_instance,
 	"stdin!"			=> \$opt_stdin,
 	"script=s"			=> \$opt_script,
+	"command=s"			=> \$opt_command,
 	"tabular!"			=> \$opt_tabular )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
@@ -87,16 +115,18 @@ Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'fals
 Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
 Mods::Toops::msgVerbose( "found stdin='".( $opt_stdin ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found script='$opt_script'" );
+Mods::Toops::msgVerbose( "found command='$opt_command'" );
 Mods::Toops::msgVerbose( "found tabular='".( $opt_tabular ? 'true':'false' )."'" );
 
 # instance is mandatory
 Mods::Dbms::checkInstanceOpt( $opt_instance );
-# either -stdin or -script options must be specified and only one
+# either -stdin or -script or -command options must be specified and only one
 my $count = 0;
 $count += 1 if $opt_stdin;
 $count += 1 if $opt_script;
+$count += 1 if $opt_command;
 if( $count != 1 ){
-	Mods::Toops::msgErr( "either '--stdint' or '--script' option must be specified" );
+	Mods::Toops::msgErr( "either '--stdint' or '--script' or '--command' option must be specified" );
 } elsif( $opt_script ){
 	if( ! -f $opt_script ){
 		Mods::Toops::msgErr( "$opt_script: file is not found or not readable" );
@@ -104,8 +134,9 @@ if( $count != 1 ){
 }
 
 if( !Mods::Toops::errs()){
-	execSqlCommand() if $opt_stdin;
+	execSqlStdin() if $opt_stdin;
 	execSqlScript() if $opt_script;
+	execSqlCommand() if $opt_command;
 }
 
 Mods::Toops::ttpExit();

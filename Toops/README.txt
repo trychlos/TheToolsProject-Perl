@@ -12,6 +12,7 @@ Toops for Windows:
 	> (optional) set a TTP_ROOT global environment variable in PATH-style like to address several Toops trees
 	> update the PATH to address all your Toops/bin directories
 	> install CPAN packages
+	  Data::UUID
 	  Proc::Background
 
 Site configuration:
@@ -45,6 +46,7 @@ TTPVars:
 		exitCode
 		help
 		verbose
+		logsDir
 		logsMain
 		
 		# when run as a command.pl verb

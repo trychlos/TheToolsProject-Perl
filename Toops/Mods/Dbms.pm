@@ -184,6 +184,11 @@ sub computeDefaultBackupFilename {
 # a SqlResult is just an array of hashes
 sub displayTabularSql {
 	my ( $ref ) = @_;
+	# if the result won't provide any data, just give up
+	if( !ref( $ref )){
+		msgVerbose( "Dbms::displayTabularSql() got a scalar '$ref', so give up" );
+		return;
+	}
 	# first compute the max length of each field name + keep the same field order
 	my $lengths = {};
 	my @fields = ();
@@ -193,7 +198,10 @@ sub displayTabularSql {
 	}
 	# and for each field, compute the max length content
 	foreach my $it ( @{$ref} ){
+		print Dumper( $it );
+		print Dumper( $lengths );
 		foreach my $key ( keys %{$it} ){
+			print "key='$key'".EOL;
 			if( $it->{$key} && length $it->{$key} > $lengths->{$key} ){
 				$lengths->{$key} = length $it->{$key};
 			}
@@ -237,9 +245,11 @@ sub execSqlCommand {
 	$opts //= {};
 	my $dbms = Mods::Dbms::_buildDbms();
 	my $result = Mods::Dbms::toPackage( 'apiExecSqlCommand', $dbms, $command );
-	my $tabular = true;
-	$tabular = $opts->{tabular} if exists $opts->{tabular};
-	displayTabularSql( $result ) if $tabular;
+	if( $result ){
+		my $tabular = true;
+		$tabular = $opts->{tabular} if exists $opts->{tabular};
+		displayTabularSql( $result ) if $tabular;
+	}
 	return $result;
 }
 
