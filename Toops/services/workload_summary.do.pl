@@ -73,7 +73,9 @@ sub printSummary {
 	print _pad( "| $ENV{$opt_me} WORKLOAD SUMMARY", $totLength-1, ' ' )."|".EOL;
 	print _pad( "|", $maxLength+8, ' ' )._pad( "started at", 25, ' ' )._pad( "ended at", 25, ' ' )." RC |".EOL;
 	print _pad( "+", $maxLength+6, '-' )._pad( "+", 25, '-' )._pad( "+", 25, '-' )."+-----+".EOL;
+	my $i = 0;
 	foreach my $it ( @results ){
+		$i += 1;
 		Mods::Toops::msgVerbose( "printing i=$i execution report" );
 		print _pad( "| $it->{command}", $maxLength+6, ' ' )._pad( "| $it->{start}", 25, ' ' )._pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
 	}
