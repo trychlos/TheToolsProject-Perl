@@ -244,6 +244,7 @@ sub execReportAppend {
 	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	# if Toops is configured to write JSON files
+	# please note that having the json filenames ordered both by name and by date is a design decision - do not change
 	if( $TTPVars->{config}{site}{toops}{executionReport}{withFile} ){
 		my $path = File::Spec->catdir( $TTPVars->{config}{site}{toops}{execReports}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
 		jsonWrite( $data, $path );

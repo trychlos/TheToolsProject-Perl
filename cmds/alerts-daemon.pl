@@ -14,6 +14,8 @@ use strict;
 use warnings;
 
 use Data::Dumper;
+use File::Find;
+use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Daemon;
@@ -26,10 +28,8 @@ my $commands = {
 	#help => \&help,
 };
 
-Mods::Daemon::daemonInitToops( $0 );
+my $daemon = Mods::Daemon::daemonInitToops( $0, \@ARGV );
 my $TTPVars = Mods::Toops::TTPVars();
-my $daemonConfig = Mods::Daemon::getConfigByPath( $ARGV[0] );
-my $socket = Mods::Daemon::daemonCreateListeningSocket( $daemonConfig );
 
 my $lastScanTime = 0;
 my $first = true;
@@ -37,9 +37,8 @@ my @previousScan = ();
 my @runningScan = ();
 
 # -------------------------------------------------------------------------------------------------
-# new execution reports
-# we are tracking backup databases with dbms.pl backup -nodummy
-# warning when we have a diff without a previous full
+# new alert
+# should never arrive as all alerts must be sent through MQTT bus
 sub doWithNew {
 	my ( @newFiles ) = @_;
 	foreach my $file ( @newFiles ){
@@ -71,21 +70,25 @@ sub wanted {
 # do its work
 sub works {
 	# reevaluate the json configuration to take into account 'eval' data
-	$daemonConfig = Mods::Daemon::getConfigByPath( $ARGV[0] );
-	my $monitored = $daemonConfig->{monitoredDirs};
-	@runningScan = ();
-	find( \&wanted, @{$monitored} );
-	if( scalar @runningScan < scalar @previousScan ){
-		varReset();
-	} elsif( $first ){
-		$first = false;
-		@previousScan = sort @runningScan;
-	} elsif( scalar @runningScan > scalar @previousScan ){
-		my @sorted = sort @runningScan;
-		my @tmp = @sorted;
-		my @newFiles = splice( @tmp, scalar @previousScan, scalar @runningScan - scalar @previousScan );
-		doWithNew( @newFiles );
-		@previousScan = @sorted;
+	$daemon->{config} = Mods::Daemon::getConfigByPath( $daemon->{json} );
+	my $monitored = $daemon->{config}{monitoredDirs};
+	if( $monitored && scalar @{$monitored} ){
+		@runningScan = ();
+		find( \&wanted, @{$monitored} );
+		if( scalar @runningScan < scalar @previousScan ){
+			varReset();
+		} elsif( $first ){
+			$first = false;
+			@previousScan = sort @runningScan;
+		} elsif( scalar @runningScan > scalar @previousScan ){
+			my @sorted = sort @runningScan;
+			my @tmp = @sorted;
+			my @newFiles = splice( @tmp, scalar @previousScan, scalar @runningScan - scalar @previousScan );
+			doWithNew( @newFiles );
+			@previousScan = @sorted;
+		}
+	} else {
+		Mods::Toops::msgWarn( "seems that 'monitoredDirs' configuration is empty" );
 	}
 }
 
@@ -93,20 +96,22 @@ sub works {
 # MAIN
 # =================================================================================================
 
-my $sleep = 2;
-$sleep = $daemonConfig->{listenInterval} if exists $daemonConfig->{listenInterval} && $daemonConfig->{listenInterval} >= $sleep;
-
 my $scanInterval = 5;
-$scanInterval = $daemonConfig->{scanInterval} if exists $daemonConfig->{scanInterval} && $daemonConfig->{scanInterval} >= $scanInterval;
+$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
 
-while( !$TTPVars->{run}{daemon}{terminating} ){
-	my $res = Mods::Daemon::daemonListen( $socket, $commands );
+my $sleepTime = Mods::Daemon::getSleepTime(
+	$daemon->{config}{listenInterval},
+	$scanInterval
+);
+
+while( !$daemon->{terminating} ){
+	my $res = Mods::Daemon::daemonListen( $daemon, $commands );
 	my $now = localtime->epoch;
 	if( $now - $lastScanTime >= $scanInterval ){
 		works();
 	}
 	$lastScanTime = $now;
-	sleep( $sleep );
+	sleep( $sleepTime );
 }
 
 Mods::Toops::msgLog( "terminating" );

@@ -1,7 +1,13 @@
 #!perl
 #!/usr/bin/perl
 #
-# This runs as a daemon to monitor the backups in the live production
+# This runs as a daemon to monitor the backups done in the live production.
+#
+# Rationale:
+# - the production "live" machine does its backup periodically, and doesn't care of anything else (it is not cooperative)
+# - it is to the production "backup" machine to monitor the backups, transfert the files througgh the network, and restore them on its dataserver;
+#   as it is expected to be just in waiting state, and so without anything else to do, it has this job.
+# Automatic restores, a full in the morning, and diff's every 2h during the day, let us be relatively sure that it will be easiy ready in case the live stops.
 #
 # Command-line arguments:
 # - the full path to the JSON configuration file
@@ -31,10 +37,8 @@ my $commands = {
 	#help => \&help,
 };
 
-Mods::Daemon::daemonInitToops( $0 );
+my $daemon = Mods::Daemon::daemonInitToops( $0, \@ARGV );
 my $TTPVars = Mods::Toops::TTPVars();
-my $daemonConfig = Mods::Daemon::getConfigByPath( $ARGV[0] );
-my $socket = Mods::Daemon::daemonCreateListeningSocket( $daemonConfig );
 
 my $lastScanTime = 0;
 my $first = true;
@@ -61,7 +65,7 @@ sub searchForLastFull {
 	# search locally, based on TTP configuration
 	# hardcoding the expected format file name as host-instance-database ... -mode.backup
 	# this should be enough in most situations
-	my $dir = $daemonConfig->{localDir};
+	my $dir = $daemon->{config}{localDir};
 	$searchForLastFull_data = {};
 	$searchForLastFull_data->{host} = $content->{host};
 	$searchForLastFull_data->{instance} = $content->{instance};
@@ -104,9 +108,9 @@ sub syncedPath {
 	if( ! -r $sourceNet ){
 		Mods::Toops::msgWarn( "$sourceNet: file not found or not readable" );
 	} else {
-		$localTarget =  File::Spec->catpath( Mods::Toops::pathWithTrailingSeparator( $daemonConfig->{localDir} ), $bck_file );
+		$localTarget =  File::Spec->catpath( Mods::Toops::pathWithTrailingSeparator( $daemon->{config}{localDir} ), $bck_file );
 		#print "localTarget='$localTarget'".EOL;
-		Mods::Toops::makeDirExist( $daemonConfig->{localDir} );
+		Mods::Toops::makeDirExist( $daemon->{config}{localDir} );
 		my $res = copy( $sourceNet, $localTarget );
 		if( $res ){
 			Mods::Toops::msgVerbose( "successfully copied '$sourceNet' to '$localTarget'" );
@@ -137,7 +141,7 @@ sub doWithNew {
 			my $executable = true;
 			my $candidates = [];
 			my $local = undef;
-			$candidates = $daemonConfig->{databases} if exists $daemonConfig->{databases};
+			$candidates = $daemon->{config}{databases} if exists $daemon->{config}{databases};
 			if( scalar @{$candidates} && !grep( /$database/i, @{$candidates} )){
 				Mods::Toops::msgVerbose( "backuped database is '$database' while configured are [".join( ', ', @{$candidates} )."]: ignored" );
 				$executable = false;
@@ -161,7 +165,7 @@ sub doWithNew {
 			}
 			if( $executable ){
 				my $restoreInstance = $instance;
-				$restoreInstance = $daemonConfig->{restoreInstance} if exists $daemonConfig->{restoreInstance} && length $daemonConfig->{restoreInstance};
+				$restoreInstance = $daemon->{config}{restoreInstance} if exists $daemon->{config}{restoreInstance} && length $daemon->{config}{restoreInstance};
 				my $command = "dbms.pl restore -instance $restoreInstance -database $database ";
 				if( $mode eq "full" ){
 					$command .= " -full $local";
@@ -199,23 +203,29 @@ sub wanted {
 
 # -------------------------------------------------------------------------------------------------
 # do its work
+# reevaluate the json configuration to take into account 'eval' data
+# because the directories we are monitoring here are typically backups/logs directories and their
+# name change every day
 sub works {
-	# reevaluate the json configuration to take into account 'eval' data
-	$daemonConfig = Mods::Daemon::getConfigByPath( $ARGV[0] );
-	my $monitored = $daemonConfig->{monitoredDirs};
-	@runningScan = ();
-	find( \&wanted, @{$monitored} );
-	if( scalar @runningScan < scalar @previousScan ){
-		varReset();
-	} elsif( $first ){
-		$first = false;
-		@previousScan = sort @runningScan;
-	} elsif( scalar @runningScan > scalar @previousScan ){
-		my @sorted = sort @runningScan;
-		my @tmp = @sorted;
-		my @newFiles = splice( @tmp, scalar @previousScan, scalar @runningScan - scalar @previousScan );
-		doWithNew( @newFiles );
-		@previousScan = @sorted;
+	$daemon->{config} = Mods::Daemon::getConfigByPath( $daemon->{json} );
+	my $monitored = $daemon->{config}{monitoredDirs};
+	if( $monitored && scalar @{$monitored} ){
+		@runningScan = ();
+		find( \&wanted, @{$monitored} );
+		if( scalar @runningScan < scalar @previousScan ){
+			varReset();
+		} elsif( $first ){
+			$first = false;
+			@previousScan = sort @runningScan;
+		} elsif( scalar @runningScan > scalar @previousScan ){
+			my @sorted = sort @runningScan;
+			my @tmp = @sorted;
+			my @newFiles = splice( @tmp, scalar @previousScan, scalar @runningScan - scalar @previousScan );
+			doWithNew( @newFiles );
+			@previousScan = @sorted;
+		}
+	} else {
+		Mods::Toops::msgWarn( "seems that 'monitoredDirs' configuration is empty" );
 	}
 }
 
@@ -223,20 +233,22 @@ sub works {
 # MAIN
 # =================================================================================================
 
-my $sleep = 2;
-$sleep = $daemonConfig->{listenInterval} if exists $daemonConfig->{listenInterval} && $daemonConfig->{listenInterval} >= $sleep;
+my $scanInterval = 10;
+$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
 
-my $scanInterval = 5;
-$scanInterval = $daemonConfig->{scanInterval} if exists $daemonConfig->{scanInterval} && $daemonConfig->{scanInterval} >= $scanInterval;
+my $sleepTime = Mods::Daemon::getSleepTime(
+	$daemon->{config}{listenInterval},
+	$scanInterval
+);
 
-while( !$TTPVars->{run}{daemon}{terminating} ){
-	my $res = Mods::Daemon::daemonListen( $socket, $commands );
+while( !$daemon->{terminating} ){
+	my $res = Mods::Daemon::daemonListen( $daemon, $commands );
 	my $now = localtime->epoch;
 	if( $now - $lastScanTime >= $scanInterval ){
 		works();
 	}
 	$lastScanTime = $now;
-	sleep( $sleep );
+	sleep( $sleepTime );
 }
 
 Mods::Toops::msgLog( "terminating" );

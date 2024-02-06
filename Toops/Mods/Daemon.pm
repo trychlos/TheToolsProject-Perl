@@ -32,13 +32,14 @@ use Mods::Constants qw( :all );
 use Mods::Toops;
 
 use constant {
-	BUFSIZE => 4096
+	BUFSIZE => 4096,
+	LISTEN_INTERVAL => 1
 };
 
 # ------------------------------------------------------------------------------------------------
 # the daemon answers to the client
 sub daemonAnswer {
-	my ( $req, $answer ) = @_;
+	my ( $daemon, $req, $answer ) = @_;
 	Mods::Toops::msgLog( "answering '$answer'" );
 	$req->{socket}->send( "$answer\n" );
 	$req->{socket}->shutdown( true );
@@ -48,7 +49,7 @@ sub daemonAnswer {
 # the daemon deals with the received command
 # - we are able to answer here to 'help', 'status' and 'terminate' commands and the daemon doesn't need to declare them.
 sub daemonCommand {
-	my ( $req, $commands ) = @_;
+	my ( $daemon, $req, $commands ) = @_;
 	my $answer = undef;
 	my $TTPVars = Mods::Toops::TTPVars();
 	if( $req->{command} eq "help" ){
@@ -59,7 +60,7 @@ sub daemonCommand {
 	} elsif( $req->{command} eq "status" ){
 		$answer = "running since $TTPVars->{run}{daemon}{started}\nOK";
 	} elsif( $req->{command} eq "terminate" ){
-		$TTPVars->{run}{daemon}{terminating} = true;
+		$daemon->{terminating} = true;
 		$answer = "OK";
 	} elsif( exists( $commands->{$req->{command}} )){
 		$answer = $commands->{$req->{command}}( $req );
@@ -70,10 +71,83 @@ sub daemonCommand {
 }
 
 # ------------------------------------------------------------------------------------------------
+# initialize The Tools Project to be usable by a running daemon
+# we create a daemon.name branch in TTPVars so that all msgXxx functions will work and go to standard log
+# (E):
+# - the program path ($0)
+# - the command line arguments (\@ARGV)
+# returns the daemon object with:
+# - json: the json configuration file path
+# - config: its json evaluated configuration
+# - socket: the created listening socket
+# - sleep: the sleep interval
+sub daemonInitToops {
+	my ( $program, $args ) = @_;
+	my $daemon = undef;
+
+	# init TTP
+	Mods::Toops::initSiteConfiguration();
+	Mods::Toops::initLogs();
+	Mods::Toops::msgLog( "executing $program ".join( ' ', @ARGV ));
+	Mods::Toops::initHostConfiguration();
+
+	# initialize TTPVars data to have a pretty log
+	my ( $volume, $directories, $file ) = File::Spec->splitpath( $program );
+	my $TTPVars = Mods::Toops::TTPVars();
+	$TTPVars->{run}{daemon}{name} = $file;
+	$TTPVars->{run}{daemon}{started} = localtime->strftime( '%Y-%m-%d %H:%M:%S' );
+
+	# get and check the daemon configuration
+	my $json = @{$args}[0];
+	my $config = getConfigByPath( $json );
+	Mods::Toops::msgErr( "JSON configuration must define a daemon 'listeningPort' value, not found" ) if !$config->{listeningPort};
+	my $listenInterval = LISTEN_INTERVAL;
+	if( !Mods::Toops::errs()){
+		if( $config->{listenInterval} ){
+			if( $config->{listenInterval} < $listenInterval ){
+				Mods::Toops::msgVerbose( "defined listenInterval=$config->{listenInterval} less than minimum accepted '$listenInterval', ignored" );
+			} else {
+				$listenInterval = $config->{listenInterval};
+			}
+		}
+	}
+
+	# create a listening socket
+	my $socket = undef;
+	if( !Mods::Toops::errs()){
+		$socket = new IO::Socket::INET(
+			LocalHost => '0.0.0.0',
+			LocalPort => $config->{listeningPort},
+			Proto => 'tcp',
+			Listen => 5,
+			ReuseAddr => true,
+			Blocking => false,
+			Timeout => 0
+		) or Mods::Toops::msgErr( "unable to create a listening socket: $!" );
+	}
+	if( !Mods::Toops::errs()){
+		$SIG{INT} = sub { $socket->close(); Mods::Toops::ttpExit(); };
+		$daemon = {
+			json => $json,
+			config => $config,
+			socket => $socket,
+			listenInterval => $listenInterval
+		};
+	}
+	return $daemon;
+}
+
+# ------------------------------------------------------------------------------------------------
 # periodically listen on the TCP port
+# returns undef or a hash with:
+# - client socket
+# - peer host, address and port
+# - command
+# - args
 sub daemonListen {
-	my ( $socket, $commands ) = @_;
-	my $client = $socket->accept();
+	my ( $daemon, $commands ) = @_;
+	$commands //= {};
+	my $client = $daemon->{socket}->accept();
 	my $result = undef;
 	my $data = "";
 	if( $client ){
@@ -90,49 +164,10 @@ sub daemonListen {
 		my @words = split( /\s+/, $data );
 		$result->{command} = shift( @words );
 		$result->{args} = \@words;
-		if( $commands ){
-			my $answer = daemonCommand( $result, $commands );
-			daemonAnswer( $result, $answer );
-		}
+		my $answer = daemonCommand( $daemon, $result, $commands );
+		daemonAnswer( $daemon, $result, $answer );
 	}
 	return $result;
-}
-
-# ------------------------------------------------------------------------------------------------
-# create a listening socket
-sub daemonCreateListeningSocket {
-	my ( $config ) = @_;
-	my $socket = new IO::Socket::INET(
-		LocalHost => '0.0.0.0',
-		LocalPort => $config->{listeningPort},
-		Proto => 'tcp',
-		Listen => 5,
-		ReuseAddr => true,
-		Blocking => false,
-		Timeout => 0
-	) or Mods::Toops::msgErr( "unable to create a listening socket: $!" );
-
-	if( $socket ){
-		$SIG{INT} = sub { $socket->close(); Mods::Toops::ttpExit(); };
-	}
-	return $socket;
-}
-
-# ------------------------------------------------------------------------------------------------
-# initialize The Tools Project to be usable by a running daemon
-# we create a daemon.name branch in TTPVars so that all msgXxx functions will work and go to standard log
-sub daemonInitToops {
-	my ( $program ) = @_;
-	Mods::Toops::initSiteConfiguration();
-	Mods::Toops::initLogs();
-	Mods::Toops::msgLog( "executing $program ".join( ' ', @ARGV ));
-	my ( $volume, $directories, $file ) = File::Spec->splitpath( $program );
-	# keep the sufix when advertizing about the daemon
-	#$file =~ s/\.[^.]+$//;
-	my $TTPVars = Mods::Toops::TTPVars();
-	$TTPVars->{run}{daemon}{name} = $file;
-	$TTPVars->{run}{daemon}{started} = localtime->strftime( '%Y-%m-%d %H:%M:%S' );
-	$TTPVars->{run}{daemon}{terminating} = false;
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -143,6 +178,19 @@ sub getConfigByPath {
 	my $res = Mods::Toops::evaluate( Mods::Toops::jsonRead( $json ));
 	return undef if ref( $res ) ne 'HASH' || !scalar keys %{$res};
 	return $res;
+}
+
+# ------------------------------------------------------------------------------------------------
+# return the smallest interval which will be the sleep time of the daemon loop
+sub getSleepTime {
+	my ( @candidates ) = @_;
+	my $min = -1;
+	foreach my $it ( @candidates ){
+		if( $it < $min || $min == -1 ){
+			$min = $it;
+		}
+	}
+	return $min;
 }
 
 1;
