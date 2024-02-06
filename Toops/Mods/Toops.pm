@@ -243,9 +243,24 @@ sub execReportAppend {
 	$data->{code} = $TTPVars->{run}{exitCode};
 	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
-	# and build the target full path
-	my $path = File::Spec->catdir( $TTPVars->{config}{site}{toops}{execReports}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
-	jsonWrite( $data, $path );
+	# if Toops is configured to write JSON files
+	if( $TTPVars->{config}{site}{toops}{executionReport}{withFile} ){
+		my $path = File::Spec->catdir( $TTPVars->{config}{site}{toops}{execReports}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
+		jsonWrite( $data, $path );
+	}
+	# if Toops is configured to output execution reports to the MQTT bus
+	if( $TTPVars->{config}{site}{toops}{executionReport}{withMqtt} ){
+		my $topic = $data->{host}; delete $data->{host};
+		$topic .= "/executionReport";
+		$topic .= "/$data->{command}"; delete $data->{command};
+		$topic .= "/$data->{verb}"; delete $data->{verb};
+		my $json = JSON->new;
+		my $message = $json->encode( $data );
+		my $verbose = '';
+		$verbose = "-verbose" if $TTPVars->{run}{verbose};
+		my $out = `mqtt.pl publish -topic $topic -message $message $verbose`;
+		#msgVerbose( $out );
+	}
 }
 
 # -------------------------------------------------------------------------------------------------
