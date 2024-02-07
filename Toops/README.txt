@@ -84,4 +84,4 @@ Topics tree
   published
 	<emitter_host> / executionReport / <command> / <verb>
   retained
-	<emitter_host> / daemon / <json_base_name> / status
+	<emitter_host> / daemon / <daemon_name> / status				where daemon_name is the base name of the json file, without the extension

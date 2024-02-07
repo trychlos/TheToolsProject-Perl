@@ -39,11 +39,10 @@ sub doStatus {
 	my $verbose = "-verbose" if $TTPVars->{run}{verbose};
 	my $res = `daemon.pl command -json $json_path -command status $verbose`;
 	if( $res && length $res ){
-		print " $res" if $res && length $res;
+		print "$res";
 	} else {
 		Mods::Toops::msgErr( "no answer from the daemon" );
 	}
-	
 }
 
 # =================================================================================================

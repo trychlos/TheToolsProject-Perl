@@ -61,9 +61,12 @@ BACKUP DATABASE $parms->{database} TO DISK='$parms->{output}' WITH $options, NAM
 # execute a SQL command and returns its result
 # doesn't try to capture the output at the moment
 # doesn't honor '--dummy' option when the command is a SELECT sentence
+# returns a hash with following keys:
+# - result: true|false
+# - output: an array of output lines (which may be errors or normal command output)
 sub apiExecSqlCommand {
 	my ( $me, $dbms, $sql ) = @_;
-	my $result = undef;
+	my $result = { result => false };
 	Mods::Toops::msgErr( "SqlServer::apiExecSqlCommand() instance is mandatory, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
 	if( !Mods::Toops::errs()){
 		Mods::Toops::msgVerbose( "SqlServer::apiExecSqlCommand() entering with instance='$dbms->{instance}{name}' sql='$sql'" );
@@ -76,18 +79,18 @@ sub apiExecSqlCommand {
 			if( length $account && length $passwd ){
 				my $server = $dbms->{config}{name}."\\".$dbms->{instance}{name};
 				my $tempfname = Mods::Toops::getTempFileName();
-				my $command = "sqlcmd -q $sql -S $server -U $account -P $passwd -V16";
-				Mods::Toops::msgVerbose( "executing 'sqlcmd -q $sql -S $server -U $account -P xxxxxx -V16'" );
-				print `$command -o $tempfname`;
-				$result = ( $? == 0 ) ? true : false;
-				Mods::Toops::msgVerbose( "result=$result" );
-				Mods::Toops::msgOut( "result stored in '$tempfname'" );
+				Mods::Toops::msgVerbose( "tempFileName='$tempfname'" );
+				my $command = "sqlcmd -Q \"$sql\" -S $server -U $account -V16 -P";
+				Mods::Toops::msgVerbose( "executing '$command xxxxxx'" );
+				`$command $passwd -o $tempfname`;
+				$result->{result} = ( $? == 0 ) ? true : false;
 				my $temp = path( $tempfname );
-				print $temp->slurp_utf8;
+				my @lines = $temp->lines_utf8;
+				$result->{output} = \@lines;
 			}
 		}
 	}
-	Mods::Toops::msgVerbose( "SqlServer::apiExecSqlCommand() result=$result" );
+	Mods::Toops::msgVerbose( "SqlServer::apiExecSqlCommand() result=$result->{result}" );
 	return $result;
 }
 

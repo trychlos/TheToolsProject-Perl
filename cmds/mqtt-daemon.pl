@@ -33,16 +33,76 @@ my $TTPVars = Mods::Toops::TTPVars();
 
 # specific to this daemon
 my $mqtt;
+my $kept = {};
+my $sysReceived = false;
+
+# -------------------------------------------------------------------------------------------------
+# some kept data are anwered to some configured commands
+# the input request is:
+# - client socket
+# - peer host, address and port
+# - command
+# - args
+sub doCommand {
+	my ( $req ) = @_;
+	Mods::Toops::msgLog( "command='$req->{command}' sysReceived=$sysReceived" );
+	my @answer = ();
+	my $count = 0;
+	foreach my $it ( keys %{$kept->{$req->{command}}} ){
+		$count += 1;
+		push( @answer, "$it $kept->{$req->{command}}{$it}" );
+	}
+	return $count ? join( "\n", @answer ) : '';
+}
+
+# -------------------------------------------------------------------------------------------------
+# the received topic match a daemon configuration item
+sub doMatched {
+	my ( $topic, $message, $config ) = @_;
+	# is a $SYS message ?
+	$sysReceived = true if $topic =~ /^\$SYS/;
+	# do we log the topic and/or the message ?
+	my $logTopic = true;
+	$logTopic = $config->{logTopic} if exists $config->{logTopic};
+	my $logMessage = true;
+	$logMessage = $config->{logMessage} if exists $config->{logMessage};
+	if( $logTopic || $logMessage ){
+		my $logged = '';
+		$logged .= "logTopic=$logTopic";
+		$logged .= " topic='$topic'" if $logTopic;
+		$logged .= " logMessage=$logMessage";
+		$logged .= " message='$message'" if $logMessage;
+		Mods::Toops::msgLog( "$logged" );
+	}
+	# do we want keep and answer with the received data ?
+	my $command = undef;
+	$command = $config->{command} if exists $config->{command};
+	if( $command ){
+		$kept->{$command}{$topic} = $message;
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# setup the commands hash before the first listening loop
+sub setCommands {
+	foreach my $key ( keys %{$daemon->{config}{topics}} ){
+		if( exists( $daemon->{config}{topics}{$key}{command} )){
+			$commands->{$daemon->{config}{topics}{$key}{command}} = \&doCommand;
+		}
+	}
+}
 
 # -------------------------------------------------------------------------------------------------
 # do its work, examining the MQTT queue
 sub works {
 	my ( $topic, $message ) = @_;
-	print "topic='$topic' message='$message'".EOL;
-	Mods::Toops::msgLog( "received topic='$topic' message='$message'" );
-	foreach my $it ( @{$daemon->{config}{monitoredTopics}} ){
-		my $match = $topic =~ /$it->{topic}/;
-		print "'$it->{topic}' ".( $match ? "match" : "doesn't match" ).EOL;
+	#print "$topic".EOL;
+	foreach my $key ( keys %{$daemon->{config}{topics}} ){
+		my $match = $topic =~ /$key/;
+		#print "topic='$topic' key='$key' match=$match".EOL;
+		if( $match ){
+			doMatched( $topic, $message, $daemon->{config}{topics}{$key} );
+		}
 	}
 }
 
@@ -63,7 +123,8 @@ if( !Mods::Toops::errs()){
 if( !Mods::Toops::errs()){
 	my $user = $mqtt->login( $hostConfig->{MQTT}{username}, $hostConfig->{MQTT}{passwd} );
 	Mods::Toops::msgLog( "login(): $user" );
-	$mqtt->subscribe( "#" => \&works );
+	$mqtt->subscribe( '#' => \&works, '$SYS/#' => \&works );
+	setCommands();
 }
 
 my $lastScanTime;

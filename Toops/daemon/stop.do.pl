@@ -38,7 +38,11 @@ sub doStop {
 	my $json_path = File::Spec->rel2abs( $opt_json );
 	my $verbose = "-verbose" if $TTPVars->{run}{verbose};
 	my $res = `daemon.pl command -json $json_path -command terminate $verbose`;
-	print " $res";
+	if( $res && length $res ){
+		print "$res";
+	} else {
+		Mods::Toops::msgErr( "no answer from the daemon" );
+	}
 }
 
 # =================================================================================================

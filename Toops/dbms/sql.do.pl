@@ -44,10 +44,17 @@ my $opt_command = $defaults->{command};
 my $opt_tabular = false;
 
 # -------------------------------------------------------------------------------------------------
-# execute the sql command to be read from stdin
+# Dbms::execSqlCommand returns a hash with:
+# -result: true|false
+# - output: an array of output
 sub _result {
 	my ( $res ) = @_;
-	if( $res ){
+	if( $res->{output} && scalar @{$res->{output}} ){
+		foreach my $it ( @{$res->{output}} ){
+			print $it;
+		}
+	}
+	if( $res->{result} ){
 		Mods::Toops::msgOut( "success" );
 	} else {
 		Mods::Toops::msgErr( "NOT OK" );

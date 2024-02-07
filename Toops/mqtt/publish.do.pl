@@ -36,7 +36,7 @@ my $opt_message = $defaults->{message};
 # send the alert
 # as far as we are concerned here, this is just writing a json file in a special directory
 sub doPublish {
-	Mods::Toops::msgOut( "publishing '$opt_topic/$opt_message'..." );
+	Mods::Toops::msgOut( "publishing '$opt_topic [$opt_message]'..." );
 
 	my $hostConfig = Mods::Toops::getHostConfig();
 	Mods::Toops::msgErr( "no registered broker" ) if !$hostConfig->{MQTT}{broker};

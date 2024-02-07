@@ -261,8 +261,7 @@ sub execReportAppend {
 		my $message = $json->encode( $data );
 		my $verbose = '';
 		$verbose = "-verbose" if $TTPVars->{run}{verbose};
-		my $out = `mqtt.pl publish -topic $topic -message $message $verbose`;
-		#msgVerbose( $out );
+		msgStdout2Log( `mqtt.pl publish -topic $topic -message "$message" $verbose` );
 	}
 }
 
@@ -389,13 +388,20 @@ sub getOptionsToOpts {
 =cut
 
 # -------------------------------------------------------------------------------------------------
-# returns a new unique temp filename
-sub getTempFileName {
-	my $fname = $TTPVars->{run}{command}{name}.'-'.$TTPVars->{run}{verb}{name};
+# returns a random identifier
+sub getRandom {
 	my $ug = new Data::UUID;
 	my $uuid = lc $ug->create_str();
 	$uuid =~ s/-//g;
-	my $tempfname = File::Spec->catdir( $TTPVars->{run}{logsDir}, "$fname-$uuid.tmp" );
+	return $uuid;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns a new unique temp filename
+sub getTempFileName {
+	my $fname = $TTPVars->{run}{command}{name}.'-'.$TTPVars->{run}{verb}{name};
+	my $random = getRandom();
+	my $tempfname = File::Spec->catdir( $TTPVars->{run}{logsDir}, "$fname-$random.tmp" );
 	msgVerbose( "getTempFileName() tempfname='$tempfname'" );
 	return $tempfname;
 }
@@ -757,7 +763,7 @@ sub msgLogAppend {
 	if( $TTPVars->{run}{logsMain} ){
 		my $host = uc hostname;
 		my $username = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME} || 'unknown'; #getpwuid( $< );
-		my $line = localtime->strftime( '%Y-%m-%d %H:%M:%S' )." $host $username $msg";
+		my $line = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%5N' )." $host $username $msg";
 		path( $TTPVars->{run}{logsMain} )->append_utf8( $line.EOL );
 	}
 }
@@ -808,6 +814,18 @@ sub msgPrefix {
 	}
 	return $prefix;
 }
+
+# -------------------------------------------------------------------------------------------------
+# Log the stdout of a command (i.e. several lines with carriage return line feeds)
+sub msgStdout2Log {
+	my ( @out ) = @_;
+	foreach my $line ( @out ){
+		chomp $line;
+		msgLog( $line );
+	}
+}
+
+
 
 # -------------------------------------------------------------------------------------------------
 # Verbose message

@@ -59,10 +59,10 @@ sub daemonAdvertize {
 	if( !$daemon->{lastAdvertize} || $now-$daemon->{lastAdvertize} >= $advertizeInterval ){
 		my $topic = _hostname();
 		$topic .= "/daemon";
-		$topic .= "/$daemon->{json}";
+		$topic .= "/$daemon->{name}";
 		$topic .= "/status";
 		my $message = _running();
-		Mods::Toops::msgLog( `mqtt.pl publish -topic $topic -message $message -retain` );
+		Mods::Toops::msgStdout2Log( `mqtt.pl publish -topic $topic -message "$message" -retain` );
 		$daemon->{lastAdvertize} = $now;
 	}
 }
@@ -157,8 +157,11 @@ sub daemonInitToops {
 	}
 	if( !Mods::Toops::errs()){
 		$SIG{INT} = sub { $socket->close(); Mods::Toops::ttpExit(); };
+		my ( $jvol, $jdirs, $jfile ) = File::Spec->splitpath( $json );
+		$jfile =~ s/\.[^.]+$//;
 		$daemon = {
 			json => $json,
+			name => $jfile,
 			config => $config,
 			socket => $socket,
 			listenInterval => $listenInterval
