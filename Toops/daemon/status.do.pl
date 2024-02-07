@@ -1,4 +1,4 @@
-# @(#) get a running status a TTP daemon
+# @(#) get the running status of a TTP daemon
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]

@@ -48,6 +48,21 @@ sub _pad {
 	return Mods::Toops::pad( @_ );
 }
 
+=pod
++=============================================================================================================================+
+|  WORKLOAD SUMMARY                                                                                                           |
+|                                                                       started at               ended at                  RC |
++---------------------------------------------------------------------+------------------------+------------------------+-----+
+| dbms.pl backup -instance MSSQLSERVER -database inlingua17a -diff    | 2024-02-07 22:00:02,26 | 2024-02-07 22:00:02,98 |   0 |
+| dbms.pl backup -instance MSSQLSERVER -database inlingua21 -diff     | 2024-02-07 22:00:02,98 | 2024-02-07 22:00:03,58 |   0 |
+| dbms.pl backup -instance MSSQLSERVER -database TOM59331 -diff       | 2024-02-07 22:00:03,58 | 2024-02-07 22:00:04,59 |   0 |
++=============================================================================================================================+
+|                                                                                                                             |
+|                                                        EMPTY OUTPUT                                                         |
+|                                                                                                                             |
++=============================================================================================================================+
+=cut
+
 # -------------------------------------------------------------------------------------------------
 # print a funny workload summary
 sub printSummary {
@@ -67,17 +82,27 @@ sub printSummary {
 			$maxLength = length $command;
 		}
 	}
+	if( $opt_count == 0 ){
+		$maxLength = 65; # arbitrary value long enough to get a pretty display (and the totLength be even)
+	}
 	# display the summary
 	my $totLength = $maxLength + 63;
 	print _pad( "+", $totLength-1, '=' )."+".EOL;
-	print _pad( "| $ENV{$opt_me} WORKLOAD SUMMARY", $totLength-1, ' ' )."|".EOL;
+	print _pad( "| WORKLOAD SUMMARY for <$opt_workload>", $totLength-1, ' ' )."|".EOL;
 	print _pad( "|", $maxLength+8, ' ' )._pad( "started at", 25, ' ' )._pad( "ended at", 25, ' ' )." RC |".EOL;
 	print _pad( "+", $maxLength+6, '-' )._pad( "+", 25, '-' )._pad( "+", 25, '-' )."+-----+".EOL;
-	my $i = 0;
-	foreach my $it ( @results ){
-		$i += 1;
-		Mods::Toops::msgVerbose( "printing i=$i execution report" );
-		print _pad( "| $it->{command}", $maxLength+6, ' ' )._pad( "| $it->{start}", 25, ' ' )._pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
+	# display the result or an empty output
+	if( $opt_count > 0 ){
+		my $i = 0;
+		foreach my $it ( @results ){
+			$i += 1;
+			Mods::Toops::msgVerbose( "printing i=$i execution report" );
+			print _pad( "| $it->{command}", $maxLength+6, ' ' )._pad( "| $it->{start}", 25, ' ' )._pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
+		}
+	} else {
+		print _pad( "|", $totLength-1, ' ' )."|".EOL;
+		print _pad( "|", $totLength/2 - 6, ' ' )._pad( "EMPTY OUTPUT", $totLength/2 + 5, ' ' )."|".EOL;
+		print _pad( "|", $totLength-1, ' ' )."|".EOL;
 	}
 	print "+"._pad( "", $totLength-2, '=' )."+".EOL;
 }
