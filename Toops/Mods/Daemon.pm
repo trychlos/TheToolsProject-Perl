@@ -26,6 +26,7 @@ use warnings;
 use Data::Dumper;
 use File::Spec;
 use IO::Socket::INET;
+use Sys::Hostname qw( hostname );
 use Time::Piece;
 
 use Mods::Constants qw( :all );
@@ -33,8 +34,38 @@ use Mods::Toops;
 
 use constant {
 	BUFSIZE => 4096,
-	LISTEN_INTERVAL => 1
+	ADVERTIZE_INTERVAL => 60,
+	MIN_INTERVAL => 1
 };
+
+# ------------------------------------------------------------------------------------------------
+sub _hostname {
+	return uc hostname;
+}
+
+# ------------------------------------------------------------------------------------------------
+sub _running {
+	my $TTPVars = Mods::Toops::TTPVars();
+	return "running since $TTPVars->{run}{daemon}{started}";
+}
+
+# ------------------------------------------------------------------------------------------------
+# the daemon advertize of its status every minute
+sub daemonAdvertize {
+	my ( $daemon ) = @_;
+	my $now = localtime->epoch;
+	my $advertizeInterval = ADVERTIZE_INTERVAL;
+	$advertizeInterval = $daemon->{config}{advertizeInterval} if exists $daemon->{config}{advertizeInterval} && $daemon->{config}{advertizeInterval} >= MIN_INTERVAL;
+	if( !$daemon->{lastAdvertize} || $now-$daemon->{lastAdvertize} >= $advertizeInterval ){
+		my $topic = _hostname();
+		$topic .= "/daemon";
+		$topic .= "/$daemon->{json}";
+		$topic .= "/status";
+		my $message = _running();
+		Mods::Toops::msgLog( `mqtt.pl publish -topic $topic -message $message -retain` );
+		$daemon->{lastAdvertize} = $now;
+	}
+}
 
 # ------------------------------------------------------------------------------------------------
 # the daemon answers to the client
@@ -51,14 +82,13 @@ sub daemonAnswer {
 sub daemonCommand {
 	my ( $daemon, $req, $commands ) = @_;
 	my $answer = undef;
-	my $TTPVars = Mods::Toops::TTPVars();
 	if( $req->{command} eq "help" ){
 		$commands->{help} = 1;
 		$commands->{status} = 1;
 		$commands->{terminate} = 1;
 		$answer = join( ', ', sort keys %{$commands} )."\nOK";
 	} elsif( $req->{command} eq "status" ){
-		$answer = "running since $TTPVars->{run}{daemon}{started}\nOK";
+		$answer = _running()."\nOK";
 	} elsif( $req->{command} eq "terminate" ){
 		$daemon->{terminating} = true;
 		$answer = "OK";
@@ -101,7 +131,7 @@ sub daemonInitToops {
 	my $json = @{$args}[0];
 	my $config = getConfigByPath( $json );
 	Mods::Toops::msgErr( "JSON configuration must define a daemon 'listeningPort' value, not found" ) if !$config->{listeningPort};
-	my $listenInterval = LISTEN_INTERVAL;
+	my $listenInterval = MIN_INTERVAL;
 	if( !Mods::Toops::errs()){
 		if( $config->{listenInterval} ){
 			if( $config->{listenInterval} < $listenInterval ){
@@ -167,6 +197,8 @@ sub daemonListen {
 		my $answer = daemonCommand( $daemon, $result, $commands );
 		daemonAnswer( $daemon, $result, $answer );
 	}
+	# advertize my status on communication bus
+	daemonAdvertize( $daemon );
 	return $result;
 }
 
