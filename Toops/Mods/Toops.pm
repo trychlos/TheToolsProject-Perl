@@ -1087,6 +1087,20 @@ sub ttpExit {
 }
 
 # -------------------------------------------------------------------------------------------------
+# given a command output, extracts the [command.pl verb] lines, returning the rest
+sub ttpFilter {
+	my @lines = @_;
+	my @result = ();
+	foreach my $it ( @lines ){
+		chomp $it;
+		$it =~ s/^\s*//;
+		$it =~ s/\s*$//;
+		push( @result, $it ) if ! grep( /\[[^\]]+\]/, $it );
+	}
+	return \@result;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Used by verbs to access our global variables
 sub TTPVars {
 	return $TTPVars;

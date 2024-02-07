@@ -81,7 +81,11 @@ TODO
     1 24- 1-29 Toops::getOptions doesn't work as we do not know how to pass arguments to GetOptions()
 
 Topics tree
+
   published
-	<emitter_host> / executionReport / <command> / <verb>
+	<emitter_host> / executionReport / <command> / <verb>															-> the json execution report (command/verb dependant)
+	<emitter_host> / metrology / dbms / <instance> / database / <database> / dbsize / <size_item>					-> size_item_value
+	<emitter_host> / metrology / dbms / <instance> / database / <database> / table / <table_name> / rows_count		-> size_item_value
+
   retained
 	<emitter_host> / daemon / <daemon_name> / status				where daemon_name is the base name of the json file, without the extension
