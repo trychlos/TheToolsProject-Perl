@@ -67,14 +67,21 @@ sub interpretResultSet {
 # (E):
 # - topic string
 # - result set
+# - an optional options hash with following keys:
+#   > maxCount: the maximum count of messages to be published (ignored if less than zero)
 # (R):
 # returns the count of published messages
 sub publish {
-	my ( $root, $set ) = @_;
+	my ( $root, $set, $opts ) = @_;
+	$opts //= {};
 	my $host = uc hostname;
+	my $max = -1;
+	$max = $opts->{maxCount} if exists( $opts->{maxCount} ) && $opts->{maxCount} >= 0;
 	my $count = 0;
 	foreach my $it ( @{$set} ){
+		last if $count >= $max && $max >= 0;
 		foreach my $key ( keys %{$it} ){
+			last if $count >= $max && $max >= 0;
 			my $command = "mqtt.pl publish -topic $host/metrology/$root/$key -message \"$it->{$key}\"";
 			Mods::Toops::msgOut( "  $command" );
 			`$command`;
