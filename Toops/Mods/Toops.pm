@@ -100,15 +100,16 @@ sub commandByOs {
 		# Thus, the exit value of the subprocess is actually ($? >> 8), and $? & 127 gives which signal, if any, the
 		# process died from, and $? & 128 reports whether there was a core dump.
 		# https://ss64.com/nt/robocopy-exit.html
-		# 0 and 1 are ok
 		my $res = $?;
 		$result->{result} = ( $res == 0 ) ? true : false;
+		msgVerbose( "Toops::commandByOs() return_code=$res interpreted as result=$result->{result}" );
 		if( $args->{command} =~ /robocopy/i ){
 			$res = ( $res >> 8 );
 			$result->{result} = ( $res <= 7 ) ? true : false;
+			msgVerbose( "Toops::commandByOs() robocopy specific interpretation res=$res result=$result->{result}" );
 		}
 	}
-	msgVerbose( "Toops::commandByOs() result=$result" );
+	msgVerbose( "Toops::commandByOs() result=$result->{result}" );
 	return $result;
 }
 
@@ -121,7 +122,7 @@ sub commandByOs {
 sub copyDir {
 	my ( $source, $target ) = @_;
 	my $result = false;
-	msgVerbose( "Toops::copyDir() source='$source' target='$target'" );
+	msgVerbose( "Toops::copyDir() entering with source='$source' target='$target'" );
 	if( ! -d $source ){
 		msgErr( "$source: source directory doesn't exist" );
 		return false;
@@ -135,6 +136,7 @@ sub copyDir {
 	});
 	if( defined $cmdres->{command} ){
 		$result = $cmdres->{result};
+		msgVerbose( "Toops::copyDir() commandByOs() result=$result" );
 	} else {
 		msgDummy( "dircopy( $source, $target )" );
 		if( !wantsDummy()){
@@ -142,11 +144,11 @@ sub copyDir {
 			# This function returns true or false: for true in scalar context it returns the number of files and directories copied,
 			# whereas in list context it returns the number of files and directories, number of directories only, depth level traversed.
 			my $res = dircopy( $source, $target );
-			msgVerbose( "Toops::copyDir() result=$result" );
 			$result = $res ? true : false;
+			msgVerbose( "Toops::copyDir() dircopy() res=$res result=$result" );
 		}
 	}
-	msgVerbose( "Toops::copyDir() result=$result" );
+	msgVerbose( "Toops::copyDir() returns result=$result" );
 	return $result;
 }
 
