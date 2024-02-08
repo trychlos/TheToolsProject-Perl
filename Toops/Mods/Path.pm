@@ -31,6 +31,7 @@ use strict;
 use warnings;
 
 use Data::Dumper;
+use File::Path qw( make_path );
 use File::Spec;
 use Sys::Hostname qw( hostname );
 use Time::Piece;
@@ -64,6 +65,7 @@ sub logsRootDir {
 
 # -------------------------------------------------------------------------------------------------
 # make sure a directory exist
+# note that this does NOT honor the '-dummy' option as creating a directory is easy and a work may blocked without that
 # returns true|false
 sub makeDirExist {
 	my ( $dir ) = @_;
@@ -89,33 +91,28 @@ sub makeDirExist {
 		while( scalar @levels ){
 			my $level = shift @levels;
 			my $dir = File::Spec->catpath( $volume, $candidate, $level );
-			$result &= Mods::Toops::msgDummy( "mkdir $dir" );
-			if( !Mods::Toops::wantsDummy()){
-				$result &= mkdir $dir;
-			}
+			$result &= mkdir $dir;
 			$candidate = File::Spec->catdir(  $candidate, $level );
 		}
 	} else {
 		Mods::Toops::msgVerbose( "Toops::makeDirExist() dir='$dir' tries make_path()" );
-		$result &= Mods::Toops::msgDummy( "make_path( $dir )" );
-		if( !Mods::Toops::wantsDummy()){
-			my $error;
-			make_path( $dir, {
-				verbose => Mods::Toops::TTPVars()->{run}{verbose},
-				error => \$error
-			});
-			# https://perldoc.perl.org/File::Path#make_path%28-%24dir1%2C-%24dir2%2C-....-%29
-			if( $error && @$error ){
-				for my $diag ( @$error ){
-					my ( $file, $message ) = %$diag;
-					if( $file eq '' ){
-						Mods::Toops::msgErr( $message );
-					} else {
-						Mods::Toops::msgErr( "$file: $message" );
-					}
+		my $error;
+		$result = true;
+		make_path( $dir, {
+			verbose => Mods::Toops::TTPVars()->{run}{verbose},
+			error => \$error
+		});
+		# https://perldoc.perl.org/File::Path#make_path%28-%24dir1%2C-%24dir2%2C-....-%29
+		if( $error && @$error ){
+			for my $diag ( @$error ){
+				my ( $file, $message ) = %$diag;
+				if( $file eq '' ){
+					Mods::Toops::msgErr( $message );
+				} else {
+					Mods::Toops::msgErr( "$file: $message" );
 				}
-				$result = false;
 			}
+			$result = false;
 		}
 	}
 	Mods::Toops::msgVerbose( "Toops::makeDirExist() dir='$dir' result=$result" );
