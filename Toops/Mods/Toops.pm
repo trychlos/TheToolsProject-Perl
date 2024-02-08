@@ -87,6 +87,7 @@ our $TTPVars = {
 sub commandByOs {
 	my ( $args ) = @_;
 	my $result = {};
+	$result->{command} = $args->{command};
 	$result->{result} = false;
 	msgVerbose( "Toops::commandByOs() evaluating and executing command='".( $args->{command} || '(undef)' )."'" );
 	if( defined $args->{command} ){
@@ -114,7 +115,7 @@ sub commandByOs {
 }
 
 # -------------------------------------------------------------------------------------------------
-# (recursively) move a directory and its content from a source to a target
+# copy a directory and its content from a source to a target
 # this is a design decision to make this recursive copy file by file in order to have full logs
 # Toops allows to provide a system-specific command in its configuration file
 # well suited for example to move big files to network storage
@@ -247,11 +248,21 @@ sub execReportAppend {
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	# if Toops is configured to write JSON files
 	# please note that having the json filenames ordered both by name and by date is a design decision - do not change
+	if( exists( $TTPVars->{config}{site}{toops}{executionReport}{withFile} )){
+		msgVerbose( "execReportAppend() TTPVars->{config}{site}{toops}{executionReport}{withFile}=$TTPVars->{config}{site}{toops}{executionReport}{withFile}" );
+	} else {
+		msgVerbose( "execReportAppend() TTPVars->{config}{site}{toops}{executionReport}{withFile} is undef" );
+	}
 	if( $TTPVars->{config}{site}{toops}{executionReport}{withFile} ){
 		my $path = File::Spec->catdir( $TTPVars->{config}{site}{toops}{execReports}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
 		jsonWrite( $data, $path );
 	}
 	# if Toops is configured to output execution reports to the MQTT bus
+	if( exists( $TTPVars->{config}{site}{toops}{executionReport}{withMqtt} )){
+		msgVerbose( "execReportAppend() TTPVars->{config}{site}{toops}{executionReport}{withMqtt}=$TTPVars->{config}{site}{toops}{executionReport}{withMqtt}" );
+	} else {
+		msgVerbose( "execReportAppend() TTPVars->{config}{site}{toops}{executionReport}{withMqtt} is undef" );
+	}
 	if( $TTPVars->{config}{site}{toops}{executionReport}{withMqtt} ){
 		my $topic = $data->{host}; delete $data->{host};
 		$topic .= "/executionReport";
@@ -261,7 +272,7 @@ sub execReportAppend {
 		my $message = $json->encode( $data );
 		my $verbose = '';
 		$verbose = "-verbose" if $TTPVars->{run}{verbose};
-		msgStdout2Log( `mqtt.pl publish -topic $topic -message "$message" $verbose` );
+		msgStdout2Log( `mqtt.pl publish -topic $topic -message "\"$message\"" $verbose` );
 	}
 }
 
