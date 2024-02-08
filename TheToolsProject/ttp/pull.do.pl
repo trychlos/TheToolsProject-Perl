@@ -117,7 +117,7 @@ Mods::Toops::msgVerbose( "found fromhost='$opt_fromhost'" );
 
 # a pull host must be defined in command-line and have a json configuration file
 Mods::Toops::msgErr( "'--fromhost' value is required, but not specified" ) if !$opt_fromhost;
-my $config = Mods::Toops::hostConfig( $opt_fromhost );
+my $config = Mods::Toops::getHostConfig( $opt_fromhost );
 
 if( !Mods::Toops::errs()){
 	doPull( $config );

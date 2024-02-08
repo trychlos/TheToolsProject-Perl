@@ -303,7 +303,7 @@ sub wanted {
 sub works {
 	# update the daemon config and the services informations too
 	$daemon->{config} = Mods::Daemon::getConfigByPath( $daemon->{json} );
-	$monitoredConfig = Mods::Toops::hostConfig( $monitoredHost );
+	$monitoredConfig = Mods::Toops::getHostConfig( $monitoredHost );
 	# and scan..
 	my @monitored = _evaluateArray( @{$daemon->{config}{monitoredDirs}} );
 	if( scalar @monitored ){
@@ -338,7 +338,7 @@ if( scalar @ARGV != 3 ){
 } else {
 	$monitoredHost = $ARGV[1];
 	$monitoredService = $ARGV[2];
-	$monitoredConfig = Mods::Toops::hostConfig( $monitoredHost );
+	$monitoredConfig = Mods::Toops::getHostConfig( $monitoredHost );
 	if( !exists( $monitoredConfig->{Services}{$monitoredService} )){
 		Mods::Toops::msgErr( "service '$monitoredService' is unknown in '$monitoredHost' host configuration" );
 	}
