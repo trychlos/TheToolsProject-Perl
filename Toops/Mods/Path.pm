@@ -6,12 +6,12 @@
 #
 # - as environment variables:
 #
-#   > TTP_SITE: as the path to the tree which contains all configurations files, and specially 'toops.json'
+#   > TTP_CONFDIR: as the path to the tree which contains all configurations files, and specially 'toops.json'
 #     it is suggested that this configuration tree be outside of the Toops installation
 #     it is addressed by siteConfigurationsDir()
 #     the structure is fixed at the moment:
 #
-#       TTP_SITE/
+#       TTP_CONFDIR/
 #        |
 #        +- toops.json
 #            |
@@ -47,11 +47,6 @@ sub daemonsConfigurationsDir {
 # ------------------------------------------------------------------------------------------------
 sub hostsConfigurationsDir {
 	return File::Spec->catdir( siteConfigurationsDir(), "machines" );
-}
-
-# ------------------------------------------------------------------------------------------------
-sub siteConfigurationsDir {
-	return $ENV{TTP_SITE};
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -117,6 +112,11 @@ sub makeDirExist {
 	}
 	Mods::Toops::msgVerbose( "Toops::makeDirExist() dir='$dir' result=$result" );
 	return $result;
+}
+
+# ------------------------------------------------------------------------------------------------
+sub siteConfigurationsDir {
+	return $ENV{TTP_CONFDIR};
 }
 
 # ------------------------------------------------------------------------------------------------

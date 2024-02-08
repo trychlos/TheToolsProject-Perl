@@ -14,6 +14,9 @@
 # - the machine to be monitored for backups
 # - the service to be monitored for backups
 #
+# So each daemon instance only monitors one host service.
+# -------------------------------------------------------
+#
 # Makes use of Toops, but is not part itself of Toops (though a not so bad example of application).
 #
 # Copyright (@) 2023-2024 PWI Consulting
@@ -37,7 +40,7 @@ use Mods::Toops;
 $| = 1;
 
 my $commands = {
-	#help => \&help,
+	stats => \&answerStats,
 };
 
 my $daemon = Mods::Daemon::daemonInitToops( $0, \@ARGV );
@@ -55,6 +58,64 @@ my @runningScan = ();
 
 # store here the last found full database backup
 my $full = {};
+
+# try to have some statistics
+my $stats = {
+	count => 0,
+	ignored => 0,
+	restored => []
+};
+
+# -------------------------------------------------------------------------------------------------
+sub answerStats {
+	my ( $req ) = @_;
+	my $answer = "total seen execution reports: $stats->{count}".EOL;
+	$answer .= "ignored: $stats->{ignored}".EOL;
+	my $executed = scalar @{$stats->{restored}};
+	$answer .= "restore operations: $executed".EOL;
+	if( $executed ){
+		my $last = @{$stats->{restored}}[$executed-1];
+		$answer .= "last was from $last->{reportSourceFileName} to $last->{localSynced} at $stats->{now}".EOL;
+	}
+	$answer .= "OK".EOL;
+	return $answer;
+}
+
+# -------------------------------------------------------------------------------------------------
+sub _execReport {
+	my ( $report ) = @_;
+	Mods::Toops::execReport( $report );
+	push( @{$stats->{restored}}, $report );
+}
+
+# -------------------------------------------------------------------------------------------------
+# evaluate macros
+# REMOTESHARE
+# REMOTEHOST
+# (I);
+# - a string
+# (O):
+# - same thing, with macros having been replaced
+sub _evaluate {
+	my ( $str ) = @_;
+	$str =~ s/<REMOTESHARE>/$monitoredConfig->{remoteShare}/;
+	$str =~ s/<REMOTEHOST>/$monitoredConfig->{name}/;
+	return $str;
+}
+
+# -------------------------------------------------------------------------------------------------
+# evaluate an array of strings
+# (I);
+# - an array of strings
+# (O):
+# - an array, with macros having been replaced
+sub _evaluateArray {
+	my @res = ();
+	foreach my $it ( @_ ){
+		push( @res, _evaluate( $it ));
+	}
+	return @res;
+}
 
 # -------------------------------------------------------------------------------------------------
 # happens that there are lot of situations where we will not be able to keep in memory the last full backup of a database
@@ -116,9 +177,10 @@ sub syncedPath {
 	if( ! -r $sourceNet ){
 		Mods::Toops::msgWarn( "$sourceNet: file not found or not readable" );
 	} else {
-		$localTarget =  File::Spec->catpath( Mods::Toops::pathWithTrailingSeparator( $daemon->{config}{localDir} ), $bck_file );
+		my $localDir = _evaluate( $daemon->{config}{localDir} );
+		$localTarget =  File::Spec->catpath( Mods::Toops::pathWithTrailingSeparator( $localDir ), $bck_file );
 		#print "localTarget='$localTarget'".EOL;
-		Mods::Path::makeDirExist( $daemon->{config}{localDir} );
+		Mods::Path::makeDirExist( $localDir );
 		my $res = copy( $sourceNet, $localTarget );
 		if( $res ){
 			Mods::Toops::msgVerbose( "successfully copied '$sourceNet' to '$localTarget'" );
@@ -137,12 +199,25 @@ sub syncedPath {
 sub doWithNew {
 	my ( @newFiles ) = @_;
 	foreach my $report ( @newFiles ){
+		$stats->{count} += 1;
 		Mods::Toops::msgVerbose( "new report '$report'" );
 		my $data = Mods::Toops::jsonRead( $report );
 		if( exists( $data->{command} ) && $data->{command} eq "dbms.pl" && exists( $data->{verb} ) && $data->{verb} eq "backup" && ( !exists( $data->{dummy} ) || !$data->{dummy} )){
 
 			my $instance = $data->{instance};
+			if( $instance ne $monitoredConfig->{Services}{$monitoredService}{instance} ){
+				Mods::Toops::msgVerbose( "instance='$instance' ignored" );
+				$stats->{ignored} += 1;
+				next;
+			}
+
 			my $database = $data->{database};
+			if( !grep ( /$database/, @{$monitoredConfig->{Services}{$monitoredService}{databases}} )){
+				Mods::Toops::msgVerbose( "database='$database' ignored" );
+				$stats->{ignored} += 1;
+				next;
+			}
+
 			my $mode = $data->{mode};
 			my $output = $data->{output};
 
@@ -154,6 +229,7 @@ sub doWithNew {
 				Mods::Toops::msgVerbose( "backuped database is '$database' while configured are [".join( ', ', @{$candidates} )."]: ignored" );
 				$executable = false;
 			} else {
+				# transfert the remote backup file to our backup host, getting the local backup file (from remote host) to be restored
 				$local = syncedPath( $report, $output );
 				if( $local ){
 					if( $mode eq "full" ){
@@ -182,9 +258,19 @@ sub doWithNew {
 				}
 				Mods::Toops::msgVerbose( "executing $command" );
 				print `$command`;
+				_execReport({
+					reportSourceFileName => $report,
+					reportData => $data,
+					localSynced => $local,
+					command => $command,
+					now => localtime->strftime( "%Y-%m-%d %H:%M%S" )
+				});
+			} else {
+				$stats->{ignored} += 1;
 			}
 
 		} else {
+			$stats->{ignored} += 1;
 			Mods::Toops::msgVerbose( "not a non-dummy database backup, ignored" );
 		}
 	}
@@ -211,15 +297,19 @@ sub wanted {
 
 # -------------------------------------------------------------------------------------------------
 # do its work
-# reevaluate the json configuration to take into account 'eval' data
+# reevaluate the json configuration to take into account 'eval' datas
 # because the directories we are monitoring here are typically backups/logs directories and their
-# name change every day
+# name may change every day
 sub works {
+	# update the daemon config and the services informations too
 	$daemon->{config} = Mods::Daemon::getConfigByPath( $daemon->{json} );
-	my $monitored = $daemon->{config}{monitoredDirs};
-	if( $monitored && scalar @{$monitored} ){
+	$monitoredConfig = Mods::Toops::hostConfig( $monitoredHost );
+	# and scan..
+	my @monitored = _evaluateArray( @{$daemon->{config}{monitoredDirs}} );
+	if( scalar @monitored ){
 		@runningScan = ();
-		find( \&wanted, @{$monitored} );
+		print Dumper( @monitored );
+		find( \&wanted, @monitored );
 		if( scalar @runningScan < scalar @previousScan ){
 			varReset();
 		} elsif( $first ){
@@ -243,7 +333,7 @@ sub works {
 
 # first check arguments
 # - monitored host must have a json configuration file
-if( $#ARGV != 3 ){
+if( scalar @ARGV != 3 ){
 	Mods::Toops::msgErr( "not enough arguments, expected <json> <host> <service>, found ".join( ' ', @ARGV )); 
 } else {
 	$monitoredHost = $ARGV[1];
@@ -258,7 +348,7 @@ if( !Mods::Toops::errs()){
 	$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
 
 	my $sleepTime = Mods::Daemon::getSleepTime(
-		$daemon->{config}{listenInterval},
+		$daemon->{listenInterval},
 		$scanInterval
 	);
 

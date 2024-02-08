@@ -8,7 +8,7 @@ Toops for Windows:
 - set the HOST_ENV value of your machine
 - install and configure Toops for your site:
 	> set the PERL5LIB global environment variable to address the Toops directory
-	> set a TTP_SITE global environment variable to address the directory which contains your site configuration
+	> set a TTP_CONFDIR global environment variable to address the directory which contains your site configuration
 	> (optional) set a TTP_ROOT global environment variable in PATH-style like to address several Toops trees
 	> update the PATH to address all your Toops/bin directories
 	> install CPAN packages
@@ -17,12 +17,12 @@ Toops for Windows:
 	  Proc::Background
 
 Site configuration:
-Install in TTP_SITE/:
-- a copy of TOOPS_ROOT/Mods/etc/toops.json.default as TTP_SITE/toops.json
+Install in TTP_CONFDIR/:
+- a copy of TOOPS_ROOT/Mods/etc/toops.json.default as TTP_CONFDIR/toops.json
 - update it according your needs and preferences
 
 Host configuration:
-Install in TTP_SITE/ as <hostname>.json:
+Install in TTP_CONFDIR/ as <hostname>.json:
 - describe your services
   A service is characterized by the fact that we want describe in this configuration file the difference for *this* service between several environments
   e.g. TOM59 service is referenced in DEV and in PROD/
