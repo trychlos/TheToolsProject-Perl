@@ -15,6 +15,7 @@ use Module::Load;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
+use Mods::Path;
 use Mods::Toops;
 
 # ------------------------------------------------------------------------------------------------
@@ -170,7 +171,7 @@ sub computeDefaultBackupFilename {
 		Mods::Toops::msgWarn( "Dbms::computeDefaultBackupFilename() instance='$parms->{instance}' backupPath is not specified, set to default temp directory" );
 		$backupPath = Mods::Toops::getDefaultTempDir();
 	}
-	Mods::Toops::makeDirExist( $backupPath );
+	Mods::Path::makeDirExist( $backupPath );
 	# compute the filename
 	my $fname = $dbms->{config}{name}.'-'.$parms->{instance}.'-'.$parms->{database}.'-'.localtime->strftime( '%y%m%d' ).'-'.localtime->strftime( '%H%M%S' ).'-'.$mode.'.backup';
 	$output = File::Spec->catdir( $backupPath, $fname );

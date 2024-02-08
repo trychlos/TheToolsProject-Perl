@@ -15,6 +15,8 @@
 use Data::Dumper;
 use File::Spec;
 
+use Mods::Path;
+
 my $TTPVars = Mods::Toops::TTPVars();
 
 my $defaults = {
@@ -58,7 +60,7 @@ sub doCopyDirs {
 		}
 		closedir( FD );
 		# copy all, making sure the initial path at least exists
-		$result = Mods::Toops::makeDirExist( $opt_targetpath );
+		$result = Mods::Path::makeDirExist( $opt_targetpath );
 		if( $result ){
 			foreach my $it ( @list ){
 				my $source = _sourcePath( $it );

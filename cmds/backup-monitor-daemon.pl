@@ -11,6 +11,8 @@
 #
 # Command-line arguments:
 # - the full path to the JSON configuration file
+# - the machine to be monitored for backups
+# - the service to be monitored for backups
 #
 # Makes use of Toops, but is not part itself of Toops (though a not so bad example of application).
 #
@@ -28,6 +30,7 @@ use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Daemon;
+use Mods::Path;
 use Mods::Toops;
 
 # auto-flush on socket
@@ -39,6 +42,11 @@ my $commands = {
 
 my $daemon = Mods::Daemon::daemonInitToops( $0, \@ARGV );
 my $TTPVars = Mods::Toops::TTPVars();
+
+# command-line arguments
+my $monitoredHost = undef;
+my $monitoredService = undef;
+my $monitoredConfig = undef;
 
 my $lastScanTime = 0;
 my $first = true;
@@ -110,7 +118,7 @@ sub syncedPath {
 	} else {
 		$localTarget =  File::Spec->catpath( Mods::Toops::pathWithTrailingSeparator( $daemon->{config}{localDir} ), $bck_file );
 		#print "localTarget='$localTarget'".EOL;
-		Mods::Toops::makeDirExist( $daemon->{config}{localDir} );
+		Mods::Path::makeDirExist( $daemon->{config}{localDir} );
 		my $res = copy( $sourceNet, $localTarget );
 		if( $res ){
 			Mods::Toops::msgVerbose( "successfully copied '$sourceNet' to '$localTarget'" );
@@ -233,23 +241,39 @@ sub works {
 # MAIN
 # =================================================================================================
 
-my $scanInterval = 10;
-$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
-
-my $sleepTime = Mods::Daemon::getSleepTime(
-	$daemon->{config}{listenInterval},
-	$scanInterval
-);
-
-while( !$daemon->{terminating} ){
-	my $res = Mods::Daemon::daemonListen( $daemon, $commands );
-	my $now = localtime->epoch;
-	if( $now - $lastScanTime >= $scanInterval ){
-		works();
+# first check arguments
+# - monitored host must have a json configuration file
+if( $#ARGV != 3 ){
+	Mods::Toops::msgErr( "not enough arguments, expected <json> <host> <service>, found ".join( ' ', @ARGV )); 
+} else {
+	$monitoredHost = $ARGV[1];
+	$monitoredService = $ARGV[2];
+	my $conf = File::Spec->catdir( $ENV{TTP_SITE}, "machines", $monitoredHost.'.json' );
+	$monitoredConfig = Mods::Toops::evaluate( Mods::Toops::jsonRead( $conf ));
+	if( !exists( $monitoredConfig->{Services}{$monitoredService} )){
+		Mods::Toops::msgErr( "service '$monitoredService' is unknown in '$monitoredHost' JSON configuration" );
 	}
-	$lastScanTime = $now;
-	sleep( $sleepTime );
+}
+if( !Mods::Toops::errs()){
+	my $scanInterval = 10;
+	$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
+
+	my $sleepTime = Mods::Daemon::getSleepTime(
+		$daemon->{config}{listenInterval},
+		$scanInterval
+	);
+
+	while( !$daemon->{terminating} ){
+		my $res = Mods::Daemon::daemonListen( $daemon, $commands );
+		my $now = localtime->epoch;
+		if( $now - $lastScanTime >= $scanInterval ){
+			works();
+		}
+		$lastScanTime = $now;
+		sleep( $sleepTime );
+	}
+
+	Mods::Toops::msgLog( "terminating" );
 }
 
-Mods::Toops::msgLog( "terminating" );
 Mods::Toops::ttpExit();

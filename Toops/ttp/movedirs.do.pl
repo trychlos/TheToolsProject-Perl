@@ -16,6 +16,8 @@
 use Data::Dumper;
 use File::Spec;
 
+use Mods::Path;
+
 my $TTPVars = Mods::Toops::TTPVars();
 
 my $defaults = {
@@ -80,7 +82,7 @@ sub doMoveDirs {
 			}
 		}
 		# and move the rest, making sure the initial path at least exists
-		Mods::Toops::makeDirExist( $opt_targetpath );
+		Mods::Path::makeDirExist( $opt_targetpath );
 		foreach my $it ( @list ){
 			my $source = _sourcePath( $it );
 			my $target = _targetPath( $it );

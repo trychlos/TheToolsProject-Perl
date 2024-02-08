@@ -22,6 +22,7 @@ use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::MessageLevel qw( :all );
+use Mods::Path;
 
 # autoflush STDOUT
 $| = 1;
@@ -586,7 +587,7 @@ sub initLogs {
 # -------------------------------------------------------------------------------------------------
 # Make sure we have a site configuration JSON file and loads and interprets it
 sub initSiteConfiguration {
-	my $conf = File::Spec->catdir( $ENV{TTP_SITE}, 'toops.json' );
+	my $conf = Mods::Path::toopsConfigurationPath();
 	$TTPVars->{config}{site} = jsonRead( $conf );
 	# rationale: evaluate() may want take advantage of the TTPVars content, so must be set before evaluation
 	$TTPVars->{config}{site} = evaluate( $TTPVars->{config}{site} );
@@ -603,7 +604,7 @@ sub jsonAppend {
 	my $json = JSON->new;
 	my $str = $json->encode( $hash );
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
-	makeDirExist( File::Spec->catdir( $vol, $dirs ));
+	Mods::Path::makeDirExist( File::Spec->catdir( $vol, $dirs ));
 	# some daemons may monitor this file in order to be informed of various executions - make sure each record has an EOL
 	path( $path )->append_utf8( $str.EOL );
 }
@@ -641,68 +642,9 @@ sub jsonWrite {
 	my $json = JSON->new;
 	my $str = $json->encode( $hash );
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
-	makeDirExist( File::Spec->catdir( $vol, $dirs ));
+	Mods::Path::makeDirExist( File::Spec->catdir( $vol, $dirs ));
 	# some daemons may monitor this file in order to be informed of various executions - make sure each record has an EOL
 	path( $path )->spew_utf8( $str.EOL );
-}
-
-# -------------------------------------------------------------------------------------------------
-# make sure a directory exist
-sub makeDirExist {
-	my ( $dir ) = @_;
-	my $result = false;
-	if( -d $dir ){
-		msgVerbose( "Toops::makeDirExist() dir='$dir' already exists" );
-		$result = true;
-	# seems that make_path is not easy with UNC path (actually seems that make_path just dies)
-	} elsif( $dir =~ /^\\\\/ ){
-		msgVerbose( "Toops::makeDirExist() dir='$dir' is a UNC path, recursing by level" );
-		my @levels = ();
-		my $candidate = $dir;
-		my ( $volume, $directories, $file ) = File::Spec->splitpath( $candidate );
-		my $other;
-		unshift( @levels, $file );
-		while( length $directories > 1 ){
-			$candidate = Mods::Toops::pathRemoveTrailingSeparator( $directories );
-			( $other, $directories, $file ) = File::Spec->splitpath( $candidate );
-			unshift( @levels, $file );
-		}
-		$candidate = '';
-		$result = true;
-		while( scalar @levels ){
-			my $level = shift @levels;
-			my $dir = File::Spec->catpath( $volume, $candidate, $level );
-			$result &= msgDummy( "mkdir $dir" );
-			if( !wantsDummy()){
-				$result &= mkdir $dir;
-			}
-			$candidate = File::Spec->catdir(  $candidate, $level );
-		}
-	} else {
-		msgVerbose( "Toops::makeDirExist() dir='$dir' tries make_path()" );
-		$result &= msgDummy( "make_path( $dir )" );
-		if( !wantsDummy()){
-			my $error;
-			make_path( $dir, {
-				verbose => $TTPVars->{run}{verbose},
-				error => \$error
-			});
-			# https://perldoc.perl.org/File::Path#make_path%28-%24dir1%2C-%24dir2%2C-....-%29
-			if( $error && @$error ){
-				for my $diag ( @$error ){
-					my ( $file, $message ) = %$diag;
-					if( $file eq '' ){
-						msgErr( $message );
-					} else {
-						msgErr( "$file: $message" );
-					}
-				}
-				$result = false;
-			}
-		}
-	}
-	msgVerbose( "Toops::makeDirExist() dir='$dir' result=$result" );
-	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------

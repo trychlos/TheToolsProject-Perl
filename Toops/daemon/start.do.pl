@@ -8,6 +8,7 @@
 #
 # @(@) The Tools Project is able to manage any daemons with these very same verbs.
 # @(@) Each separate daemon is characterized by its own JSON properties which uniquely identifies it from the TTP point of view.
+# @(@) Other arguments in the command-line are passed to the run daemon, after the JSON path.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -41,7 +42,8 @@ sub doStart {
 	Mods::Toops::msgOut( "starting the daemon from '$opt_json'..." );
 	Mods::Toops::msgErr( "$program_path: not found or not readable" ) if ! -r $program_path;
 	if( !Mods::Toops::errs()){
-		my $proc = Proc::Background->new( "perl $program_path $json_path" ) or Mods::Toops::msgErr( "unable to start '$program_path'" );
+		print Dumper( @ARGV );
+		my $proc = Proc::Background->new( "perl $program_path $json_path ".join( ' ', @ARGV )) or Mods::Toops::msgErr( "unable to start '$program_path'" );
 		Mods::Toops::msgOut( "success" ) if $proc;
 	}
 }
