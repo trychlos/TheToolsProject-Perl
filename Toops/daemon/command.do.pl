@@ -87,6 +87,8 @@ Mods::Toops::msgVerbose( "found command='$opt_command'" );
 
 # the json is mandatory
 $daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
+# must have a listening port
+Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
 # and a command too
 Mods::Toops::msgErr( "'--command' option is mandatory, but is not specified" ) if !$opt_command;
 

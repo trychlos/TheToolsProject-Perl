@@ -309,8 +309,7 @@ sub getHostConfig {
 # -------------------------------------------------------------------------------------------------
 # returns the list of JSON configuration full pathnames for defined hosts (including this one)
 sub getJsonHosts {
-	my $dir = File::Spec->catdir( $ENV{TTP_SITE}, "machines" );
-	my @hosts = glob( $dir."/*.json" );
+	my @hosts = glob( Mods::Path::hostsConfigurationsDir()."/*.json" );
 	return @hosts;
 }
 
@@ -554,21 +553,53 @@ sub helpVerb {
 }
 
 # -------------------------------------------------------------------------------------------------
+# read and evaluate the host configuration
+# send an error message if the top key of the read json is not the requested host name
+# eat this top key, adding a 'name' key to the data with the canonical (uppercase)  host name
+# (I):
+# - a hostname
+# - an optional options hash with following keys:
+#   > withEvaluate: default to true
+# (O):
+# - returns a reference to the (evaluated) host configuration with its new 'name' key
+sub hostConfig {
+	my ( $host, $opts ) = @_;
+	$opts //= {};
+	$host = uc $host;
+	my $result = undef;
+	my $conf = File::Spec->catdir( Mods::Path::hostsConfigurationsDir(), $host.'.json' );
+	msgVerbose( "hostConfig() conf='$conf'" );
+	my $hash = jsonRead( $conf );
+	if( $hash ){
+		my $topkey = ( keys %{$hash} )[0];
+		my $hash_host = uc ( $topkey );
+		msgErr( "hostname '$host' expected, found '$hash_host'" ) if $hash_host ne $host;
+		if( !errs()){
+			my $withEvaluate = true;
+			$withEvaluate = $opts->{withEvaluate} if exists $opts->{withEvaluate};
+			# rationale: evaluate() may want take advantage of the TTPVars content, so must be set before evaluation
+			if( $withEvaluate ){
+				$hash = evaluate( $hash );
+			}
+			$result = $hash->{$topkey};
+			$result->{name} = $host;
+		}
+	}
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
 # get the machine services configuration as a hash indexed by hostname
 #  HostConf::init() is expected to return a hash with a single top key which is the hostname
 #  we check and force that here
 #  + set the host as a value to be more easily available
 sub initHostConfiguration {
 	my $host = uc hostname;
-	my $conf = File::Spec->catdir( $ENV{TTP_SITE}, "machines", $host.'.json' );
-	my $hash = jsonRead( $conf );
-	my $hash_host = uc (( keys %{$hash} )[0] );
-	msgErr( "hostname '$host' expected, found '$hash_host'" ) if $hash_host ne $host;
-	if( !errs()){
-		# rationale: evaluate() may want take advantage of the TTPVars content, so must be set before evaluation
-		$TTPVars->{config}{$host} = $hash->{$host};
+	my $config = hostConfig( $host, { withEvaluate => false });
+	if( $config ){
+		# rationale: evaluate() may want take advantage of its own TTPVars config content, so must be set before evaluation
+		$TTPVars->{config}{$host} = $config;
 		$TTPVars->{config}{$host} = evaluate( $TTPVars->{config}{$host} );
-		$TTPVars->{config}{$host}{name} = $host;
 	}
 }
 
@@ -626,7 +657,7 @@ sub jsonRead {
 		my $json = JSON->new;
 		$result = $json->decode( $content );
 	} else {
-		Mods::Toops::msgWarn( "site configuration file '$conf' not found or not readable" );
+		msgErr( "site configuration file '$conf' not found or not readable" );
 	}
 	return $result;
 }

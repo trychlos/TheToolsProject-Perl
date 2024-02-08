@@ -76,9 +76,9 @@ Mods::Toops::msgVerbose( "found json='$opt_json'" );
 # the json is mandatory
 $daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
 # must have a listening port
-Mods::Toops::msgErr( "JSON configuration must define a daemon 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
 # must have something to run
-Mods::Toops::msgErr( "JSON configuration must define a daemon 'execPath' value, not found" ) if !$daemonConfig->{execPath};
+Mods::Toops::msgErr( "daemon configuration must define an 'execPath' value, not found" ) if !$daemonConfig->{execPath};
 
 if( !Mods::Toops::errs()){
 	doStart();

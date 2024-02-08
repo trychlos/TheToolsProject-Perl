@@ -248,10 +248,9 @@ if( $#ARGV != 3 ){
 } else {
 	$monitoredHost = $ARGV[1];
 	$monitoredService = $ARGV[2];
-	my $conf = File::Spec->catdir( $ENV{TTP_SITE}, "machines", $monitoredHost.'.json' );
-	$monitoredConfig = Mods::Toops::evaluate( Mods::Toops::jsonRead( $conf ));
+	$monitoredConfig = Mods::Toops::hostConfig( $monitoredHost );
 	if( !exists( $monitoredConfig->{Services}{$monitoredService} )){
-		Mods::Toops::msgErr( "service '$monitoredService' is unknown in '$monitoredHost' JSON configuration" );
+		Mods::Toops::msgErr( "service '$monitoredService' is unknown in '$monitoredHost' host configuration" );
 	}
 }
 if( !Mods::Toops::errs()){

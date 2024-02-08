@@ -17,6 +17,7 @@ use File::Copy::Recursive qw( dircopy );
 use File::Spec;
 
 use Mods::Constants qw( :all );
+use Mods::Path;
 use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -35,15 +36,13 @@ my $opt_fromhost = $defaults->{fromhost};
 # -------------------------------------------------------------------------------------------------
 # pull the reference tree from the specified machine
 sub doPull {
-	my ( $confpath ) = @_;
+	my ( $pullConfig ) = @_;
 	my $result = false;
-	my $pullHost = uc $opt_fromhost;
-	Mods::Toops::msgOut( "pulling from '$pullHost'..." );
-	my $pullConfig = Mods::Toops::evaluate( Mods::Toops::jsonRead( $confpath ));
+	Mods::Toops::msgOut( "pulling from '$opt_fromhost'..." );
 	# have pull share
 	my $pullShare = undef;
-	$pullShare = $pullConfig->{$pullHost}{remoteShare} if exists $pullConfig->{$pullHost}{remoteShare};
-	Mods::Toops::msgErr( "remoteShare is not specified in '$pullHost' host configuration" ) if !$pullShare;
+	$pullShare = $pullConfig->{remoteShare} if exists $pullConfig->{remoteShare};
+	Mods::Toops::msgErr( "remoteShare is not specified in '$opt_fromhost' host configuration" ) if !$pullShare;
 	# may have several source dirs
 	my $asked = 0;
 	my $done = 0;
@@ -118,11 +117,10 @@ Mods::Toops::msgVerbose( "found fromhost='$opt_fromhost'" );
 
 # a pull host must be defined in command-line and have a json configuration file
 Mods::Toops::msgErr( "'--fromhost' value is required, but not specified" ) if !$opt_fromhost;
-my $confpath = File::Spec->catpath( $ENV{TTP_SITE}, "/machines", $opt_fromhost.".json" );
-Mods::Toops::msgErr( "JSON configuration file '$confpath' not found or not readable" ) if ! -r $confpath;
+my $config = Mods::Toops::hostConfig( $opt_fromhost );
 
 if( !Mods::Toops::errs()){
-	doPull( $confpath );
+	doPull( $config );
 }
 
 Mods::Toops::ttpExit();

@@ -39,6 +39,16 @@ use Mods::Constants qw( :all );
 use Mods::Toops;
 
 # ------------------------------------------------------------------------------------------------
+sub daemonsConfigurationsDir {
+	return File::Spec->catdir( siteConfigurationsDir(), "daemons" );
+}
+
+# ------------------------------------------------------------------------------------------------
+sub hostsConfigurationsDir {
+	return File::Spec->catdir( siteConfigurationsDir(), "machines" );
+}
+
+# ------------------------------------------------------------------------------------------------
 sub siteConfigurationsDir {
 	return $ENV{TTP_SITE};
 }

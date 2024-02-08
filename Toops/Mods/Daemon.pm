@@ -130,7 +130,7 @@ sub daemonInitToops {
 	# get and check the daemon configuration
 	my $json = @{$args}[0];
 	my $config = getConfigByPath( $json );
-	Mods::Toops::msgErr( "JSON configuration must define a daemon 'listeningPort' value, not found" ) if !$config->{listeningPort};
+	Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$config->{listeningPort};
 	my $listenInterval = MIN_INTERVAL;
 	if( !Mods::Toops::errs()){
 		if( $config->{listenInterval} ){
