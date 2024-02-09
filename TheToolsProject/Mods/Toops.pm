@@ -97,18 +97,25 @@ sub commandByOs {
 			$result->{evaluated} =~ s/<$key>/$args->{macros}{$key}/;
 		}
 		msgVerbose( "Toops::commandByOs() evaluated to '$result->{evaluated}'" );
-		print `$result->{evaluated}`;
-		# https://www.perlmonks.org/?node_id=81640
-		# Thus, the exit value of the subprocess is actually ($? >> 8), and $? & 127 gives which signal, if any, the
-		# process died from, and $? & 128 reports whether there was a core dump.
-		# https://ss64.com/nt/robocopy-exit.html
-		my $res = $?;
-		$result->{result} = ( $res == 0 ) ? true : false;
-		msgVerbose( "Toops::commandByOs() return_code=$res interpreted as result=$result->{result}" );
-		if( $args->{command} =~ /robocopy/i ){
-			$res = ( $res >> 8 );
-			$result->{result} = ( $res <= 7 ) ? true : false;
-			msgVerbose( "Toops::commandByOs() robocopy specific interpretation res=$res result=$result->{result}" );
+		msgDummy( $result->{evaluated} );
+		if( !wantsDummy()){
+			my $out = `$result->{evaluated}`;
+			print $out;
+			msgLog( $out );
+			# https://www.perlmonks.org/?node_id=81640
+			# Thus, the exit value of the subprocess is actually ($? >> 8), and $? & 127 gives which signal, if any, the
+			# process died from, and $? & 128 reports whether there was a core dump.
+			# https://ss64.com/nt/robocopy-exit.html
+			my $res = $?;
+			$result->{result} = ( $res == 0 ) ? true : false;
+			msgVerbose( "Toops::commandByOs() return_code=$res firstly interpreted as result=$result->{result}" );
+			if( $args->{command} =~ /robocopy/i ){
+				$res = ( $res >> 8 );
+				$result->{result} = ( $res <= 7 ) ? true : false;
+				msgVerbose( "Toops::commandByOs() robocopy specific interpretation res=$res result=$result->{result}" );
+			}
+		} else {
+			$result->{result} = true;
 		}
 	}
 	msgVerbose( "Toops::commandByOs() result=$result->{result}" );
@@ -130,10 +137,10 @@ sub copyDir {
 		return false;
 	}
 	my $cmdres = commandByOs({
-		command => $TTPVars->{config}{site}{toops}{copyDir}{$Config{osname}}{command},
+		command => $TTPVars->{config}{site}{toops}{copyDir}{byOS}{$Config{osname}}{command},
 		macros => {
-			source => $source,
-			target => $target
+			SOURCE => $source,
+			TARGET => $target
 		}
 	});
 	if( defined $cmdres->{command} ){
@@ -692,10 +699,10 @@ sub moveDir {
 		return true;
 	}
 	my $cmdres = commandByOs({
-		command => $TTPVars->{config}{site}{toops}{moveDir}{$Config{osname}}{command},
+		command => $TTPVars->{config}{site}{toops}{moveDir}{byOS}{$Config{osname}}{command},
 		macros => {
-			source => $source,
-			target => $target
+			SOURCE => $source,
+			TARGET => $target
 		}
 	});
 	if( defined $cmdres->{command} ){

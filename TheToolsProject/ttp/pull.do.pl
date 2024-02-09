@@ -12,6 +12,7 @@
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
+use Config;
 use Data::Dumper;
 use File::Copy::Recursive qw( dircopy );
 use File::Spec;
@@ -39,51 +40,67 @@ sub doPull {
 	my ( $pullConfig ) = @_;
 	my $result = false;
 	Mods::Toops::msgOut( "pulling from '$opt_fromhost'..." );
+	my $asked = 0;
+	my $done = 0;
 	# have pull share
 	my $pullShare = undef;
 	$pullShare = $pullConfig->{remoteShare} if exists $pullConfig->{remoteShare};
-	Mods::Toops::msgErr( "remoteShare is not specified in '$opt_fromhost' host configuration" ) if !$pullShare;
-	# may have several source dirs
-	my $asked = 0;
-	my $done = 0;
-	my ( $pull_vol, $pull_dirs, $pull_file ) = File::Spec->splitpath( $pullShare );
-	# iterate on each
-	foreach my $pullDir ( @{$TTPVars->{config}{site}{toops}{deployments}{sourceDirs}} ){
-		Mods::Toops::msgVerbose( "pulling '$pullDir'" );
-		my ( $dir_vol, $dir_dirs, $dir_file ) = File::Spec->splitpath( $pullDir );
-		my $srcPath = File::Spec->catpath( $pull_vol, $dir_dirs, $dir_file );
-		opendir( FD, "$srcPath" ) or Mods::Toops::msgErr( "unable to open directory $srcPath: $!" );
-		if( !Mods::Toops::errs()){
-			$result = true;
-			while( my $it = readdir( FD )){
-				next if $it eq "." or $it eq "..";
-				next if grep( /$it/i, @{$TTPVars->{config}{site}{toops}{deployments}{excludes}} );
-				$asked += 1;
-				my $pull_path = File::Spec->catdir( $srcPath, $it );
-				my $dst_path = File::Spec->catdir( $pullDir, $it );
-				Mods::Toops::msgOut( "  resetting from '$pull_path' into '$dst_path'" );
-				Mods::Toops::msgDummy( "Mods::Toops::removeTree( $dst_path )" );
-				if( !Mods::Toops::wantsDummy()){
-					$result = Mods::Toops::removeTree( $dst_path );
-				}
-				if( $result ){
-					Mods::Toops::msgDummy( "dircopy( $pull_path, $dst_path )" );
-					if( !Mods::Toops::wantsDummy()){
-						$result = dircopy( $pull_path, $dst_path );
-						msgVerbose( "dircopy() result=$result" );
+	if( $pullShare ){
+		my ( $pull_vol, $pull_dirs, $pull_file ) = File::Spec->splitpath( $pullShare );
+		# if a byOS command is specified, then use it
+		my $command = $TTPVars->{config}{site}{toops}{deployments}{byOS}{$Config{osname}}{command};
+		Mods::Toops::msgVerbose( "found command='$command'" );
+		# may have several source dirs: iterate on each
+		foreach my $pullDir ( @{$TTPVars->{config}{site}{toops}{deployments}{sourceDirs}} ){
+			Mods::Toops::msgVerbose( "pulling '$pullDir'" );
+			my ( $dir_vol, $dir_dirs, $dir_file ) = File::Spec->splitpath( $pullDir );
+			my $srcPath = File::Spec->catpath( $pull_vol, $dir_dirs, $dir_file );
+			if( $command ){
+				Mods::Toops::msgVerbose( "source='$srcPath' target='$pullDir'" );
+				my $cmdres = Mods::Toops::commandByOs({
+					command => $command,
+					macros => {
+						SOURCE => $srcPath,
+						TARGET => $pullDir
 					}
-				}
-				if( $result ){
-					$done += 1;
-				} else {
-					Mods::Toops::msgWarn( "error when copying from '$pull_path' to '$dst_path'" );
+				});
+			} else {
+				opendir( FD, "$srcPath" ) or Mods::Toops::msgErr( "unable to open directory $srcPath: $!" );
+				if( !Mods::Toops::errs()){
+					$result = true;
+					while( my $it = readdir( FD )){
+						next if $it eq "." or $it eq "..";
+						next if grep( /$it/i, @{$TTPVars->{config}{site}{toops}{deployments}{excludes}} );
+						$asked += 1;
+						my $pull_path = File::Spec->catdir( $srcPath, $it );
+						my $dst_path = File::Spec->catdir( $pullDir, $it );
+						Mods::Toops::msgOut( "  resetting from '$pull_path' into '$dst_path'" );
+						Mods::Toops::msgDummy( "Mods::Toops::removeTree( $dst_path )" );
+						if( !Mods::Toops::wantsDummy()){
+							$result = Mods::Toops::removeTree( $dst_path );
+						}
+						if( $result ){
+							Mods::Toops::msgDummy( "dircopy( $pull_path, $dst_path )" );
+							if( !Mods::Toops::wantsDummy()){
+								$result = dircopy( $pull_path, $dst_path );
+								msgVerbose( "dircopy() result=$result" );
+							}
+						}
+						if( $result ){
+							$done += 1;
+						} else {
+							Mods::Toops::msgWarn( "error when copying from '$pull_path' to '$dst_path'" );
+						}
+					}
+					closedir( FD );
 				}
 			}
-			closedir( FD );
 		}
+	} else {
+		Mods::Toops::msgErr( "remoteShare is not specified in '$opt_fromhost' host configuration" );
 	}
 	my $str = "$done/$asked subdirs copied";
-	if( $done == $asked ){
+	if( $done == $asked && !Mods::Toops::errs()){
 		Mods::Toops::msgOut( "success ($str)" );
 	} else {
 		Mods::Tools::msgErr( "NOT OK ($str)" );
