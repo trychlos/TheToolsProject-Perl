@@ -1,0 +1,33 @@
+{
+	"WS22DEV1": {
+		"Services": {
+			"Technical.Services": {
+				"hidden": true,
+				"workloads": {
+					"daily.morning": [
+						{
+							"label": "Purge daily directories",
+							"order": "00",
+							"commands": [
+								"ttp.pl pull -nohelp"
+							]
+						}
+					],
+					"daily.evening": [
+						{
+							"label": "Update our scrips and resources",
+							"commands": [
+							]
+						}
+					]
+				}
+			}
+		},
+		"remoteShare": "\\\\10.122.1.12\\C",
+		"MQTT": {
+			"broker": "10.122.1.15",
+			"username": "[eval:uc hostname]",
+			"passwd": "q6G7YanFDf5zXsqvQ1og"
+		}
+	}
+}

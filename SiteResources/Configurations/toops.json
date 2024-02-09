@@ -1,0 +1,94 @@
+{
+	"toops_comments": [
+		"The global Toops configuration for your site",
+		"In Windows environment, take care of doubling your backslashes",
+		"Besides of the below 'toops' key, the site is free to set here any global configuration which will be available with $TTPVars->{config}{site}{<key>}",
+		"May make use - in values only - of parameters between square brackets as [..]",
+		"At the moment, there is one type of parameters:",
+		"- those specified by 'eval:' indicate some code to be evaluated at run time.",
+		"  'eval' may be prefixed with an underscore in order to delay the eval (e.g. if it refers to another dynamic variable which needs to be resolved first).",
+		"Remind that the directory where lies this 'ttops.json' must be adressed by the TTP_CONFDIR variable."
+	],
+	"toops": {
+		"logsRoot": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\Logs",
+		"logsDir": "[_eval:$TTPVars->{config}{site}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
+		"execReports": "[_eval:$TTPVars->{config}{site}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports",
+		"msgOut": {
+			"withLog": true
+		},
+		"msgVerbose": {
+			"withLog": true
+		},
+		"copyDir": {
+			"byOS": {
+				"MSWin32": {
+					"command": "robocopy <SOURCE> <TARGET> /E /TS /FP /NP /BYTES"
+				}
+			}
+		},
+		"moveDir": {
+			"byOS": {
+				"MSWin32": {
+					"command": "robocopy <SOURCE> <TARGET> /E /MOVE /TS /FP /NP /BYTES"
+				}
+			}
+		},
+		"alerts": {
+			"dropDir": "[_eval:$TTPVars->{config}{site}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Alerts",
+			"levels": {
+				"default": {
+					"mail": {
+						"from": "inlingua-adm@trychos.org",
+						"mailto": [
+							"alerts@trychlos.org",
+							"pierre@pwi-consulting.fr"
+						],
+						"smsto": [
+							{
+								"to": "forwarder@trychlos.org",
+								"subject": "SMSTO: +33607797792"
+							}
+						]
+					}
+				}
+			}
+		},
+		"executionReport": {
+			"withFile": true,
+			"withMqtt": true
+		},
+		"SMTP": {
+			"host": "mail.trychlos.org",
+			"port": 587,
+			"username": "inlingua-adm@trychlos.org",
+			"password": "ZCY2O5pMFab7kl8g"
+		},
+		"deployments": {
+			"sourceDirs": [
+				"[eval:$TTPVars->{config}{site}{site}{rootDir}]\\SiteResources",
+				"[eval:$TTPVars->{config}{site}{site}{rootDir}]\\TheToolsProject"
+			],
+			"excludes": [
+			],
+			"before": {
+				"removeTree": true
+			},
+			"after": [
+			],
+			"pullReference": "WS12DEV1",
+			"byOS": {
+				"MSWin32": {
+					"command": "robocopy <SOURCE> <TARGET> /MIR"
+				}
+			}
+		}
+	},
+	"site_comments": [
+		"Define here common configuration to all environments/machines.",
+		"These are free to the site integrator and NOT considered by TheToolsProject though they can be used in JSON dynamic evaluations."
+	],
+	"site": {
+		"rootDir": "C:\\INLINGUA",
+		"commandsDir": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\SiteResources\\Commands"
+	}
+}

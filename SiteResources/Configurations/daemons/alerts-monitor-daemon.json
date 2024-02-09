@@ -1,0 +1,12 @@
+{
+	"comments": [
+		"Scan the alerts, dealing new ones."
+	],
+	"execPath": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\Scripts\\cmds\\alerts-daemon.pl",
+	"listeningPort": 14391,
+	"listenInterval" : 2,
+	"scanInterval" : 5,
+	"monitoredDirs": [
+		"[__eval:$TTPVars->{config}{site}{toops}{alerts}{dropDir}]"
+	]
+}

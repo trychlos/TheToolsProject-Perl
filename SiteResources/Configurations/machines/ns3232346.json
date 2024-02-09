@@ -1,0 +1,163 @@
+{
+	"NS3232346": {
+		"ServicesComments": [
+			"SQL Server message 1844, Severity 16, State 1, Server NS3232346",
+			"L'instruction BACKUP DATABASE WITH COMPRESSION n'est pas prise en charge sur Web Edition (64-bit)."
+		],
+		"Services": {
+			"Tom17": {
+				"instance": "MSSQLSERVER",
+				"databases": [
+					"inlingua17a"
+				],
+				"workloads": {
+					"tom17.live.morning": [
+						{
+							"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom17",
+							"commands": [
+								"dbms.pl backup -service Tom17 -full"
+							]
+						}
+					],
+					"tom17.live.every.2h": [
+						{
+							"label": "(Production Live) Sauvegarde différentielle sur la base de données Tom17",
+							"commands": [
+								"dbms.pl backup -service Tom17 -diff"
+							]
+						}
+					],
+					"tom17.live.evening": [
+					],
+					"tom17.backup.startup": [
+						{
+							"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
+							"commands": [
+								"daemon.pl start -json C:\\INLINGUA\\SiteResources\\Configurations\\daemons\\tom17-backup-monitor-daemon.json WS22PROD1 Tom17"
+							]
+						}
+					]
+				}
+			},
+			"Tom21": {
+				"instance": "MSSQLSERVER",
+				"databases": [
+					"inlingua21"
+				],
+				"workloads": {
+					"tom21.live.morning": [
+						{
+							"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom21",
+							"commands": [
+								"dbms.pl backup -service Tom21 -full"
+							]
+						}
+					],
+					"tom21.live.every.2h": [
+						{
+							"label": "(Production Live) Sauvegarde différentielle sur la base de données Tom21",
+							"commands": [
+								"dbms.pl backup -service Tom21 -diff"
+							]
+						}
+					],
+					"tom21.live.evening": [
+					],
+					"tom21.backup.startup": [
+						{
+							"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
+							"commands": [
+								"daemon.pl start -json C:\\INLINGUA\\SiteResources\\Configurations\\daemons\\tom21-backup-monitor-daemon.json WS22PROD1 Tom21"
+							]
+						}
+					]
+				}
+			},
+			"Tom59": {
+				"instance": "MSSQLSERVER",
+				"databases": [
+					"TOM59331"
+				],
+				"workloads": {
+					"tom59.live.morning": [
+						{
+							"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom59",
+							"commands": [
+								"dbms.pl backup -service Tom59 -full"
+							]
+						}
+					],
+					"tom59.live.every.2h": [
+						{
+							"label": "(Production Live) Sauvegarde différentielle sur la base de données Tom59",
+							"commands": [
+								"dbms.pl backup -service Tom59 -diff"
+							]
+						}
+					],
+					"tom59.live.evening": [
+					],
+					"tom59.backup.startup": [
+						{
+							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
+							"commands": [
+								"daemon.pl start -json C:\\INLINGUA\\SiteResources\\Configurations\\daemons\\tom59-backup-monitor-daemon.json WS22PROD1 Tom59"
+							]
+						}
+					]
+				}
+			},
+			"Technical.Services": {
+				"hidden": true,
+				"workloads": {
+					"daily.morning": [
+						{
+							"label": "Purge daily directories",
+							"order": "00",
+							"commands": [
+								"ttp.pl pull -nohelp",
+								"ttp.pl movedirs -sourcecmd \"dbms.pl vars -backupRoot\" -targetcmd \"dbms.pl vars -archiveRoot\" -dirs -keep 1",
+								"ttp.pl purgedirs -dircmd \"dbms.pl vars -archiveRoot\" -keep 10",
+								"ttp.pl purgedirs -dircmd \"ttp.pl vars -logsRoot\" -keep 10"
+							]
+						}
+					],
+					"daily.evening": [
+						{
+							"label": "Update our scrips and resources",
+							"commands": [
+							]
+						}
+					],
+					"startup": [
+						{
+							"label": "At startup ?",
+							"commands": [
+							]
+						}
+					]
+				}
+			}
+		},
+		"DBMSInstancesComments": [
+		],
+		"DBMSInstances": {
+			"MSSQLSERVER": {
+				"package": "Mods::SqlServer",
+				"accounts": {
+					"sa": "LS7RR0m2nKshuEB1"
+				},
+				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL15.MSSQLSERVER\\MSSQL\\DATA"
+			}
+		},
+		"backupRoot": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\SqlBackups",
+		"backupPath": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\SqlBackups\\[eval:localtime->strftime( '%y%m%d' )]",
+		"archivePath": "\\\\ftpback-rbx7-844.ovh.net\\ns3232346.ip-57-128-101.eu\\[eval:uc hostname]",
+		"remoteShare": "\\\\ns3232346.ovh.net\\C",
+		"MQTT": {
+			"broker": "10.122.1.15",
+			"username": "[eval:uc hostname]",
+			"passwd": "hqXFCX4ZV1Fo1PWtaJzo"
+		}
+	}
+}
