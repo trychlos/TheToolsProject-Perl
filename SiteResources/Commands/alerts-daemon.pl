@@ -69,9 +69,7 @@ sub wanted {
 # -------------------------------------------------------------------------------------------------
 # do its work
 sub works {
-	# reevaluate the json configuration to take into account 'eval' data
-	$daemon->{config} = Mods::Daemon::getConfigByPath( $daemon->{json} );
-	my $monitored = $daemon->{config}{monitoredDirs};
+	my $monitored = $daemon->{daemonConfig}{monitoredDirs};
 	if( $monitored && scalar @{$monitored} ){
 		@runningScan = ();
 		find( \&wanted, @{$monitored} );
@@ -97,10 +95,10 @@ sub works {
 # =================================================================================================
 
 my $scanInterval = 5;
-$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
+$scanInterval = $daemon->{daemonConfig}{scanInterval} if exists $daemon->{daemonConfig}{scanInterval} && $daemon->{daemonConfig}{scanInterval} >= $scanInterval;
 
 my $sleepTime = Mods::Daemon::getSleepTime(
-	$daemon->{config}{listenInterval},
+	$daemon->{listenInterval},
 	$scanInterval
 );
 

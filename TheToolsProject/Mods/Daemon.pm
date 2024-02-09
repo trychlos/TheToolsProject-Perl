@@ -12,6 +12,12 @@
 # - workDir: the daemon working directory, defaulting to site.rootDir
 # - execPath: the full path to the program to be executed as the main code of the daemon
 #
+# Also the daemon writer mmust be conscious of the dynamic character of TheToolsProject.
+# In particular and at least, many output directories (logs, temp files and so on) are built on a daily basis.
+# So your configuration files must e periodically re-evaluated.
+# This 'Daemon' package takes care of reevaluating both the host and the daemon configurations
+# on each listenInterval.
+#
 # A note about technical solutions to have daemons on Win32 platforms:
 # - Proc::Daemon 0.23 (as of 2024- 2- 3) is not an option.
 #   According to the documentation: "INFO: Since fork is not performed the same way on Windows systems as on Linux, this module does not work with Windows. Patches appreciated!"
@@ -110,7 +116,8 @@ sub daemonCommand {
 #   > add: a complement to the log prefix (e.g. a service name)
 # returns the daemon object with:
 # - json: the json configuration file path
-# - config: its json evaluated configuration
+# - daemonConfig: its json evaluated configuration (and reevaluated at each listenInterval)
+# - hostConfig: the host configuration (reevaluated too at each listenInterval)
 # - socket: the created listening socket
 # - sleep: the sleep interval
 sub daemonInitToops {
@@ -166,7 +173,8 @@ sub daemonInitToops {
 		$daemon = {
 			json => $json,
 			name => $jfile,
-			config => $config,
+			daemonConfig => $config,
+			hostConfig => Mods::Toops::getHostConfig( _hostname()),
 			socket => $socket,
 			listenInterval => $listenInterval
 		};
@@ -175,7 +183,8 @@ sub daemonInitToops {
 }
 
 # ------------------------------------------------------------------------------------------------
-# periodically listen on the TCP port
+# periodically listen on the TCP port - reevaluate the host configuration at that moment
+# this is needed to cover running when day changes and be sure that we are logging into the right file
 # returns undef or a hash with:
 # - client socket
 # - peer host, address and port
@@ -184,6 +193,9 @@ sub daemonInitToops {
 sub daemonListen {
 	my ( $daemon, $commands ) = @_;
 	$commands //= {};
+	# before anything else, reevalute our configurations
+	$daemon->{daemonConfig} = getConfigByPath( $daemon->{json} );
+	$daemon->{hostConfig} = Mods::Toops::getHostConfig( _hostname());
 	my $client = $daemon->{socket}->accept();
 	my $result = undef;
 	my $data = "";

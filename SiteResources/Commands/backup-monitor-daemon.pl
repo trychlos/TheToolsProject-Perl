@@ -134,7 +134,7 @@ sub searchForLastFull {
 	# search locally, based on TTP configuration
 	# hardcoding the expected format file name as host-instance-database ... -mode.backup
 	# this should be enough in most situations
-	my $dir = $daemon->{config}{localDir};
+	my $dir = $daemon->{daemonConfig}{localDir};
 	$searchForLastFull_data = {};
 	$searchForLastFull_data->{host} = $content->{host};
 	$searchForLastFull_data->{instance} = $content->{instance};
@@ -177,7 +177,7 @@ sub syncedPath {
 	if( ! -r $sourceNet ){
 		Mods::Toops::msgWarn( "$sourceNet: file not found or not readable" );
 	} else {
-		my $localDir = _evaluate( $daemon->{config}{localDir} );
+		my $localDir = _evaluate( $daemon->{daemonConfig}{localDir} );
 		$localTarget =  File::Spec->catpath( Mods::Toops::pathWithTrailingSeparator( $localDir ), $bck_file );
 		#print "localTarget='$localTarget'".EOL;
 		Mods::Path::makeDirExist( $localDir );
@@ -225,7 +225,7 @@ sub doWithNew {
 			my $executable = true;
 			my $candidates = [];
 			my $local = undef;
-			$candidates = $daemon->{config}{databases} if exists $daemon->{config}{databases};
+			$candidates = $daemon->{daemonConfig}{databases} if exists $daemon->{daemonConfig}{databases};
 			if( scalar @{$candidates} && !grep( /$database/i, @{$candidates} )){
 				Mods::Toops::msgVerbose( "backuped database is '$database' while configured are [".join( ', ', @{$candidates} )."]: ignored" );
 				$executable = false;
@@ -250,7 +250,7 @@ sub doWithNew {
 			}
 			if( $executable ){
 				my $restoreInstance = $instance;
-				$restoreInstance = $daemon->{config}{restoreInstance} if exists $daemon->{config}{restoreInstance} && length $daemon->{config}{restoreInstance};
+				$restoreInstance = $daemon->{daemonConfig}{restoreInstance} if exists $daemon->{daemonConfig}{restoreInstance} && length $daemon->{daemonConfig}{restoreInstance};
 				my $command = "dbms.pl restore -instance $restoreInstance -database $database ";
 				if( $mode eq "full" ){
 					$command .= " -full $local";
@@ -301,14 +301,14 @@ sub wanted {
 # -------------------------------------------------------------------------------------------------
 # do its work
 # reevaluate the json configuration to take into account 'eval' datas
+# daemonConfig and hostConfig are managed by the 'Daemon' package
 # because the directories we are monitoring here are typically backups/logs directories and their
 # name may change every day
 sub works {
-	# update the daemon config and the services informations too
-	$daemon->{config} = Mods::Daemon::getConfigByPath( $daemon->{json} );
+	# update the service informations too
 	$monitoredConfig = Mods::Toops::getHostConfig( $monitoredHost );
 	# and scan..
-	my @monitored = _evaluateArray( @{$daemon->{config}{monitoredDirs}} );
+	my @monitored = _evaluateArray( @{$daemon->{daemonConfig}{monitoredDirs}} );
 	if( scalar @monitored ){
 		@runningScan = ();
 		find( \&wanted, @monitored );
@@ -347,7 +347,7 @@ if( scalar @ARGV != 3 ){
 }
 if( !Mods::Toops::errs()){
 	my $scanInterval = 10;
-	$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
+	$scanInterval = $daemon->{daemonConfig}{scanInterval} if exists $daemon->{daemonConfig}{scanInterval} && $daemon->{daemonConfig}{scanInterval} >= $scanInterval;
 
 	my $sleepTime = Mods::Daemon::getSleepTime(
 		$daemon->{listenInterval},

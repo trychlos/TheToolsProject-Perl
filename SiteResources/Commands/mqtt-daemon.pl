@@ -94,9 +94,9 @@ sub haveStdout {
 # -------------------------------------------------------------------------------------------------
 # setup the commands hash before the first listening loop
 sub setCommands {
-	foreach my $key ( keys %{$daemon->{config}{topics}} ){
-		if( exists( $daemon->{config}{topics}{$key}{command} )){
-			$commands->{$daemon->{config}{topics}{$key}{command}} = \&doCommand;
+	foreach my $key ( keys %{$daemon->{daemonConfig}{topics}} ){
+		if( exists( $daemon->{daemonConfig}{topics}{$key}{command} )){
+			$commands->{$daemon->{daemonConfig}{topics}{$key}{command}} = \&doCommand;
 		}
 	}
 }
@@ -106,11 +106,11 @@ sub setCommands {
 sub works {
 	my ( $topic, $payload ) = @_;
 	#print "$topic".EOL;
-	foreach my $key ( keys %{$daemon->{config}{topics}} ){
+	foreach my $key ( keys %{$daemon->{daemonConfig}{topics}} ){
 		my $match = $topic =~ /$key/;
 		#print "topic='$topic' key='$key' match=$match".EOL;
 		if( $match ){
-			doMatched( $topic, $payload, $daemon->{config}{topics}{$key} );
+			doMatched( $topic, $payload, $daemon->{daemonConfig}{topics}{$key} );
 		}
 	}
 }
@@ -119,18 +119,16 @@ sub works {
 # MAIN
 # =================================================================================================
 
-my $hostConfig = Mods::Toops::getHostConfig();
-
-Mods::Toops::msgErr( "no registered broker" ) if !$hostConfig->{MQTT}{broker};
-Mods::Toops::msgErr( "no registered username" ) if !$hostConfig->{MQTT}{username};
-Mods::Toops::msgErr( "no registered password" ) if !$hostConfig->{MQTT}{passwd};
+Mods::Toops::msgErr( "no registered broker" ) if !$daemon->{hostConfig}{MQTT}{broker};
+Mods::Toops::msgErr( "no registered username" ) if !$daemon->{hostConfig}{MQTT}{username};
+Mods::Toops::msgErr( "no registered password" ) if !$daemon->{hostConfig}{MQTT}{passwd};
 
 if( !Mods::Toops::errs()){
-	$mqtt = Net::MQTT::Simple->new( $hostConfig->{MQTT}{broker} );
-	Mods::Toops::msgErr( "unable to connect to '$hostConfig->{MQTT}{broker}'" ) if !$mqtt;
+	$mqtt = Net::MQTT::Simple->new( $daemon->{hostConfig}{MQTT}{broker} );
+	Mods::Toops::msgErr( "unable to open a connection to '$daemon->{hostConfig}{MQTT}{broker}'" ) if !$mqtt;
 }
 if( !Mods::Toops::errs()){
-	my $user = $mqtt->login( $hostConfig->{MQTT}{username}, $hostConfig->{MQTT}{passwd} );
+	my $user = $mqtt->login( $daemon->{hostConfig}{MQTT}{username}, $daemon->{hostConfig}{MQTT}{passwd} );
 	Mods::Toops::msgLog( "login(): $user" );
 	$mqtt->subscribe( '#' => \&works, '$SYS/#' => \&works );
 	setCommands();
