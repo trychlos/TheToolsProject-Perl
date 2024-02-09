@@ -59,11 +59,11 @@ sub doCommand {
 # -------------------------------------------------------------------------------------------------
 # the received topic match a daemon configuration item
 sub doMatched {
-	my ( $topic, $message, $config ) = @_;
+	my ( $topic, $payload, $config ) = @_;
 	# is a $SYS message ?
 	$sysReceived = true if $topic =~ /^\$SYS/;
 	# if asked to prit to stdout, do that here (unless $SYS)
-	print localtime->strftime( "%Y-%m-%d %H:%M:%S:" )." $topic $message".EOL if haveStdout() && $topic !~ /^\$SYS/;
+	print localtime->strftime( "%Y-%m-%d %H:%M:%S:" )." $topic $payload".EOL if haveStdout() && $topic !~ /^\$SYS/;
 	# do we log the topic and/or the message ?
 	my $logTopic = true;
 	$logTopic = $config->{logTopic} if exists $config->{logTopic};
@@ -74,14 +74,14 @@ sub doMatched {
 		$logged .= "logTopic=$logTopic";
 		$logged .= " topic='$topic'" if $logTopic;
 		$logged .= " logMessage=$logMessage";
-		$logged .= " message='$message'" if $logMessage;
+		$logged .= " payload='$payload'" if $logMessage;
 		Mods::Toops::msgLog( "$logged" );
 	}
 	# do we want keep and answer with the received data ?
 	my $command = undef;
 	$command = $config->{command} if exists $config->{command};
 	if( $command ){
-		$kept->{$command}{$topic} = $message;
+		$kept->{$command}{$topic} = $payload;
 	}
 }
 
@@ -104,13 +104,13 @@ sub setCommands {
 # -------------------------------------------------------------------------------------------------
 # do its work, examining the MQTT queue
 sub works {
-	my ( $topic, $message ) = @_;
+	my ( $topic, $payload ) = @_;
 	#print "$topic".EOL;
 	foreach my $key ( keys %{$daemon->{config}{topics}} ){
 		my $match = $topic =~ /$key/;
 		#print "topic='$topic' key='$key' match=$match".EOL;
 		if( $match ){
-			doMatched( $topic, $message, $daemon->{config}{topics}{$key} );
+			doMatched( $topic, $payload, $daemon->{config}{topics}{$key} );
 		}
 	}
 }

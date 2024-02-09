@@ -62,7 +62,7 @@ sub daemonAdvertize {
 		$topic .= "/$daemon->{name}";
 		$topic .= "/status";
 		my $message = _running();
-		Mods::Toops::msgStdout2Log( `mqtt.pl publish -topic $topic -payload "$message" -retain` );
+		Mods::Toops::msgStdout2Log( `mqtt.pl publish -topic $topic -payload "$message" -retain -will off` );
 		$daemon->{lastAdvertize} = $now;
 	}
 }

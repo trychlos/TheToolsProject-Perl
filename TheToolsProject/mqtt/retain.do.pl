@@ -1,20 +1,17 @@
-# @(#) publish a message on a topic
+# @(#) get the retained available messages
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
-# @(-) --topic=<name>          the topic to publish in [${topic}]
-# @(-) --payload=<name>        the message to be published [${payload}]
-# @(-) --[no]retain            with the 'retain' flag (ignored here) [${retain}]
-# @(-) --will=<name>           a message to be published as Will option [${will}]
-#
-# @(@) The topic should be formatted as HOST/subject/subject/content
+# @(-) --[no]get               get the messages [${get}]
+# @(-) --wait=<time>           timeout to wait for messages [${wait}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
 use Net::MQTT::Simple;
+use Time::Piece;
 
 use Mods::Constants qw( :all );
 
@@ -25,48 +22,63 @@ my $defaults = {
 	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
-	topic => '',
-	payload => '',
-	retain => 'no',
-	will => ''
+	get => 'no',
+	wait => 5
 };
 
-my $opt_topic = $defaults->{topic};
-my $opt_payload = $defaults->{payload};
-my $opt_will = $defaults->{will};
+my $opt_get = false;
+my $opt_wait = $defaults->{wait};
+
+# the MQTT connection
+my $mqtt = undef;
+my $loop = true;
+my $last = 0;
+my $count = 0;
 
 # -------------------------------------------------------------------------------------------------
-# send the alert
-# as far as we are concerned here, this is just writing a json file in a special directory
-sub doPublish {
-	Mods::Toops::msgOut( "publishing '$opt_topic [$opt_payload]'..." );
+# get and output the retained messages
+sub doGetRetained {
+	Mods::Toops::msgOut( "getting the retained messages..." );
 
 	my $hostConfig = Mods::Toops::getHostConfig();
 	Mods::Toops::msgErr( "no registered broker" ) if !$hostConfig->{MQTT}{broker};
 	Mods::Toops::msgErr( "no registered username" ) if !$hostConfig->{MQTT}{username};
 	Mods::Toops::msgErr( "no registered password" ) if !$hostConfig->{MQTT}{passwd};
 
-	my $mqtt = Net::MQTT::Simple->new( $hostConfig->{MQTT}{broker} );
+	$mqtt = Net::MQTT::Simple->new( $hostConfig->{MQTT}{broker} );
 	if( $mqtt ){
-		if( $opt_will ){
-			$mqtt->last_will( $opt_topic, $opt_will, $opt_retain );
-		}
 		$mqtt->login( $hostConfig->{MQTT}{username}, $hostConfig->{MQTT}{passwd} );
 		Mods::Toops::msgVerbose( "broker login with '$hostConfig->{MQTT}{username}' account" );
-		if( $opt_retain ){
-			$mqtt->retain( $opt_topic, $opt_payload );
-		} else {
-			$mqtt->publish( $opt_topic, $opt_payload );
+		$mqtt->subscribe( '#' => \&doWork );
+		while( $loop ){
+			$mqtt->tick( 1 );
+			my $now = localtime->epoch;
+			if( $last && $now - $last > $opt_wait ){
+				$loop = false;
+			} else {
+				sleep( 1 );
+			}
 		}
-		$mqtt->disconnect();
 	}
-
+	$mqtt->disconnect();
 	my $result = true;
-
 	if( $result ){
-		Mods::Toops::msgOut( "success" );
+		Mods::Toops::msgOut( "success: $count got messages" );
 	} else {
 		Mods::Toops::msgErr( "NOT OK" );
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# triggered on the published message
+#  wait 2sec after last received before disconnecting..
+sub doWork {
+	my ( $topic, $payload, $retain ) = @_;
+	if( $retain ){
+		print "$topic $payload".EOL;
+		Mods::Toops::msgLog( "$topic $payload" );
+		$last = localtime->epoch;
+		$count += 1;
 	}
 }
 
@@ -79,10 +91,8 @@ if( !GetOptions(
 	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
-	"topic=s"			=> \$opt_topic,
-	"payload=s"			=> \$opt_payload,
-	"retain!"			=> \$opt_retain,
-	"will=s"			=> \$opt_will	)){
+	"get!"				=> \$opt_get,
+	"wait=i"			=> \$opt_wait )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -96,17 +106,11 @@ if( Mods::Toops::wantsHelp()){
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found topic='$opt_topic'" );
-Mods::Toops::msgVerbose( "found payload='$opt_payload'" );
-Mods::Toops::msgVerbose( "found retain='".( $opt_retain ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found will='$opt_will'" );
-
-# topic is mandatory
-Mods::Toops::msgErr( "topic is required, but is not specified" ) if !$opt_topic;
-Mods::Toops::msgWarn( "payload is empty, but shouldn't" ) if !$opt_payload;
+Mods::Toops::msgVerbose( "found get='".( $opt_get ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found wait='$opt_wait'" );
 
 if( !Mods::Toops::errs()){
-	doPublish();
+	doGetRetained() if $opt_get;
 }
 
 Mods::Toops::ttpExit();
