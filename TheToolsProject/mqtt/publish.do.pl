@@ -5,7 +5,7 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --topic=<name>          the topic to publish in [${topic}]
-# @(-) --message=<name>        the message to be published [${message}]
+# @(-) --payload=<name>        the message to be published [${payload}]
 # @(-) --[no]retain            with the 'retain' flag (ignored here) [${retain}]
 #
 # @(@) The topic should be formatted as HOST/subject/subject/content
@@ -25,18 +25,18 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	topic => '',
-	message => '',
+	payload => '',
 	retain => 'no'
 };
 
 my $opt_topic = $defaults->{topic};
-my $opt_message = $defaults->{message};
+my $opt_payload = $defaults->{payload};
 
 # -------------------------------------------------------------------------------------------------
 # send the alert
 # as far as we are concerned here, this is just writing a json file in a special directory
 sub doPublish {
-	Mods::Toops::msgOut( "publishing '$opt_topic [$opt_message]'..." );
+	Mods::Toops::msgOut( "publishing '$opt_topic [$opt_payload]'..." );
 
 	my $hostConfig = Mods::Toops::getHostConfig();
 	Mods::Toops::msgErr( "no registered broker" ) if !$hostConfig->{MQTT}{broker};
@@ -47,9 +47,9 @@ sub doPublish {
 	if( $mqtt ){
 		$mqtt->login( $hostConfig->{MQTT}{username}, $hostConfig->{MQTT}{passwd} );
 		if( $opt_retain ){
-			$mqtt->retain( $opt_topic, $opt_message );
+			$mqtt->retain( $opt_topic, $opt_payload );
 		} else {
-			$mqtt->publish( $opt_topic, $opt_message );
+			$mqtt->publish( $opt_topic, $opt_payload );
 		}
 		$mqtt->disconnect();
 	}
@@ -73,7 +73,7 @@ if( !GetOptions(
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"topic=s"			=> \$opt_topic,
-	"message=s"			=> \$opt_message,
+	"payload=s"			=> \$opt_payload,
 	"retain!"			=> \$opt_retain	)){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
@@ -89,12 +89,12 @@ Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'
 Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found topic='$opt_topic'" );
-Mods::Toops::msgVerbose( "found message='$opt_message'" );
+Mods::Toops::msgVerbose( "found payload='$opt_payload'" );
 Mods::Toops::msgVerbose( "found retain='".( $opt_retain ? 'true':'false' )."'" );
 
 # topic is mandatory
 Mods::Toops::msgErr( "topic is required, but is not specified" ) if !$opt_topic;
-Mods::Toops::msgWarn( "message is empty, but shouldn't" ) if !$opt_message;
+Mods::Toops::msgWarn( "payload is empty, but shouldn't" ) if !$opt_payload;
 
 if( !Mods::Toops::errs()){
 	doPublish();

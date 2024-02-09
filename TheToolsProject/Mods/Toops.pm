@@ -282,7 +282,7 @@ sub execReportAppend {
 		my $message = $json->encode( $data );
 		my $verbose = '';
 		$verbose = "-verbose" if $TTPVars->{run}{verbose};
-		msgStdout2Log( `mqtt.pl publish -topic $topic -message "\"$message\"" $verbose` );
+		msgStdout2Log( `mqtt.pl publish -topic $topic -payload "\"$message\"" $verbose` );
 	}
 }
 

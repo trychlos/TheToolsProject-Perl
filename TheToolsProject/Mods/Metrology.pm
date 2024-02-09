@@ -82,7 +82,7 @@ sub publish {
 		last if $count >= $max && $max >= 0;
 		foreach my $key ( keys %{$it} ){
 			last if $count >= $max && $max >= 0;
-			my $command = "mqtt.pl publish -topic $host/metrology/$root/$key -message \"$it->{$key}\"";
+			my $command = "mqtt.pl publish -topic $host/metrology/$root/$key -payload \"$it->{$key}\"";
 			Mods::Toops::msgOut( "  $command" );
 			`$command`;
 			$count += 1;

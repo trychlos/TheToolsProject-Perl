@@ -50,7 +50,7 @@ sub _running {
 }
 
 # ------------------------------------------------------------------------------------------------
-# the daemon advertize of its status every minute
+# the daemon advertize of its status every 'advertizeInterval' seconds (defaults to 60)
 sub daemonAdvertize {
 	my ( $daemon ) = @_;
 	my $now = localtime->epoch;
@@ -62,7 +62,7 @@ sub daemonAdvertize {
 		$topic .= "/$daemon->{name}";
 		$topic .= "/status";
 		my $message = _running();
-		Mods::Toops::msgStdout2Log( `mqtt.pl publish -topic $topic -message "$message" -retain` );
+		Mods::Toops::msgStdout2Log( `mqtt.pl publish -topic $topic -payload "$message" -retain` );
 		$daemon->{lastAdvertize} = $now;
 	}
 }
