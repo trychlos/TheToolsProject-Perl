@@ -9,14 +9,14 @@
 		"",
 		"This daemon is designed to run (on the backup production host) with network read permissions on the live production host."
 	],
-	"execPath": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\Scripts\\cmds\\backup-monitor-daemon.pl",
+	"execPath": "[eval:$TTPVars->{config}{site}{site}{commandsDir}]\\backup-monitor-daemon.pl",
 	"listeningPort": 14393,
 
 	"monitoredDirs": [
-		"<REMOTESHARE>\\INLINGUA\\Logs\\[eval:localtime->strftime( '%y%m%d' )]\\execReports"
+		"<REMOTESHARE>\\INLINGUA\\byDayLogs\\[eval:localtime->strftime( '%y%m%d' )]\\execReports"
 	],
 	"restoreInstance": "PROD",
 	"databases": [
 	],
-	"localDir": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\SQLBackups\\[eval:localtime->strftime( '%y%m%d' )]\\<REMOTEHOST>"
+	"localDir": "[eval:$TTPVars->{config}{site}{site}{SQLBackupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\<REMOTEHOST>"
 }

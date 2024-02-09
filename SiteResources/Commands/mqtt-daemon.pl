@@ -5,6 +5,7 @@
 #
 # Command-line arguments:
 # - the full path to the JSON configuration file
+# - optional "stdout" to print received message to stdout
 #
 # Makes use of Toops, but is not part itself of Toops (though a not so bad example of application).
 #
@@ -61,6 +62,8 @@ sub doMatched {
 	my ( $topic, $message, $config ) = @_;
 	# is a $SYS message ?
 	$sysReceived = true if $topic =~ /^\$SYS/;
+	# if asked to prit to stdout, do that here (unless $SYS)
+	print localtime->strftime( "%Y-%m-%d %H:%M:%S:" )." $topic $message".EOL if haveStdout() && $topic !~ /^\$SYS/;
 	# do we log the topic and/or the message ?
 	my $logTopic = true;
 	$logTopic = $config->{logTopic} if exists $config->{logTopic};
@@ -80,6 +83,12 @@ sub doMatched {
 	if( $command ){
 		$kept->{$command}{$topic} = $message;
 	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# whether to print received messages to stdout
+sub haveStdout {
+	return scalar @ARGV > 1 && $ARGV[1] eq "stdout";
 }
 
 # -------------------------------------------------------------------------------------------------

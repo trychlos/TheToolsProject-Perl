@@ -84,7 +84,7 @@ sub answerStats {
 # -------------------------------------------------------------------------------------------------
 sub _execReport {
 	my ( $report ) = @_;
-	Mods::Toops::execReport( $report );
+	Mods::Toops::execReportAppend( $report );
 	push( @{$stats->{restored}}, $report );
 }
 
@@ -198,6 +198,7 @@ sub syncedPath {
 # warning when we have a diff without a previous full
 sub doWithNew {
 	my ( @newFiles ) = @_;
+	#print "newFiles".EOL.Dumper( @runningScan );
 	foreach my $report ( @newFiles ){
 		$stats->{count} += 1;
 		Mods::Toops::msgVerbose( "new report '$report'" );
@@ -257,7 +258,9 @@ sub doWithNew {
 					$command .= " -full $full->{$instance}{$database} -diff $local";
 				}
 				Mods::Toops::msgVerbose( "executing $command" );
-				print `$command`;
+				my $out = `$command`;
+				print $out;
+				Mods::Toops::msgLog( $out );
 				_execReport({
 					reportSourceFileName => $report,
 					reportData => $data,
@@ -308,7 +311,6 @@ sub works {
 	my @monitored = _evaluateArray( @{$daemon->{config}{monitoredDirs}} );
 	if( scalar @monitored ){
 		@runningScan = ();
-		print Dumper( @monitored );
 		find( \&wanted, @monitored );
 		if( scalar @runningScan < scalar @previousScan ){
 			varReset();
@@ -351,14 +353,17 @@ if( !Mods::Toops::errs()){
 		$daemon->{listenInterval},
 		$scanInterval
 	);
+	Mods::Toops::msgVerbose( "sleepTime='$sleepTime'" );
+	Mods::Toops::msgVerbose( "scanInterval='$scanInterval'" );
 
 	while( !$daemon->{terminating} ){
 		my $res = Mods::Daemon::daemonListen( $daemon, $commands );
 		my $now = localtime->epoch;
+		#print "now=$now lastScanTime=$lastScanTime now-lastScanTime=".( $now - $lastScanTime)." scanInterval=$scanInterval".EOL;
 		if( $now - $lastScanTime >= $scanInterval ){
 			works();
+			$lastScanTime = $now;
 		}
-		$lastScanTime = $now;
 		sleep( $sleepTime );
 	}
 

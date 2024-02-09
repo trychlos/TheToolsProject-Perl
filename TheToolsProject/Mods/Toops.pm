@@ -655,7 +655,7 @@ sub jsonAppend {
 sub jsonRead {
 	my ( $conf ) = @_;
 	my $result = undef;
-	if( -f $conf ){
+	if( $conf && -f $conf ){
 		my $content = do {
 		   open( my $fh, "<:encoding(UTF-8)", $conf ) or msgErr( "Can't open '$conf': $!".EOL );
 		   local $/;
@@ -663,8 +663,10 @@ sub jsonRead {
 		};
 		my $json = JSON->new;
 		$result = $json->decode( $content );
-	} else {
+	} elsif( $conf ){
 		msgErr( "site configuration file '$conf' not found or not readable" );
+	} else {
+		msgErr( "jsonRead() expects a SJON path to be read" );
 	}
 	return $result;
 }

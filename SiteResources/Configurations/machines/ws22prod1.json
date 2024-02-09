@@ -31,7 +31,7 @@
 						{
 							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl start -json C:\\INLINGUA\\SiteResources\\Configurations\\daemons\\tom17-backup-monitor-daemon.json NS3232346 Tom17"
+								"daemon.pl start -json [eval:$TTPVars->{config}{site}{site}{daemonsDir}]\\tom17-backup-monitor-daemon.json NS3232346 Tom17"
 							]
 						}
 					]
@@ -65,7 +65,7 @@
 						{
 							"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl start -json C:\\INLINGUA\\SiteResources\\Configurations\\daemons\\tom21-backup-monitor-daemon.json NS3232346 Tom21"
+								"daemon.pl start -json [eval:$TTPVars->{config}{site}{site}{daemonsDir}]\\tom21-backup-monitor-daemon.json NS3232346 Tom21"
 							]
 						}
 					]
@@ -99,7 +99,7 @@
 						{
 							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl start -json C:\\INLINGUA\\SiteResources\\Configurations\\daemons\\tom59-backup-monitor-daemon.json NS3232346 Tom59"
+								"daemon.pl start -json [eval:$TTPVars->{config}{site}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json NS3232346 Tom59"
 							]
 						}
 					]
@@ -143,13 +143,13 @@
 			"PROD": {
 				"package": "Mods::SqlServer",
 				"accounts": {
-					"sa": "LS7RR0m2nKshuEB1"
+					"sa": "E5WPtiQBjgi1ffJRwdRL"
 				},
-				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL15.OVH2\\MSSQL\\DATA"
+				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL16.PROD\\MSSQL\\DATA"
 			}
 		},
-		"backupRoot": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\SqlBackups",
-		"backupPath": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\SqlBackups\\[eval:localtime->strftime( '%y%m%d' )]",
+		"backupRoot": "[eval:$TTPVars->{config}{site}{site}{SQLBackupsRoot}]",
+		"backupPath": "[eval:$TTPVars->{config}{site}{site}{SQLBackupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:uc hostname]",
 		"archivePath": "\\\\ftpback-rbx7-844.ovh.net\\ns3232346.ip-57-128-101.eu\\[eval:uc hostname]",
 		"remoteShare": "\\\\10.122.1.11\\C",
 		"MQTT": {

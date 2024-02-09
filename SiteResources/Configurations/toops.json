@@ -10,7 +10,7 @@
 		"Remind that the directory where lies this 'ttops.json' must be adressed by the TTP_CONFDIR variable."
 	],
 	"toops": {
-		"logsRoot": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\Logs",
+		"logsRoot": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\byDayLogs",
 		"logsDir": "[_eval:$TTPVars->{config}{site}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
 		"execReports": "[_eval:$TTPVars->{config}{site}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports",
 		"msgOut": {
@@ -89,6 +89,8 @@
 	],
 	"site": {
 		"rootDir": "C:\\INLINGUA",
-		"commandsDir": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\SiteResources\\Commands"
+		"commandsDir": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\SiteResources\\Commands",
+		"daemonsDir": "[eval:$ENV{TTP_CONFDIR}]\\daemons",
+		"SQLBackupsRoot": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\byDaySQLBackups"
 	}
 }
