@@ -56,6 +56,7 @@ sub doPull {
 			my ( $dir_vol, $dir_dirs, $dir_file ) = File::Spec->splitpath( $pullDir );
 			my $srcPath = File::Spec->catpath( $pull_vol, $dir_dirs, $dir_file );
 			if( $command ){
+				$asked += 1;
 				Mods::Toops::msgVerbose( "source='$srcPath' target='$pullDir'" );
 				my $cmdres = Mods::Toops::commandByOs({
 					command => $command,
@@ -64,6 +65,7 @@ sub doPull {
 						TARGET => $pullDir
 					}
 				});
+				$done += 1 if $cmdres->{result};
 			} else {
 				opendir( FD, "$srcPath" ) or Mods::Toops::msgErr( "unable to open directory $srcPath: $!" );
 				if( !Mods::Toops::errs()){
