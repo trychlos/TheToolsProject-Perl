@@ -106,14 +106,17 @@ sub daemonCommand {
 # (E):
 # - the program path ($0)
 # - the command line arguments (\@ARGV)
+# - an optional options hash with following keys:
+#   > add: a complement to the log prefix (e.g. a service name)
 # returns the daemon object with:
 # - json: the json configuration file path
 # - config: its json evaluated configuration
 # - socket: the created listening socket
 # - sleep: the sleep interval
 sub daemonInitToops {
-	my ( $program, $args ) = @_;
+	my ( $program, $args, $opts ) = @_;
 	my $daemon = undef;
+	$opts //= {};
 
 	# init TTP
 	Mods::Toops::initSiteConfiguration();
@@ -125,6 +128,7 @@ sub daemonInitToops {
 	my ( $volume, $directories, $file ) = File::Spec->splitpath( $program );
 	my $TTPVars = Mods::Toops::TTPVars();
 	$TTPVars->{run}{daemon}{name} = $file;
+	$TTPVars->{run}{daemon}{add} = $opts->{add} if $opts->{add};
 	$TTPVars->{run}{daemon}{started} = localtime->strftime( '%Y-%m-%d %H:%M:%S' );
 
 	# get and check the daemon configuration

@@ -2,7 +2,7 @@
 	"WS12PROD1": {
 		"Services": {
 			"Canal33.db": {
-				"instance": "MSSQLSERVER",
+				"instance": "PROD",
 				"databases": [
 					"Canal33"
 				],
@@ -103,7 +103,7 @@
 		"DBMSInstancesComments": [
 		],
 		"DBMSInstances": {
-			"MSSQLSERVER": {
+			"PROD": {
 				"package": "Mods::SqlServer",
 				"accounts": {
 					"sa": "gPtPUWj85hzcnENZsoUm"

@@ -43,7 +43,7 @@ my $commands = {
 	stats => \&answerStats,
 };
 
-my $daemon = Mods::Daemon::daemonInitToops( $0, \@ARGV );
+my $daemon = Mods::Daemon::daemonInitToops( $0, \@ARGV, { add => $ARGV[2] || undef });
 my $TTPVars = Mods::Toops::TTPVars();
 
 # command-line arguments
