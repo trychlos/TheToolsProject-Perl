@@ -36,12 +36,14 @@ use Sys::Hostname qw( hostname );
 use Time::Piece;
 
 use Mods::Constants qw( :all );
+use Mods::MQTT;
 use Mods::Toops;
 
 use constant {
 	BUFSIZE => 4096,
 	ADVERTIZE_INTERVAL => 60,
-	MIN_INTERVAL => 1
+	MIN_INTERVAL => 1,
+	OFFLINE => "offline"
 };
 
 # ------------------------------------------------------------------------------------------------
@@ -50,9 +52,29 @@ sub _hostname {
 }
 
 # ------------------------------------------------------------------------------------------------
+sub _lastwill {
+	my ( $name ) = @_;
+	return {
+		topic => _topic( $name ),
+		payload => OFFLINE,
+		retain => true
+	};
+}
+
+# ------------------------------------------------------------------------------------------------
 sub _running {
 	my $TTPVars = Mods::Toops::TTPVars();
 	return "running since $TTPVars->{run}{daemon}{started}";
+}
+
+# ------------------------------------------------------------------------------------------------
+sub _topic {
+	my ( $name ) = @_;
+	my $topic = _hostname();
+	$topic .= "/daemon";
+	$topic .= "/$name";
+	$topic .= "/status";
+	return $topic;
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -63,12 +85,12 @@ sub daemonAdvertize {
 	my $advertizeInterval = ADVERTIZE_INTERVAL;
 	$advertizeInterval = $daemon->{config}{advertizeInterval} if exists $daemon->{config}{advertizeInterval} && $daemon->{config}{advertizeInterval} >= MIN_INTERVAL;
 	if( !$daemon->{lastAdvertize} || $now-$daemon->{lastAdvertize} >= $advertizeInterval ){
-		my $topic = _hostname();
-		$topic .= "/daemon";
-		$topic .= "/$daemon->{name}";
-		$topic .= "/status";
-		my $message = _running();
-		Mods::Toops::msgStdout2Log( `mqtt.pl publish -topic $topic -payload "$message" -retain -will offline` );
+		my $topic = _topic( $daemon->{name} );
+		my $payload = _running();
+		Mods::Toops::msgLog( "$topic [$payload]" );
+		if( $daemon->{mqtt} ){
+			$daemon->{mqtt}->retain( $topic, $payload );
+		}
 		$daemon->{lastAdvertize} = $now;
 	}
 }
@@ -136,6 +158,8 @@ sub daemonInitToops {
 
 	# get and check the daemon configuration
 	my $json = @{$args}[0];
+	my ( $jvol, $jdirs, $jfile ) = File::Spec->splitpath( $json );
+	$jfile =~ s/\.[^.]+$//;
 	my $raw = getRawConfigByPath( $json );
 	my $config = $raw ? getEvaluatedConfig( $raw ) : undef;
 	my $listenInterval = MIN_INTERVAL;
@@ -164,16 +188,29 @@ sub daemonInitToops {
 			Timeout => 0
 		) or Mods::Toops::msgErr( "unable to create a listening socket: $!" );
 	}
+
+	# connect to MQTT communication bus if the host is configured for
+	my $mqtt = undef;
+	if( !Mods::Toops::errs()){
+		my $hostConfig = Mods::Toops::getHostConfig();
+		if( $hostConfig->{MQTT}{broker} && $hostConfig->{MQTT}{username} && $hostConfig->{MQTT}{passwd} ){
+			$mqtt = Mods::MQTT::connect({
+				broker => $hostConfig->{MQTT}{broker},
+				username => $hostConfig->{MQTT}{username},
+				password => $hostConfig->{MQTT}{passwd},
+				will => _lastwill( $jfile )
+			});
+		}
+	}
 	if( !Mods::Toops::errs()){
 		$SIG{INT} = sub { $socket->close(); Mods::Toops::ttpExit(); };
-		my ( $jvol, $jdirs, $jfile ) = File::Spec->splitpath( $json );
-		$jfile =~ s/\.[^.]+$//;
 		$daemon = {
 			json => $json,
 			raw => $raw,
 			name => $jfile,
 			config => $config,
 			socket => $socket,
+			mqtt => $mqtt,
 			listenInterval => $listenInterval
 		};
 	}
@@ -276,6 +313,21 @@ sub getSleepTime {
 		}
 	}
 	return $min;
+}
+
+# ------------------------------------------------------------------------------------------------
+# terminate the daemon, gracefully closing all opened connections
+sub terminate {
+	my ( $daemon ) = @_;
+
+	# close MQTT connection
+	Mods::MQTT::disconnect( $daemon->{mqtt} ) if $daemon->{mqtt};
+	# close TCP connection
+	$daemon->{socket}->close();
+	# have a log line
+	Mods::Toops::msgLog( "terminating" );
+	# and quit the program
+	Mods::Toops::ttpExit();
 }
 
 1;

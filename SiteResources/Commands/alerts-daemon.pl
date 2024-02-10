@@ -113,5 +113,4 @@ while( !$daemon->{terminating} ){
 	sleep( $sleepTime );
 }
 
-Mods::Toops::msgLog( "terminating" );
-Mods::Toops::ttpExit();
+Mods::Daemon::terminate( $daemon );

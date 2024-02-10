@@ -147,5 +147,4 @@ while( !$daemon->{terminating} ){
 }
 
 $mqtt->disconnect();
-Mods::Toops::msgLog( "terminating" );
-Mods::Toops::ttpExit();
+Mods::Daemon::terminate( $daemon );

@@ -339,30 +339,30 @@ if( scalar @ARGV != 3 ){
 		Mods::Toops::msgErr( "service '$daemon->{monitored}{service}' is unknown in '$daemon->{monitored}{host}' host configuration" );
 	}
 }
-if( !Mods::Toops::errs()){
-	my $scanInterval = 10;
-	$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
-
-	my $sleepTime = Mods::Daemon::getSleepTime(
-		$daemon->{listenInterval},
-		$scanInterval
-	);
-	Mods::Toops::msgVerbose( "listening on port $daemon->{config}{listeningPort}" );
-	Mods::Toops::msgVerbose( "sleepTime='$sleepTime'" );
-	Mods::Toops::msgVerbose( "scanInterval='$scanInterval'" );
-
-	while( !$daemon->{terminating} ){
-		my $res = Mods::Daemon::daemonListen( $daemon, $commands );
-		my $now = localtime->epoch;
-		#print "now=$now lastScanTime=$lastScanTime now-lastScanTime=".( $now - $lastScanTime)." scanInterval=$scanInterval".EOL;
-		if( $now - $lastScanTime >= $scanInterval ){
-			works();
-			$lastScanTime = $now;
-		}
-		sleep( $sleepTime );
-	}
-
-	Mods::Toops::msgLog( "terminating" );
+if( Mods::Toops::errs()){
+	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::ttpExit();
+my $scanInterval = 10;
+$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
+
+my $sleepTime = Mods::Daemon::getSleepTime(
+	$daemon->{listenInterval},
+	$scanInterval
+);
+Mods::Toops::msgVerbose( "listening on port $daemon->{config}{listeningPort}" );
+Mods::Toops::msgVerbose( "sleepTime='$sleepTime'" );
+Mods::Toops::msgVerbose( "scanInterval='$scanInterval'" );
+
+while( !$daemon->{terminating} ){
+	my $res = Mods::Daemon::daemonListen( $daemon, $commands );
+	my $now = localtime->epoch;
+	#print "now=$now lastScanTime=$lastScanTime now-lastScanTime=".( $now - $lastScanTime)." scanInterval=$scanInterval".EOL;
+	if( $now - $lastScanTime >= $scanInterval ){
+		works();
+		$lastScanTime = $now;
+	}
+	sleep( $sleepTime );
+}
+
+Mods::Daemon::terminate( $daemon );
