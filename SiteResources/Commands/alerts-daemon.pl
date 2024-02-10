@@ -31,6 +31,7 @@ my $commands = {
 my $daemon = Mods::Daemon::daemonInitToops( $0, \@ARGV );
 my $TTPVars = Mods::Toops::TTPVars();
 
+# scanning for new elements
 my $lastScanTime = 0;
 my $first = true;
 my @previousScan = ();
@@ -69,7 +70,7 @@ sub wanted {
 # -------------------------------------------------------------------------------------------------
 # do its work
 sub works {
-	my $monitored = $daemon->{daemonConfig}{monitoredDirs};
+	my $monitored = $daemon->{config}{monitoredDirs};
 	if( $monitored && scalar @{$monitored} ){
 		@runningScan = ();
 		find( \&wanted, @{$monitored} );
@@ -95,7 +96,7 @@ sub works {
 # =================================================================================================
 
 my $scanInterval = 5;
-$scanInterval = $daemon->{daemonConfig}{scanInterval} if exists $daemon->{daemonConfig}{scanInterval} && $daemon->{daemonConfig}{scanInterval} >= $scanInterval;
+$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
 
 my $sleepTime = Mods::Daemon::getSleepTime(
 	$daemon->{listenInterval},

@@ -68,7 +68,7 @@ sub daemonAdvertize {
 		$topic .= "/$daemon->{name}";
 		$topic .= "/status";
 		my $message = _running();
-		Mods::Toops::msgStdout2Log( `mqtt.pl publish -topic $topic -payload "$message" -retain -will off` );
+		Mods::Toops::msgStdout2Log( `mqtt.pl publish -topic $topic -payload "$message" -retain -will offline` );
 		$daemon->{lastAdvertize} = $now;
 	}
 }
@@ -116,10 +116,10 @@ sub daemonCommand {
 #   > add: a complement to the log prefix (e.g. a service name)
 # returns the daemon object with:
 # - json: the json configuration file path
-# - daemonConfig: its json evaluated configuration (and reevaluated at each listenInterval)
-# - hostConfig: the host configuration (reevaluated too at each listenInterval)
+# - config: its json evaluated configuration (and reevaluated at each listenInterval)
 # - socket: the created listening socket
 # - sleep: the sleep interval
+# - listenInterval: computed runtime value
 sub daemonInitToops {
 	my ( $program, $args, $opts ) = @_;
 	my $daemon = undef;
@@ -136,11 +136,13 @@ sub daemonInitToops {
 
 	# get and check the daemon configuration
 	my $json = @{$args}[0];
-	my $config = getConfigByPath( $json );
-	Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$config->{listeningPort};
+	my $raw = getRawConfigByPath( $json );
+	my $config = $raw ? getEvaluatedConfig( $raw ) : undef;
 	my $listenInterval = MIN_INTERVAL;
-	if( !Mods::Toops::errs()){
-		if( $config->{listenInterval} ){
+	if( $config ){
+		if( !$config->{listeningPort} ){
+			Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" );
+		} else {
 			if( $config->{listenInterval} < $listenInterval ){
 				Mods::Toops::msgVerbose( "defined listenInterval=$config->{listenInterval} less than minimum accepted '$listenInterval', ignored" );
 			} else {
@@ -168,9 +170,9 @@ sub daemonInitToops {
 		$jfile =~ s/\.[^.]+$//;
 		$daemon = {
 			json => $json,
+			raw => $raw,
 			name => $jfile,
-			daemonConfig => $config,
-			hostConfig => Mods::Toops::getHostConfig( _hostname()),
+			config => $config,
 			socket => $socket,
 			listenInterval => $listenInterval
 		};
@@ -190,8 +192,10 @@ sub daemonListen {
 	my ( $daemon, $commands ) = @_;
 	$commands //= {};
 	# before anything else, reevalute our configurations
-	$daemon->{daemonConfig} = getConfigByPath( $daemon->{json} );
-	$daemon->{hostConfig} = Mods::Toops::getHostConfig( _hostname());
+	# - the daemon config
+	$daemon->{config} = getEvaluatedConfig( $daemon->{raw} );
+	#- toops+site and host configurations
+	Mods::Toops::ttpEvaluate();
 	my $client = $daemon->{socket}->accept();
 	my $result = undef;
 	my $data = "";
@@ -218,13 +222,47 @@ sub daemonListen {
 }
 
 # ------------------------------------------------------------------------------------------------
-# read the daemon configuration
+# read and evaluate the daemon configuration
+# (I):
+# - the daemon configuration file path
+# (O):
+# - the evaluated result hash
 sub getConfigByPath {
 	my ( $json ) = @_;
-	#Mods::Toops::msgVerbose( "Daemon::getConfigByPath() json='$json'" );
-	my $res = Mods::Toops::evaluate( Mods::Toops::jsonRead( $json ));
-	return undef if ref( $res ) ne 'HASH' || !scalar keys %{$res};
-	return $res;
+	my $result = getRawConfigByPath( $json );
+	$result = Mods::Toops::evaluate( $result ) if $result;
+	return $result;
+}
+
+# ------------------------------------------------------------------------------------------------
+# evaluate the raw daemon configuration
+# (I):
+# - the raw config
+# (O):
+# - the evaluated result hash
+sub getEvaluatedConfig {
+	my ( $config ) = @_;
+	my $evaluated = $config;
+	$evaluated = Mods::Toops::evaluate( $evaluated );
+	return $evaluated;
+}
+
+# ------------------------------------------------------------------------------------------------
+# read and returns the raw daemon configuration
+# (I):
+# - the daemon configuration file path
+# (O):
+# - the raw result hash
+sub getRawConfigByPath {
+	my ( $json ) = @_;
+	Mods::Toops::msgVerbose( "Daemon::getRawConfigByPath() json='$json'" );
+	my $result = Mods::Toops::jsonRead( $json );
+	my $ref = ref( $result );
+	if( $ref ne 'HASH' ){
+		Mods::Toops::msgErr( "Daemon::getRawConfigByPath() expected a hash, found a ".( $ref || 'scalar' ));
+		$result = undef;
+	}
+	return $result;
 }
 
 # ------------------------------------------------------------------------------------------------

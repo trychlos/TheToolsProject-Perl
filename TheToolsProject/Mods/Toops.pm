@@ -1157,7 +1157,6 @@ sub ttpEvaluate {
 	}
 	# then evaluate
 	foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
-		#print Dumper( $TTPVars->{config} );
 		$TTPVars->{config}{$key} = evaluate( $TTPVars->{config}{$key} );
 	}
 	# and reevaluates the logs too

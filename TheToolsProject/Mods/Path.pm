@@ -140,8 +140,8 @@ sub makeDirExist {
 			}
 			$result = false;
 		}
+		Mods::Toops::msgVerbose( "Path::makeDirExist() dir='$dir' result=$result" );
 	}
-	Mods::Toops::msgVerbose( "Toops::makeDirExist() dir='$dir' result=$result" );
 	return $result;
 }
 
