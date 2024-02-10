@@ -2,7 +2,7 @@
 	"toops_comments": [
 		"The global Toops configuration for your site",
 		"In Windows environment, take care of doubling your backslashes",
-		"Besides of the below 'toops' key, the site is free to set here any global configuration which will be available with $TTPVars->{config}{site}{<key>}",
+		"Besides of the below 'toops' key, the site is free to set here any global configuration which will be available with $TTPVars->{config}{<key>}",
 		"May make use - in values only - of parameters between square brackets as [..]",
 		"At the moment, there is one type of parameters:",
 		"- those specified by 'eval:' indicate some code to be evaluated at run time.",
@@ -10,9 +10,9 @@
 		"Remind that the directory where lies this 'ttops.json' must be adressed by the TTP_CONFDIR variable."
 	],
 	"toops": {
-		"logsRoot": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\byDayLogs",
-		"logsDir": "[_eval:$TTPVars->{config}{site}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
-		"execReports": "[_eval:$TTPVars->{config}{site}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports",
+		"logsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDayLogs",
+		"logsDir": "[_eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
+		"execReports": "[_eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports",
 		"msgOut": {
 			"withLog": true
 		},
@@ -34,7 +34,7 @@
 			}
 		},
 		"alerts": {
-			"dropDir": "[_eval:$TTPVars->{config}{site}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Alerts",
+			"dropDir": "[_eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Alerts",
 			"levels": {
 				"default": {
 					"mail": {
@@ -65,8 +65,8 @@
 		},
 		"deployments": {
 			"sourceDirs": [
-				"[eval:$TTPVars->{config}{site}{site}{rootDir}]\\SiteResources",
-				"[eval:$TTPVars->{config}{site}{site}{rootDir}]\\TheToolsProject"
+				"[eval:$TTPVars->{config}{site}{rootDir}]\\SiteResources",
+				"[eval:$TTPVars->{config}{site}{rootDir}]\\TheToolsProject"
 			],
 			"excludes": [
 			],
@@ -89,8 +89,8 @@
 	],
 	"site": {
 		"rootDir": "C:\\INLINGUA",
-		"commandsDir": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\SiteResources\\Commands",
+		"commandsDir": "[eval:$TTPVars->{config}{site}{rootDir}]\\SiteResources\\Commands",
 		"daemonsDir": "[eval:$ENV{TTP_CONFDIR}]\\daemons",
-		"SQLBackupsRoot": "[eval:$TTPVars->{config}{site}{site}{rootDir}]\\byDaySQLBackups"
+		"SQLBackupsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDaySQLBackups"
 	}
 }

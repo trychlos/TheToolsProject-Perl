@@ -30,6 +30,7 @@ package Mods::Path;
 use strict;
 use warnings;
 
+use Config;
 use Data::Dumper;
 use File::Path qw( make_path );
 use File::Spec;
@@ -40,20 +41,71 @@ use Mods::Constants qw( :all );
 use Mods::Toops;
 
 # ------------------------------------------------------------------------------------------------
+# (O):
+# returns the directory which contains the daemons configurations
+# at the moment, a non-configurable subdirectory of TTP_CONFDIR
 sub daemonsConfigurationsDir {
 	return File::Spec->catdir( siteConfigurationsDir(), "daemons" );
 }
 
 # ------------------------------------------------------------------------------------------------
+# (I):
+# - optionally a hostname, defaulting to the current host
+#   remind that Unix has case sensitive filesystems, while Windows has not - we do not modify here the case
+# (O):
+# returns the full path of the host configuration file
+sub hostConfigurationPath {
+	my ( $host ) = @_;
+	$host = hostname if !$host;
+	return File::Spec->catdir( hostsConfigurationsDir(), "$host.json" );
+}
+
+# ------------------------------------------------------------------------------------------------
+# (O):
+# returns the dir which contains hosts configuration files
+# at the moment, a non-configurable subdirectory of TTP_CONFDIR
 sub hostsConfigurationsDir {
 	return File::Spec->catdir( siteConfigurationsDir(), "machines" );
 }
 
 # ------------------------------------------------------------------------------------------------
-sub logsRootDir {
+# (O):
+# returns the root of the logs tree
+# this is an optional value read from toops.json, defaulting to user temp directory, itself defaulting to /tmp (or C:\Temp)
+# Though TheToolsProject doesn't force that, we encourage to have a by-daya logs tree. Thus logsRoot is the top of the
+# logs hierarchy while logsDailyDir is the logs of the day (which may be the same by the fact and this is a decision of
+# the site integrator)
+sub logsDailyDir {
+	my $dir;
 	my $TTPVars = Mods::Toops::TTPVars();
-	my $dir = $TTPVars->{config}{site}{toops}{logsRoot};
-	Mods::Toops::msgErr( "siteLogsRootDir() 'logsRoot' value is not set, but is required" ) if $dir;
+	if( exists( $TTPVars->{config}{toops}{logsDir} )){
+		$dir = $TTPVars->{config}{toops}{logsDir};
+	} else {
+		$dir = File::Spec->catdir( logsRootDir(), 'Toops', 'logs' );
+	}
+	makeDirExist( $dir );
+	return $dir;
+}
+
+# ------------------------------------------------------------------------------------------------
+# (O):
+# returns the root of the logs tree, maiking sure it exists
+# this is an optional value read from toops.json, defaulting to user temp directory, itself defaulting to /tmp (or C:\Temp)
+# Though TheToolsProject doesn't force that, we encourage to have a by-daya logs tree. Thus logsRoot is the top of the
+# logs hierarchy while logsDailyDir is the logs of the day (which may be the same by the fact and this is a decision of
+# the site integrator)
+sub logsRootDir {
+	my $dir;
+	my $TTPVars = Mods::Toops::TTPVars();
+	if( exists( $TTPVars->{config}{toops}{logsRoot} )){
+		$dir = $TTPVars->{config}{toops}{logsRoot};
+	} elsif( $ENV{TEMP} ){
+		$dir = $ENV{TEMP};
+	} elsif( $ENV{TMP} ){
+		$dir = $ENV{TMP};
+	} else {
+		$dir = $TTPVars->{Toops}{defaults}{$Config{osname}}{tempDir};
+	}
 	makeDirExist( $dir );
 	return $dir;
 }
@@ -66,31 +118,10 @@ sub makeDirExist {
 	my ( $dir ) = @_;
 	my $result = false;
 	if( -d $dir ){
-		Mods::Toops::msgVerbose( "Toops::makeDirExist() dir='$dir' already exists" );
+		Mods::Toops::msgVerbose( "Path::makeDirExist() dir='$dir' exists" );
 		$result = true;
-	# seems that make_path is not easy with UNC path (actually seems that make_path just dies)
-	} elsif( $dir =~ /^\\\\/ ){
-		Mods::Toops::msgVerbose( "Toops::makeDirExist() dir='$dir' is a UNC path, recursing by level" );
-		my @levels = ();
-		my $candidate = $dir;
-		my ( $volume, $directories, $file ) = File::Spec->splitpath( $candidate );
-		my $other;
-		unshift( @levels, $file );
-		while( length $directories > 1 ){
-			$candidate = Mods::Toops::pathRemoveTrailingSeparator( $directories );
-			( $other, $directories, $file ) = File::Spec->splitpath( $candidate );
-			unshift( @levels, $file );
-		}
-		$candidate = '';
-		$result = true;
-		while( scalar @levels ){
-			my $level = shift @levels;
-			my $dir = File::Spec->catpath( $volume, $candidate, $level );
-			$result &= mkdir $dir;
-			$candidate = File::Spec->catdir(  $candidate, $level );
-		}
 	} else {
-		Mods::Toops::msgVerbose( "Toops::makeDirExist() dir='$dir' tries make_path()" );
+		Mods::Toops::msgVerbose( "Path::makeDirExist() make_path() dir='$dir'" );
 		my $error;
 		$result = true;
 		make_path( $dir, {
@@ -121,7 +152,7 @@ sub siteConfigurationsDir {
 
 # ------------------------------------------------------------------------------------------------
 sub toopsConfigurationPath {
-	return File::Spec->catdir( siteConfigurationsDir(), 'toops.json' );
+	return File::Spec->catdir( siteConfigurationsDir(), "toops.json" );
 }
 
 1;

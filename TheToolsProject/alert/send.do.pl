@@ -41,7 +41,7 @@ my $opt_message = $defaults->{message};
 sub doSend {
 	Mods::Toops::msgOut( "sending a '$opt_level' alert..." );
 
-	my $path = File::Spec->catdir( $TTPVars->{config}{site}{toops}{alerts}{dropDir}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
+	my $path = File::Spec->catdir( $TTPVars->{config}{toops}{alerts}{dropDir}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
 
 	Mods::Toops::jsonWrite({
 		emitter => $opt_emitter,

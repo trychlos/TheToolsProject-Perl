@@ -30,7 +30,7 @@ my $defaults = {
 	dummy => 'no',
 	fromhost => ''
 };
-$defaults->{fromhost} = $TTPVars->{config}{site}{toops}{deployments}{pullReference} if exists $TTPVars->{config}{site}{toops}{deployments}{pullReference};
+$defaults->{fromhost} = $TTPVars->{config}{toops}{deployments}{pullReference} if exists $TTPVars->{config}{toops}{deployments}{pullReference};
 
 my $opt_fromhost = $defaults->{fromhost};
 
@@ -48,10 +48,10 @@ sub doPull {
 	if( $pullShare ){
 		my ( $pull_vol, $pull_dirs, $pull_file ) = File::Spec->splitpath( $pullShare );
 		# if a byOS command is specified, then use it
-		my $command = $TTPVars->{config}{site}{toops}{deployments}{byOS}{$Config{osname}}{command};
+		my $command = $TTPVars->{config}{toops}{deployments}{byOS}{$Config{osname}}{command};
 		Mods::Toops::msgVerbose( "found command='$command'" );
 		# may have several source dirs: iterate on each
-		foreach my $pullDir ( @{$TTPVars->{config}{site}{toops}{deployments}{sourceDirs}} ){
+		foreach my $pullDir ( @{$TTPVars->{config}{toops}{deployments}{sourceDirs}} ){
 			Mods::Toops::msgVerbose( "pulling '$pullDir'" );
 			my ( $dir_vol, $dir_dirs, $dir_file ) = File::Spec->splitpath( $pullDir );
 			my $srcPath = File::Spec->catpath( $pull_vol, $dir_dirs, $dir_file );
@@ -72,7 +72,7 @@ sub doPull {
 					$result = true;
 					while( my $it = readdir( FD )){
 						next if $it eq "." or $it eq "..";
-						next if grep( /$it/i, @{$TTPVars->{config}{site}{toops}{deployments}{excludes}} );
+						next if grep( /$it/i, @{$TTPVars->{config}{toops}{deployments}{excludes}} );
 						$asked += 1;
 						my $pull_path = File::Spec->catdir( $srcPath, $it );
 						my $dst_path = File::Spec->catdir( $pullDir, $it );

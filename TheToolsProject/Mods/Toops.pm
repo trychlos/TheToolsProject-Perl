@@ -53,6 +53,12 @@ our $TTPVars = {
 			'run',
 			'Toops'
 		],
+		# main configuration keys
+		ConfigKeys => [
+			'toops',
+			'site',
+			'host'
+		],
 		# some internally used constants
 		commentPreUsage => '^# @\(#\) ',
 		commentPostUsage => '^# @\(@\) ',
@@ -60,6 +66,8 @@ our $TTPVars = {
 		verbSufix => '.do.pl',
 		verbSed => '\.do\.pl'
 	},
+	# a key reserved for the storage of toops+site+host json configuration files
+	json => undef,
 	# initialize some run variables
 	run => {
 		exitCode => 0,
@@ -137,7 +145,7 @@ sub copyDir {
 		return false;
 	}
 	my $cmdres = commandByOs({
-		command => $TTPVars->{config}{site}{toops}{copyDir}{byOS}{$Config{osname}}{command},
+		command => $TTPVars->{config}{toops}{copyDir}{byOS}{$Config{osname}}{command},
 		macros => {
 			SOURCE => $source,
 			TARGET => $target
@@ -258,22 +266,22 @@ sub execReportAppend {
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	# if Toops is configured to write JSON files
 	# please note that having the json filenames ordered both by name and by date is a design decision - do not change
-	if( exists( $TTPVars->{config}{site}{toops}{executionReport}{withFile} )){
-		msgVerbose( "execReportAppend() TTPVars->{config}{site}{toops}{executionReport}{withFile}=$TTPVars->{config}{site}{toops}{executionReport}{withFile}" );
+	if( exists( $TTPVars->{config}{toops}{executionReport}{withFile} )){
+		msgVerbose( "execReportAppend() TTPVars->{config}{toops}{executionReport}{withFile}=$TTPVars->{config}{toops}{executionReport}{withFile}" );
 	} else {
-		msgVerbose( "execReportAppend() TTPVars->{config}{site}{toops}{executionReport}{withFile} is undef" );
+		msgVerbose( "execReportAppend() TTPVars->{config}{toops}{executionReport}{withFile} is undef" );
 	}
-	if( $TTPVars->{config}{site}{toops}{executionReport}{withFile} ){
-		my $path = File::Spec->catdir( $TTPVars->{config}{site}{toops}{execReports}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
+	if( $TTPVars->{config}{toops}{executionReport}{withFile} ){
+		my $path = File::Spec->catdir( $TTPVars->{config}{toops}{execReports}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
 		jsonWrite( $data, $path );
 	}
 	# if Toops is configured to output execution reports to the MQTT bus
-	if( exists( $TTPVars->{config}{site}{toops}{executionReport}{withMqtt} )){
-		msgVerbose( "execReportAppend() TTPVars->{config}{site}{toops}{executionReport}{withMqtt}=$TTPVars->{config}{site}{toops}{executionReport}{withMqtt}" );
+	if( exists( $TTPVars->{config}{toops}{executionReport}{withMqtt} )){
+		msgVerbose( "execReportAppend() TTPVars->{config}{toops}{executionReport}{withMqtt}=$TTPVars->{config}{toops}{executionReport}{withMqtt}" );
 	} else {
-		msgVerbose( "execReportAppend() TTPVars->{config}{site}{toops}{executionReport}{withMqtt} is undef" );
+		msgVerbose( "execReportAppend() TTPVars->{config}{toops}{executionReport}{withMqtt} is undef" );
 	}
-	if( $TTPVars->{config}{site}{toops}{executionReport}{withMqtt} ){
+	if( $TTPVars->{config}{toops}{executionReport}{withMqtt} ){
 		my $topic = $data->{host}; delete $data->{host};
 		$topic .= "/executionReport";
 		$topic .= "/$data->{command}"; delete $data->{command};
@@ -322,31 +330,18 @@ sub getDefaultTempDir {
 sub getHostConfig {
 	my ( $host, $opts ) = @_;
 	if( !$host ){
-		my $host = uc hostname;
-		return $TTPVars->{config}{$host};
+		return $TTPVars->{config}{host};
 	}
 	$opts //= {};
-	$host = uc $host;
-	my $result = undef;
-	my $conf = File::Spec->catdir( Mods::Path::hostsConfigurationsDir(), $host.'.json' );
-	msgVerbose( "getHostConfig() conf='$conf'" );
-	my $hash = jsonRead( $conf );
+	my $hash = hostConfigRead( $host );
 	if( $hash ){
-		my $topkey = ( keys %{$hash} )[0];
-		my $hash_host = uc ( $topkey );
-		msgErr( "hostname '$host' expected, found '$hash_host'" ) if $hash_host ne $host;
-		if( !errs()){
-			my $withEvaluate = true;
-			$withEvaluate = $opts->{withEvaluate} if exists $opts->{withEvaluate};
-			# rationale: evaluate() may want take advantage of the TTPVars content, so must be set before evaluation
-			if( $withEvaluate ){
-				$hash = evaluate( $hash );
-			}
-			$result = $hash->{$topkey};
-			$result->{name} = $host;
+		my $withEvaluate = true;
+		$withEvaluate = $opts->{withEvaluate} if exists $opts->{withEvaluate};
+		if( $withEvaluate ){
+			$hash = evaluate( $hash );
 		}
 	}
-	return $result;
+	return $hash;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -519,6 +514,7 @@ sub grepFileByRegex {
 # - a one-liner from the command itself
 # - and the one-liner help of each available verb
 sub helpCommand {
+	msgVerbose( "helpCommand()" );
 	# display the command one-line help
 	Mods::Toops::helpCommandOneline( $TTPVars->{run}{command}{path} );
 	# display each verb one-line help
@@ -562,8 +558,14 @@ sub helpCommandOneline {
 #   > a pre-usage help
 #   > the usage of the verb
 #   > a post-usage help
+# (I):
+# - a hash which contains default values
+# - an optional options hash with following keys:
+#   > usage: a reference to display available options
 sub helpVerb {
-	my ( $defaults ) = @_;
+	msgVerbose( "helpVerb()" );
+	my ( $defaults, $opts ) = @_;
+	$opts //= {};
 	# display the command one-line help
 	Mods::Toops::helpCommandOneline( $TTPVars->{run}{command}{path} );
 	# verb pre-usage
@@ -577,7 +579,11 @@ sub helpVerb {
 		print "    $line".EOL;
 	}
 	# verb usage
-	@verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
+	if( $opts->{usage} ){
+		@verbHelp = @{$opts->{usage}->()};
+	} else {
+		@verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
+	}
 	if( scalar @verbHelp ){
 		print "    Usage: $TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} [options]".EOL;
 		print "    where available options are:".EOL;
@@ -596,11 +602,74 @@ sub helpVerb {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Returns the help line for the standard options
+sub helpVerbStandardOptions {
+	my @help = (
+		"--[no]help              print this message, and exit [no]",
+		"--[no]verbose           run verbosely [no]",
+		"--[no]colored           color the output depending of the message level [yes]",
+		"--[no]dummy             dummy run (ignored here) [no]"
+	);
+	return \@help;
+}
+
+# -------------------------------------------------------------------------------------------------
+# read the host configuration without evaluation but checks that we have the correct top key
+# (I):
+# - the hostname
+# (O):
+# - returns the data under the toplevel key (which is expected to be the hostname)
+#   with a new 'name' key which contains the hostname
+# or undef in case of an error
+sub hostConfigRead {
+	my ( $host ) = @_;
+	my $result = undef;
+	if( !$host ){
+		msgErr( "hostConfigRead() hostname expected" );
+	} else {
+		my $hash = jsonRead( Mods::Path::hostConfigurationPath( $host ));
+		if( $hash ){
+			my $topkey = ( keys %{$hash} )[0];
+			if( $topkey ne $host ){
+				msgErr( "expected toplevel key '$host', found '$topkey'" ) ;
+			} else {
+				$result = $hash->{$topkey};
+				$result->{name} = $host;
+			}
+		}
+	}
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Initialize TheToolsProject
+# This is reading the toops+site and host configuration files and interpreting it before first use
+sub init {
+	$TTPVars->{Toops}{json} = jsonRead( Mods::Path::toopsConfigurationPath());
+	# make sure the toops+site configuration doesn't have any other key
+	# immediately aborting if this is the case
+	# accepting 'toops' and 'site'-derived keys (like 'site_comments' for example)
+	my @others = ();
+	foreach my $key ( keys %{$TTPVars->{Toops}{json}} ){
+		push( @others, "'$key'" ) unless index( $key, "toops" )==0 || index( $key, "site" )==0;
+	}
+	if( scalar @others ){
+		print STDERR "Invalid key(s) found in toops.json configuration file: ".join( ', ', @others )."\n";
+		print STDERR "Site own keys should be inside 'site' hierarchy\n";
+		exit( 1 );
+	}
+	$TTPVars->{Toops}{json}{host} = hostConfigRead( uc hostname );
+	ttpEvaluate();
+	msgLog( "executing $0 ".join( ' ', @ARGV ));
+}
+
+# -------------------------------------------------------------------------------------------------
 # get the machine services configuration as a hash indexed by hostname
 #  HostConf::init() is expected to return a hash with a single top key which is the hostname
 #  we check and force that here
 #  + set the host as a value to be more easily available
 sub initHostConfiguration {
+=pod
 	my $host = uc hostname;
 	my $config = getHostConfig( $host, { withEvaluate => false });
 	if( $config ){
@@ -608,27 +677,18 @@ sub initHostConfiguration {
 		$TTPVars->{config}{$host} = $config;
 		$TTPVars->{config}{$host} = evaluate( $TTPVars->{config}{$host} );
 	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# Initialize the logs
-# Expects the site configuration has a 'toops/logsDir' variable, defaulting to /tmp/Toops/logs in unix and C:\Temps\Toops\logs in Windows
-# Make sure the daily directory exists
-sub initLogs {
-	my $logsDir = File::Spec->catdir( $TTPVars->{Toops}{defaults}{$Config{osname}}{tempDir}, 'Toops', 'logs' );
-	$logsDir = $TTPVars->{config}{site}{toops}{logsDir} if exists $TTPVars->{config}{site}{toops}{logsDir};
-	make_path( $logsDir );
-	$TTPVars->{run}{logsDir} = $logsDir;
-	$TTPVars->{run}{logsMain} = File::Spec->catdir( $logsDir, 'main.log' );
+=cut
 }
 
 # -------------------------------------------------------------------------------------------------
 # Make sure we have a site configuration JSON file and loads and interprets it
 sub initSiteConfiguration {
+=pod
 	my $conf = Mods::Path::toopsConfigurationPath();
 	$TTPVars->{config}{site} = jsonRead( $conf );
 	# rationale: evaluate() may want take advantage of the TTPVars content, so must be set before evaluation
 	$TTPVars->{config}{site} = evaluate( $TTPVars->{config}{site} );
+=cut
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -649,24 +709,25 @@ sub jsonAppend {
 
 # -------------------------------------------------------------------------------------------------
 # Read a JSON file into a hash
-# All Toops JSON configuration files may take advantage of dynamic eval here
+# Do not evaluate here, just read the file data
 # (E):
 # - the full path to the to-be-loaded-and-interpreted json file
 sub jsonRead {
 	my ( $conf ) = @_;
+	msgVerbose( "jsonRead() conf='$conf'" );
 	my $result = undef;
-	if( $conf && -f $conf ){
+	if( $conf && -r $conf ){
 		my $content = do {
-		   open( my $fh, "<:encoding(UTF-8)", $conf ) or msgErr( "Can't open '$conf': $!".EOL );
+		   open( my $fh, "<:encoding(UTF-8)", $conf ) or msgErr( "jsonRead() $conf: $!" );
 		   local $/;
 		   <$fh>
 		};
 		my $json = JSON->new;
 		$result = $json->decode( $content );
 	} elsif( $conf ){
-		msgErr( "site configuration file '$conf' not found or not readable" );
+		msgErr( "jsonRead() $conf: not found or not readable" );
 	} else {
-		msgErr( "jsonRead() expects a SJON path to be read" );
+		msgErr( "jsonRead() expects a JSON path to be read" );
 	}
 	return $result;
 }
@@ -701,7 +762,7 @@ sub moveDir {
 		return true;
 	}
 	my $cmdres = commandByOs({
-		command => $TTPVars->{config}{site}{toops}{moveDir}{byOS}{$Config{osname}}{command},
+		command => $TTPVars->{config}{toops}{moveDir}{byOS}{$Config{osname}}{command},
 		macros => {
 			SOURCE => $source,
 			TARGET => $target
@@ -751,8 +812,10 @@ sub msgLog {
 # -------------------------------------------------------------------------------------------------
 # log an already prefixed message
 # do not try to write in logs while they are not initialized
+# the host config is silently reevaluated on each call o be sure we are writing in the logs of the day
+
 sub msgLogAppend {
-	my $msg = shift;
+	my ( $msg ) = @_;
 	if( $TTPVars->{run}{logsMain} ){
 		my $host = uc hostname;
 		my $username = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME} || 'unknown'; #getpwuid( $< );
@@ -767,7 +830,7 @@ sub msgLogAppend {
 # - whether the corresponding option is set in Toops site configuration
 # - defaulting to truethy (Toops default is to log everything)
 sub msgLogIf {
-	# the ligne which has been printed
+	# the ligne which has been {config}{ed
 	my $msg = shift;
 	# the caller options - we search here for a 'withLog' option
 	my $opts = shift || {};
@@ -775,7 +838,7 @@ sub msgLogIf {
 	my $key = shift || '';
 	# where default is true
 	my $withLog = true;
-	$withLog = $TTPVars->{config}{site}{toops}{$key} if $key and exists $TTPVars->{config}{site}{toops}{$key};
+	$withLog = $TTPVars->{config}{toops}{$key} if $key and exists $TTPVars->{config}{toops}{$key};
 	$withLog = $opts->{withLog} if exists $opts->{withLog};
 	Mods::Toops::msgLogAppend( $msg ) if $withLog;
 }
@@ -783,7 +846,7 @@ sub msgLogIf {
 # -------------------------------------------------------------------------------------------------
 # standard message on stdout
 # (E):
-# - the message to be printed
+# - the message to be {config}{ed
 # - (optional) a hash options with 'withLog=true|false'
 #   which override the site configuration , with itself overrides the Toops default which is true
 sub msgOut {
@@ -820,12 +883,10 @@ sub msgStdout2Log {
 	}
 }
 
-
-
 # -------------------------------------------------------------------------------------------------
 # Verbose message
 # (E):
-# - the message to be printed
+# - the message to be {config}{ed
 # - (optional) a hash options with following options:
 #   > verbose=true|false
 #     overrides the --verbose option of the running command/verb
@@ -841,7 +902,7 @@ sub msgVerbose {
 	$verbose = $opts->{verbose} if exists( $opts->{verbose} );
 	# be verbose in log ?
 	my $withLog = true;
-	$withLog = $TTPVars->{config}{site}{toops}{msgVerbose}{withLog} if exists $TTPVars->{config}{site}{toops}{msgVerbose}{withLog};
+	$withLog = $TTPVars->{config}{toops}{msgVerbose}{withLog} if exists $TTPVars->{config}{toops}{msgVerbose}{withLog};
 	$withLog = $opts->{withLog} if exists $opts->{withLog};
 	Mods::MessageLevel::print({
 		msg => $msg,
@@ -962,10 +1023,7 @@ sub removeTree {
 # Expects $0 be the full path name to the command script (this is the case in Windows+Strawberry)
 # and @ARGV the command-line arguments
 sub run {
-	Mods::Toops::initSiteConfiguration();
-	Mods::Toops::initLogs();
-	Mods::Toops::msgLog( "executing $0 ".join( ' ', @ARGV ));
-	Mods::Toops::initHostConfiguration();
+	init();
 	$TTPVars->{run}{command}{path} = $0;
 	$TTPVars->{run}{command}{started} = Time::Moment->now;
 	my @command_args = @ARGV;
@@ -1004,6 +1062,7 @@ sub run {
 		}
 	} else {
 		Mods::Toops::helpCommand();
+		ttpExit();
 	}
 }
 
@@ -1070,15 +1129,40 @@ sub searchRecHash {
 
 # -------------------------------------------------------------------------------------------------
 # exit the command
-# Return code is optional, defaulting to exitCode
+# Return code is optional, defaulting to TTPVars->{run}{exitCode}
 sub ttpExit {
 	my $rc = shift || $TTPVars->{run}{exitCode};
 	if( $rc ){
-		msgOut( "exiting with code $rc" );
+		msgErr( "exiting with code $rc" );
 	} else {
-		Mods::Toops::msgVerbose( "exiting with code $rc" );
+		msgVerbose( "exiting with code $rc" );
 	}
 	exit $rc;
+}
+
+# -------------------------------------------------------------------------------------------------
+# re-evaluate both toops and host configurations
+# Rationale: we could have decided to systematically reevaluate the configuration data at each use
+# with the benefit that the data is always up to date
+# with the possible inconvenient of a rare condition where a command+verb execution will be logged
+# in two different log files, for example if executed between 23:59:59 and 00:00:01 and logs are daily.
+# So this a design decision to only evaluate the logs once at initialization of the standard 
+# command+verb execution.
+# The daemons which make use of TheToolsProject have their own decisions to be taken, but habits
+# want that daemons writes in the current log, not in an old one..
+sub ttpEvaluate {
+	# first initialize the targets so that the evaluations have values to replace with
+	foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
+		$TTPVars->{config}{$key} = $TTPVars->{Toops}{json}{$key};
+	}
+	# then evaluate
+	foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
+		#print Dumper( $TTPVars->{config} );
+		$TTPVars->{config}{$key} = evaluate( $TTPVars->{config}{$key} );
+	}
+	# and reevaluates the logs too
+	$TTPVars->{run}{logsDir} = Mods::Path::logsDailyDir();
+	$TTPVars->{run}{logsMain} = File::Spec->catdir( $TTPVars->{run}{logsDir}, 'main.log' );
 }
 
 # -------------------------------------------------------------------------------------------------

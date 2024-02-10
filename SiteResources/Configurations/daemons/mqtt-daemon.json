@@ -3,7 +3,7 @@
 		"Subscribes to below topics, trigerring an action on each received message"
 	],
 
-	"execPath": "[eval:$TTPVars->{config}{site}{site}{commandsDir}]\\mqtt-daemon.pl",
+	"execPath": "[eval:$TTPVars->{config}{site}{commandsDir}]\\mqtt-daemon.pl",
 	"listenInterval": 1,
 	"advertizeInterval": 60,
 	"listeningPort": 14390,

@@ -25,17 +25,33 @@ Host configuration:
 Install in TTP_CONFDIR/ as <hostname>.json:
 - describe your services
   A service is characterized by the fact that we want describe in this configuration file the difference for *this* service between several environments
-  e.g. TOM59 service is referenced in DEV and in PROD/
+  e.g. TOM59 service is referenced in DEV and in PROD/. It is most probably closely tied to a business concept.
 
 Windows Note:
 	We do not know at the moment how to ssh into a remote host to exec a remote script.
 	We so get stuck in our machine.
 
 TTPVars:
-	config
-		site					the computed site configuration after variables interpretation
+	Toops						TheToolsProject internals
+		json					the original (un-evaluated) content read from file json configuration files
 			toops
-				logsDir
+			site
+			host
+	config						dynamically re-evaluated toops.json content
+		toops					
+			logsDir
+			...
+		site
+			rootDir
+		host					dynamically re-evaluated host configuration
+			name
+			Services
+			...
+
+
+
+
+		site					the computed site configuration after variables interpretation
 			site
 				rootDir
 		<hostname>

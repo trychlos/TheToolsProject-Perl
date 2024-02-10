@@ -126,11 +126,7 @@ sub daemonInitToops {
 	$opts //= {};
 
 	# init TTP
-	Mods::Toops::initSiteConfiguration();
-	Mods::Toops::initLogs();
-	Mods::Toops::msgLog( "executing $program ".join( ' ', @ARGV ));
-	Mods::Toops::initHostConfiguration();
-
+	Mods::Toops::init();
 	# initialize TTPVars data to have a pretty log
 	my ( $volume, $directories, $file ) = File::Spec->splitpath( $program );
 	my $TTPVars = Mods::Toops::TTPVars();
