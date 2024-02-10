@@ -9,8 +9,6 @@
 # @(-) --[no]siteroot          display the site-defined root path [${siteroot}]
 # @(-) --[no]archivepath       display the site-defined archive path [${archivepath}]
 #
-# @(@) Trying here to dynamically present all toplevel scalar values in toops.json.
-#
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
@@ -36,57 +34,22 @@ my $opt_logsdir = false;
 my $opt_siteroot = false;
 my $opt_archivepath = false;
 
-# the dynamically built options hash
-my $options = _computeOptions();
-
-# -------------------------------------------------------------------------------------------------
-# compute the available options
-sub _computeOptions {
-	my $opts = {};
-	$opts->{toops} = [];
-	foreach my $key ( keys %{$TTPVars->{config}{toops}} ){
-		my $ref = ref( $TTPVars->{config}{toops}{$key} );
-		push( @{$opts->{toops}}, $key ) unless $ref;
-	}
-	$opts->{site} = [];
-	foreach my $key ( keys %{$TTPVars->{config}{site}} ){
-		my $ref = ref( $TTPVars->{config}{toops}{$key} );
-		push( @{$opts->{site}}, $key ) unless $ref;
-	}
-	return $opts;
-}
-
-# -------------------------------------------------------------------------------------------------
-# provide some help to available options
-sub _optionsUsage {
-	my $help = Mods::Toops::helpVerbStandardOptions();
-	foreach my $opt ( @{$options->{toops}} ){
-		my $optlc = lc $opt;
-		push( @{$help}, Mods::Toops::pad( "--[no]$optlc", 24, ' ' )."display the Toops $opt variable content [no]" );
-	}
-	foreach my $opt ( @{$options->{site}} ){
-		my $optlc = lc $opt;
-		push( @{$help}, Mods::Toops::pad( "--[no]$optlc", 24, ' ' )."display the site-specific $opt variable content [no]" );
-	}
-	return $help;
-}
-
 # -------------------------------------------------------------------------------------------------
 # list logsroot value - e.g. 'C:\INLINGUA\Logs'
 sub listLogsroot {
-	print " logsRoot: $TTPVars->{config}{toops}{logsRoot}".EOL;
+	print " logsRoot: $TTPVars->{config}{site}{toops}{logsRoot}".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
 # list logsdir value - e.g. 'C:\INLINGUA\Logs\240201\Toops'
 sub listLogsdir {
-	print " logsDir: $TTPVars->{config}{toops}{logsDir}".EOL;
+	print " logsDir: $TTPVars->{config}{site}{toops}{logsDir}".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
 # list siteroot value - e.g. 'C:\INLINGUA'
 sub listSiteroot {
-	print " siteRoot: $TTPVars->{config}{site}{rootDir}".EOL;
+	print " siteRoot: $TTPVars->{config}{site}{site}{rootDir}".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -115,7 +78,7 @@ if( !GetOptions(
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults, { usage => \&_optionsUsage });
+	Mods::Toops::helpVerb( $defaults );
 	Mods::Toops::ttpExit();
 }
 
