@@ -16,7 +16,7 @@
 							"label": "(Production Live) Sauvegarde quotidienne de la base Canall33",
 							"commands": [
 								"dbms.pl backup -service Canal33.db -full",
-								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsRoot\" -targetcmd \"dbms.pl vars -archivesRoot\" -dirs"
+								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
 							]
 						}
 					],
@@ -25,7 +25,8 @@
 							"label": "(Production Live) Sauvegarde différentielle en journée",
 							"commands_x": [
 								"-> désactivée sur ns230134 faute d'espace disque suffisant",
-								"dbms.pl backup -service Canal33.db -diff"
+								"dbms.pl backup -service Canal33.db -diff",
+								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
 							]
 						}
 					],
@@ -56,7 +57,7 @@
 							"commands": [
 								"dbms.pl backup -instance MSSQLSERVER -database Dom1 -full",
 								"dbms.pl backup -instance MSSQLSERVER -database Dom33 -full",
-								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsRoot\" -targetcmd \"dbms.pl vars -archivesRoot\" -dirs"
+								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
 							]
 						}
 					]
@@ -119,7 +120,7 @@
 		},
 		"dbms": {
 			"archivesRoot": "\\\\ftpback-rbx4-48.ovh.net\\ns230134.ovh.net\\[eval:uc hostname]\\SQLBackups"
-		}
+		},
 		"remoteShare": "\\\\ns230134.ovh.net\\C",
 		"MQTT": {
 			"broker": "10.122.1.15",

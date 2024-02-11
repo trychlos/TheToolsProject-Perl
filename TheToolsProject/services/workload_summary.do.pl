@@ -100,9 +100,9 @@ sub printSummary {
 			print _pad( "| $it->{command}", $maxLength+6, ' ' )._pad( "| $it->{start}", 25, ' ' )._pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
 		}
 	} else {
-		print _pad( "|", $totLength-1, ' ' )."|".EOL;
+		#print _pad( "|", $totLength-1, ' ' )."|".EOL;
 		print _pad( "|", $totLength/2 - 6, ' ' )._pad( "EMPTY OUTPUT", $totLength/2 + 5, ' ' )."|".EOL;
-		print _pad( "|", $totLength-1, ' ' )."|".EOL;
+		#print _pad( "|", $totLength-1, ' ' )."|".EOL;
 	}
 	print "+"._pad( "", $totLength-2, '=' )."+".EOL;
 }

@@ -12,7 +12,7 @@
 							"label": "(Production Live) Sauvegarde quotidienne de la base Canall33",
 							"commands": [
 								"dbms.pl backup -service Canal33.db -full",
-								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsRoot\" -targetcmd \"dbms.pl vars -archivesRoot\" -dirs"
+								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
 							]
 						}
 					],
@@ -22,7 +22,7 @@
 							"commands_x": [
 								"-> désactivée sur ns230134 faute d'espace disque suffisant",
 								"dbms.pl backup -service Canal33.db -diff",
-								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsRoot\" -targetcmd \"dbms.pl vars -archivesRoot\" -dirs"
+								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
 							]
 						}
 					],
@@ -52,7 +52,7 @@
 							"commands": [
 								"dbms.pl backup -instance PROD -database Dom1 -full",
 								"dbms.pl backup -instance PROD -database Dom33 -full",
-								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsRoot\" -targetcmd \"dbms.pl vars -archivesRoot\" -dirs"
+								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
 							]
 						}
 					]

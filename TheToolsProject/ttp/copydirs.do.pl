@@ -42,6 +42,7 @@ my $opt_dirs = false;
 sub doCopyDirs {
 	Mods::Toops::msgOut( "copying from '$opt_sourcepath' to '$opt_targetpath'..." );
 	my $count = 0;
+=pod
 	my $result = undef;
 	opendir( FD, "$opt_sourcepath" ) || Mods::Toops::msgErr( "unable to open directory $opt_sourcepath: $!" );
 	if( !Mods::Toops::errs()){
@@ -66,16 +67,17 @@ sub doCopyDirs {
 				my $source = _sourcePath( $it );
 				my $target = _targetPath( $it );
 				Mods::Toops::msgOut( "  copying '$source' to '$target'" );
-				my $res = Mods::Toops::copyDir( $source, $target );
-				if( $res ){
-					$count += 1;
-				} else {
-					Mods::Toops::msgErr( "error detected" );
-				}
 			}
 		}
 	}
-	Mods::Toops::msgOut( "$count copied directory(ies)" );
+=cut
+	my $res = Mods::Toops::copyDir( $opt_sourcepath, $opt_targetpath );
+	if( $res ){
+		$count += 1;
+		Mods::Toops::msgOut( "$count copied directory(ies)" );
+	} else {
+		Mods::Toops::msgErr( "NOT OK" );
+	}
 }
 
 sub _sourcePath {

@@ -34,19 +34,19 @@ my $opt_siteroot = false;
 # -------------------------------------------------------------------------------------------------
 # list logsroot value - e.g. 'C:\INLINGUA\Logs'
 sub listLogsroot {
-	print " logsRoot: $TTPVars->{config}{site}{toops}{logsRoot}".EOL;
+	print " logsRoot: $TTPVars->{config}{toops}{logsRoot}".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
 # list logsdir value - e.g. 'C:\INLINGUA\Logs\240201\Toops'
 sub listLogsdir {
-	print " logsDir: $TTPVars->{config}{site}{toops}{logsDir}".EOL;
+	print " logsDir: $TTPVars->{config}{toops}{logsDir}".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
 # list siteroot value - e.g. 'C:\INLINGUA'
 sub listSiteroot {
-	print " siteRoot: $TTPVars->{config}{site}{site}{rootDir}".EOL;
+	print " siteRoot: $TTPVars->{config}{site}{rootDir}".EOL;
 }
 
 # =================================================================================================
