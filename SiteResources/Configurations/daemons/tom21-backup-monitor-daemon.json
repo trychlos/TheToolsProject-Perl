@@ -18,5 +18,5 @@
 	"restoreInstance": "PROD",
 	"databases": [
 	],
-	"localDir": "[eval:$TTPVars->{config}{site}{SQLBackupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\<REMOTEHOST>"
+	"localDir": "[eval:Mods::Path::dbmsBackupsRoot()]\\[eval:localtime->strftime( '%y%m%d' )]\\<REMOTEHOST>"
 }

@@ -7,7 +7,6 @@
 # @(-) --[no]logsdir           display the current Toops logs directory [${logsdir}]
 # @(-) --[no]logsroot          display the Toops logs Root (not daily) [${logsroot}]
 # @(-) --[no]siteroot          display the site-defined root path [${siteroot}]
-# @(-) --[no]archivepath       display the site-defined archive path [${archivepath}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -25,14 +24,12 @@ my $defaults = {
 	dummy => 'no',
 	logsdir => 'no',
 	logsroot => 'no',
-	siteroot => 'no',
-	archivepath => 'no'
+	siteroot => 'no'
 };
 
 my $opt_logsroot = false;
 my $opt_logsdir = false;
 my $opt_siteroot = false;
-my $opt_archivepath = false;
 
 # -------------------------------------------------------------------------------------------------
 # list logsroot value - e.g. 'C:\INLINGUA\Logs'
@@ -52,13 +49,6 @@ sub listSiteroot {
 	print " siteRoot: $TTPVars->{config}{site}{site}{rootDir}".EOL;
 }
 
-# -------------------------------------------------------------------------------------------------
-# list siteroot value - e.g. 'C:\INLINGUA'
-sub listArchivepath {
-	my $host = uc hostname;
-	print " archivePath: $TTPVars->{config}{$host}{archivePath}".EOL;
-}
-
 # =================================================================================================
 # MAIN
 # =================================================================================================
@@ -70,8 +60,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"logsdir!"			=> \$opt_logsdir,
 	"logsroot!"			=> \$opt_logsroot,
-	"siteroot!"			=> \$opt_siteroot,
-	"archivepath"		=> \$opt_archivepath )){
+	"siteroot!"			=> \$opt_siteroot )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -88,13 +77,11 @@ Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'fals
 Mods::Toops::msgVerbose( "found logsdir='".( $opt_logsdir ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found logsroot='".( $opt_logsroot ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found siteroot='".( $opt_siteroot ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found archivepath='".( $opt_archivepath ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
 	listLogsdir() if $opt_logsdir;
 	listLogsroot() if $opt_logsroot;
 	listSiteroot() if $opt_siteroot;
-	listArchivepath() if $opt_archivepath;
 }
 
 Mods::Toops::ttpExit();

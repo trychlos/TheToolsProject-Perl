@@ -116,8 +116,8 @@
 							"order": "00",
 							"commands": [
 								"ttp.pl pull -nohelp",
-								"ttp.pl movedirs -sourcecmd \"dbms.pl vars -backupRoot\" -targetcmd \"dbms.pl vars -archiveRoot\" -dirs -keep 1",
-								"ttp.pl purgedirs -dircmd \"dbms.pl vars -archiveRoot\" -keep 10",
+								"ttp.pl movedirs -sourcecmd \"dbms.pl vars -backupsRoot\" -targetcmd \"dbms.pl vars -archivesRoot\" -dirs -keep 1",
+								"ttp.pl purgedirs -dircmd \"dbms.pl vars -archivesRoot\" -keep 10",
 								"ttp.pl purgedirs -dircmd \"ttp.pl vars -logsRoot\" -keep 10"
 							]
 						}
@@ -150,9 +150,9 @@
 				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL15.MSSQLSERVER\\MSSQL\\DATA"
 			}
 		},
-		"backupRoot": "[eval:$TTPVars->{config}{site}{SQLBackupsRoot}]",
-		"backupPath": "[eval:$TTPVars->{config}{site}{SQLBackupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:uc hostname]",
-		"archivePath": "\\\\ftpback-rbx7-844.ovh.net\\ns3232346.ip-57-128-101.eu\\[eval:uc hostname]",
+		"dbms": {
+			"archivesRoot": "\\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\[eval:uc hostname]\\SQLBackups"
+		},
 		"remoteShare": "\\\\ns3232346.ovh.net\\C",
 		"MQTT": {
 			"broker": "10.122.1.15",

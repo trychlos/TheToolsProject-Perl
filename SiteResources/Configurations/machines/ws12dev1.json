@@ -105,9 +105,9 @@
 				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL11.DEV\\MSSQL\\DATA"
 			}
 		},
-		"backupRoot": "[eval:$TTPVars->{config}{site}{SQLBackupsRoot}]",
-		"backupPath": "[eval:$TTPVars->{config}{site}{SQLBackupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:uc hostname]",
-		"archivePath": "\\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\[eval:uc hostname]",
+		"dbms": {
+			"archivesRoot": "\\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\[eval:uc hostname]\\SQLBackups"
+		},
 		"remoteShare": "\\\\10.122.1.14\\C",
 		"MQTT": {
 			"broker": "10.122.1.15",

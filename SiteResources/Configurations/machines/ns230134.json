@@ -16,7 +16,7 @@
 							"label": "(Production Live) Sauvegarde quotidienne de la base Canall33",
 							"commands": [
 								"dbms.pl backup -service Canal33.db -full",
-								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupRoot\" -targetcmd \"dbms.pl vars -archiveRoot\" -dirs"
+								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsRoot\" -targetcmd \"dbms.pl vars -archivesRoot\" -dirs"
 							]
 						}
 					],
@@ -56,7 +56,7 @@
 							"commands": [
 								"dbms.pl backup -instance MSSQLSERVER -database Dom1 -full",
 								"dbms.pl backup -instance MSSQLSERVER -database Dom33 -full",
-								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupRoot\" -targetcmd \"dbms.pl vars -archiveRoot\" -dirs"
+								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsRoot\" -targetcmd \"dbms.pl vars -archivesRoot\" -dirs"
 							]
 						}
 					]
@@ -77,8 +77,8 @@
 							],
 							"commands": [
 								"ttp.pl pull -nohelp",
-								"ttp.pl purgedirs -dircmd \"dbms.pl vars -backupRoot\" -keep 0",
-								"ttp.pl purgedirs -dircmd \"dbms.pl vars -archiveRoot\" -keep 5",
+								"ttp.pl purgedirs -dircmd \"dbms.pl vars -backupsRoot\" -keep 0",
+								"ttp.pl purgedirs -dircmd \"dbms.pl vars -archivesRoot\" -keep 5",
 								"ttp.pl purgedirs -dircmd \"ttp.pl vars -logsRoot\" -keep 7"
 							]
 						},
@@ -117,9 +117,9 @@
 				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL10_50.MSSQLSERVER\\MSSQL\\DATA"
 			}
 		},
-		"backupRoot": "[eval:$TTPVars->{config}{site}{SQLBackupsRoot}]",
-		"backupPath": "[eval:$TTPVars->{config}{site}{SQLBackupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:uc hostname]",
-		"archivePath": "\\\\ftpback-rbx4-48.ovh.net\\ns230134.ovh.net\\[eval:uc hostname]",
+		"dbms": {
+			"archivesRoot": "\\\\ftpback-rbx4-48.ovh.net\\ns230134.ovh.net\\[eval:uc hostname]\\SQLBackups"
+		}
 		"remoteShare": "\\\\ns230134.ovh.net\\C",
 		"MQTT": {
 			"broker": "10.122.1.15",

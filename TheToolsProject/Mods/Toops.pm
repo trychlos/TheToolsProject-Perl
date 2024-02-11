@@ -189,11 +189,11 @@ sub errs {
 #  and restart until all references have been replaced
 sub evaluate {
 	my ( $value ) = @_;
-	my $prev = undef;
+	my %prev = ();
 	my $result = _evaluateRec( $value );
-	while( !eq_deeply( $result, $prev )){
-		$prev = $result;
-		$result = _evaluateRec( $prev );
+	while( !eq_deeply( $result, \%prev )){
+		%prev = %{$result};
+		$result = _evaluateRec( $result );
 	}
 	return $result;
 }
@@ -240,6 +240,11 @@ sub _evaluateScalar {
 sub _evaluatePrint {
 	my ( $value ) = @_;
 	my $result = eval $value;
+	# we cannot really emit a warning here as it is possible that we are in the way of resolving
+	# a still-undefined value. so have to wait until the end to resolve all values, but too late
+	# to emit a warning ?
+	#msgWarn( "something is wrong with '$value' as evaluation result is undefined" ) if !defined $result;
+	$result = $result ||'(undef)';
 	#print "value='$value' result='$result'".EOL;
 	return $result;
 }
@@ -619,7 +624,7 @@ sub helpVerbStandardOptions {
 # - the hostname
 # (O):
 # - returns the data under the toplevel key (which is expected to be the hostname)
-#   with a new 'name' key which contains the hostname
+#   with a new 'name' key which contains this same hostname
 # or undef in case of an error
 sub hostConfigRead {
 	my ( $host ) = @_;
@@ -643,12 +648,13 @@ sub hostConfigRead {
 
 # -------------------------------------------------------------------------------------------------
 # Initialize TheToolsProject
-# This is reading the toops+site and host configuration files and interpreting it before first use
+# - reading the toops+site and host configuration files and interpreting them before first use
+# - initialize the logs internal variables
 sub init {
 	$TTPVars->{Toops}{json} = jsonRead( Mods::Path::toopsConfigurationPath());
 	# make sure the toops+site configuration doesn't have any other key
 	# immediately aborting if this is the case
-	# accepting 'toops' and 'site'-derived keys (like 'site_comments' for example)
+	# accepting anyway 'toops' and 'site'-derived keys (like 'site_comments' for example)
 	my @others = ();
 	foreach my $key ( keys %{$TTPVars->{Toops}{json}} ){
 		push( @others, "'$key'" ) unless index( $key, "toops" )==0 || index( $key, "site" )==0;
@@ -1156,7 +1162,8 @@ sub ttpEvaluate {
 		$TTPVars->{config}{$key} = $TTPVars->{Toops}{json}{$key};
 	}
 	# then evaluate
-	foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
+	# sort the keys to try to get something which is predictable
+	foreach my $key ( sort @{$TTPVars->{Toops}{ConfigKeys}} ){
 		$TTPVars->{config}{$key} = evaluate( $TTPVars->{config}{$key} );
 	}
 	# and reevaluates the logs too
@@ -1182,6 +1189,46 @@ sub ttpFilter {
 # Used by verbs to access our global variables
 sub TTPVars {
 	return $TTPVars;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the content of a var, read from toops.json, maybe overriden in host configuration
+# (I):
+# - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
+# (O):
+# - the evaluated value of this variable, which may be undef
+#   must be a scaler
+sub var {
+	my ( $keys ) = @_;
+	my $result = varSearch( $keys, $TTPVars->{config}{toops} );
+	my $hostValue = varSearch( $keys, $TTPVars->{config}{host} );
+	$result = $hostValue if defined $hostValue;
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the content of a var, read from the provided base
+# (I):
+# - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
+# (O):
+# - the evaluated value of this variable, which may be undef
+#   must be a scaler
+sub varSearch {
+	my ( $keys, $base ) = @_;
+	my $result = undef;
+	my $found = true;
+	for my $k ( @{$keys} ){
+		if( exists( $base->{$k} )){
+			$base = $base->{$k};
+		} else {
+			$found = false;
+			last;
+		}
+	}
+	if( $found && !ref( $base )){
+		$result = $base;
+	}
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------

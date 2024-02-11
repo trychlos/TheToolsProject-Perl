@@ -33,8 +33,14 @@
 				}
 			}
 		},
+		"dbms": {
+			"backupsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDaySQLBackups",
+			"backupsDir": "[eval:$TTPVars->{config}{toops}{dbms}{backupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:uc hostname]",
+			"archivesRoot": "",
+			"archivesDir": "[eval:Mods::Path::dbmsArchivesRoot()]\\[eval:localtime->strftime( '%y%m%d' )]"
+		},
 		"alerts": {
-			"dropDir": "[_eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Alerts",
+			"dropDir": "[eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Alerts",
 			"levels": {
 				"default": {
 					"mail": {
@@ -90,7 +96,6 @@
 	"site": {
 		"rootDir": "C:\\INLINGUA",
 		"commandsDir": "[eval:$TTPVars->{config}{site}{rootDir}]\\SiteResources\\Commands",
-		"daemonsDir": "[eval:$ENV{TTP_CONFDIR}]\\daemons",
-		"SQLBackupsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDaySQLBackups"
+		"daemonsDir": "[eval:$ENV{TTP_CONFDIR}]\\daemons"
 	}
 }

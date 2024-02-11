@@ -4,14 +4,17 @@
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
-# @(-) --[no]backuproot        display the root (non daily) of the DBMS backup path [${backuproot}]
-# @(-) --[no]archiveroot       display the root (non daily) of the DBMS archive path [${archiveroot}]
+# @(-) --[no]backupsRoot       display the root (non daily) of the DBMS backup path [${backupsRoot}]
+# @(-) --[no]backupsDir       display the root (non daily) of the DBMS backup path [${backupsDir}]
+# @(-) --[no]archivesRoot      display the root (non daily) of the DBMS archive path [${archivesRoot}]
+# @(-) --[no]archivesDir      display the root (non daily) of the DBMS archive path [${archivesDir}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
 use File::Spec;
 
+use Mods::Path;
 use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -21,28 +24,43 @@ my $defaults = {
 	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
-	backuproot => 'no',
-	archiveroot => 'no'
+	backupsRoot => 'no',
+	backupsDir => 'no',
+	archivesRoot => 'no',
+	archivesDir => 'no'
 };
 
-my $opt_backuproot = false;
-my $opt_archiveroot = false;
+my $opt_backupsRoot = false;
+my $opt_backupsDir = false;
+my $opt_archivesRoot = false;
+my $opt_archivesDir = false;
 
 # -------------------------------------------------------------------------------------------------
-# list archiveroot value - e.g. '\\ftpback-rbx7-618.ovh.net\ns3153065.ip-51-91-25.eu\WS12DEV1\SQLBackups'
-sub listArchiveroot {
-	my $archivePath = Mods::Toops::pathFromCommand( "ttp.pl vars -archivePath" );
-	my $hostConfig = Mods::Toops::getHostConfig();
-	my ( $volume, $directories, $file ) = File::Spec->splitdir( $hostConfig->{backupRoot} );
-	my $archiveRoot = File::Spec->catdir( $archivePath, $file );
-	print " archiveRoot: $archiveRoot".EOL;
+# list archivesDir value - e.g. '\\ftpback-rbx7-618.ovh.net\ns3153065.ip-51-91-25.eu\WS12DEV1\SQLBackups\240101'
+sub listArchivesdir {
+	my $dir = Mods::Path::dbmsArchivesDir();
+	print " archivesDir: $dir".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
-# list backuproot value - e.g. 'C:\INLINGUA\SQLBackups'
-sub listBackuproot {
-	my $hostConfig = Mods::Toops::getHostConfig();
-	print " backupRoot: $hostConfig->{backupRoot}".EOL;
+# list archivesRoot value - e.g. '\\ftpback-rbx7-618.ovh.net\ns3153065.ip-51-91-25.eu\WS12DEV1\SQLBackups'
+sub listArchivesroot {
+	my $dir = Mods::Path::dbmsArchivesRoot();
+	print " archivesRoot: $dir".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
+# list backupsDir value - e.g. 'C:\INLINGUA\SQLBackups\240101\WS12DEV1'
+sub listBackupsdir {
+	my $dir = Mods::Path::dbmsBackupsDir();
+	print " backupsDir: $dir".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
+# list backupsRoot value - e.g. 'C:\INLINGUA\SQLBackups'
+sub listBackupsroot {
+	my $dir = Mods::Path::dbmsBackupsRoot();
+	print " backupsRoot: $dir".EOL;
 }
 
 # =================================================================================================
@@ -54,8 +72,10 @@ if( !GetOptions(
 	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
-	"backuproot!"		=> \$opt_backuproot,
-	"archiveroot!"		=> \$opt_archiveroot )){
+	"backupsRoot!"		=> \$opt_backupsRoot,
+	"backupsDir!"		=> \$opt_backupsDir,
+	"archivesRoot!"		=> \$opt_archivesRoot,
+	"archivesDir!"		=> \$opt_archivesDir )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -69,12 +89,16 @@ if( Mods::Toops::wantsHelp()){
 Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found backuproot='".( $opt_backuproot ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found archiveroot='".( $opt_archiveroot ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found backupsRoot='".( $opt_backupsRoot ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found backupsDir='".( $opt_backupsDir ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found archivesRoot='".( $opt_archivesRoot ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found archivesDir='".( $opt_archivesDir ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
-	listArchiveroot() if $opt_archiveroot;
-	listBackuproot() if $opt_backuproot;
+	listArchivesroot() if $opt_archivesRoot;
+	listArchivesdir() if $opt_archivesDir;
+	listBackupsroot() if $opt_backupsRoot;
+	listBackupsdir() if $opt_backupsDir;
 }
 
 Mods::Toops::ttpExit();

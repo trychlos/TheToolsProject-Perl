@@ -49,6 +49,62 @@ sub daemonsConfigurationsDir {
 }
 
 # ------------------------------------------------------------------------------------------------
+# (O):
+# the current DBMS archives directory, making sure the dir exists
+# the dir can be defined in toops.json, or overriden in host configuration
+sub dbmsArchivesDir {
+	my $dir = Mods::Toops::var([ 'dbms', 'archivesDir' ]);
+	if( defined $dir ){
+		makeDirExist( $dir );
+	} else {
+		Mods::Toops::msgWarn( "'archivesDir' is not defined in toops.json nor in host configuration" );
+	}
+	return $dir;
+}
+
+# ------------------------------------------------------------------------------------------------
+# (O):
+# the current DBMS archives root tree, making sure the dir exists
+# the dir can be defined in toops.json, or overriden in host configuration
+sub dbmsArchivesRoot {
+	my $dir = Mods::Toops::var([ 'dbms', 'archivesRoot' ]);
+	if( defined $dir ){
+		makeDirExist( $dir );
+	} else {
+		Mods::Toops::msgWarn( "'archivesRoot' is not defined in toops.json nor in host configuration" );
+	}
+	return $dir;
+}
+
+# ------------------------------------------------------------------------------------------------
+# (O):
+# the current DBMS backups directory, making sure the dir exists
+# the dir can be defined in toops.json, or overriden in host configuration
+sub dbmsBackupsDir {
+	my $dir = Mods::Toops::var([ 'dbms', 'backupsDir' ]);
+	if( defined $dir ){
+		makeDirExist( $dir );
+	} else {
+		Mods::Toops::msgWarn( "'backupsDir' is not defined in toops.json nor in host configuration" );
+	}
+	return $dir;
+}
+
+# ------------------------------------------------------------------------------------------------
+# (O):
+# the root the the DBMS backups directories, making sure the dir exists
+# the root can be defined in toops.json, or overriden in host configuration
+sub dbmsBackupsRoot {
+	my $dir = Mods::Toops::var([ 'dbms', 'backupsRoot' ]);
+	if( defined $dir ){
+		makeDirExist( $dir );
+	} else {
+		Mods::Toops::msgWarn( "'backupsRoot' is not defined in toops.json nor in host configuration" );
+	}
+	return $dir;
+}
+
+# ------------------------------------------------------------------------------------------------
 # (I):
 # - optionally a hostname, defaulting to the current host
 #   remind that Unix has case sensitive filesystems, while Windows has not - we do not modify here the case
