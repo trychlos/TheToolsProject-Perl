@@ -41,8 +41,10 @@ use Mods::Toops;
 
 use constant {
 	BUFSIZE => 4096,
-	ADVERTIZE_INTERVAL => 60,
-	MIN_INTERVAL => 1,
+	MIN_LISTEN_INTERVAL => 1,
+	DEFAULT_LISTEN_INTERVAL => 5,
+	MIN_ADVERTIZE_INTERVAL => 10,
+	DEFAULT_ADVERTIZE_INTERVAL => 60,
 	OFFLINE => "offline"
 };
 
@@ -82,16 +84,14 @@ sub _topic {
 sub daemonAdvertize {
 	my ( $daemon ) = @_;
 	my $now = localtime->epoch;
-	my $advertizeInterval = ADVERTIZE_INTERVAL;
-	$advertizeInterval = $daemon->{config}{advertizeInterval} if exists $daemon->{config}{advertizeInterval} && $daemon->{config}{advertizeInterval} >= MIN_INTERVAL;
-	if( !$daemon->{lastAdvertize} || $now-$daemon->{lastAdvertize} >= $advertizeInterval ){
+	if( !$daemon->{lastAdvertized} || $now-$daemon->{lastAdvertized} >= $daemon->{advertizeInterval} ){
 		my $topic = _topic( $daemon->{name} );
 		my $payload = _running();
 		Mods::Toops::msgLog( "$topic [$payload]" );
 		if( $daemon->{mqtt} ){
 			$daemon->{mqtt}->retain( $topic, $payload );
 		}
-		$daemon->{lastAdvertize} = $now;
+		$daemon->{lastAdvertized} = $now;
 	}
 }
 
@@ -162,17 +162,30 @@ sub daemonInitToops {
 	$jfile =~ s/\.[^.]+$//;
 	my $raw = getRawConfigByPath( $json );
 	my $config = $raw ? getEvaluatedConfig( $raw ) : undef;
-	my $listenInterval = MIN_INTERVAL;
-	if( $config ){
-		if( !$config->{listeningPort} ){
-			Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" );
-		} elsif( exists( $config->{listenInterval} )){
-			if( $config->{listenInterval} < $listenInterval ){
-				Mods::Toops::msgVerbose( "defined listenInterval=$config->{listenInterval} less than minimum accepted '$listenInterval', ignored" );
-			} else {
-				$listenInterval = $config->{listenInterval};
-			}
+	# listening port
+	if( !$config->{listeningPort} ){
+		Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" );
+	}
+	# listen interval
+	my $listenInterval = DEFAULT_LISTEN_INTERVAL;
+	if( $config && exists( $config->{listenInterval} )){
+		if( $config->{listenInterval} < MIN_LISTEN_INTERVAL ){
+			Mods::Toops::msgVerbose( "defined listenInterval=$config->{listenInterval} less than minimum accepted ".MIN_LISTEN_INTERVAL.", ignored" );
+		} else {
+			$listenInterval = $config->{listenInterval};
 		}
+	}
+	# advertize interval
+	my $advertizeInterval = DEFAULT_ADVERTIZE_INTERVAL;
+	if( exists( $config->{advertizeInterval} )){
+		if( $config->{advertizeInterval} < MIN_ADVERTIZE_INTERVAL ){
+			Mods::Toops::msgVerbose( "defined advertizedInterval=$config->{advertizeInterval} less than minimum accepted ".MIN_ADVERTIZE_INTERVAL.", ignored" );
+		} else {
+			$advertizeInterval = $config->{advertizeInterval};
+		}
+	}
+	if( !Mods::Toops::errs()){
+		Mods::Toops::msgVerbose( "listeningPort='$config->{listeningPort}' listenInterval='$listenInterval' advertizeInterval='$advertizeInterval'" );
 	}
 
 	# create a listening socket
@@ -211,7 +224,8 @@ sub daemonInitToops {
 			config => $config,
 			socket => $socket,
 			mqtt => $mqtt,
-			listenInterval => $listenInterval
+			listenInterval => $listenInterval,
+			advertizeInterval => $advertizeInterval
 		};
 	}
 	return $daemon;
