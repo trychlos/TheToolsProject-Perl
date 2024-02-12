@@ -37,10 +37,10 @@ schtasks /Delete /TN Inlingua\%JOB% /F 1>NUL 2>NUL
 schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC DAILY /ST 23:00 /F %RUNNER%
 schtasks /Change /TN Inlingua\%JOB% /Disable
 
-set JOB=tom17.backup.startup
+set JOB=tom17.backup
 echo %JOB%
 schtasks /Delete /TN Inlingua\%JOB% /F 1>NUL 2>NUL
-schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC ONSTART /F %RUNNER%
+schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC DAILY /ST 05:30 /F %RUNNER%
 schtasks /Change /TN Inlingua\%JOB% /Disable
 
 rem TOM21
@@ -63,10 +63,10 @@ schtasks /Delete /TN Inlingua\%JOB% /F 1>NUL 2>NUL
 schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC DAILY /ST 23:00 /F %RUNNER%
 schtasks /Change /TN Inlingua\%JOB% /Disable
 
-set JOB=tom21.backup.startup
+set JOB=tom21.backup
 echo %JOB%
 schtasks /Delete /TN Inlingua\%JOB% /F 1>NUL 2>NUL
-schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC ONSTART /F %RUNNER%
+schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC DAILY /ST 05:30 /F %RUNNER%
 schtasks /Change /TN Inlingua\%JOB% /Disable
 
 rem TOM59
@@ -89,8 +89,8 @@ schtasks /Delete /TN Inlingua\%JOB% /F 1>NUL 2>NUL
 schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC DAILY /ST 23:00 /F %RUNNER%
 schtasks /Change /TN Inlingua\%JOB% /Disable
 
-set JOB=tom59.backup.startup
+set JOB=tom59.backup
 echo %JOB%
 schtasks /Delete /TN Inlingua\%JOB% /F 1>NUL 2>NUL
-schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC ONSTART /F %RUNNER%
+schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC DAILY /ST 05:30 /F %RUNNER%
 schtasks /Change /TN Inlingua\%JOB% /Disable

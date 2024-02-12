@@ -37,8 +37,8 @@ schtasks /Delete /TN Inlingua\%JOB% /F 1>NUL 2>NUL
 schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC DAILY /ST 23:00 /F %RUNNER%
 schtasks /Change /TN Inlingua\%JOB% /Disable
 
-set JOB=canal33.backup.startup
+set JOB=canal33.backup
 echo %JOB%
 schtasks /Delete /TN Inlingua\%JOB% /F 1>NUL 2>NUL
-schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC ONSTART /F %RUNNER%
+schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC DAILY /ST 05:30 /F %RUNNER%
 schtasks /Change /TN Inlingua\%JOB% /Disable

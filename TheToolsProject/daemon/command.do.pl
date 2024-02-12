@@ -6,6 +6,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
 # @(-) --command=<command>     the command to be sent to the daemon [${command}]
+# @(-) --ignore                ignore the return code if the daemon is not active [${ignore}]
 #
 # @(@) A command is a simple string. The daemon is expected to (at least) acknowledge it.
 #
@@ -29,22 +30,28 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	json => '',
-	command => ''
+	command => '',
+	ignore => 'no'
 };
 
 my $opt_json = $defaults->{json};
 my $opt_command = $defaults->{command};
+my $opt_ignore = false;
 
 my $daemonConfig = undef;
 
 # -------------------------------------------------------------------------------------------------
 # send a command to the daemon
 sub doSend {
+	# connect
+	# triggers an error if the daemon is not active
 	my $socket = new IO::Socket::INET(
 		PeerHost => 'localhost',
 		PeerPort => $daemonConfig->{listeningPort},
 		Proto => 'tcp'
 	) or Mods::Toops::msgErr( "unable to connect: $!" ) if !$socket;
+
+	# send the command
 	if( $socket ){
 		my $size = $socket->send( $opt_command );
 		Mods::Toops::msgVerbose( "sent '$opt_command' to the server ($size bytes)" );
@@ -55,6 +62,13 @@ sub doSend {
 		$socket->recv( $response, 4096 );
 		print "$response";
 		$socket->close();
+		Mods::Toops::msgOut( "success" );
+
+	# if the daemon was not active, and the '--ignore' flag has been set, the reset the current exist code
+	# and output a corresponding message to stdout
+	} elsif( $opt_ignore ){
+		$TTPVars->{run}{exitCode} = 0;
+		Mods::Toops::msgOut( "daemon is not active, but '--ignore' flag is set, so set rc to zero" );
 	}
 }
 
@@ -68,7 +82,8 @@ if( !GetOptions(
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"json=s"			=> \$opt_json,
-	"command=s"			=> \$opt_command )){
+	"command=s"			=> \$opt_command,
+	"ignore!"			=> \$opt_ignore )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -84,6 +99,7 @@ Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'
 Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found json='$opt_json'" );
 Mods::Toops::msgVerbose( "found command='$opt_command'" );
+Mods::Toops::msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
 
 # the json is mandatory
 $daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );

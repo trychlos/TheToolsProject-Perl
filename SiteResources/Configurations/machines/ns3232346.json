@@ -29,10 +29,11 @@
 					],
 					"tom17.live.evening": [
 					],
-					"tom17.backup.startup": [
+					"tom17.backup": [
 						{
 							"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
+								"daemon.pl stop -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom17-backup-monitor-daemon.json -ignore -wait 2",
 								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom17-backup-monitor-daemon.json WS22PROD1"
 							]
 						}
@@ -63,10 +64,11 @@
 					],
 					"tom21.live.evening": [
 					],
-					"tom21.backup.startup": [
+					"tom21.backup": [
 						{
 							"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
+								"daemon.pl stop -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom21-backup-monitor-daemon.json -ignore -wait 2",
 								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom21-backup-monitor-daemon.json WS22PROD1"
 							]
 						}
@@ -97,10 +99,11 @@
 					],
 					"tom59.live.evening": [
 					],
-					"tom59.backup.startup": [
+					"tom59.backup": [
 						{
 							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
+								"daemon.pl stop -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json -ignore -wait 2",
 								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json WS22PROD1"
 							]
 						}
