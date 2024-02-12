@@ -166,7 +166,7 @@ sub daemonInitToops {
 	if( $config ){
 		if( !$config->{listeningPort} ){
 			Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" );
-		} else {
+		} elsif( exists( $config->{listenInterval} )){
 			if( $config->{listenInterval} < $listenInterval ){
 				Mods::Toops::msgVerbose( "defined listenInterval=$config->{listenInterval} less than minimum accepted '$listenInterval', ignored" );
 			} else {
