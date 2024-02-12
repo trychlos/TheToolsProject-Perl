@@ -68,12 +68,15 @@ sub doBackup {
 			mode => $mode,
 			compress => $opt_compress
 		});
-		Mods::Toops::execReportAppend({
+		# retain last full and last diff
+		Mods::Toops::execReportByCommand({
 			instance => $opt_instance,
 			database => $db,
 			mode => $mode,
-			output => $res->{output},
-			dummy => $TTPVars->{run}{dummy}
+			output => $res->{output}
+		}, {
+			topic => [ 'instance', 'database', 'mode' ],
+			retain => true
 		});
 		$asked += 1;
 		$count += 1 if $res->{status};

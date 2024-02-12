@@ -12,11 +12,6 @@
 	"execPath": "[eval:$TTPVars->{config}{site}{commandsDir}]\\backup-monitor-daemon.pl",
 	"listeningPort": 14393,
 
-	"monitoredDirs": [
-		"<REMOTESHARE>\\INLINGUA\\byDayLogs\\[eval:localtime->strftime( '%y%m%d' )]\\execReports"
-	],
-	"restoreInstance": "PROD",
-	"databases": [
-	],
+	"monitoredService": "Tom21",
 	"localDir": "[eval:Mods::Path::dbmsBackupsRoot()]\\[eval:localtime->strftime( '%y%m%d' )]\\<REMOTEHOST>"
 }

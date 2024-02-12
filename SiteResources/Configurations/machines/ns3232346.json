@@ -33,7 +33,7 @@
 						{
 							"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom17-backup-monitor-daemon.json WS22PROD1 Tom17"
+								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom17-backup-monitor-daemon.json WS22PROD1"
 							]
 						}
 					]
@@ -67,7 +67,7 @@
 						{
 							"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom21-backup-monitor-daemon.json WS22PROD1 Tom21"
+								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom21-backup-monitor-daemon.json WS22PROD1"
 							]
 						}
 					]
@@ -101,7 +101,7 @@
 						{
 							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json WS22PROD1 Tom59"
+								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json WS22PROD1"
 							]
 						}
 					]

@@ -250,17 +250,22 @@ sub _evaluatePrint {
 }
 
 # -------------------------------------------------------------------------------------------------
-# append a record to our daily executions report
-# (E):
+# append a record to our daily executions reports
+# send a MQTT message if Toops is configured for
+# (I):
 # - the data provided to be recorded
+# - optional options hash with following keys:
+#   > topic: an array reference with a list of report keys to be appended to the topic, defaulting to none
+#   > retain: whether to retain the message, defaulting to false
 # This function automatically appends:
 # - hostname
 # - start timestamp
 # - end timestamp
 # - return code
 # - full run command
-sub execReportAppend {
-	my ( $data ) = @_;
+sub execReportByCommand {
+	my ( $data, $opts ) = @_;
+	$opts //= {};
 	# add some auto elements
 	$data->{cmdline} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
 	$data->{command} = $TTPVars->{run}{command}{basename};
@@ -269,33 +274,68 @@ sub execReportAppend {
 	$data->{code} = $TTPVars->{run}{exitCode};
 	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
-	# if Toops is configured to write JSON files
-	# please note that having the json filenames ordered both by name and by date is a design decision - do not change
+	$data->{dummy} = $TTPVars->{run}{dummy};
+	execReportToFile( $data, $opts );
+	execReportToMqtt( $data, $opts );
+}
+
+# -------------------------------------------------------------------------------------------------
+# append a record to our daily executions reports dir if Toops is configured for
+# please note that having the json filenames ordered both by name and by date is a design decision - do not change
+# (I):
+# - the data to be written
+sub execReportToFile {
+	my ( $report, $opts ) = @_;
 	if( exists( $TTPVars->{config}{toops}{executionReport}{withFile} )){
-		msgVerbose( "execReportAppend() TTPVars->{config}{toops}{executionReport}{withFile}=$TTPVars->{config}{toops}{executionReport}{withFile}" );
+		msgVerbose( "execReportToFile() TTPVars->{config}{toops}{executionReport}{withFile}=$TTPVars->{config}{toops}{executionReport}{withFile}" );
 	} else {
-		msgVerbose( "execReportAppend() TTPVars->{config}{toops}{executionReport}{withFile} is undef" );
+		msgVerbose( "execReportToFile() TTPVars->{config}{toops}{executionReport}{withFile} is undef" );
 	}
 	if( $TTPVars->{config}{toops}{executionReport}{withFile} ){
-		my $path = File::Spec->catdir( $TTPVars->{config}{toops}{execReports}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
-		jsonWrite( $data, $path );
+		my $path = File::Spec->catdir( Mods::Path::execReportsDir(), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
+		jsonWrite( $report, $path );
 	}
-	# if Toops is configured to output execution reports to the MQTT bus
+}
+
+# -------------------------------------------------------------------------------------------------
+# send an execution report on the MQTT bus if Toops is configured for
+# (I):
+# - the data to be written
+sub execReportToMqtt {
+	my ( $report, $opts ) = @_;
 	if( exists( $TTPVars->{config}{toops}{executionReport}{withMqtt} )){
-		msgVerbose( "execReportAppend() TTPVars->{config}{toops}{executionReport}{withMqtt}=$TTPVars->{config}{toops}{executionReport}{withMqtt}" );
+		msgVerbose( "execReportToMqtt() TTPVars->{config}{toops}{executionReport}{withMqtt}=$TTPVars->{config}{toops}{executionReport}{withMqtt}" );
 	} else {
-		msgVerbose( "execReportAppend() TTPVars->{config}{toops}{executionReport}{withMqtt} is undef" );
+		msgVerbose( "execReportToMqtt() TTPVars->{config}{toops}{executionReport}{withMqtt} is undef" );
 	}
 	if( $TTPVars->{config}{toops}{executionReport}{withMqtt} ){
-		my $topic = $data->{host}; delete $data->{host};
+		my $topic = uc hostname;
+		delete $report->{host} if exists $report->{host};
 		$topic .= "/executionReport";
-		$topic .= "/$data->{command}"; delete $data->{command};
-		$topic .= "/$data->{verb}"; delete $data->{verb};
+		if( $report->{command} ){
+			$topic .= "/$report->{command}";
+			delete $report->{command};
+		}
+		if( $report->{verb} ){
+			$topic .= "/$report->{verb}";
+			delete $report->{verb};
+		}
+		if( $opts->{topic} && ref( $opts->{topic} ) eq 'ARRAY' ){
+			foreach my $it ( @{$opts->{topic}} ){
+				if( exists( $report->{$it} )){
+					$topic .= "/$report->{$it}";
+					delete $report->{$it};
+				}
+			}
+		}
 		my $json = JSON->new;
-		my $message = $json->encode( $data );
+		my $message = $json->encode( $report );
 		my $verbose = '';
 		$verbose = "-verbose" if $TTPVars->{run}{verbose};
-		msgStdout2Log( `mqtt.pl publish -topic $topic -payload "\"$message\"" $verbose` );
+		my $retain = '';
+		$retain = '-retain' if $opts->{retain};
+		my $stdout = `mqtt.pl publish -topic $topic -payload "\"$message\"" $verbose $retain`;
+		print $stdout;
 	}
 }
 
@@ -812,7 +852,17 @@ sub msgErr {
 # prefix and log a message
 sub msgLog {
 	my $msg = shift;
-	Mods::Toops::msgLogAppend( Mods::Toops::msgPrefix().$msg );
+	my $ref = ref( $msg );
+	if( $ref eq 'ARRAY' ){
+		foreach my $line ( split( /[\r\n]/, @{$msg} )){
+			chomp $line;
+			msgLog( $line );
+		}
+	} elsif( !$ref ){
+		msgLogAppend( Mods::Toops::msgPrefix().$msg );
+	} else {
+		msgLog( "unmanaged type '$ref' for '$msg'" );
+	}
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -877,16 +927,6 @@ sub msgPrefix {
 		$prefix.= '] ';
 	}
 	return $prefix;
-}
-
-# -------------------------------------------------------------------------------------------------
-# Log the stdout of a command (i.e. several lines with carriage return line feeds)
-sub msgStdout2Log {
-	my ( @out ) = @_;
-	foreach my $line ( @out ){
-		chomp $line;
-		msgLog( $line );
-	}
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -1195,13 +1235,18 @@ sub TTPVars {
 # returns the content of a var, read from toops.json, maybe overriden in host configuration
 # (I):
 # - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
+# - an optional options hash with following keys:
+#   > config: host configuration (useful when searching for a remote host)
 # (O):
 # - the evaluated value of this variable, which may be undef
 #   must be a scaler
 sub var {
-	my ( $keys ) = @_;
+	my ( $keys, $opts ) = @_;
+	$opts //= {};
 	my $result = varSearch( $keys, $TTPVars->{config}{toops} );
-	my $hostValue = varSearch( $keys, $TTPVars->{config}{host} );
+	my $config = $TTPVars->{config}{host};
+	$config = $opts->{config} if exists $opts->{config};
+	my $hostValue = varSearch( $keys, $config );
 	$result = $hostValue if defined $hostValue;
 	return $result;
 }

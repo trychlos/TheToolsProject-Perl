@@ -12,17 +12,6 @@
 	"execPath": "[eval:$TTPVars->{config}{site}{commandsDir}]\\backup-monitor-daemon.pl",
 	"listeningPort": 14395,
 
-	"monitoredDirs": [
-		"<REMOTESHARE>\\INLINGUA\\byDayLogs\\[eval:localtime->strftime( '%y%m%d' )]\\execReports"
-	],
-	"restoreInstance": "PROD",
-	"restoreInstance_comments": [
-		"The name of the target instance where databases must be restored, defaulting to same name that the source"
-	],
-	"databases": [
-	],
-	"databases_comments": [
-		"The names of the databases to be restored, defaulting to all"
-	],
+	"monitoredService": "Canal33.db",
 	"localDir": "[eval:Mods::Path::dbmsBackupsRoot()]\\[eval:localtime->strftime( '%y%m%d' )]\\<REMOTEHOST>"
 }

@@ -56,11 +56,15 @@ sub doRestore {
 		verifyonly => $opt_verifyonly
 	});
 	if( !$opt_verifyonly ){
-		Mods::Toops::execReportAppend({
+		my $mode = $opt_diff ? 'diff' : 'full';
+		Mods::Toops::execReportByCommand({
 			instance => $opt_instance,
 			database => $opt_database,
 			full => $opt_full,
-			diff => $opt_diff
+			diff => $opt_diff || '',
+			mode => $mode
+		}, {
+			topic => [ 'instance', 'database', 'mode' ]
 		});
 	}
 	if( $res ){
