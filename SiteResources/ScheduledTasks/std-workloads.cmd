@@ -7,7 +7,7 @@ set RUNNER=/RU %COMPUTERNAME%\inlingua-user /RP GRlCvlNazmGcvRL0a3Ow
 set JOB=daily.morning
 echo %JOB%
 @schtasks /Delete /TN Inlingua\%JOB% /F 1>NUL 2>NUL
-schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC DAILY /ST 01:00 /F %RUNNER%
+schtasks /Create /TN Inlingua\%JOB% /TR "%WORKLOAD% %JOB%" /SC DAILY /ST 05:00 /F %RUNNER%
 schtasks /Change /TN Inlingua\%JOB% /Disable
 
 set JOB=daily.evening
