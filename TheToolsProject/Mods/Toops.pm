@@ -8,6 +8,7 @@ use warnings;
 use Config;
 use Data::Dumper;
 use Data::UUID;
+use Devel::StackTrace;
 use File::Copy qw( copy move );
 use File::Copy::Recursive qw( dircopy );
 use File::Path qw( make_path remove_tree );
@@ -64,7 +65,9 @@ our $TTPVars = {
 		commentPostUsage => '^# @\(@\) ',
 		commentUsage => '^# @\(-\) ',
 		verbSufix => '.do.pl',
-		verbSed => '\.do\.pl'
+		verbSed => '\.do\.pl',
+		# some runtime constants
+		stackOnErr => false
 	},
 	# a key reserved for the storage of toops+site+host json configuration files
 	json => undef,
@@ -839,6 +842,9 @@ sub msgDummy {
 # -------------------------------------------------------------------------------------------------
 # Error message - always logged
 sub msgErr {
+	# let have a stack trace
+	stackTrace() if $TTPVars->{Toops}{stackOnErr};
+	# and send the message
 	Mods::MessageLevel::print({
 		msg => shift,
 		level => ERR,
@@ -1171,6 +1177,15 @@ sub searchRecHash {
 		}
 	}
 	return $recData;
+}
+
+# -------------------------------------------------------------------------------------------------
+# print a stack trace
+# https://stackoverflow.com/questions/229009/how-can-i-get-a-call-stack-listing-in-perl
+
+sub stackTrace {
+	my $trace = Devel::StackTrace->new;
+	print $trace->as_string; # like carp
 }
 
 # -------------------------------------------------------------------------------------------------
