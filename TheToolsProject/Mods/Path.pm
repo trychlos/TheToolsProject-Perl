@@ -55,7 +55,9 @@ sub daemonsConfigurationsDir {
 sub dbmsArchivesDir {
 	my $dir = Mods::Toops::var([ 'dbms', 'archivesDir' ]);
 	if( defined $dir ){
-		makeDirExist( $dir );
+		# happens that \\ftpback-xx OVH backup storage spaces are sometimes unavailable during the day
+		# at least do not try to test them each time we need this address
+		#makeDirExist( $dir );
 	} else {
 		Mods::Toops::msgWarn( "'archivesDir' is not defined in toops.json nor in host configuration" );
 	}
@@ -69,7 +71,9 @@ sub dbmsArchivesDir {
 sub dbmsArchivesRoot {
 	my $dir = Mods::Toops::var([ 'dbms', 'archivesRoot' ]);
 	if( defined $dir ){
-		makeDirExist( $dir );
+		# happens that \\ftpback-xx OVH backup storage spaces are sometimes unavailable during the day
+		# at least do not try to test them each time we need this address
+		#makeDirExist( $dir );
 	} else {
 		Mods::Toops::msgWarn( "'archivesRoot' is not defined in toops.json nor in host configuration" );
 	}
