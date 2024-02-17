@@ -7,7 +7,6 @@
 # @(-) --topic=<name>          the topic to publish in [${topic}]
 # @(-) --payload=<name>        the message to be published [${payload}]
 # @(-) --[no]retain            with the 'retain' flag (ignored here) [${retain}]
-# @(-) --will=<name>           a message to be published as Will option [${will}]
 #
 # @(@) The topic should be formatted as HOST/subject/subject/content
 #
@@ -27,13 +26,11 @@ my $defaults = {
 	dummy => 'no',
 	topic => '',
 	payload => '',
-	retain => 'no',
-	will => ''
+	retain => 'no'
 };
 
 my $opt_topic = $defaults->{topic};
 my $opt_payload = $defaults->{payload};
-my $opt_will = $defaults->{will};
 
 # -------------------------------------------------------------------------------------------------
 # send the alert
@@ -48,9 +45,6 @@ sub doPublish {
 
 	my $mqtt = Net::MQTT::Simple->new( $hostConfig->{MQTT}{broker} );
 	if( $mqtt ){
-		if( $opt_will ){
-			$mqtt->last_will( $opt_topic, $opt_will, $opt_retain );
-		}
 		$mqtt->login( $hostConfig->{MQTT}{username}, $hostConfig->{MQTT}{passwd} );
 		Mods::Toops::msgVerbose( "broker login with '$hostConfig->{MQTT}{username}' account" );
 		if( $opt_retain ){
@@ -81,8 +75,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"topic=s"			=> \$opt_topic,
 	"payload=s"			=> \$opt_payload,
-	"retain!"			=> \$opt_retain,
-	"will=s"			=> \$opt_will	)){
+	"retain!"			=> \$opt_retain	)){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -99,7 +92,6 @@ Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'fals
 Mods::Toops::msgVerbose( "found topic='$opt_topic'" );
 Mods::Toops::msgVerbose( "found payload='$opt_payload'" );
 Mods::Toops::msgVerbose( "found retain='".( $opt_retain ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found will='$opt_will'" );
 
 # topic is mandatory
 Mods::Toops::msgErr( "topic is required, but is not specified" ) if !$opt_topic;
