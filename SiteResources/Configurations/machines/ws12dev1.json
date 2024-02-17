@@ -65,6 +65,12 @@
 						}
 					],
 					"startup": [
+						{
+							"label": "Advertize at startup",
+							"commands": [
+								"C:\\INLINGUA\\SiteResources\\Commands\\startup.cmd"
+							]
+						}
 					],
 					"test1": [
 						{

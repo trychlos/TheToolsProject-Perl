@@ -1,4 +1,4 @@
-# @(#) send a new alert
+# @(#) send an alert
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
@@ -7,17 +7,19 @@
 # @(-) --emitter=<name>        the emitter's name [${emitter}]
 # @(-) --level=<name>          the alert level [${level}]
 # @(-) --message=<name>        the alert message [${message}]
-#
-# @(xxx) --setdest=<name>        set the alert destination in replacement of the defaults [${setdest}]
-# @(xxx) --adddest=<name>        add an alert destination to the defaults [${adddest}]
+# @(-) --[no]json              set a JSON file alert to be monitored by the alert daemon [${json}]
+# @(-) --[no]mqtt              send the alert on the MQTT bus [${mqtt}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
+use JSON;
 use Sys::Hostname qw( hostname );
 use Time::Moment;
 
 use Mods::Constants qw( :all );
+use Mods::MessageLevel qw( :all );
+use Mods::Path;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -26,21 +28,26 @@ my $defaults = {
 	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
-	emitter => '',
+	emitter => uc hostname,
 	level => 'INFO',
-	message => ''
+	message => '',
+	json => 'yes',
+	mqtt => 'yes'
 };
 
 my $opt_emitter = $defaults->{emitter};
 my $opt_level = INFO;
 my $opt_message = $defaults->{message};
+my $opt_json = true;
+my $opt_mqtt = true;
 
 # -------------------------------------------------------------------------------------------------
 # send the alert
-# as far as we are concerned here, this is just writing a json file in a special directory
-sub doSend {
-	Mods::Toops::msgOut( "sending a '$opt_level' alert..." );
+## as far as we are concerned here, this is just writing a json file in a special directory
+sub doJsonAlert {
+	Mods::Toops::msgOut( "creating a new '$opt_level' json alert..." );
 
+	Mods::Path::makeDirExist( $TTPVars->{config}{toops}{alerts}{dropDir} );
 	my $path = File::Spec->catdir( $TTPVars->{config}{toops}{alerts}{dropDir}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
 
 	Mods::Toops::jsonWrite({
@@ -50,6 +57,30 @@ sub doSend {
 		host => uc hostname,
 		stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
 	}, $path );
+
+	Mods::Toops::msgOut( "success" );
+}
+
+# -------------------------------------------------------------------------------------------------
+# send the alert
+## as far as we are concerned here, this is just publishing a MQTT message
+sub doMqttAlert {
+	Mods::Toops::msgOut( "publishing a '$opt_level' alert on MQTT bus..." );
+
+	my $topic = uc hostname;
+	$topic .= "/alert";
+
+	my $hash = {
+		emitter => $opt_emitter,
+		level => $opt_level,
+		message => $opt_message,
+		host => uc hostname,
+		stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
+	};
+	my $json = JSON->new;
+	my $payload = $json->encode( $hash );
+	
+	print `mqtt.pl publish -topic $topic -payload $payload`;
 
 	Mods::Toops::msgOut( "success" );
 }
@@ -65,7 +96,9 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"emitter=s"			=> \$opt_emitter,
 	"level=s"			=> \$opt_level,
-	"message=s"			=> \$opt_message )){
+	"message=s"			=> \$opt_message,
+	"json!"				=> \$opt_json,
+	"mqtt!"				=> \$opt_mqtt )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -82,16 +115,22 @@ Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'fals
 Mods::Toops::msgVerbose( "found emitter='$opt_emitter'" );
 Mods::Toops::msgVerbose( "found level='$opt_level'" );
 Mods::Toops::msgVerbose( "found message='$opt_message'" );
+Mods::Toops::msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
 
-# we accept empty vars here, but still emit a warn
-Mods::Toops::msgWarn( "emitter is empty, but shouldn't" ) if !$opt_emitter;
-Mods::Toops::msgWarn( "message is empty, but shouldn't" ) if !$opt_message;
-
-# level is mandatory (and we provide a default value)
+# all data are mandatory (and we provide a default value for all but the message)
+Mods::Toops::msgErr( "emitter is empty, but shouldn't" ) if !$opt_emitter;
+Mods::Toops::msgErr( "message is empty, but shouldn't" ) if !$opt_message;
 Mods::Toops::msgErr( "level is empty, but shouldn't" ) if !$opt_level;
 
+# at least one of json or mqtt media mus tbe specified
+if( !$opt_json && !$opt_mqtt ){
+	Mods::Toops::msgErr( "at least one of '--json' or '--mqtt' options must be specified" ) if !$opt_emitter;
+}
+
 if( !Mods::Toops::errs()){
-	doSend();
+	doJsonAlert() if $opt_json;
+	doMqttAlert() if $opt_mqtt;
 }
 
 Mods::Toops::ttpExit();

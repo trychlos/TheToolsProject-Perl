@@ -19,6 +19,7 @@ use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Daemon;
+use Mods::Path;
 use Mods::Toops;
 
 # auto-flush on socket
@@ -70,24 +71,19 @@ sub wanted {
 # -------------------------------------------------------------------------------------------------
 # do its work
 sub works {
-	my $monitored = $daemon->{config}{monitoredDirs};
-	if( $monitored && scalar @{$monitored} ){
-		@runningScan = ();
-		find( \&wanted, @{$monitored} );
-		if( scalar @runningScan < scalar @previousScan ){
-			varReset();
-		} elsif( $first ){
-			$first = false;
-			@previousScan = sort @runningScan;
-		} elsif( scalar @runningScan > scalar @previousScan ){
-			my @sorted = sort @runningScan;
-			my @tmp = @sorted;
-			my @newFiles = splice( @tmp, scalar @previousScan, scalar @runningScan - scalar @previousScan );
-			doWithNew( @newFiles );
-			@previousScan = @sorted;
-		}
-	} else {
-		Mods::Toops::msgWarn( "seems that 'monitoredDirs' configuration is empty" );
+	@runningScan = ();
+	find( \&wanted, $daemon->{config}{monitoredDir} );
+	if( scalar @runningScan < scalar @previousScan ){
+		varReset();
+	} elsif( $first ){
+		$first = false;
+		@previousScan = sort @runningScan;
+	} elsif( scalar @runningScan > scalar @previousScan ){
+		my @sorted = sort @runningScan;
+		my @tmp = @sorted;
+		my @newFiles = splice( @tmp, scalar @previousScan, scalar @runningScan - scalar @previousScan );
+		doWithNew( @newFiles );
+		@previousScan = @sorted;
 	}
 }
 
@@ -95,7 +91,22 @@ sub works {
 # MAIN
 # =================================================================================================
 
-my $scanInterval = 5;
+# first check arguments
+# - the daemon configuration must have monitoredDir key
+if( scalar @ARGV != 1 ){
+	Mods::Toops::msgErr( "not enough arguments, expected <json>, found ".join( ' ', @ARGV )); 
+} else {
+	if( exists( $daemon->{config}{monitoredDir} )){
+		Mods::Toops::msgVerbose( "monitored dir '$daemon->{config}{monitoredDir}' successfully found in daemon configuration file" );
+	} else {
+		Mods::Toops::msgErr( "'monitoredDir' must be specified in daemon configuration, not found" );
+	}
+}
+if( Mods::Toops::errs()){
+	Mods::Toops::ttpExit();
+}
+
+my $scanInterval = 10;
 $scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
 
 my $sleepTime = Mods::Daemon::getSleepTime(
@@ -103,13 +114,16 @@ my $sleepTime = Mods::Daemon::getSleepTime(
 	$scanInterval
 );
 
+Mods::Toops::msgVerbose( "sleepTime='$sleepTime'" );
+Mods::Toops::msgVerbose( "scanInterval='$scanInterval'" );
+
 while( !$daemon->{terminating} ){
 	my $res = Mods::Daemon::daemonListen( $daemon, $commands );
 	my $now = localtime->epoch;
 	if( $now - $lastScanTime >= $scanInterval ){
 		works();
+		$lastScanTime = $now;
 	}
-	$lastScanTime = $now;
 	sleep( $sleepTime );
 }
 
