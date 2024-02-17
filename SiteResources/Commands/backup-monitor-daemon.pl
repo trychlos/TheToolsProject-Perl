@@ -264,7 +264,7 @@ sub syncedPath {
 	my $remoteSource = File::Spec->catpath( $daemon->{monitored}{config}{remoteShare}, $rl_dirs, $rl_file );
 	Mods::Toops::msgVerbose( "remoteSource='$remoteSource'" );
 	# local target
-	my $localTarget = File::Spec->catpath( $daemon->{config}{localDir}, $rl_file );
+	my $localTarget = File::Spec->catpath( Mods::Toops::pathWithTrailingSeparator( $daemon->{config}{localDir} ), $rl_file );
 	Mods::Toops::msgVerbose( "localTarget='$localTarget'" );
 	Mods::Path::makeDirExist( $daemon->{config}{localDir} );
 	my $res = copy( $remoteSource, $localTarget );
@@ -398,7 +398,7 @@ if( scalar @ARGV != 2 ){
 	}
 	# daemon: localDir
 	if( exists( $daemon->{config}{localDir} )){
-		Mods::Toops::msgVerbose( "local dir '$daemon->{config}{localDir}' successfully found in remote host '$daemon->{monitored}{host}' configuration file" );
+		Mods::Toops::msgVerbose( "local dir '$daemon->{config}{localDir}' successfully found in daemon configuration file" );
 	} else {
 		Mods::Toops::msgErr( "'localDir' must be specified in daemon configuration, not found" );
 	}
