@@ -201,7 +201,7 @@ sub makeDirExist {
 	my ( $dir ) = @_;
 	my $result = false;
 	if( -d $dir ){
-		Mods::Toops::msgVerbose( "Path::makeDirExist() dir='$dir' exists" );
+		#Mods::Toops::msgVerbose( "Path::makeDirExist() dir='$dir' exists" );
 		$result = true;
 	} else {
 		Mods::Toops::msgVerbose( "Path::makeDirExist() make_path() dir='$dir'" );

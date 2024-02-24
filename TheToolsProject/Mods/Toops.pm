@@ -874,7 +874,7 @@ sub msgLog {
 # -------------------------------------------------------------------------------------------------
 # log an already prefixed message
 # do not try to write in logs while they are not initialized
-# the host config is silently reevaluated on each call o be sure we are writing in the logs of the day
+# the host config is silently reevaluated on each call to be sure we are writing in the logs of the day
 
 sub msgLogAppend {
 	my ( $msg ) = @_;
