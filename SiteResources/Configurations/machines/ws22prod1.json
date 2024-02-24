@@ -117,10 +117,10 @@
 							"order": "00",
 							"commands": [
 								"ttp.pl pull -nohelp",
-								"ttp.pl copydirs -sourcecmd 'dbms.pl vars -backupsDir' -targetcmd 'dbms.pl vars -archivesDir' -dirs",
-								"ttp.pl purgedirs -dircmd 'dbms.pl vars -backupsRoot' -keep 5",
-								"ttp.pl purgedirs -dircmd 'dbms.pl vars -archivesRoot' -keep 10",
-								"ttp.pl purgedirs -dircmd 'ttp.pl vars -logsRoot' -keep 10"
+								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs",
+								"ttp.pl purgedirs -dircmd \"dbms.pl vars -backupsRoot\" -keep 5",
+								"ttp.pl purgedirs -dircmd \"dbms.pl vars -archivesRoot\" -keep 10",
+								"ttp.pl purgedirs -dircmd \"ttp.pl vars -logsRoot\" -keep 10"
 							]
 						}
 					],
