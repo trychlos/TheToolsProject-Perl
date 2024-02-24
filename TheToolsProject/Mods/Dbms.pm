@@ -42,7 +42,11 @@ sub backupDatabase {
 		$result->{status} = Mods::Dbms::toPackage( 'apiBackupDatabase', $dbms, $parms );
 	}
 	$result->{output} = $parms->{output};
-	Mods::Toops::msgVerbose( "Dbms::backupDatabase() returning $result" );
+	if( !$result->{status} ){
+		Mods::Toops::msgErr( "Dbms::backupDatabase() $parms->{instance}\\$parms->{database} NOT OK" );
+	} else {
+		Mods::Toops::msgVerbose( "Dbms::backupDatabase() returning status='true' output='$result->{output}'" );
+	}
 	return $result;
 }
 
@@ -347,7 +351,7 @@ sub toPackage {
 		} else {
 			Mods::Toops::msgErr( "unable to find a package to address '$dbms->{instance}{name}' instance" );
 		}
-		Mods::Toops::msgVerbose( "Dbms::toPackage() returning with result='".( $result || '(undef)' )."'" );
+		Mods::Toops::msgVerbose( "Dbms::toPackage() returning with result='".( defined $result ? ( $result ? 'true':'false' ) : '(undef)' )."'" );
 	}
 	return $result;
 }
