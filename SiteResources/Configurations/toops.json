@@ -26,6 +26,13 @@
 				}
 			}
 		},
+		"copyFile": {
+			"byOS": {
+				"MSWin32": {
+					"command": "robocopy <SOURCE> <TARGET> <FILE> /TS /FP /NP /BYTES"
+				}
+			}
+		},
 		"moveDir": {
 			"byOS": {
 				"MSWin32": {

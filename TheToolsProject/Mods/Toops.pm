@@ -173,6 +173,50 @@ sub copyDir {
 }
 
 # -------------------------------------------------------------------------------------------------
+# copy a file from a source to a target
+# Toops allows to provide a system-specific command in its configuration file
+# well suited for example to copy big files to network storage
+# (I):
+# - source: the source volume, directory and filename
+# - target :the target volume and directory
+# (O):
+# return true|false
+sub copyFile {
+	my ( $source, $target ) = @_;
+	my $result = false;
+	msgVerbose( "Toops::copyFile() entering with source='$source' target='$target'" );
+	# isolate the file from the source directory path
+	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $source );
+	my $srcpath = File::Spec->catpath( $vol, $dirs );
+	my $cmdres = commandByOs({
+		command => $TTPVars->{config}{toops}{copyFile}{byOS}{$Config{osname}}{command},
+		macros => {
+			SOURCE => $srcpath,
+			TARGET => $target,
+			FILE => $file
+		}
+	});
+	if( defined $cmdres->{command} ){
+		$result = $cmdres->{result};
+		msgVerbose( "Toops::copyFile() commandByOs() result=$result" );
+	} else {
+		msgDummy( "copy( $source, $target )" );
+		if( !wantsDummy()){
+			# https://metacpan.org/pod/File::Copy
+			# This function returns true or false
+			$result = copy( $source, $target );
+			if( $result ){
+				msgVerbose( "Toops::copyFile() result=true" );
+			} else {
+				msgErr( "Toops::copyFile() $!" );
+			}
+		}
+	}
+	msgVerbose( "Toops::copyFile() returns result=$result" );
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Dump the internal variables
 sub dump {
 	foreach my $key ( keys %{$TTPVars} ){
