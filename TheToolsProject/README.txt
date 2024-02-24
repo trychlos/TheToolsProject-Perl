@@ -46,16 +46,6 @@ TTPVars:
 		host					dynamically re-evaluated host configuration
 			name
 			Services
-			...
-
-
-
-
-		site					the computed site configuration after variables interpretation
-			site
-				rootDir
-		<hostname>
-			Services
 			DBMSInstances
 			...
 			name: <hostname>
@@ -87,10 +77,11 @@ TTPVars:
 		
 		# when run by a daemon
 		daemon
+			name
 
 # when writing and using new commands or verbs
 # --------------------------------------------
-For debugging purposes workload.cmd may take additional arguments, sayf or example -dummy, -verbose, -nocolored
+For debugging purposes workload.cmd may take additional arguments, say for example -dummy, -verbose, -nocolored
 As these additional arguments will be passed to each and every executed TTP command/verb, all these must at least *support* (if not honor) these standard arguments.
 
 TODO

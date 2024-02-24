@@ -4,7 +4,7 @@
 	rem Note 1: this workload.cmd adds itself the -nocolor option to every run command. Tou should take care that your run commands accept (if not honor) this command-line option.
 	set ME=[%~nx0 %1]
 	call :setLogFile %1
-	call :doExecute >>%LOGFILE% 2>&1
+	call :doExecute %* >>%LOGFILE% 2>&1
 	exit /b
 
 :doExecute
