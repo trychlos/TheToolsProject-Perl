@@ -299,6 +299,11 @@ sub restoreDatabase {
 	if( !Mods::Toops::errs()){
 		$result = Mods::Dbms::toPackage( 'apiRestoreDatabase', $dbms, $parms );
 	}
+	if( !$result ){
+		Mods::Toops::msgErr( "Dbms::restoreDatabase() $parms->{instance}\\$parms->{database} NOT OK" );
+	} else {
+		Mods::Toops::msgVerbose( "Dbms::restoreDatabase() returning status='true'" );
+	}
 	return $result;
 }
 
