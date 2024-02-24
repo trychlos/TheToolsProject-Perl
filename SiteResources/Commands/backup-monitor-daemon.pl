@@ -255,7 +255,7 @@ sub remoteSearchLastFull_wanted {
 # source file is file on the source host, specified in the source language (aka a local path rather than a network path)
 # we want here:
 # - copy the remote file on the local host
-# - returns the local path
+# - returns the local path, or undef in case of an error
 sub syncedPath {
 	my ( $localSource ) = @_;
 	Mods::Toops::msgVerbose( "localSource='$localSource'" );
@@ -272,7 +272,7 @@ sub syncedPath {
 	if( $res ){
 		Mods::Toops::msgVerbose( "successfully copied '$remoteSource' to '$localTarget'" );
 	} else {
-		Mods::Toops::msgErr( "unable to copy '$remoteSource' to '$localTarget': res='$res'" );
+		Mods::Toops::msgErr( "unable to copy '$remoteSource' to '$localTarget': $!" );
 		$localTarget = undef;
 	}
 	return $localTarget;
