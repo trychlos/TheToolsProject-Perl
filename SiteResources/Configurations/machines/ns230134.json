@@ -54,7 +54,7 @@
 					"daily.morning": [
 						{
 							"label": "Sauvegarde quotidienne des bases Dom",
-							"comment": "pwi 24-02-08 à étudier, mais peut-être bien que ce ne sont que des bases de dev, donc à transférer..",
+							"comment": "pwi 24-02-08 à étudier, mais peut-être bien que ce ne sont que des bases de dev, donc à transférer vers un autre environnement..",
 							"commands": [
 								"dbms.pl backup -instance MSSQLSERVER -database Dom1 -full",
 								"dbms.pl backup -instance MSSQLSERVER -database Dom33 -full",
@@ -75,7 +75,7 @@
 								"order='00' is very first as tasks are ordered in Ascii order: [0-9A-Za-z]",
 								"ns230134 has very low free space on its local disk, just enough for one backup set, not two.",
 								"Make sure the SQLBackups is empty before our daily full backups. It will be immediately copied to the archive, and moved again to the archive at evening.",
-								"daily.morning is scheduled at 01::00h - while canal33.live.morning is at 06:00"
+								"daily.morning is scheduled at 05:00h - while canal33.live.morning is at 06:00"
 							],
 							"commands": [
 								"ttp.pl pull -nohelp",
