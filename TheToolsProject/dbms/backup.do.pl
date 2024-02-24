@@ -60,7 +60,7 @@ sub doBackup {
 	my $count = 0;
 	my $asked = 0;
 	foreach my $db ( @{$databases} ){
-	Mods::Toops::msgOut( "backuping database '$hostConfig->{name}\\$opt_instance\\$db'" );
+		Mods::Toops::msgOut( "backuping database '$hostConfig->{name}\\$opt_instance\\$db'" );
 		my $res = Mods::Dbms::backupDatabase({
 			instance => $opt_instance,
 			database => $db,
