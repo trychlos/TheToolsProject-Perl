@@ -101,7 +101,7 @@ sub answerStats {
 sub computeDynamics {
 	# remote host configuration
 	$daemon->{monitored}{config} = Mods::Toops::evaluate( $daemon->{monitored}{raw} );
-	# daemon configuration is reevaluated Daemon::listen() on each listenInterval
+	# daemon configuration is reevaluated by Daemon::daemonListen() on each listenInterval
 	# we still have to substitute macros
 	$daemon->{config} = computeMacrosRec( $daemon->{config} );
 	# monitored dir is the (maybe daily) remote host execReportsDir
@@ -263,9 +263,12 @@ sub syncedPath {
 	# we need to get a the remote filename (source of the copy) and the local filename (target of the copy)
 	my( $rl_vol, $rl_dirs, $rl_file ) = File::Spec->splitpath( $localSource );
 	my $remoteSource = File::Spec->catpath( $daemon->{monitored}{config}{remoteShare}, $rl_dirs, $rl_file );
+	$remoteSource =~ s/\\/\\\\/g;
 	Mods::Toops::msgVerbose( "remoteSource='$remoteSource'" );
 	# local target
-	my $localTarget = File::Spec->catpath( Mods::Toops::pathWithTrailingSeparator( $daemon->{config}{localDir} ), $rl_file );
+	#my $localTarget = File::Spec->catpath( Mods::Toops::pathWithTrailingSeparator( $daemon->{config}{localDir} ), $rl_file );
+	my $localTarget = Mods::Toops::pathWithTrailingSeparator( $daemon->{config}{localDir} );
+	$localTarget =~ s/\\/\\\\/g;
 	Mods::Toops::msgVerbose( "localTarget='$localTarget'" );
 	Mods::Path::makeDirExist( $daemon->{config}{localDir} );
 	my $res = copy( $remoteSource, $localTarget );

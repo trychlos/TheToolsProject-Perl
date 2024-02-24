@@ -257,9 +257,9 @@ sub daemonListen {
 	my ( $daemon, $commands ) = @_;
 	$commands //= {};
 	# before anything else, reevalute our configurations
-	# - the daemon config
+	# -> the daemon config
 	$daemon->{config} = getEvaluatedConfig( $daemon->{raw} );
-	#- toops+site and host configurations
+	# -> toops+site and host configurations
 	Mods::Toops::ttpEvaluate();
 	my $client = $daemon->{socket}->accept();
 	my $result = undef;

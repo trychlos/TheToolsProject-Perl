@@ -174,7 +174,7 @@ sub logsDailyDir {
 # (O):
 # returns the root of the logs tree, maiking sure it exists
 # this is an optional value read from toops.json, defaulting to user temp directory, itself defaulting to /tmp (or C:\Temp)
-# Though TheToolsProject doesn't force that, we encourage to have a by-daya logs tree. Thus logsRoot is the top of the
+# Though TheToolsProject doesn't force that, we encourage to have a by-day logs tree. Thus logsRoot is the top of the
 # logs hierarchy while logsDailyDir is the logs of the day (which may be the same by the fact and this is a decision of
 # the site integrator)
 sub logsRootDir {

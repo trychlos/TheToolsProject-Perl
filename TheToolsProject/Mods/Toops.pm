@@ -69,7 +69,7 @@ our $TTPVars = {
 		# some runtime constants
 		stackOnErr => false
 	},
-	# a key reserved for the storage of toops+site+host json configuration files
+	# a key reserved for the storage of toops+site+host raw json configuration files
 	json => undef,
 	# initialize some run variables
 	run => {
@@ -226,9 +226,13 @@ sub _evaluateRec {
 sub _evaluateScalar {
 	my ( $value ) = @_;
 	my $type = ref( $value );
-	msgErr( "scalar expected, but '$type' found" ) if $type;
+	my $evaluate = true;
+	if( $type ){
+		msgErr( "scalar expected, but '$type' found" );
+		$evaluate = false;
+	}
 	my $result = $value || '';
-	if( !errs()){
+	if( $evaluate ){
 		# this weird code to let us manage some level of pseudo recursivity
 		$result =~ s/\[eval:([^\]]+)\]/_evaluatePrint( $1 )/eg;
 		$result =~ s/\[_eval:/[eval:/g;
