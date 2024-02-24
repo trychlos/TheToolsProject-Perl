@@ -788,7 +788,7 @@ sub jsonRead {
 # - the full path to be created
 sub jsonWrite {
 	my ( $hash, $path ) = @_;
-	msgVerbose( "jsonWrite().. to '$path'" );
+	msgVerbose( "jsonWrite() to '$path'" );
 	my $json = JSON->new;
 	my $str = $json->encode( $hash );
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
