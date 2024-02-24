@@ -17,6 +17,8 @@ use Mods::Constants qw( :all );
 
 my $TTPVars = Mods::Toops::TTPVars();
 
+$ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;
+
 my $defaults = {
 	help => 'no',
 	verbose => 'no',

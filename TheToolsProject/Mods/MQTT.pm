@@ -13,6 +13,8 @@ use Net::MQTT::Simple;
 use Mods::Constants qw( :all );
 use Mods::Toops;
 
+$ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;
+
 # ------------------------------------------------------------------------------------------------
 # connect to the specified MQTT broker, keeping the connection alive (doesn't disconnect)
 # (I):

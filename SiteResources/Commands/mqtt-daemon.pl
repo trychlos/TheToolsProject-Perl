@@ -25,6 +25,8 @@ use Mods::Toops;
 # auto-flush on socket
 $| = 1;
 
+$ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;
+
 my $commands = {
 	#help => \&help,
 };
