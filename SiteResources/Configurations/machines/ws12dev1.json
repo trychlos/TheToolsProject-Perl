@@ -43,7 +43,7 @@
 			},
 			"Canal33.http": {
 			},
-			"Dom.2012": {
+			"Dom.2008": {
 				"instance": "DEV",
 				"databases": [
 					"Dom1",
@@ -54,7 +54,7 @@
 						{
 							"label": "Databases backup",
 							"commands": [
-								"dbms.pl backup -service Dom.2012 -full"
+								"dbms.pl backup -nocolored -service Dom.2008 -full"
 							]
 						}
 					]
@@ -68,9 +68,9 @@
 							"label": "Purge directories",
 							"order": "00",
 							"commands": [
-								"ttp.pl purgedirs -dircmd \"dbms.pl vars -backupsRoot\" -keep 7",
-								"ttp.pl purgedirs -dircmd \"dbms.pl vars -archivesRoot\" -keep 7",
-								"ttp.pl purgedirs -dircmd \"ttp.pl vars -logsRoot\" -keep 7"
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -backupsRoot\" -keep 7",
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -archivesRoot\" -keep 7",
+								"ttp.pl purgedirs -nocolored -dircmd \"ttp.pl vars -logsRoot\" -keep 7"
 							]
 						}
 					],

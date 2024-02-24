@@ -13,7 +13,7 @@
 						{
 							"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom17",
 							"commands": [
-								"dbms.pl backup -service Tom17 -full"
+								"dbms.pl backup -nocolored -service Tom17 -full"
 							]
 						}
 					],
@@ -21,7 +21,7 @@
 						{
 							"label": "(Production Live) Sauvegarde différentielle sur la base de données Tom17",
 							"commands": [
-								"dbms.pl backup -service Tom17 -diff"
+								"dbms.pl backup -nocolored -service Tom17 -diff"
 							]
 						}
 					],
@@ -31,8 +31,8 @@
 						{
 							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl stop -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom17-backup-monitor-daemon.json -ignore -wait 2",
-								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom17-backup-monitor-daemon.json NS3232346"
+								"daemon.pl stop -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom17-backup-monitor-daemon.json -ignore -wait 2",
+								"daemon.pl start -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom17-backup-monitor-daemon.json NS3232346"
 							]
 						}
 					]
@@ -48,7 +48,7 @@
 						{
 							"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom21",
 							"commands": [
-								"dbms.pl backup -service Tom21 -full"
+								"dbms.pl backup -nocolored -service Tom21 -full"
 							]
 						}
 					],
@@ -56,7 +56,7 @@
 						{
 							"label": "(Production Live) Sauvegarde différentielle sur la base de données Tom21",
 							"commands": [
-								"dbms.pl backup -service Tom21 -diff"
+								"dbms.pl backup -nocolored -service Tom21 -diff"
 							]
 						}
 					],
@@ -66,8 +66,8 @@
 						{
 							"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl stop -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom21-backup-monitor-daemon.json -ignore -wait 2",
-								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom21-backup-monitor-daemon.json NS3232346"
+								"daemon.pl stop -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom21-backup-monitor-daemon.json -ignore -wait 2",
+								"daemon.pl start -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom21-backup-monitor-daemon.json NS3232346"
 							]
 						}
 					]
@@ -83,7 +83,7 @@
 						{
 							"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom59",
 							"commands": [
-								"dbms.pl backup -service Tom59 -full"
+								"dbms.pl backup -nocolored -service Tom59 -full"
 							]
 						}
 					],
@@ -91,7 +91,7 @@
 						{
 							"label": "(Production Live) Sauvegarde différentielle sur la base de données Tom59",
 							"commands": [
-								"dbms.pl backup -service Tom59 -diff"
+								"dbms.pl backup -nocolored -service Tom59 -diff"
 							]
 						}
 					],
@@ -101,8 +101,8 @@
 						{
 							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl stop -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json -ignore -wait 2",
-								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json NS3232346"
+								"daemon.pl stop -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json -ignore -wait 2",
+								"daemon.pl start -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json NS3232346"
 							]
 						}
 					]
@@ -116,11 +116,11 @@
 							"label": "Purge daily directories",
 							"order": "00",
 							"commands": [
-								"ttp.pl pull -nohelp",
-								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs",
-								"ttp.pl purgedirs -dircmd \"dbms.pl vars -backupsRoot\" -keep 5",
-								"ttp.pl purgedirs -dircmd \"dbms.pl vars -archivesRoot\" -keep 10",
-								"ttp.pl purgedirs -dircmd \"ttp.pl vars -logsRoot\" -keep 10"
+								"ttp.pl pull -nocolored",
+								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs",
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -backupsRoot\" -keep 5",
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -archivesRoot\" -keep 10",
+								"ttp.pl purgedirs -nocolored -dircmd \"ttp.pl vars -logsRoot\" -keep 10"
 							]
 						}
 					],

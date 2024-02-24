@@ -9,10 +9,10 @@
 							"label": "Purge daily directories",
 							"order": "00",
 							"commands": [
-								"ttp.pl pull -nohelp",
-								"ttp.pl purgedirs -dircmd \"dbms.pl vars -backupsRoot\" -keep 7",
-								"ttp.pl purgedirs -dircmd \"dbms.pl vars -archivesRoot\" -keep 7",
-								"ttp.pl purgedirs -dircmd \"ttp.pl vars -logsRoot\" -keep 7"
+								"ttp.pl pull -nocolored",
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -backupsRoot\" -keep 7",
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -archivesRoot\" -keep 7",
+								"ttp.pl purgedirs -nocolored -dircmd \"ttp.pl vars -logsRoot\" -keep 7"
 							]
 						}
 					],

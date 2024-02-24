@@ -15,8 +15,8 @@
 						{
 							"label": "(Production Live) Sauvegarde quotidienne de la base Canall33",
 							"commands": [
-								"dbms.pl backup -service Canal33.db -full",
-								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
+								"dbms.pl backup -nocolored -service Canal33.db -full",
+								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
 							]
 						}
 					],
@@ -25,8 +25,8 @@
 							"label": "(Production Live) Sauvegarde différentielle en journée",
 							"commands_x": [
 								"-> désactivée sur ns230134 faute d'espace disque suffisant",
-								"dbms.pl backup -service Canal33.db -diff",
-								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
+								"dbms.pl backup -nocolored -service Canal33.db -diff",
+								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
 							]
 						}
 					],
@@ -36,8 +36,8 @@
 						{
 							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl stop -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\canal33-backup-monitor-daemon.json -ignore -wait 2",
-								"daemon.pl start -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\canal33-backup-monitor-daemon.json WS12PROD1"
+								"daemon.pl stop -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\canal33-backup-monitor-daemon.json -ignore -wait 2",
+								"daemon.pl start -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\canal33-backup-monitor-daemon.json WS12PROD1"
 							]
 						}
 					]
@@ -56,9 +56,9 @@
 							"label": "Sauvegarde quotidienne des bases Dom",
 							"comment": "pwi 24-02-08 à étudier, mais peut-être bien que ce ne sont que des bases de dev, donc à transférer vers un autre environnement..",
 							"commands": [
-								"dbms.pl backup -instance MSSQLSERVER -database Dom1 -full",
-								"dbms.pl backup -instance MSSQLSERVER -database Dom33 -full",
-								"ttp.pl copydirs -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
+								"dbms.pl backup -nocolored -instance MSSQLSERVER -database Dom1 -full",
+								"dbms.pl backup -nocolored -instance MSSQLSERVER -database Dom33 -full",
+								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
 							]
 						}
 					]
@@ -78,10 +78,10 @@
 								"daily.morning is scheduled at 05:00h - while canal33.live.morning is at 06:00"
 							],
 							"commands": [
-								"ttp.pl pull -nohelp",
-								"ttp.pl purgedirs -dircmd \"dbms.pl vars -backupsRoot\" -keep 0",
-								"ttp.pl purgedirs -dircmd \"dbms.pl vars -archivesRoot\" -keep 5",
-								"ttp.pl purgedirs -dircmd \"ttp.pl vars -logsRoot\" -keep 7"
+								"ttp.pl pull -nocolored",
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -backupsRoot\" -keep 0",
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -archivesRoot\" -keep 5",
+								"ttp.pl purgedirs -nocolored -dircmd \"ttp.pl vars -logsRoot\" -keep 7"
 							]
 						},
 						{
