@@ -70,6 +70,19 @@ sub _running {
 }
 
 # ------------------------------------------------------------------------------------------------
+# answering to a 'status' request with:
+# - running since yyyy-mm-dd hh:mi:ss
+# - json: 
+# - listeningPort:
+sub _status {
+	my ( $daemon ) = @_;
+	my $answer = _running();
+	$answer .= "\njson: $daemon->{json}";
+	$answer .= "\nlisteningPort: $daemon->{config}{listeningPort}";
+	return $answer;
+}
+
+# ------------------------------------------------------------------------------------------------
 sub _topic {
 	my ( $name ) = @_;
 	my $topic = _hostname();
@@ -116,7 +129,8 @@ sub daemonCommand {
 		$commands->{terminate} = 1;
 		$answer = join( ', ', sort keys %{$commands} )."\nOK";
 	} elsif( $req->{command} eq "status" ){
-		$answer = _running()."\nOK";
+		#$answer = _running()."\nOK";
+		$answer = _status( $daemon )."\nOK";
 	} elsif( $req->{command} eq "terminate" ){
 		$daemon->{terminating} = true;
 		$answer = "OK";
