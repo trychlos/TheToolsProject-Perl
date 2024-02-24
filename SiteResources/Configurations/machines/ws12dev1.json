@@ -19,9 +19,9 @@
 			"  We could so define any workload in any service...",
 			"  'workloads' is a hash whose keys are the name of each workload this service subscribes to, values being an (ordered) array of the work tasks associated to this workload for this service.",
 			"  Each work task is a hash whose content depends mainly of the particular involved workload, but may have:",
-			"  > a 'label'.",
+			"  > a 'label'",
 			"  > an array of 'commands'",
-			"  > an order",
+			"  > the order as an optional integer",
 			"    A word of caution: due to the way Perl::JSON interprets the zero integer of the '0' string, do not use these values!",
 			"    For consistency reasons, you should rather use only strings.",
 			"    Due to the above Perl 'not-a-bug-but-a-feature', do not use single zero, either as a string nor an integer.",
@@ -50,6 +50,14 @@
 					"Dom33"
 				],
 				"workloads": {
+					"daily.morning": [
+						{
+							"label": "Databases backup",
+							"commands": [
+								"dbms.pl backup -service Dom.2012 -full"
+							]
+						}
+					]
 				}
 			},
 			"Technical Workloads": {
@@ -57,10 +65,12 @@
 				"workloads": {
 					"daily.morning": [
 						{
-							"label": "To be done in very first: create the daily directories",
+							"label": "Purge directories",
 							"order": "00",
 							"commands": [
-								"dbms.pl backup -service Dom.2012 -full"
+								"ttp.pl purgedirs -dircmd \"dbms.pl vars -backupsRoot\" -keep 7",
+								"ttp.pl purgedirs -dircmd \"dbms.pl vars -archivesRoot\" -keep 7",
+								"ttp.pl purgedirs -dircmd \"ttp.pl vars -logsRoot\" -keep 7"
 							]
 						}
 					],
