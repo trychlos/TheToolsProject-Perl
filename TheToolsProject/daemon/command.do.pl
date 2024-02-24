@@ -5,6 +5,7 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
+# @(-) --port=<port>           the port number to address [${port}]
 # @(-) --command=<command>     the command to be sent to the daemon [${command}]
 # @(-) --ignore                ignore the return code if the daemon is not active [${ignore}]
 #
@@ -30,11 +31,13 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	json => '',
+	port => '',
 	command => '',
 	ignore => 'no'
 };
 
 my $opt_json = $defaults->{json};
+my $opt_port = -1;
 my $opt_command = $defaults->{command};
 my $opt_ignore = false;
 
@@ -44,10 +47,12 @@ my $daemonConfig = undef;
 # send a command to the daemon
 sub doSend {
 	# connect
+	my $port = $opt_port;
+	$port = $daemonConfig->{listeningPort} if $daemonConfig;
 	# triggers an error if the daemon is not active
 	my $socket = new IO::Socket::INET(
 		PeerHost => 'localhost',
-		PeerPort => $daemonConfig->{listeningPort},
+		PeerPort => $port,
 		Proto => 'tcp'
 	) or Mods::Toops::msgErr( "unable to connect: $!" ) if !$socket;
 
@@ -82,6 +87,7 @@ if( !GetOptions(
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"json=s"			=> \$opt_json,
+	"port=i"			=> \$opt_port,
 	"command=s"			=> \$opt_command,
 	"ignore!"			=> \$opt_ignore )){
 
@@ -98,13 +104,25 @@ Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'
 Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found json='$opt_json'" );
+Mods::Toops::msgVerbose( "found port='$opt_port'" );
 Mods::Toops::msgVerbose( "found command='$opt_command'" );
 Mods::Toops::msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
 
-# the json is mandatory
-$daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
-# must have a listening port
-Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+# either the json or the port must be specified (and not both)
+my $count = 0;
+$count += 1 if $opt_json;
+$count += 1 if $opt_port != -1;
+if( $count == 0 ){
+	Mods::Toops::msgErr( "one of '--json' or '--port' options must be specified, none found" );
+} elsif( $count > 1 ){
+	Mods::Toops::msgErr( "one of '--json' or '--port' options must be specified, both were found" );
+}
+#if a json is specified, must have a listeningPort
+if( $opt_json ){
+	$daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
+	# must have a listening port
+	Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+}
 # and a command too
 Mods::Toops::msgErr( "'--command' option is mandatory, but is not specified" ) if !$opt_command;
 

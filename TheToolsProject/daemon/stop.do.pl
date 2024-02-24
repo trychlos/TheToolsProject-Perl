@@ -5,6 +5,7 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
+# @(-) --port=<port>           the port number to address [${port}]
 # @(-) --ignore                ignore the return code if the daemon is not active [${ignore}]
 # @(-) --wait=<wait>           wait for seconds before exiting [${wait}]
 #
@@ -28,27 +29,30 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	json => '',
+	port => '',
 	ignore => 'no',
 	wait => 0
 };
 
 my $opt_json = $defaults->{json};
+my $opt_port = -1;
 my $opt_ignore = false;
 my $opt_wait = $defaults->{wait};
-
-my $daemonConfig = undef;
 
 # -------------------------------------------------------------------------------------------------
 # stop the daemon
 sub doStop {
-	Mods::Toops::msgOut( "stopping the '$opt_json' daemon..." );
-	my $json_path = File::Spec->rel2abs( $opt_json );
-	my $verbose = "";
-	$verbose = "-verbose" if $TTPVars->{run}{verbose};
-	my $ignore = "";
-	$ignore = "-ignore" if $opt_ignore;
-	my $res = `daemon.pl command -json $json_path -command terminate $verbose $ignore`;
-	if( $res && length $res ){
+	Mods::Toops::msgOut( "requesting the daemon for termination..." );
+	my $cmd = "daemon.pl command -command terminate";
+	$cmd .= " -verbose" if $TTPVars->{run}{verbose};
+	if( $opt_json ){
+		my $json_path = File::Spec->rel2abs( $opt_json );
+		$cmd .= " -json $json_path";
+	}
+	$cmd .= " -port $opt_port" if $opt_port != -1;
+	$cmd .= " -ignore" if $opt_ignore;
+	my $res = `$cmd`;
+	if( $res && length $res && !$? ){
 		print "$res";
 		if( $opt_wait > 0 ){
 			Mods::Toops::msgVerbose( "sleeping $opt_wait sec." );
@@ -71,6 +75,7 @@ if( !GetOptions(
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"json=s"			=> \$opt_json,
+	"port=i"			=> \$opt_port,
 	"ignore!"			=> \$opt_ignore,
 	"wait=i"			=> \$opt_wait )){
 
@@ -87,13 +92,25 @@ Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'
 Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found json='$opt_json'" );
+Mods::Toops::msgVerbose( "found port='$opt_port'" );
 Mods::Toops::msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found wait='$opt_wait'" );
 
-# the json is mandatory
-$daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
-# must have a listening port
-Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+# either the json or the port must be specified (and not both)
+my $count = 0;
+$count += 1 if $opt_json;
+$count += 1 if $opt_port != -1;
+if( $count == 0 ){
+	Mods::Toops::msgErr( "one of '--json' or '--port' options must be specified, none found" );
+} elsif( $count > 1 ){
+	Mods::Toops::msgErr( "one of '--json' or '--port' options must be specified, both were found" );
+}
+#if a json is specified, must have a listeningPort
+if( $opt_json ){
+	my $daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
+	# must have a listening port
+	Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+}
 
 if( !Mods::Toops::errs()){
 	doStop();
