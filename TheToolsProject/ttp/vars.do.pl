@@ -34,19 +34,25 @@ my $opt_siteroot = false;
 # -------------------------------------------------------------------------------------------------
 # list logsroot value - e.g. 'C:\INLINGUA\Logs'
 sub listLogsroot {
-	print " logsRoot: $TTPVars->{config}{toops}{logsRoot}".EOL;
+	my $str = "logsRoot: $TTPVars->{config}{toops}{logsRoot}";
+	Mods::Toops::msgVerbose( "returning '$str'" );
+	print " $str".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
 # list logsdir value - e.g. 'C:\INLINGUA\Logs\240201\Toops'
 sub listLogsdir {
-	print " logsDir: $TTPVars->{config}{toops}{logsDir}".EOL;
+	my $str = "logsDir: $TTPVars->{config}{toops}{logsDir}";
+	Mods::Toops::msgVerbose( "returning '$str'" );
+	print " $str".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
 # list siteroot value - e.g. 'C:\INLINGUA'
 sub listSiteroot {
-	print " siteRoot: $TTPVars->{config}{site}{rootDir}".EOL;
+	my $str = "siteRoot: $TTPVars->{config}{site}{rootDir}";
+	Mods::Toops::msgVerbose( "returning '$str'" );
+	print " $str".EOL;
 }
 
 # =================================================================================================

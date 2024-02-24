@@ -39,28 +39,36 @@ my $opt_archivesDir = false;
 # list archivesDir value - e.g. '\\ftpback-rbx7-618.ovh.net\ns3153065.ip-51-91-25.eu\WS12DEV1\SQLBackups\240101'
 sub listArchivesdir {
 	my $dir = Mods::Path::dbmsArchivesDir();
-	print " archivesDir: $dir".EOL;
+	my $str = "archivesDir: $dir";
+	Mods::Toops::msgVerbose( "returning '$str'" );
+	print " $str".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
 # list archivesRoot value - e.g. '\\ftpback-rbx7-618.ovh.net\ns3153065.ip-51-91-25.eu\WS12DEV1\SQLBackups'
 sub listArchivesroot {
 	my $dir = Mods::Path::dbmsArchivesRoot();
-	print " archivesRoot: $dir".EOL;
+	my $str = "archivesRoot: $dir";
+	Mods::Toops::msgVerbose( "returning '$str'" );
+	print " $str".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
 # list backupsDir value - e.g. 'C:\INLINGUA\SQLBackups\240101\WS12DEV1'
 sub listBackupsdir {
 	my $dir = Mods::Path::dbmsBackupsDir();
-	print " backupsDir: $dir".EOL;
+	my $str = "backupsDir: $dir";
+	Mods::Toops::msgVerbose( "returning '$str'" );
+	print " $str".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
 # list backupsRoot value - e.g. 'C:\INLINGUA\SQLBackups'
 sub listBackupsroot {
 	my $dir = Mods::Path::dbmsBackupsRoot();
-	print " backupsRoot: $dir".EOL;
+	my $str = "backupsRoot: $dir";
+	Mods::Toops::msgVerbose( "returning '$str'" );
+	print " $str".EOL;
 }
 
 # =================================================================================================

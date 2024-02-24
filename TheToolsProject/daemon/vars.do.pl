@@ -26,7 +26,9 @@ my $opt_confdir = false;
 # -------------------------------------------------------------------------------------------------
 # list confdir value - e.g. 'C:\INLINGUA\configurations\daemons'
 sub listConfdir {
-	print " confDir: ".Mods::Path::daemonsConfigurationsDir().EOL;
+	my $str = "confDir: ".Mods::Path::daemonsConfigurationsDir();
+	Mods::Toops::msgVerbose( "returning '$str'" );
+	print " $str".EOL;
 }
 
 # =================================================================================================
