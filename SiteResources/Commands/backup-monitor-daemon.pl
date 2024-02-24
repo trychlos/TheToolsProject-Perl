@@ -153,6 +153,7 @@ sub locallySyncedBackups {
 	my $result = undef;
 
 	my $localTarget = syncedPath( $report->{output} );
+	return false if !$localTarget;
 
 	# if we are about to restore a full backup, then we are finished here
 	# else, in order to be able to restore a diff backup, we have to also got the last full
