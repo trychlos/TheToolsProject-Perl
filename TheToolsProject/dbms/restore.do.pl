@@ -64,7 +64,8 @@ sub doRestore {
 			diff => $opt_diff || '',
 			mode => $mode
 		}, {
-			topic => [ 'instance', 'database', 'mode' ]
+			topic => [ 'instance', 'database', 'mode' ],
+			retain => true
 		});
 	}
 	if( $res ){
