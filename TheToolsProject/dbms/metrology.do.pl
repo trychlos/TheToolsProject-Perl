@@ -9,7 +9,7 @@
 # @(-) --database=<name>       database name [${database}]
 # @(-) --[no]dbsize            get databases size for the specified instance [${dbsize}]
 # @(-) --[no]tabcount          get tables rows count for the specified database [${tabcount}]
-# @(-) --limit=<limit>         limit the published messages [${limit}]
+# @(-) --limit=<limit>         limit the MQTT published messages [${limit}]
 #
 # @(@) When limiting the published messages, be conscious that the '--dbsize' option provides 7 messages per database.
 #
@@ -93,7 +93,8 @@ sub _modifySet {
 # at the moment, a service is stucked to a single instance
 sub doDbSize {
 	Mods::Toops::msgOut( "publishing databases size on '$hostConfig->{name}\\$opt_instance'..." );
-	my $count = 0;
+	my $mqttCount = 0;
+	my $prometheusCount = 0;
 	my $list = [];
 	if( $opt_service ){
 		$list = \@databases;
@@ -103,7 +104,7 @@ sub doDbSize {
 		push( @{$list}, $opt_database );
 	}
 	foreach my $db ( @{$list} ){
-		last if $count >= $opt_limit && $opt_limit >= 0;
+		last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 		# sp_spaceused provides two results sets, where each one only contains one data row
 		my $sql = "use $db; exec sp_spaceused";
 		my $out = Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"$sql\"` );
@@ -116,13 +117,13 @@ sub doDbSize {
 			if( scalar @resultSet == 3 ){
 				my $set = Mods::Metrology::interpretResultSet( @resultSet );
 				$set = _modifySet( $set );
-				$count += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$count });
-				Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db", $set, { prefix => 'metrology_dbms_dbsize_' });
+				$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$count });
+				$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db", $set, { prefix => 'metrology_dbms_dbsize_' });
 				@resultSet = ();
 			}
 		}
 	}
-	Mods::Toops::msgOut( "$count published message(s)" );
+	Mods::Toops::msgOut( "$mqttCount message(s) published on MQTT bus, $prometheusCount metric(s) published to Prometheus" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -130,16 +131,17 @@ sub doDbSize {
 #  this is an error if no database has been specified on the command-line
 #  if we have asked for a service, we may have several databases
 sub doTablesCount {
-	my $count = 0;
+	my $mqttCount = 0;
+	my $prometheusCount = 0;
 	if( !scalar @databases ){
 		Mods::Toops::msgErr( "no database specified, unable to count rows in tables.." );
 	} else {
 		foreach my $db ( @databases ){
 			Mods::Toops::msgOut( "publishing tables rows count on '$hostConfig->{name}\\$opt_instance\\$db'..." );
-			last if $count >= $opt_limit && $opt_limit >= 0;
+			last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 			my $tables = Mods::Toops::ttpFilter( `dbms.pl list -instance $opt_instance -database $db -listtables` );
 			foreach my $tab ( @{$tables} ){
-				last if $count >= $opt_limit && $opt_limit >= 0;
+				last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 				my $sql = "use $db; select count(*) as rows_count from $tab";
 				my $out = Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"$sql\"` );
 				my @resultSet = ();
@@ -149,12 +151,12 @@ sub doTablesCount {
 					push( @resultSet, $line );
 				}
 				my $set = Mods::Metrology::interpretResultSet( @resultSet );
-				$count += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/table/$tab", $set );
-				Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db/table/$tab", $set, { prefix => 'metrology_dbms_' });
+				$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/table/$tab", $set );
+				$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db/table/$tab", $set, { prefix => 'metrology_dbms_' });
 			}
 		}
 	}
-	Mods::Toops::msgOut( "$count published message(s)" );
+	Mods::Toops::msgOut( "$mqttCount message(s) published on MQTT bus, $prometheusCount metric(s) published to Prometheus" );
 }
 
 # =================================================================================================
