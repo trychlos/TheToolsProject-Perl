@@ -7,7 +7,7 @@
 # @(-) --instance=<name>       acts on the named instance [${instance}]
 # @(-) --[no]stdin             whether the sql command has to be read from stdin [${stdin}]
 # @(-) --script=<filename>     the sql script filename [${script}]
-# @(-) --command=<filename>    the sql command as a string [${command}]
+# @(-) --command=<command>     the sql command as a string [${command}]
 # @(-) --[no]tabular           format the output as tabular data [${tabular}]
 #
 # @(@) The provided SQL script may or may not have a displayable result. Nonetheless, this verb will always display all the script output.
@@ -49,12 +49,17 @@ my $opt_tabular = false;
 # - output: an array of output
 sub _result {
 	my ( $res ) = @_;
-	if( $res->{output} && scalar @{$res->{output}} ){
+	if( $res->{output} && scalar @{$res->{output}} && !$opt_tabular ){
+		my $isHash = false;
 		foreach my $it ( @{$res->{output}} ){
+			$isHash = true if ref( $it ) eq 'HASH';
 			print $it;
 		}
+		if( $isHash ){
+			Mods::Toops::msgWarn( "result contains data, should have been displayed with '--tabular' option" );
+		}
 	}
-	if( $res->{result} ){
+	if( $res->{ok} ){
 		Mods::Toops::msgOut( "success" );
 	} else {
 		Mods::Toops::msgErr( "NOT OK" );

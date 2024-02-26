@@ -16,7 +16,9 @@
 							"label": "(Production Live) Sauvegarde quotidienne de la base Canall33",
 							"commands": [
 								"dbms.pl backup -nocolored -service Canal33.db -full",
-								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
+								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs",
+								"dbms.pl metrology -nocolored -service Canal33.db -dbsize",
+								"dbms.pl metrology -nocolored -service Canal33.db -tabcount"
 							]
 						}
 					],
@@ -58,7 +60,9 @@
 							"commands": [
 								"dbms.pl backup -nocolored -instance MSSQLSERVER -database Dom1 -full",
 								"dbms.pl backup -nocolored -instance MSSQLSERVER -database Dom33 -full",
-								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
+								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs",
+								"dbms.pl metrology -nocolored -service Dom.2008 -dbsize",
+								"dbms.pl metrology -nocolored -service Dom.2008 -tabcount"
 							]
 						}
 					]

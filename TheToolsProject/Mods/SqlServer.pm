@@ -30,10 +30,12 @@ my $systemDatabases = [
 # - output: mandatory
 # - mode: mandatory, full|diff
 # - compress: true|false
-# return true|false
+# (O):
+# returns a hash with following keys:
+# - ok: true|false
 sub apiBackupDatabase {
 	my ( $me, $dbms, $parms ) = @_;
-	my $result = false;
+	my $result = { ok => false };
 	Mods::Toops::msgErr( "SqlServer::apiBackupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
 	Mods::Toops::msgErr( "SqlServer::apiBackupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
 	Mods::Toops::msgErr( "SqlServer::apiBackupDatabase() output is mandatory, but is not specified" ) if !$parms->{output};
@@ -51,9 +53,9 @@ sub apiBackupDatabase {
 		$parms->{sql} = "USE master;
 BACKUP DATABASE $parms->{database} TO DISK='$parms->{output}' WITH $options, NAME='$parms->{database} $label Backup $tstring';";
 		Mods::Toops::msgVerbose( "SqlServer::apiBackupDatabase() sql='$parms->{sql}'" );
-		$result = Mods::SqlServer::sqlNoResult( $dbms, $parms );
+		$result->{ok} = _sqlNoResult( $dbms, $parms );
 	}
-	Mods::Toops::msgVerbose( "SqlServer::apiBackupDatabase() returns '".( $result ? 'true':'false' )."'" );
+	Mods::Toops::msgVerbose( "SqlServer::apiBackupDatabase() returns '".( $result->{ok} ? 'true':'false' )."'" );
 	return $result;
 }
 
@@ -61,19 +63,20 @@ BACKUP DATABASE $parms->{database} TO DISK='$parms->{output}' WITH $options, NAM
 # execute a SQL command and returns its result
 # doesn't try to capture the output at the moment
 # doesn't honor '--dummy' option when the command is a SELECT sentence
+# (O):
 # returns a hash with following keys:
-# - result: true|false
-# - output: an array of output lines (which may be errors or normal command output)
+# - ok: true|false
+# - output: a ref to an array of output lines (which may be errors or normal command output)
 sub apiExecSqlCommand {
 	my ( $me, $dbms, $sql ) = @_;
-	my $result = { result => false };
+	my $result = { ok => false };
 	Mods::Toops::msgErr( "SqlServer::apiExecSqlCommand() instance is mandatory, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
 	if( !Mods::Toops::errs()){
 		Mods::Toops::msgVerbose( "SqlServer::apiExecSqlCommand() entering with instance='$dbms->{instance}{name}' sql='$sql'" );
 		if( $sql =~ /^SELECT /i ){
 			my $sqlsrv = Mods::SqlServer::_connect( $dbms );
-			$result = $sqlsrv->sql( $sql );
-			$result = $sqlsrv->sql_has_errors() ? false : true;
+			$result->{output} = $sqlsrv->sql( $sql );
+			$result->{ok} = $sqlsrv->sql_has_errors() ? false : true;
 		} else {
 			my( $account, $passwd ) = Mods::SqlServer::_getCredentials( $dbms );
 			if( length $account && length $passwd ){
@@ -82,34 +85,43 @@ sub apiExecSqlCommand {
 				Mods::Toops::msgVerbose( "tempFileName='$tempfname'" );
 				my $command = "sqlcmd -Q \"$sql\" -S $server -U $account -V16 -P";
 				Mods::Toops::msgVerbose( "executing '$command xxxxxx'" );
-				`$command $passwd -o $tempfname`;
-				$result->{result} = ( $? == 0 ) ? true : false;
+				my $stdout = `$command $passwd -o $tempfname`;
+				$result->{ok} = ( $? == 0 ) ? true : false;
+				if( $stdout ){
+					print $stdout;
+					Mods::Toops::msgLog( $stdout );
+				}
 				my $temp = path( $tempfname );
 				my @lines = $temp->lines_utf8;
 				$result->{output} = \@lines;
 			}
 		}
 	}
-	Mods::Toops::msgVerbose( "SqlServer::apiExecSqlCommand() result=$result->{result}" );
+	Mods::Toops::msgVerbose( "SqlServer::apiExecSqlCommand() result='".( $result->{ok} ? 'true' : 'false' )."'" );
 	return $result;
 }
 
 # ------------------------------------------------------------------------------------------------
 # returns the list of tables in the database
+# (O):
+# returns a hash with following keys:
+# - ok: true|false
+# - output: a ref to an array of output lines (which may be errors or normal command output)
 sub apiGetDatabaseTables {
 	my ( $me, $dbms, $database ) = @_;
-	my $result = undef;
+	my $result = { ok => false };
 	my $instance = $dbms->{instance}{name};
 	Mods::Toops::msgVerbose( "SqlServer::apiGetDatabaseTables() entering with instance='".( $instance || '(undef)' )."', database='".( $database || '(undef)' )."'" );
 	if( $instance && $database ){
 		my $sqlsrv = Mods::SqlServer::_connect( $dbms );
 		if( !Mods::Toops::errs() && $sqlsrv ){
-			$result = [];
+			$result->{output} = [];
 			# get an array of { TABLE_SCHEMA,TABLE_NAME } hashes
 			my $res = $sqlsrv->sql( "SELECT TABLE_SCHEMA,TABLE_NAME FROM $database.INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_SCHEMA,TABLE_NAME" );
 			foreach my $it ( @{$res} ){
-				push( @{$result}, "$it->{TABLE_SCHEMA}.$it->{TABLE_NAME}" );
+				push( @{$result->{output}}, "$it->{TABLE_SCHEMA}.$it->{TABLE_NAME}" );
 			}
+			Mods::Toops::msgVerbose( "SqlServer::apiGetDatabaseTables() found ".scalar @{$result->{output}}." tables" );
 		}
 	}
 	return $result;
@@ -123,23 +135,27 @@ sub apiGetDatabaseTables {
 #   > name: the name of the addressed instance
 #   > data: the host configuration for this instance
 # - exitCode: a reference to the global exit code
+# (O):
+# returns a hash with following keys:
+# - ok: true|false
+# - output: a ref to an array of output lines (which may be errors or normal command output)
 sub apiGetInstanceDatabases {
 	my ( $me, $dbms ) = @_;
-	my $result = undef;
+	my $result = { ok => false };
 	my $instance = $dbms->{instance}{name};
 	Mods::Toops::msgVerbose( "SqlServer::apiGetInstanceDatabases() entering with instance='".$instance || '(undef)'."'" );
 	if( $instance ){
 		my $sqlsrv = Mods::SqlServer::_connect( $dbms );
 		if( !Mods::Toops::errs() && $sqlsrv ){
-			$result = [];
+			$result->{output} = [];
 			my $res = $sqlsrv->sql( "select name from master.sys.databases order by name" );
 			foreach( @{$res} ){
 				my $dbname = $_->{'name'};
 				if( !grep( /^$dbname$/, @{$systemDatabases} )){
-					push( @{$result}, $dbname );
+					push( @{$result->{output}}, $dbname );
 				}
 			}
-			Mods::Toops::msgVerbose( "SqlServer::apiGetInstanceDatabases() found ".scalar @{$result}." databases: ".join( ', ', @{$result} ));
+			Mods::Toops::msgVerbose( "SqlServer::apiGetInstanceDatabases() found ".scalar @{$result->{output}}." databases" );
 		}
 	} else {
 		Mods::Toops::msgErr( "SqlServer::apiGetInstanceDatabases() instance is mandatory, not specified" );
@@ -154,7 +170,9 @@ sub apiGetInstanceDatabases {
 # - full: mandatory
 # - diff: defaults to '' (full restore only)
 # - verifyonly, defaulting to false
-# returns true|false
+# (O):
+# returns a hash with following keys:
+# - ok: true|false
 sub apiRestoreDatabase {
 	my ( $me, $dbms, $parms ) = @_;
 	Mods::Toops::msgVerbose( "SqlServer::apiRestoreDatabase() entering..." );
@@ -162,7 +180,7 @@ sub apiRestoreDatabase {
 	my $database = $parms->{database};
 	my $full = $parms->{full};
 	my $diff = $parms->{diff} || '';
-	my $res = false;
+	my $result = { ok => false };
 	my $sqlsrv = undef;
 	my $verifyonly = false;
 	$verifyonly = $parms->{verifyonly} if exists $parms->{verifyonly};
@@ -174,22 +192,22 @@ sub apiRestoreDatabase {
 			$parms->{'file'} = $full;
 			$parms->{'last'} = length $diff == 0 ? true : false;
 			if( $verifyonly ){
-				$res = _restoreDatabaseVerify( $dbms, $parms );
+				$result->{ok} = _restoreDatabaseVerify( $dbms, $parms );
 			} else {
-				$res = _restoreDatabaseFile( $dbms, $parms );
+				$result->{ok} = _restoreDatabaseFile( $dbms, $parms );
 			}
-			if( $res && length $diff ){
+			if( $result->{ok} && length $diff ){
 				$parms->{'file'} = $diff;
 				$parms->{'last'} = true;
 				if( $verifyonly ){
-					$res &= _restoreDatabaseVerify( $dbms, $parms );
+					$result->{ok} &= _restoreDatabaseVerify( $dbms, $parms );
 				} else {
-					$res &= _restoreDatabaseFile( $dbms, $parms );
+					$result->{ok} &= _restoreDatabaseFile( $dbms, $parms );
 				}
 			}
 		}
 	}
-	return $res;
+	return $result;
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -272,7 +290,7 @@ sub _restoreDatabaseSetOffline {
 	my $result = true;
 	if( _databaseExists( $dbms, $database )){
 		$parms->{sql} = "ALTER DATABASE $database SET OFFLINE WITH ROLLBACK IMMEDIATE;";
-		$result = Mods::SqlServer::sqlNoResult( $dbms, $parms );
+		$result = Mods::SqlServer::_sqlNoResult( $dbms, $parms );
 	}
 	return $result;
 }
@@ -297,7 +315,7 @@ sub _restoreDatabaseFile {
 	my $result = undef;
 	if( $move ){
 		$parms->{'sql'} = "RESTORE DATABASE $database FROM DISK='$fname' WITH $recovery, $move;";
-		$result = Mods::SqlServer::sqlNoResult( $dbms, $parms );
+		$result = Mods::SqlServer::_sqlNoResult( $dbms, $parms );
 	}
 	return $result;
 }
@@ -338,7 +356,7 @@ sub _restoreDatabaseVerify {
 	Mods::Toops::msgVerbose( "SqlServer::_restoreDatabaseVerify() verifying $fname" );
 	my $move = _restoreDatabaseMove( $dbms, $parms );
 	$parms->{'sql'} = "RESTORE VERIFYONLY FROM DISK='$fname' WITH $move;";
-	return Mods::SqlServer::sqlNoResult( $dbms, $parms );
+	return _sqlNoResult( $dbms, $parms );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -347,16 +365,16 @@ sub _restoreDatabaseVerify {
 # - instance|sqlsrv: mandatory
 # - sql: mandatory
 # return true|false
-sub sqlNoResult {
+sub _sqlNoResult {
 	my ( $dbms, $parms ) = @_;
-	Mods::Toops::msgErr( "SqlServer::sqlNoResult() sql is mandatory, but is not specified" ) if !$parms->{sql};
+	Mods::Toops::msgErr( "SqlServer::_sqlNoResult() sql is mandatory, but is not specified" ) if !$parms->{sql};
 	my $result = false;
 	my $sqlsrv = undef;
 	if( !Mods::Toops::errs()){
 		$sqlsrv = Mods::SqlServer::_connect( $dbms );
 	}
 	if( !Mods::Toops::errs()){
-		Mods::Toops::msgVerbose( "SqlServer::sqlNoResult() executing '$parms->{sql}'" );
+		Mods::Toops::msgVerbose( "SqlServer::_sqlNoResult() executing '$parms->{sql}'" );
 		$result = Mods::Toops::msgDummy( $parms->{sql} );
 		if( !Mods::Toops::wantsDummy()){
 			my $merged = capture_merged { $sqlsrv->sql( $parms->{sql}, Win32::SqlServer::NORESULT )};
@@ -371,7 +389,7 @@ sub sqlNoResult {
 			delete $sqlsrv->{ErrInfo}{Messages};
 		}
 	}
-	Mods::Toops::msgVerbose( "SqlServer::sqlNoResult() returns '".( $result ? 'true':'false' )."'" );
+	Mods::Toops::msgVerbose( "SqlServer::_sqlNoResult() returns '".( $result ? 'true':'false' )."'" );
 	return $result;
 }
 
@@ -394,7 +412,7 @@ sub updateStatistics( $ ){
 	my $res = false;
 	if( !errs()){
 		$parms->{'sql'} = "USE $db; EXEC sp_updatestats;";
-		$res = Mods::SqlServer::sqlNoResult( $parms );
+		$res = Mods::SqlServer::_sqlNoResult( $parms );
 	}
 	return $res;
 }

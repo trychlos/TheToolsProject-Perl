@@ -16,6 +16,7 @@ use Time::Piece;
 use Mods::Constants qw( :all );
 use Mods::Path;
 use Mods::Toops;
+#use Mods::SqlServer;
 
 # ------------------------------------------------------------------------------------------------
 # parms is a hash ref with keys:
@@ -39,7 +40,8 @@ sub backupDatabase {
 			$parms->{output} = Mods::Dbms::computeDefaultBackupFilename( $dbms, $parms );
 		}
 		Mods::Toops::msgOut( "backuping to '$parms->{output}'" );
-		$result->{status} = Mods::Dbms::toPackage( 'apiBackupDatabase', $dbms, $parms );
+		my $res = Mods::Dbms::toPackage( 'apiBackupDatabase', $dbms, $parms );
+		$result->{status} = $res->{ok};
 	}
 	$result->{output} = $parms->{output};
 	if( !$result->{status} ){
@@ -200,10 +202,7 @@ sub displayTabularSql {
 	}
 	# and for each field, compute the max length content
 	foreach my $it ( @{$ref} ){
-		print Dumper( $it );
-		print Dumper( $lengths );
 		foreach my $key ( keys %{$it} ){
-			print "key='$key'".EOL;
 			if( $it->{$key} && length $it->{$key} > $lengths->{$key} ){
 				$lengths->{$key} = length $it->{$key};
 			}
@@ -238,19 +237,27 @@ sub displayTabularSql {
 
 # -------------------------------------------------------------------------------------------------
 # execute a sql command
-# (E):
+# (I):
 # - the command string to be executed
 # - an optional options hash which may contain following keys:
 #   > tabular: whether to format data as tabular data, defaulting to true
+# (O):
+# returns a hash ref with following keys:
+# - ok: true|false
+# - output: an array ref to hash results
 sub execSqlCommand {
 	my ( $command, $opts ) = @_;
 	$opts //= {};
 	my $dbms = Mods::Dbms::_buildDbms();
 	my $result = Mods::Dbms::toPackage( 'apiExecSqlCommand', $dbms, $command );
-	if( $result ){
+	if( $result && $result->{ok} ){
 		my $tabular = true;
 		$tabular = $opts->{tabular} if exists $opts->{tabular};
-		displayTabularSql( $result ) if $tabular;
+		if( $tabular ){
+			displayTabularSql( $result->{output} );
+		} else {
+			Mods::Toops::msgVerbose( "do not display tabular result as opts->{tabular}='false'" );
+		}
 	}
 	return $result;
 }
@@ -260,8 +267,8 @@ sub execSqlCommand {
 # the working-on instance has been set by checkInstanceOpt() function
 sub getDatabaseTables {
 	my ( $database ) = @_;
-	my $list = Mods::Dbms::toPackage( 'apiGetDatabaseTables', undef, $database );
-	return $list;
+	my $result = Mods::Dbms::toPackage( 'apiGetDatabaseTables', undef, $database );
+	return $result->{output} || [];
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -269,8 +276,8 @@ sub getDatabaseTables {
 # the working-on instance has been set by checkInstanceOpt() function
 sub getLiveDatabases {
 	my ( $dbms ) = @_;
-	my $list = Mods::Dbms::toPackage( 'apiGetInstanceDatabases', $dbms );
-	return $list;
+	my $result = Mods::Dbms::toPackage( 'apiGetInstanceDatabases', $dbms );
+	return $result->{output} || [];
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -290,7 +297,7 @@ sub pad {
 # return true|false
 sub restoreDatabase {
 	my ( $parms ) = @_;
-	my $result = false;
+	my $result = undef;
 	my $dbms = Mods::Dbms::_buildDbms();
 	Mods::Toops::msgErr( "Dbms::restoreDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
 	Mods::Toops::msgErr( "Dbms::restoreDatabase() database is mandatory, but is not specified" ) if !$parms->{database} && !$parms->{verifyonly};
@@ -299,12 +306,12 @@ sub restoreDatabase {
 	if( !Mods::Toops::errs()){
 		$result = Mods::Dbms::toPackage( 'apiRestoreDatabase', $dbms, $parms );
 	}
-	if( !$result ){
-		Mods::Toops::msgErr( "Dbms::restoreDatabase() $parms->{instance}\\$parms->{database} NOT OK" );
-	} else {
+	if( $result && $result->{ok} ){
 		Mods::Toops::msgVerbose( "Dbms::restoreDatabase() returning status='true'" );
+	} else {
+		Mods::Toops::msgErr( "Dbms::restoreDatabase() $parms->{instance}\\$parms->{database} NOT OK" );
 	}
-	return $result;
+	return $result && $result->{ok};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -335,7 +342,7 @@ sub setInstanceByName {
 
 # -------------------------------------------------------------------------------------------------
 # address a function in the package which deserves the named instance
-#  and returns the result
+#  and returns the result which is expected to be a hash with (at least) a 'ok' key, or undef
 sub toPackage {
 	my ( $fname, $dbms, $parms ) = @_;
 	my $result = undef;
@@ -356,8 +363,8 @@ sub toPackage {
 		} else {
 			Mods::Toops::msgErr( "unable to find a package to address '$dbms->{instance}{name}' instance" );
 		}
-		Mods::Toops::msgVerbose( "Dbms::toPackage() returning with result='".( defined $result ? ( $result ? 'true':'false' ) : '(undef)' )."'" );
 	}
+	Mods::Toops::msgVerbose( "Dbms::toPackage() returning with result='".( defined $result ? ( $result->{ok} ? 'true':'false' ) : '(undef)' )."'" );
 	return $result;
 }
 
