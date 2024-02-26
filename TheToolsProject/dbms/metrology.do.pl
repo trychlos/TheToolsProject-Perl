@@ -146,7 +146,7 @@ sub doTablesCount {
 					push( @resultSet, $line );
 				}
 				my $set = Mods::Metrology::interpretResultSet( @resultSet );
-				$count += Mods::Metrology::publish( "dbms/$instance/database/$db/table/$tab", $set );
+				$count += Mods::Metrology::publish( "dbms/$opt_instance/database/$db/table/$tab", $set );
 			}
 		}
 	}
