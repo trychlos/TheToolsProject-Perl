@@ -8,6 +8,8 @@ use strict;
 use warnings;
 
 use Data::Dumper;
+use HTTP::Request::Common;
+use LWP::UserAgent;
 use Sys::Hostname qw( hostname );
 
 use Mods::Constants qw( :all );
@@ -60,6 +62,41 @@ sub interpretResultSet {
 		push( @result, $res );
 	}
 	return \@result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# publish the provided results sets to Prometheus push gateway
+# (I):
+# - path
+# - comments as an array ref
+# - metrics+values as a hash ref
+# (O):
+# - return true|false
+sub prometheusPush {
+	my ( $path, $comments, $values ) = @_;
+	my $res = true;
+	my $TTPVars = Mods::Toops::TTPVars();
+	if( $TTPVars->{config}{toops}{prometheus}{url} ){
+		my $url = $TTPVars->{config}{toops}{prometheus}{url};
+		$url .= "$path" if length $path;
+		my $ua = LWP::UserAgent->new();
+		my $req = HTTP::Request->new( POST => $url );
+		my $str = join( "\n", @{$comments} );
+		my $fields = [];
+		foreach my $key ( keys %{$values} ){
+			push( @{$fields}, "$key $values->{$key}" );
+		}
+		$str .= "\n".join( "\n", @{$fields} )."\n";
+		Mods::Toops::msgVerbose( "Metrology::prometheusPush() posting '$str' to url='$url'" );
+		$req->content( $str );
+		my $response = $ua->request( $req );
+		$res = $response->is_success;
+		#print Dumper( $response );
+		Mods::Toops::msgVerbose( "Metrology::prometheusPush() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
+	} else {
+		Mods::Toops::msgVerbose( "calling Metrology::prometheusPush() while TTPVars->{config}{toops}{prometheus}{url} is undef" );
+	}
+	return $res;
 }
 
 # -------------------------------------------------------------------------------------------------

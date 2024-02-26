@@ -68,7 +68,8 @@
 		},
 		"executionReport": {
 			"withFile": true,
-			"withMqtt": true
+			"withMqtt": true,
+			"withPrometheus": true
 		},
 		"SMTP": {
 			"host": "mail.trychlos.org",
@@ -94,6 +95,13 @@
 					"command": "robocopy <SOURCE> <TARGET> /MIR"
 				}
 			}
+		},
+		"metrology": {
+			"withMqtt": true,
+			"withPrometheus": true
+		},
+		"prometheus": {
+			"url": "http://localhost:9091/metrics"
 		}
 	},
 	"site_comments": [

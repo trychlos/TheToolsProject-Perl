@@ -23,6 +23,7 @@ use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::MessageLevel qw( :all );
+use Mods::Metrology;
 use Mods::Path;
 
 # autoflush STDOUT
@@ -328,6 +329,7 @@ sub execReportByCommand {
 	$data->{dummy} = $TTPVars->{run}{dummy};
 	execReportToFile( $data, $opts );
 	execReportToMqtt( $data, $opts );
+	execReportToPrometheus( $data, $opts );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -360,33 +362,96 @@ sub execReportToMqtt {
 		msgVerbose( "execReportToMqtt() TTPVars->{config}{toops}{executionReport}{withMqtt} is undef" );
 	}
 	if( $TTPVars->{config}{toops}{executionReport}{withMqtt} ){
+		my %reportHash = %$report;
+		my $reportCopy = \%reportHash;
 		my $topic = uc hostname;
-		delete $report->{host} if exists $report->{host};
+		delete $reportCopy->{host} if exists $reportCopy->{host};
 		$topic .= "/executionReport";
-		if( $report->{command} ){
-			$topic .= "/$report->{command}";
-			delete $report->{command};
+		if( $reportCopy->{command} ){
+			$topic .= "/$reportCopy->{command}";
+			delete $reportCopy->{command};
 		}
-		if( $report->{verb} ){
-			$topic .= "/$report->{verb}";
-			delete $report->{verb};
+		if( $reportCopy->{verb} ){
+			$topic .= "/$reportCopy->{verb}";
+			delete $reportCopy->{verb};
 		}
 		if( $opts->{topic} && ref( $opts->{topic} ) eq 'ARRAY' ){
 			foreach my $it ( @{$opts->{topic}} ){
-				if( exists( $report->{$it} )){
-					$topic .= "/$report->{$it}";
-					delete $report->{$it};
+				if( exists( $reportCopy->{$it} )){
+					$topic .= "/$reportCopy->{$it}";
+					delete $reportCopy->{$it};
 				}
 			}
 		}
 		my $json = JSON->new;
-		my $message = $json->encode( $report );
+		my $message = $json->encode( $reportCopy );
 		my $verbose = '';
 		$verbose = "-verbose" if $TTPVars->{run}{verbose};
 		my $retain = '';
 		$retain = '-retain' if $opts->{retain};
 		my $stdout = `mqtt.pl publish -topic $topic -payload "\"$message\"" $verbose $retain`;
 		print $stdout;
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# send an execution report to the Prometheus push gateway if Toops is configured for
+# this must be formatted as /job/<job_name>/label/<label_value>...
+# (I):
+# - the data to be written
+sub execReportToPrometheus {
+	my ( $report, $opts ) = @_;
+	if( exists( $TTPVars->{config}{toops}{executionReport}{withPrometheus} )){
+		msgVerbose( "execReportToPrometheus() TTPVars->{config}{toops}{executionReport}{withPrometheus}=$TTPVars->{config}{toops}{executionReport}{withPrometheus}" );
+	} else {
+		msgVerbose( "execReportToPrometheus() TTPVars->{config}{toops}{executionReport}{withPrometheus} is undef" );
+	}
+	if( $TTPVars->{config}{toops}{executionReport}{withPrometheus} ){
+		my %reportHash = %$report;
+		my $reportCopy = \%reportHash;
+		my $path = "/job";
+		my $metricRoot = "executionReport";
+		if( $TTPVars->{run}{command}{name} ){
+			$metricRoot .= "_$TTPVars->{run}{command}{name}";
+			delete $reportCopy->{command} if $reportCopy->{command};
+			if( $reportCopy->{verb} ){
+				$metricRoot .= "_$reportCopy->{verb}";
+				delete $reportCopy->{verb};
+			}
+		}
+		$path .= "/$metricRoot";
+		my $labelsArray = [];
+		if( $opts->{topic} && ref( $opts->{topic} ) eq 'ARRAY' ){
+			foreach my $it ( @{$opts->{topic}} ){
+				if( exists( $reportCopy->{$it} )){
+					#push( @{$labelsArray}, "$it=\"\"" );
+					$path .= "/$it/$reportCopy->{$it}";
+					delete $reportCopy->{$it};
+				}
+			}
+		}
+		push( @{$labelsArray}, "host=\"$reportCopy->{host}\"" );
+		delete $reportCopy->{host};
+		my $labels = "{".join( ',', @{$labelsArray} )."}";
+		my $metric = $metricRoot."_code";
+		Mods::Metrology::prometheusPush( $path, [
+			"# HELP $metric Job exit code (0=success)",
+			"# TYPE $metric gauge" ], {
+			"$metric$labels" => $reportCopy->{code}
+		});
+		$metric = $metricRoot."_started";
+		Mods::Metrology::prometheusPush( $path, [
+			"# HELP $metric Job start timestamp",
+			"# TYPE $metric gauge" ], {
+			"$metric$labels" => ( $TTPVars->{run}{command}{started}->epoch * 1000 )+$TTPVars->{run}{command}{started}->millisecond
+		});
+		$metric = $metricRoot."_ended";
+		my $tm = Time::Moment->now;
+		Mods::Metrology::prometheusPush( $path, [
+			"# HELP $metric Job end timestamp",
+			"# TYPE $metric gauge" ], {
+			"$metric$labels" => ( $tm->epoch * 1000 )+$tm->millisecond
+		});
 	}
 }
 
