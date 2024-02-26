@@ -64,6 +64,7 @@ reserved           data               index_size         unused
 
 # -------------------------------------------------------------------------------------------------
 # modify the result set to move the units to the column names
+# remove the database_name from the published result
 sub _modifySet {
 	my ( $set ) = @_;
 	my @res = ();
@@ -72,7 +73,8 @@ sub _modifySet {
 		foreach my $key ( keys %{$row} ){
 			# unchanged keys
 			if( $key eq "database_name" ){
-				$it->{$key} = $row->{$key};
+				#$it->{$key} = $row->{$key};
+				next;
 			} else {
 				my $data = $row->{$key};
 				my @words = split( /\s+/, $data );
@@ -114,7 +116,8 @@ sub doDbSize {
 			if( scalar @resultSet == 3 ){
 				my $set = Mods::Metrology::interpretResultSet( @resultSet );
 				$set = _modifySet( $set );
-				$count += Mods::Metrology::publish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$count });
+				$count += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$count });
+				Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db", $set, { prefix => 'metrology_dbms_dbsize_' });
 				@resultSet = ();
 			}
 		}
@@ -146,7 +149,8 @@ sub doTablesCount {
 					push( @resultSet, $line );
 				}
 				my $set = Mods::Metrology::interpretResultSet( @resultSet );
-				$count += Mods::Metrology::publish( "dbms/$opt_instance/database/$db/table/$tab", $set );
+				$count += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/table/$tab", $set );
+				Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db/table/$tab", $set, { prefix => 'metrology_dbms_' });
 			}
 		}
 	}
@@ -220,7 +224,7 @@ if( scalar @databases ){
 
 # if no option is given, have a warning message
 if( !$opt_dbsize && !$opt_tabcount ){
-	Mods::Toop::msgWarn( "no measure has been requested, exiting gracefully" );
+	Mods::Toops::msgWarn( "no measure has been requested, exiting gracefully" );
 
 } elsif( !Mods::Toops::errs()){
 	doDbSize() if $opt_dbsize;

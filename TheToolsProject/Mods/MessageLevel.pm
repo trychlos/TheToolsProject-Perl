@@ -141,7 +141,7 @@ sub print {
 	my $withLog = true;
 	$withLog = $args->{withLog} if exists $args->{withLog};
 	Mods::Toops::msgLogAppend( $line ) if $withLog;
-	#output to the console ?
+	# output to the console ?
 	my $withConsole = true;
 	$withConsole = $args->{withConsole} if exists $args->{withConsole};
 	if( $withConsole ){

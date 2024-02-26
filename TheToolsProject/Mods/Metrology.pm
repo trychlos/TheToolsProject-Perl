@@ -65,6 +65,87 @@ sub interpretResultSet {
 }
 
 # -------------------------------------------------------------------------------------------------
+# publish the provided results sets to MQTT bus
+# (I):
+# - topic string
+# - result set
+# - an optional options hash with following keys:
+#   > maxCount: the maximum count of messages to be published (ignored if less than zero)
+# (O):
+# returns the count of published messages
+sub mqttPublish {
+	my ( $root, $set, $opts ) = @_;
+	$opts //= {};
+	my $TTPVars = Mods::Toops::TTPVars();
+	if( exists( $TTPVars->{config}{toops}{metrology}{withMqtt} )){
+		Mods::Toops::msgVerbose( "Metrology::mqttPublish() TTPVars->{config}{toops}{metrology}{withMqtt}=$TTPVars->{config}{toops}{metrology}{withMqtt}" );
+	} else {
+		Mods::Toops::msgVerbose( "Metrology::mqttPublish() TTPVars->{config}{toops}{metrology}{withMqtt} is undef" );
+	}
+	my $count = 0;
+	if( $TTPVars->{config}{toops}{metrology}{withMqtt} ){
+		my $host = uc hostname;
+		my $max = -1;
+		$max = $opts->{maxCount} if exists( $opts->{maxCount} ) && $opts->{maxCount} >= 0;
+		foreach my $it ( @{$set} ){
+			last if $count >= $max && $max >= 0;
+			foreach my $key ( keys %{$it} ){
+				last if $count >= $max && $max >= 0;
+				my $command = "mqtt.pl publish -topic $host/metrology/$root/$key -payload \"$it->{$key}\"";
+				Mods::Toops::msgOut( "  $command" );
+				`$command`;
+				$count += 1;
+			}
+		}
+	}
+	return $count;
+}
+
+# -------------------------------------------------------------------------------------------------
+# publish the provided results sets to Prometheus pushgateway
+# (I):
+# - topic string
+# - result set
+# - an optional options hash with following keys:
+#   > prefix, a prefix to the metric name
+# (O):
+# returns the count of published messages
+sub prometheusPublish {
+	my ( $path, $set, $opts ) = @_;
+	$opts //= {};
+	my $TTPVars = Mods::Toops::TTPVars();
+	if( exists( $TTPVars->{config}{toops}{metrology}{withPrometheus} )){
+		Mods::Toops::msgVerbose( "Metrology::prometheusPublish() TTPVars->{config}{toops}{metrology}{withPrometheus}=$TTPVars->{config}{toops}{metrology}{withPrometheus}" );
+	} else {
+		Mods::Toops::msgVerbose( "Metrology::prometheusPublish() TTPVars->{config}{toops}{metrology}{withPrometheus} is undef" );
+	}
+	my $count = 0;
+	my $prefix = "";
+	$prefix = $opts->{prefix} if $opts->{prefix};
+	if( $TTPVars->{config}{toops}{metrology}{withPrometheus} ){
+		my $url = $TTPVars->{config}{toops}{prometheus}{url};
+		$url .= "/job/metrology/host/".uc hostname;
+		$url .= "/$path" if length $path;
+		my $ua = LWP::UserAgent->new();
+		my $req = HTTP::Request->new( POST => $url );
+		foreach my $it ( @{$set} ){
+			foreach my $key ( keys %{$it} ){
+				my $metric = $prefix.$key;
+				my $str = "# TYPE $metric gauge\n";
+				$str .= "$metric $it->{$key}\n";
+				Mods::Toops::msgVerbose( "Metrology::prometheusPublish() posting '$str' to url='$url'" );
+				$req->content( $str );
+				my $response = $ua->request( $req );
+				#print Dumper( $response );
+				Mods::Toops::msgVerbose( "Metrology::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
+				$count += 1 if $response->is_success;
+			}
+		}
+	}
+	return $count;
+}
+
+# -------------------------------------------------------------------------------------------------
 # publish the provided results sets to Prometheus push gateway
 # (I):
 # - path
@@ -97,35 +178,6 @@ sub prometheusPush {
 		Mods::Toops::msgVerbose( "calling Metrology::prometheusPush() while TTPVars->{config}{toops}{prometheus}{url} is undef" );
 	}
 	return $res;
-}
-
-# -------------------------------------------------------------------------------------------------
-# publish the provided results sets to MQTT bus
-# (E):
-# - topic string
-# - result set
-# - an optional options hash with following keys:
-#   > maxCount: the maximum count of messages to be published (ignored if less than zero)
-# (R):
-# returns the count of published messages
-sub publish {
-	my ( $root, $set, $opts ) = @_;
-	$opts //= {};
-	my $host = uc hostname;
-	my $max = -1;
-	$max = $opts->{maxCount} if exists( $opts->{maxCount} ) && $opts->{maxCount} >= 0;
-	my $count = 0;
-	foreach my $it ( @{$set} ){
-		last if $count >= $max && $max >= 0;
-		foreach my $key ( keys %{$it} ){
-			last if $count >= $max && $max >= 0;
-			my $command = "mqtt.pl publish -topic $host/metrology/$root/$key -payload \"$it->{$key}\"";
-			Mods::Toops::msgOut( "  $command" );
-			`$command`;
-			$count += 1;
-		}
-	}
-	return $count;
 }
 
 1;
