@@ -79,6 +79,7 @@ sub _interpretDbResultSet {
 			next if $key eq "database_name";
 			# moving the unit to the column name
 			my $data = $row->{$key};
+			$key =~ s/\s/_/g;
 			my @words = split( /\s+/, $data );
 			$result->{$key.'_'.$words[1]} = $words[0];
 		}
@@ -111,7 +112,7 @@ sub doDbSize {
 		#print Dumper( $resultSets );
 		my $set = _interpretDbResultSet( $resultSets );
 		$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$mqttCount });
-		#$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db", $set, { prefix => 'metrology_dbms_dbsize_' });
+		$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db", $set, { prefix => 'metrology_dbms_dbsize_' });
 	}
 	Mods::Toops::msgOut( "$mqttCount message(s) published on MQTT bus, $prometheusCount metric(s) published to Prometheus" );
 }
@@ -137,7 +138,7 @@ sub doTablesCount {
 				my $set = $resultSet->[0];
 				$set->{rows_count} = 0 if !defined $set->{rows_count};
 				$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/table/$tab", $set );
-				#$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db/table/$tab", $set, { prefix => 'metrology_dbms_' });
+				$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db/table/$tab", $set, { prefix => 'metrology_dbms_' });
 			}
 		}
 	}

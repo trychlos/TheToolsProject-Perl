@@ -101,7 +101,7 @@ sub mqttPublish {
 # publish the provided results sets to Prometheus pushgateway
 # (I):
 # - topic string
-# - result set
+# - result set as a hash ref
 # - an optional options hash with following keys:
 #   > prefix, a prefix to the metric name
 # (O):
@@ -122,20 +122,20 @@ sub prometheusPublish {
 		my $url = $TTPVars->{config}{toops}{prometheus}{url};
 		$url .= "/job/metrology/host/".uc hostname;
 		$url .= "/$path" if length $path;
+		$url =~ s/\./_/g;
 		my $ua = LWP::UserAgent->new();
 		my $req = HTTP::Request->new( POST => $url );
-		foreach my $it ( @{$set} ){
-			foreach my $key ( keys %{$it} ){
-				my $metric = $prefix.$key;
-				my $str = "# TYPE $metric gauge\n";
-				$str .= "$metric $it->{$key}\n";
-				Mods::Toops::msgVerbose( "Metrology::prometheusPublish() posting '$str' to url='$url'" );
-				$req->content( $str );
-				my $response = $ua->request( $req );
-				#print Dumper( $response );
-				Mods::Toops::msgVerbose( "Metrology::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
-				$count += 1 if $response->is_success;
-			}
+		foreach my $key ( keys %{$set} ){
+			my $metric = $prefix.$key;
+			$metric =~ s/\./_/g;
+			my $str = "# TYPE $metric gauge\n";
+			$str .= "$metric $set->{$key}\n";
+			Mods::Toops::msgVerbose( "Metrology::prometheusPublish() posting '$str' to url='$url'" );
+			$req->content( $str );
+			my $response = $ua->request( $req );
+			Mods::Toops::msgVerbose( "Metrology::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
+			$count += 1 if $response->is_success;
+			Mods::Toops::msgWarn( "Metrology::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content ) if !$response->is_success;
 		}
 	}
 	return $count;
