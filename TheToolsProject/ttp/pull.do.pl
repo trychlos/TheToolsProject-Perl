@@ -1,4 +1,4 @@
-# @(#) pull code et configurations from a reference machine
+# @(#) pull code and configurations from a reference machine
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
@@ -105,7 +105,7 @@ sub doPull {
 	if( $done == $asked && !Mods::Toops::errs()){
 		Mods::Toops::msgOut( "success ($str)" );
 	} else {
-		Mods::Tools::msgErr( "NOT OK ($str)" );
+		Mods::Toops::msgErr( "NOT OK ($str)" );
 	}
 }
 
