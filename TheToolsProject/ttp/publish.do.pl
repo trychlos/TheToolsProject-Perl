@@ -41,7 +41,7 @@ sub doPublish {
 		Mods::Toops::msgOut( "  to $dir" );
 		Mods::Toops::msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
 		if( !Mods::Toops::wantsDummy()){
-			my( $num_of_files_and_dirs, $num_of_dirs, $depth_traversed ) = File::Copy::Recursive->dircopy( $srcdir, $dir );
+			my( $num_of_files_and_dirs, $num_of_dirs, $depth_traversed ) = dircopy( $srcdir, $dir );
 			Mods::Toops::msgVerbose( "num_of_files_and_dirs='$num_of_files_and_dirs'" );
 			Mods::Toops::msgVerbose( "num_of_dirs='$num_of_dirs'" );
 			Mods::Toops::msgVerbose( "depth_traversed='$depth_traversed'" );
