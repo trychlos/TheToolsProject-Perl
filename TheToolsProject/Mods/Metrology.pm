@@ -126,7 +126,6 @@ sub prometheusPublish {
 		my $url = $TTPVars->{config}{toops}{prometheus}{url};
 		$url .= "/job/metrology/host/".uc hostname;
 		$url .= "/$path" if length $path;
-		$url =~ s/\./_/g;
 		my $ua = LWP::UserAgent->new();
 		my $req = HTTP::Request->new( POST => $url );
 		foreach my $key ( keys %{$set} ){
