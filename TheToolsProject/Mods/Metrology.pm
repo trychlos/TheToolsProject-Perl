@@ -110,15 +110,19 @@ sub prometheusPublish {
 	my ( $path, $set, $opts ) = @_;
 	$opts //= {};
 	my $TTPVars = Mods::Toops::TTPVars();
-	if( exists( $TTPVars->{config}{toops}{metrology}{withPrometheus} )){
-		Mods::Toops::msgVerbose( "Metrology::prometheusPublish() TTPVars->{config}{toops}{metrology}{withPrometheus}=$TTPVars->{config}{toops}{metrology}{withPrometheus}" );
-	} else {
-		Mods::Toops::msgVerbose( "Metrology::prometheusPublish() TTPVars->{config}{toops}{metrology}{withPrometheus} is undef" );
+	my $withPrometheus = false;
+	if( exists $TTPVars->{config}{toops}{metrology}{withPrometheus} ){
+		$withPrometheus = $TTPVars->{config}{toops}{metrology}{withPrometheus};
+		Mods::Toops::msgVerbose( "setting withPrometheus='".( $withPrometheus ? 'true' : 'false' )."' from toops configuration" );
+	}
+	if( exists $TTPVars->{config}{host}{metrology}{withPrometheus} ){
+		$withPrometheus = $TTPVars->{config}{host}{metrology}{withPrometheus};
+		Mods::Toops::msgVerbose( "setting withPrometheus='".( $withPrometheus ? 'true' : 'false' )."' from host configuration" );
 	}
 	my $count = 0;
-	my $prefix = "";
-	$prefix = $opts->{prefix} if $opts->{prefix};
-	if( $TTPVars->{config}{toops}{metrology}{withPrometheus} ){
+	if( $withPrometheus ){
+		my $prefix = "";
+		$prefix = $opts->{prefix} if $opts->{prefix};
 		my $url = $TTPVars->{config}{toops}{prometheus}{url};
 		$url .= "/job/metrology/host/".uc hostname;
 		$url .= "/$path" if length $path;

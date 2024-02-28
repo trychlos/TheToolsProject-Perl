@@ -132,6 +132,12 @@
 		"dbms": {
 			"archivesRoot": "\\\\ftpback-rbx4-48.ovh.net\\ns230134.ovh.net\\[eval:uc hostname]\\SQLBackups"
 		},
+		"metrology": {
+			"withPrometheus_comments": [
+				"the Prometheus pushgateway binary doesn't run on Win2008R2, but crashdump"
+			],
+			"withPrometheus": false
+		},
 		"remoteShare": "\\\\ns230134.ovh.net\\C",
 		"MQTT": {
 			"broker": "10.122.1.15",
