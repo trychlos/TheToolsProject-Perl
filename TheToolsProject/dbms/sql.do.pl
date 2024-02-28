@@ -9,6 +9,7 @@
 # @(-) --script=<filename>     the sql script filename [${script}]
 # @(-) --command=<command>     the sql command as a string [${command}]
 # @(-) --[no]tabular           format the output as tabular data [${tabular}]
+# @(-) --[no]multiple          whether we expect several result sets [${multiple}]
 #
 # @(@) The provided SQL script may or may not have a displayable result. Nonetheless, this verb will always display all the script output.
 # @(@) In a Windows command prompt, use Ctrl+Z to terminate the stdin stream (or use a HERE document).
@@ -34,7 +35,8 @@ my $defaults = {
 	stdin => 'no',
 	script => '',
 	command => '',
-	tabular => 'no'
+	tabular => 'no',
+	multiple => 'no'
 };
 
 my $opt_instance = $defaults->{instance};
@@ -42,18 +44,21 @@ my $opt_stdin = false;
 my $opt_script = $defaults->{script};
 my $opt_command = $defaults->{command};
 my $opt_tabular = false;
+my $opt_multiple = false;
 
 # -------------------------------------------------------------------------------------------------
 # Dbms::execSqlCommand returns a hash with:
-# -result: true|false
-# - output: an array of output
+# - ok: true|false
+# - result: the result set as an array ref
+#   an array of hashes for a single set, or an array of arrays of hashes in case of a multiple result sets
+# - stdout: an array of what has been printed (which are often error messages)
 sub _result {
 	my ( $res ) = @_;
-	if( $res->{output} && scalar @{$res->{output}} && !$opt_tabular ){
+	if( $res->{ok} && scalar @{$res->{result}} && !$opt_tabular ){
 		my $isHash = false;
-		foreach my $it ( @{$res->{output}} ){
+		foreach my $it ( @{$res->{result}} ){
 			$isHash = true if ref( $it ) eq 'HASH';
-			print $it;
+			print $it if !ref( $it );
 		}
 		if( $isHash ){
 			Mods::Toops::msgWarn( "result contains data, should have been displayed with '--tabular' option" );
@@ -75,8 +80,7 @@ sub execSqlStdin {
 	}
 	chomp $command;
 	Mods::Toops::msgVerbose( "executing '$command' from stdin" );
-	my $res = Mods::Dbms::execSqlCommand( $command, { tabular => $opt_tabular });
-	_result( $res );
+	_result( Mods::Dbms::execSqlCommand( $command, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -85,16 +89,14 @@ sub execSqlScript {
 	Mods::Toops::msgVerbose( "executing from '$opt_script'" );
 	my $sql = path( $opt_script )->slurp_utf8;
 	Mods::Toops::msgVerbose( "sql='$sql'" );
-	my $res = Mods::Dbms::execSqlCommand( $sql, { tabular => $opt_tabular });
-	_result( $res );
+	_result( Mods::Dbms::execSqlCommand( $sql, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
 # -------------------------------------------------------------------------------------------------
 # execute the sql command to be read from stdin
 sub execSqlCommand {
 	Mods::Toops::msgVerbose( "executing command='$opt_command'" );
-	my $res = Mods::Dbms::execSqlCommand( $opt_command, { tabular => $opt_tabular });
-	_result( $res );
+	_result( Mods::Dbms::execSqlCommand( $opt_command, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
 # =================================================================================================
@@ -110,7 +112,8 @@ if( !GetOptions(
 	"stdin!"			=> \$opt_stdin,
 	"script=s"			=> \$opt_script,
 	"command=s"			=> \$opt_command,
-	"tabular!"			=> \$opt_tabular )){
+	"tabular!"			=> \$opt_tabular,
+	"multiple!"			=> \$opt_multiple )){
 
 		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -129,6 +132,7 @@ Mods::Toops::msgVerbose( "found stdin='".( $opt_stdin ? 'true':'false' )."'" );
 Mods::Toops::msgVerbose( "found script='$opt_script'" );
 Mods::Toops::msgVerbose( "found command='$opt_command'" );
 Mods::Toops::msgVerbose( "found tabular='".( $opt_tabular ? 'true':'false' )."'" );
+Mods::Toops::msgVerbose( "found multiple='".( $opt_multiple ? 'true':'false' )."'" );
 
 # instance is mandatory
 Mods::Dbms::checkInstanceOpt( $opt_instance );

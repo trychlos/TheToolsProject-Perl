@@ -238,4 +238,14 @@ sub toopsConfigurationPath {
 	return File::Spec->catdir( siteConfigurationsDir(), "toops.json" );
 }
 
+# -------------------------------------------------------------------------------------------------
+# Make sure we returns a path with a traiing separator
+sub withTrailingSeparator {
+	my $dir = shift;
+	$dir = Mods::Toops::pathRemoveTrailingSeparator( $dir );
+	my $sep = File::Spec->catdir( '' );
+	$dir .= $sep;
+	return $dir;
+}
+
 1;

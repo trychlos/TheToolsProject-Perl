@@ -185,32 +185,55 @@ sub computeDefaultBackupFilename {
 # -------------------------------------------------------------------------------------------------
 # Display a variable starting with its reference
 # expects a data variable (not a reference to code, or so)
-# a SqlResult is just an array of hashes
+# a SqlResult is just an array of hashes, or an array of array of hashes in the case of a multiple result sets
 sub displayTabularSql {
-	my ( $ref ) = @_;
-	# if the result won't provide any data, just give up
-	if( !ref( $ref )){
-		msgVerbose( "Dbms::displayTabularSql() got a scalar '$ref', so give up" );
+	my ( $result ) = @_;
+	my $ref = ref( $result );
+	# expects an array, else just give up
+	if( $ref ne 'ARRAY' ){
+		Mods::Toops::msgVerbose( "Dbms::displayTabularSql() expected an array, but found '$ref', so just give up" );
+		return;
+	}
+	if( !scalar @{$result} ){
+		Mods::Toops::msgVerbose( "Dbms::displayTabularSql() got an empty array, so just give up" );
+		return;
+	}
+	# expects an array of hashes
+	# if we got an array of arrays, then this is a multiple result sets and recurse
+	$ref = ref( $result->[0] );
+	if( $ref eq 'ARRAY' ){
+		foreach my $set ( @{$result} ){
+			displayTabularSql( $set );
+		}
+		return;
+	}
+	if( $ref ne 'HASH' ){
+		Mods::Toops::msgVerbose( "Dbms::displayTabularSql() expected an array of hashes, but found an array of '$ref', so just give up" );
 		return;
 	}
 	# first compute the max length of each field name + keep the same field order
 	my $lengths = {};
 	my @fields = ();
-	foreach my $key ( keys %{@{$ref}[0]} ){
+	foreach my $key ( keys %{@{$result}[0]} ){
 		push( @fields, $key );
 		$lengths->{$key} = length $key;
 	}
 	# and for each field, compute the max length content
-	foreach my $it ( @{$ref} ){
+	my $haveWarned = false;
+	foreach my $it ( @{$result} ){
 		foreach my $key ( keys %{$it} ){
-			if( $it->{$key} && length $it->{$key} > $lengths->{$key} ){
-				$lengths->{$key} = length $it->{$key};
+			if( $lengths->{$key} ){
+				if( $it->{$key} && length $it->{$key} > $lengths->{$key} ){
+					$lengths->{$key} = length $it->{$key};
+				}
+			} elsif( !$haveWarned ){
+				Mods::Toops::msgWarn( "found a row with different result set, do you have omit '--multiple' option ?" );
+				$haveWarned = true;
 			}
 		}
 	}
 	# and last display the full resulting array
 	# have a carriage return to be aligned on line beginning in log files
-	print EOL;
 	foreach my $key ( @fields ){
 		print pad( "+", $lengths->{$key}+3, '-' );
 	}
@@ -223,7 +246,7 @@ sub displayTabularSql {
 		print pad( "+", $lengths->{$key}+3, '-' );
 	}
 	print "+".EOL;
-	foreach my $it ( @{$ref} ){
+	foreach my $it ( @{$result} ){
 		foreach my $key ( @fields ){
 			print pad( "| ".( $it->{$key} || "" ), $lengths->{$key}+3, ' ' );
 		}
@@ -241,20 +264,25 @@ sub displayTabularSql {
 # - the command string to be executed
 # - an optional options hash which may contain following keys:
 #   > tabular: whether to format data as tabular data, defaulting to true
+#   > multiple: whether we expect several result sets, defaulting to false
 # (O):
 # returns a hash ref with following keys:
 # - ok: true|false
-# - output: an array ref to hash results
+# - result: an array ref to hash results
 sub execSqlCommand {
 	my ( $command, $opts ) = @_;
 	$opts //= {};
 	my $dbms = Mods::Dbms::_buildDbms();
-	my $result = Mods::Dbms::toPackage( 'apiExecSqlCommand', $dbms, $command );
+	my $parms = {
+		command => $command,
+		opts => $opts
+	};
+	my $result = Mods::Dbms::toPackage( 'apiExecSqlCommand', $dbms, $parms );
 	if( $result && $result->{ok} ){
 		my $tabular = true;
 		$tabular = $opts->{tabular} if exists $opts->{tabular};
 		if( $tabular ){
-			displayTabularSql( $result->{output} );
+			displayTabularSql( $result->{result} );
 		} else {
 			Mods::Toops::msgVerbose( "do not display tabular result as opts->{tabular}='false'" );
 		}
@@ -278,6 +306,64 @@ sub getLiveDatabases {
 	my ( $dbms ) = @_;
 	my $result = Mods::Dbms::toPackage( 'apiGetInstanceDatabases', $dbms );
 	return $result->{output} || [];
+}
+
+# -------------------------------------------------------------------------------------------------
+# Converts back the output of displayTabularSql() function to an array of hashes
+# as the only way for an external command to get the output of a sql batch is to pass through a tabular display output and re-interpretation
+# (I):
+# - an array of the lines outputed by a 'dbms.pl sql -tabular' command, which may contains several result sets
+#   it is expected the output has already be filtered through Toops::ttpFilter()
+# (O):
+# returns:
+# - an array of hashes if we have found a single result set
+# - an array of arrays of hashes if we have found several result sets
+sub hashFromTabular {
+	my ( $output ) = @_;
+	my $result = [];
+	my $multiple = false;
+	my $array = [];
+	my $sepCount = 0;
+	my @columns = ();
+	foreach my $line ( @{$output} ){
+		if( $line =~ /^\+---/ ){
+			$sepCount += 1;
+			next;
+		}
+		# found another result set
+		if( $sepCount == 4 ){
+			$multiple = true;
+			push( @{$result}, $array );
+			$array = [];
+			@columns = ();
+			$sepCount = 1;
+		}
+		# header line -> provide column names
+		if( $sepCount == 1 ){
+			@columns = split( /\s*\|\s*/, $line );
+			shift @columns;
+		}
+		# get data
+		if( $sepCount == 2 ){
+			my @data = split( /\s*\|\s*/, $line );
+			shift @data;
+			my $row = {};
+			for( my $i=0 ; $i<scalar @columns ; ++$i ){
+				$row->{$columns[$i]} = $data[$i];
+			}
+			push( @{$array}, $row );
+		}
+		# end of the current result set
+		#if( $sepCount == 3 ){
+		#}
+	}
+	# at the end, either push the current array, or set it
+	if( $multiple ){
+		push( @{$result}, $array );
+	} else {
+		$result = $array;
+	}
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------

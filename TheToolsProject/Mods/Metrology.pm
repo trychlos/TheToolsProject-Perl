@@ -21,10 +21,9 @@ sub _hostname {
 }
 
 # -------------------------------------------------------------------------------------------------
-# get the lines of a result set, returns the interpreted hash
-# first line gives column names
-# second line gives column width
-# third line and others give data
+# get the lines of a result set got from 'dbms.pl sql -tabular' output, returns the interpreted hash
+# first line gives column names and column width
+# second line and others give data
 # may happen that column names include space; so only rely on columns width to split
 sub interpretResultSet {
 	my @set = @_;
@@ -68,7 +67,7 @@ sub interpretResultSet {
 # publish the provided results sets to MQTT bus
 # (I):
 # - topic string
-# - result set
+# - result set as a hash ref
 # - an optional options hash with following keys:
 #   > maxCount: the maximum count of messages to be published (ignored if less than zero)
 # (O):
@@ -87,15 +86,12 @@ sub mqttPublish {
 		my $host = uc hostname;
 		my $max = -1;
 		$max = $opts->{maxCount} if exists( $opts->{maxCount} ) && $opts->{maxCount} >= 0;
-		foreach my $it ( @{$set} ){
+		foreach my $key ( keys %{$set} ){
 			last if $count >= $max && $max >= 0;
-			foreach my $key ( keys %{$it} ){
-				last if $count >= $max && $max >= 0;
-				my $command = "mqtt.pl publish -topic $host/metrology/$root/$key -payload \"$it->{$key}\"";
-				Mods::Toops::msgOut( "  $command" );
-				`$command`;
-				$count += 1;
-			}
+			my $command = "mqtt.pl publish -topic $host/metrology/$root/$key -payload \"$set->{$key}\"";
+			Mods::Toops::msgVerbose( $command );
+			`$command`;
+			$count += 1;
 		}
 	}
 	return $count;

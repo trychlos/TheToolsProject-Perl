@@ -19,6 +19,7 @@ use Data::Dumper;
 
 use Mods::Dbms;
 use Mods::Metrology;
+use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -51,39 +52,38 @@ my @databases = ();
 # note that the sp_spaceused stored procedure returns:
 # - TWO resuts sets
 # - and that units are in the data: we move them to the column names
-# below a sample of the got result
+# below a sample of the got result from "dbms.pl sql -tabular -multiple" command
 =pod
-Changed database context to 'Canal33'.
-database_name                                                                                                                    database_size      unallocated space 
--------------------------------------------------------------------------------------------------------------------------------- ------------------ ------------------
-Canal33                                                                                                                          18746.06 MB        0.67 MB           
-reserved           data               index_size         unused            
------------------- ------------------ ------------------ ------------------
-19191824 KB        12965152 KB        6182104 KB         44568 KB          
++---------------+---------------+-------------------+
+| database_size | database_name | unallocated space |
++---------------+---------------+-------------------+
+| 54.75 MB      | Dom1          | 9.91 MB           |
++---------------+---------------+-------------------+
++--------+----------+------------+----------+
+| unused | reserved | index_size | data     |
++--------+----------+------------+----------+
+| 752 KB | 42464 KB | 2216 KB    | 39496 KB |
++--------+----------+------------+----------+
 =cut
 
 # -------------------------------------------------------------------------------------------------
-# modify the result set to move the units to the column names
-# remove the database_name from the published result
-sub _modifySet {
-	my ( $set ) = @_;
-	my @res = ();
-	foreach my $row ( @{$set} ){
-		my $it = {};
+# get the two result sets from sp_spaceused stored procedure
+# returns a ready-to-be-published consolidated result set
+sub _interpretDbResultSet {
+	my ( $sets ) = @_;
+	my $result = {};
+	foreach my $set ( @{$sets} ){
+		my $row = @{$set}[0];
 		foreach my $key ( keys %{$row} ){
-			# unchanged keys
-			if( $key eq "database_name" ){
-				#$it->{$key} = $row->{$key};
-				next;
-			} else {
-				my $data = $row->{$key};
-				my @words = split( /\s+/, $data );
-				$it->{$key.'_'.$words[1]} = $words[0];
-			}
+			# only publish numeric datas
+			next if $key eq "database_name";
+			# moving the unit to the column name
+			my $data = $row->{$key};
+			my @words = split( /\s+/, $data );
+			$result->{$key.'_'.$words[1]} = $words[0];
 		}
-		push( @res, $it );
 	}
-	return \@res;
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -105,23 +105,13 @@ sub doDbSize {
 	}
 	foreach my $db ( @{$list} ){
 		last if $mqttCount >= $opt_limit && $opt_limit >= 0;
+		Mods::Toops::msgOut( "  database '$db'" );
 		# sp_spaceused provides two results sets, where each one only contains one data row
-		my $sql = "use $db; exec sp_spaceused";
-		my $out = Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"$sql\"` );
-		my @resultSet = ();
-		foreach my $line ( @{$out} ){
-			# skip the first line 'Changed database context to ...' due to the 'use <database>'
-			next if $line =~ /Changed database context/;
-			#print $line.EOL;
-			push( @resultSet, $line );
-			if( scalar @resultSet == 3 ){
-				my $set = Mods::Metrology::interpretResultSet( @resultSet );
-				$set = _modifySet( $set );
-				$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$count });
-				$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db", $set, { prefix => 'metrology_dbms_dbsize_' });
-				@resultSet = ();
-			}
-		}
+		my $resultSets = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple` ));
+		#print Dumper( $resultSets );
+		my $set = _interpretDbResultSet( $resultSets );
+		$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$mqttCount });
+		#$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db", $set, { prefix => 'metrology_dbms_dbsize_' });
 	}
 	Mods::Toops::msgOut( "$mqttCount message(s) published on MQTT bus, $prometheusCount metric(s) published to Prometheus" );
 }
@@ -142,17 +132,12 @@ sub doTablesCount {
 			my $tables = Mods::Toops::ttpFilter( `dbms.pl list -instance $opt_instance -database $db -listtables` );
 			foreach my $tab ( @{$tables} ){
 				last if $mqttCount >= $opt_limit && $opt_limit >= 0;
-				my $sql = "use $db; select count(*) as rows_count from $tab";
-				my $out = Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"$sql\"` );
-				my @resultSet = ();
-				foreach my $line ( @{$out} ){
-					next if $line =~ /Changed database context/;
-					next if $line =~ /rows affected/;
-					push( @resultSet, $line );
-				}
-				my $set = Mods::Metrology::interpretResultSet( @resultSet );
+				Mods::Toops::msgOut( "  table '$tab'" );
+				my $resultSet = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular` ));
+				my $set = $resultSet->[0];
+				$set->{rows_count} = 0 if !defined $set->{rows_count};
 				$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/table/$tab", $set );
-				$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db/table/$tab", $set, { prefix => 'metrology_dbms_' });
+				#$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db/table/$tab", $set, { prefix => 'metrology_dbms_' });
 			}
 		}
 	}
@@ -214,7 +199,7 @@ if( $opt_service ){
 $opt_instance = $defaults->{instance} if !$opt_instance;
 my $instance = Mods::Dbms::checkInstanceOpt( $opt_instance );
 
-# if a database has been specified, check that it exists
+# if a database has been specified (or found), check that it exists
 if( scalar @databases ){
 	foreach my $db ( @databases ){
 		my $exists = Mods::Dbms::checkDatabaseExists( $opt_instance, $db );
@@ -222,6 +207,9 @@ if( scalar @databases ){
 			Mods::Toops::msgErr( "database '$db' doesn't exist" );
 		}
 	}
+} else {
+	Mods::Toops::msgWarn( "no database found nor specified, exiting gracefully" );
+	Mods::Toops::ttpExit();
 }
 
 # if no option is given, have a warning message

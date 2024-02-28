@@ -1147,16 +1147,6 @@ sub pathRemoveTrailingSeparator {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Make sure we returns a path with a traiing separator
-sub pathWithTrailingSeparator {
-	my $dir = shift;
-	$dir = Mods::Toops::pathRemoveTrailingSeparator( $dir );
-	my $sep = File::Spec->catdir( '' );
-	$dir .= $sep;
-	return $dir;
-}
-
-# -------------------------------------------------------------------------------------------------
 # delete a directory and all its content
 sub removeTree {
 	my ( $dir ) = @_;

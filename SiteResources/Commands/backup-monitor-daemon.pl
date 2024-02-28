@@ -265,7 +265,7 @@ sub syncedPath {
 	my $remoteSource = File::Spec->catpath( $daemon->{monitored}{config}{remoteShare}, $rl_dirs, $rl_file );
 	Mods::Toops::msgVerbose( "remoteSource='$remoteSource'" );
 	# local target
-	my $localTarget = Mods::Toops::pathWithTrailingSeparator( $daemon->{config}{localDir} );
+	my $localTarget = Mods::Path::withTrailingSeparator( $daemon->{config}{localDir} );
 	Mods::Toops::msgVerbose( "localTarget='$localTarget'" );
 	Mods::Path::makeDirExist( $daemon->{config}{localDir} );
 	my $res = Mods::Toops::copyFile( $remoteSource, $localTarget );

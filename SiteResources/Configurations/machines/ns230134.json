@@ -52,6 +52,11 @@
 			"Canal33.http": {
 			},
 			"Dom.2008": {
+				"instance": "MSSQLSERVER",
+				"databases": [
+					"Dom1",
+					"Dom33"
+				],
 				"workloads": {
 					"daily.morning": [
 						{
