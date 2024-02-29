@@ -1,0 +1,54 @@
+TTPVars
+ |
+ +- Toops					Hard-coded constants
+ |   |
+ |	 +- defaults			Some hard-coded defaults which depend of the host OS
+ |	 +- ReservedWords		Words which cannot be used for commands
+ |	 +- ConfigKeys			Main configuration keys which determine the top keys under Toops.json and config
+ |   |
+ |   +- json                Store here raw json configuration files
+ |       |
+ |       +- site
+ |       +- toops
+ |       +- host
+ |
+ +- config                  Store here dynamically evaluated json configuration files
+ |   |
+ |   +- site
+ |   +- toops
+ |   +- host
+ |
+ +- run                     Store here dynamically computed variables
+     |
+	 +- exitCode            exit code of the command/ver
+	 +- help                global command/verb boolean options
+	 +- verbose
+	 +- dummy
+	 +- colored
+	 +- help
+	 +- logsDir             logs directory (of the day)
+	 +- logsMain            main.log file (of the day)
+	 |
+	 +- command
+	 |   |
+	 |	 +- path            $0
+	 |	 +- started         Time::Moment->now
+	 |	 +- args            @ARGV deep copy
+	 |	 +- basename        e.g. 'dbms.pl'
+	 |	 +- directory       the bin/ directory where command comes from
+	 |	 +- name            e.g. 'dbms'
+	 |	 +- verbsDir        the directory where verbs are to be searched for
+     |
+	 +- verb                may be undef if a verb is not specified
+     |   |
+	 |	 +- name            e.g. 'backup'
+	 |	 +- args            remaining args array ref after having shift the verb itself
+	 |	 +- path            full path to the verb script
+	 |
+	 +- daemon
+	     |
+		 +- started
+		 +- name
+		 +- add
+ |
+ +- dbms					Toops.pm 1202 $TTPVars->{$command} = {};
