@@ -84,13 +84,13 @@ our $TTPVars = {
 # Execute a command dependant of the running OS.
 # This is expected to be configured in TOOPS.json as TOOPS => {<key>} => {command}
 # where command may have some keywords to be remplaced before execution
-# (E):
+# (I):
 # argument is a hash with following keys:
 # - command: the command to be evaluated and executed, may be undef
 # - macros: a hash of the macros to be replaced where:
 #   > key is the macro name, must be labeled in the toops.json as '<macro>' (i.e. between angle brackets)
 #   > value is the value to be replaced
-# (S):
+# (O):
 # return a hash with following keys:
 # - evaluated: the evaluated command after macros replacements
 # - return: original exit code of the command
@@ -147,7 +147,7 @@ sub copyDir {
 		return false;
 	}
 	my $cmdres = commandByOs({
-		command => $TTPVars->{config}{toops}{copyDir}{byOS}{$Config{osname}}{command},
+		command => var([ 'copyDir', 'byOS', $Config{osname}, 'command' ]),
 		macros => {
 			SOURCE => $source,
 			TARGET => $target
@@ -188,7 +188,7 @@ sub copyFile {
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $source );
 	my $srcpath = File::Spec->catpath( $vol, $dirs );
 	my $cmdres = commandByOs({
-		command => $TTPVars->{config}{toops}{copyFile}{byOS}{$Config{osname}}{command},
+		command => var([ 'copyFile', 'byOS', $Config{osname}, 'command' ]),
 		macros => {
 			SOURCE => $srcpath,
 			TARGET => $target,
@@ -905,7 +905,7 @@ sub moveDir {
 		return true;
 	}
 	my $cmdres = commandByOs({
-		command => $TTPVars->{config}{toops}{moveDir}{byOS}{$Config{osname}}{command},
+		command => var([ 'moveDir', 'byOS', $Config{osname}, 'command' ]),
 		macros => {
 			SOURCE => $source,
 			TARGET => $target

@@ -8,13 +8,14 @@
 # @(-) --sourcecmd=s           the command which will give the source path [${sourcecmd}]
 # @(-) --targetpath=s          the target path [${targetpath}]
 # @(-) --targetcmd=s           the command which will give the target path [${targetcmd}]
-# @(-) --[no]dirs              move only directories and their content [${dirs}]
+# @(-) --[no]dirs              copy directories and their content [${dirs}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
 use File::Spec;
 
+use Mods::Constants qw( :all );
 use Mods::Message;
 use Mods::Path;
 

@@ -49,7 +49,6 @@
 			"withMqtt": true,
 			"withPrometheus": true
 		},
-
 		"copyDir": {
 			"byOS": {
 				"MSWin32": {
@@ -71,6 +70,7 @@
 				}
 			}
 		},
+
 		"dbms": {
 			"backupsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDaySQLBackups",
 			"backupsDir": "[eval:$TTPVars->{config}{toops}{dbms}{backupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:uc hostname]",

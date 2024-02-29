@@ -8,7 +8,7 @@
 # @(-) --sourcecmd=s           the command which will give the source path [${sourcecmd}]
 # @(-) --targetpath=s          the target path [${targetpath}]
 # @(-) --targetcmd=s           the command which will give the target path [${targetcmd}]
-# @(-) --[no]dirs              move only directories and their content [${dirs}]
+# @(-) --[no]dirs              move directories and their content [${dirs}]
 # @(-) --keep=s                count of to-be-kept directories in the source [${keep}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
@@ -16,6 +16,7 @@
 use Data::Dumper;
 use File::Spec;
 
+use Mods::Constants qw( :all );
 use Mods::Message;
 use Mods::Path;
 
