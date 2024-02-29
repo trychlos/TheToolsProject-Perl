@@ -13,6 +13,7 @@
 use Data::Dumper;
 use Sys::Hostname qw( hostname );
 
+use Mods::Path;
 use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -34,7 +35,7 @@ my $opt_logsRoot = false;
 # -------------------------------------------------------------------------------------------------
 # list logsDir value - e.g. 'C:\INLINGUA\Logs\240201\Toops'
 sub listLogsdir {
-	my $str = "logsDir: $TTPVars->{config}{toops}{logsDir}";
+	my $str = "logsDir: ".Mods::Path::logsDailyDir();
 	Mods::Toops::msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
@@ -42,7 +43,7 @@ sub listLogsdir {
 # -------------------------------------------------------------------------------------------------
 # list logsRoot value - e.g. 'C:\INLINGUA\Logs'
 sub listLogsroot {
-	my $str = "logsRoot: $TTPVars->{config}{toops}{logsRoot}";
+	my $str = "logsRoot: ".Mods::Path::logsRootDir();
 	Mods::Toops::msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }

@@ -29,7 +29,6 @@ TTPVars
 	 +- dummy
 	 +- colored
 	 +- help
-	 +- logsDir             logs directory (of the day)
 	 +- logsMain            main.log file (of the day)
 	 |
 	 +- command

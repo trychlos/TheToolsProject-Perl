@@ -22,7 +22,7 @@
 # - in toops.json:
 #
 #   > logsRoot: the root of the logs tree
-#     is is addressed by logsRootDir()
+#     is is used by logsRootDir()
 #     this package takes care of creating it if it doesn't exist yet
 
 package Mods::Path;
@@ -161,7 +161,9 @@ sub hostsConfigurationsDir {
 sub logsDailyDir {
 	my $dir;
 	my $TTPVars = Mods::Toops::TTPVars();
-	if( exists( $TTPVars->{config}{toops}{logsDir} )){
+	if( exists( $TTPVars->{config}{host}{logsDir} )){
+		$dir = $TTPVars->{config}{host}{logsDir};
+	} elsif( exists( $TTPVars->{config}{toops}{logsDir} )){
 		$dir = $TTPVars->{config}{toops}{logsDir};
 	} else {
 		$dir = File::Spec->catdir( logsRootDir(), 'Toops', 'logs' );
@@ -172,15 +174,17 @@ sub logsDailyDir {
 
 # ------------------------------------------------------------------------------------------------
 # (O):
-# returns the root of the logs tree, maiking sure it exists
-# this is an optional value read from toops.json, defaulting to user temp directory, itself defaulting to /tmp (or C:\Temp)
+# returns the root of the logs tree, making sure it exists
+# this is an optional value read from toops.json, defaulting to user temp directory, itself defaulting to per-OS temp directory
 # Though TheToolsProject doesn't force that, we encourage to have a by-day logs tree. Thus logsRoot is the top of the
 # logs hierarchy while logsDailyDir is the logs of the day (which may be the same by the fact and this is a decision of
 # the site integrator)
 sub logsRootDir {
 	my $dir;
 	my $TTPVars = Mods::Toops::TTPVars();
-	if( exists( $TTPVars->{config}{toops}{logsRoot} )){
+	if( exists( $TTPVars->{config}{host}{logsRoot} )){
+		$dir = $TTPVars->{config}{host}{logsRoot};
+	} elsif( exists( $TTPVars->{config}{toops}{logsRoot} )){
 		$dir = $TTPVars->{config}{toops}{logsRoot};
 	} elsif( $ENV{TEMP} ){
 		$dir = $ENV{TEMP};

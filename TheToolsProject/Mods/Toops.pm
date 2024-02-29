@@ -611,7 +611,7 @@ sub getRandom {
 sub getTempFileName {
 	my $fname = $TTPVars->{run}{command}{name}.'-'.$TTPVars->{run}{verb}{name};
 	my $random = getRandom();
-	my $tempfname = File::Spec->catdir( $TTPVars->{run}{logsDir}, "$fname-$random.tmp" );
+	my $tempfname = File::Spec->catdir( Mods::Path::logsDailyDir(), "$fname-$random.tmp" );
 	msgVerbose( "getTempFileName() tempfname='$tempfname'" );
 	return $tempfname;
 }
@@ -1325,8 +1325,7 @@ sub ttpEvaluate {
 		$TTPVars->{config}{$key} = evaluate( $TTPVars->{config}{$key} );
 	}
 	# and reevaluates the logs too
-	$TTPVars->{run}{logsDir} = Mods::Path::logsDailyDir();
-	$TTPVars->{run}{logsMain} = File::Spec->catdir( $TTPVars->{run}{logsDir}, 'main.log' );
+	$TTPVars->{run}{logsMain} = File::Spec->catdir( Mods::Path::logsDailyDir(), 'main.log' );
 }
 
 # -------------------------------------------------------------------------------------------------
