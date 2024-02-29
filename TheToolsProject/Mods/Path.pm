@@ -119,15 +119,15 @@ sub dbmsBackupsRoot {
 # - an optional options hash with following keys:
 #   > config: host configuration (useful when searching for a remote host)
 # (O):
-# the (maybe daily) execution reports directory
+# - the (maybe daily) execution reports directory
 sub execReportsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = Mods::Toops::var( [ 'execReports' ], $opts );
+	my $dir = Mods::Toops::var([ 'executionReports', 'dropDir' ], $opts );
 	if( defined $dir ){
 		makeDirExist( $dir );
 	} else {
-		Mods::Message::msgWarn( "'execReports' is not defined in toops.json nor in host configuration" );
+		Mods::Message::msgWarn( "'executionReports/dropDir' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }

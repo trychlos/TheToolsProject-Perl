@@ -329,12 +329,9 @@ sub execReportByCommand {
 # - the data to be written
 sub execReportToFile {
 	my ( $report, $opts ) = @_;
-	if( exists( $TTPVars->{config}{toops}{executionReport}{withFile} )){
-		Mods::Message::msgVerbose( "execReportToFile() TTPVars->{config}{toops}{executionReport}{withFile}=$TTPVars->{config}{toops}{executionReport}{withFile}" );
-	} else {
-		Mods::Message::msgVerbose( "execReportToFile() TTPVars->{config}{toops}{executionReport}{withFile} is undef" );
-	}
-	if( $TTPVars->{config}{toops}{executionReport}{withFile} ){
+	my $withFile = var([ 'executionReports', 'withFile' ]);
+	Mods::Message::msgVerbose( "execReportToFile() var({executionReports}{withFile})='".( defined $withFile ? $withFile : 'undef' )."'");
+	if( $withFile ){
 		my $path = File::Spec->catdir( Mods::Path::execReportsDir(), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
 		jsonWrite( $report, $path );
 	}
@@ -346,12 +343,9 @@ sub execReportToFile {
 # - the data to be written
 sub execReportToMqtt {
 	my ( $report, $opts ) = @_;
-	if( exists( $TTPVars->{config}{toops}{executionReport}{withMqtt} )){
-		Mods::Message::msgVerbose( "execReportToMqtt() TTPVars->{config}{toops}{executionReport}{withMqtt}=$TTPVars->{config}{toops}{executionReport}{withMqtt}" );
-	} else {
-		Mods::Message::msgVerbose( "execReportToMqtt() TTPVars->{config}{toops}{executionReport}{withMqtt} is undef" );
-	}
-	if( $TTPVars->{config}{toops}{executionReport}{withMqtt} ){
+	my $withMqtt = var([ 'executionReports', 'withMqtt' ]);
+	Mods::Message::msgVerbose( "execReportToFile() var({executionReports}{withMqtt})='".( defined $withMqtt ? $withMqtt : 'undef' )."'");
+	if( $withMqtt ){
 		my %reportHash = %$report;
 		my $reportCopy = \%reportHash;
 		my $topic = uc hostname;
@@ -391,12 +385,9 @@ sub execReportToMqtt {
 # - the data to be written
 sub execReportToPrometheus {
 	my ( $report, $opts ) = @_;
-	if( exists( $TTPVars->{config}{toops}{executionReport}{withPrometheus} )){
-		Mods::Message::msgVerbose( "execReportToPrometheus() TTPVars->{config}{toops}{executionReport}{withPrometheus}=$TTPVars->{config}{toops}{executionReport}{withPrometheus}" );
-	} else {
-		Mods::Message::msgVerbose( "execReportToPrometheus() TTPVars->{config}{toops}{executionReport}{withPrometheus} is undef" );
-	}
-	if( $TTPVars->{config}{toops}{executionReport}{withPrometheus} ){
+	my $withPrometheus = var([ 'executionReports', 'withPrometheus' ]);
+	Mods::Message::msgVerbose( "execReportToFile() var({executionReports}{withPrometheus})='".( defined $withPrometheus ? $withPrometheus : 'undef' )."'");
+	if( $withPrometheus ){
 		my %reportHash = %$report;
 		my $reportCopy = \%reportHash;
 		my $path = "/job";

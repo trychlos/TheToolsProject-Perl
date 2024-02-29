@@ -21,7 +21,6 @@
 	"toops": {
 		"logsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDayLogs",
 		"logsDir": "[_eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
-
 		"Message": {
 			"msgDummy": {
 				"withColor": true,
@@ -44,8 +43,13 @@
 				"withLog": true
 			}
 		},
+		"executionReports": {
+			"dropDir": "[_eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports",
+			"withFile": true,
+			"withMqtt": true,
+			"withPrometheus": true
+		},
 
-		"execReports": "[_eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports",
 		"copyDir": {
 			"byOS": {
 				"MSWin32": {
@@ -92,11 +96,6 @@
 					}
 				}
 			}
-		},
-		"executionReport": {
-			"withFile": true,
-			"withMqtt": true,
-			"withPrometheus": true
 		},
 		"SMTP": {
 			"host": "mail.trychlos.org",
