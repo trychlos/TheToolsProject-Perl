@@ -94,7 +94,8 @@ foreach my $line ( @status ){
 	if( $line =~ /working tree clean/ ){
 		$clean = true;
 	}
-	if( $line =~ /^Changes not staged/ ){
+	# either changes not staged or changes to be committed
+	if( $line =~ /^Changes / ){
 		$changes  = true;
 	}
 	if( $line =~ /^Untracked files:/ ){
