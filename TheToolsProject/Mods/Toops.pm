@@ -143,7 +143,7 @@ sub copyDir {
 	my $result = false;
 	Mods::Message::msgVerbose( "Toops::copyDir() entering with source='$source' target='$target'" );
 	if( ! -d $source ){
-		msgErr( "$source: source directory doesn't exist" );
+		Mods::Message::msgErr( "$source: source directory doesn't exist" );
 		return false;
 	}
 	my $cmdres = commandByOs({

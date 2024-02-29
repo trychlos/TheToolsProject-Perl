@@ -44,35 +44,6 @@ my $opt_dirs = false;
 sub doCopyDirs {
 	Mods::Message::msgOut( "copying from '$opt_sourcepath' to '$opt_targetpath'..." );
 	my $count = 0;
-=pod
-	my $result = undef;
-	opendir( FD, "$opt_sourcepath" ) || Mods::Message::msgErr( "unable to open directory $opt_sourcepath: $!" );
-	if( !Mods::Toops::errs()){
-		my @list = ();
-		while ( my $it = readdir( FD )){
-			my $path = _sourcePath( $it );
-			if( $it =~ /^\./ ){
-				msgVerbose( "ignoring '$path'" );
-				next;
-			}
-			if( $opt_dirs && -d "$path" ){
-				push( @list, "$it" );
-				next;
-			}
-			msgVerbose( "ignoring '$path'" );
-		}
-		closedir( FD );
-		# copy all, making sure the initial path at least exists
-		$result = Mods::Path::makeDirExist( $opt_targetpath );
-		if( $result ){
-			foreach my $it ( @list ){
-				my $source = _sourcePath( $it );
-				my $target = _targetPath( $it );
-				Mods::Message::msgOut( "  copying '$source' to '$target'" );
-			}
-		}
-	}
-=cut
 	my $res = Mods::Toops::copyDir( $opt_sourcepath, $opt_targetpath );
 	if( $res ){
 		$count += 1;
@@ -129,13 +100,13 @@ Mods::Message::msgVerbose( "found dirs='".( $opt_dirs ? 'true':'false' )."'" );
 my $count = 0;
 $count += 1 if $opt_sourcepath;
 $count += 1 if $opt_sourcecmd;
-msgErr( "one of '--sourcepath' and '--sourcecmd' options must be specified" ) if $count != 1;
+Mods::Message::msgErr( "one of '--sourcepath' and '--sourcecmd' options must be specified" ) if $count != 1;
 
 # targetcmd and targetpath options are not compatible
 $count = 0;
 $count += 1 if $opt_targetpath;
 $count += 1 if $opt_targetcmd;
-msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if $count != 1;
+Mods::Message::msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if $count != 1;
 
 # if we have a source cmd, get the path and check it exists
 $opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd, { mustExists => true }) if $opt_sourcecmd;
@@ -144,7 +115,7 @@ $opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd, { mustExists => true 
 $opt_targetpath = Mods::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
 
 # --dirs option must be specified at the moment
-msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;
+Mods::Message::msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;
 
 if( !Mods::Toops::errs()){
 	doCopyDirs();

@@ -86,7 +86,7 @@ sub doPull {
 							Mods::Message::msgDummy( "dircopy( $pull_path, $dst_path )" );
 							if( !Mods::Toops::wantsDummy()){
 								$result = dircopy( $pull_path, $dst_path );
-								msgVerbose( "dircopy() result=$result" );
+								Mods::Message::msgVerbose( "dircopy() result=$result" );
 							}
 						}
 						if( $result ){

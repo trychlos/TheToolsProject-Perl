@@ -166,7 +166,7 @@ if( $count != 1 ){
 }
 
 if( !$opt_output ){
-	msgVerbose( "'--output' option not specified, will use the computed default" );
+	Mods::Message::msgVerbose( "'--output' option not specified, will use the computed default" );
 } elsif( scalar @{$databases} > 1 ){
 	Mods::Message::msgErr( "cowardly refuse to backup several databases in a single output file" );
 }
