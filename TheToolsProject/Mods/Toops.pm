@@ -100,35 +100,35 @@ sub commandByOs {
 	my $result = {};
 	$result->{command} = $args->{command};
 	$result->{result} = false;
-	msgVerbose( "Toops::commandByOs() evaluating and executing command='".( $args->{command} || '(undef)' )."'" );
+	Mods::Message::msgVerbose( "Toops::commandByOs() evaluating and executing command='".( $args->{command} || '(undef)' )."'" );
 	if( defined $args->{command} ){
 		$result->{evaluated} = $args->{command};
 		foreach my $key ( keys %{$args->{macros}} ){
 			$result->{evaluated} =~ s/<$key>/$args->{macros}{$key}/;
 		}
-		msgVerbose( "Toops::commandByOs() evaluated to '$result->{evaluated}'" );
+		Mods::Message::msgVerbose( "Toops::commandByOs() evaluated to '$result->{evaluated}'" );
 		Mods::Message::msgDummy( $result->{evaluated} );
 		if( !wantsDummy()){
 			my $out = `$result->{evaluated}`;
 			print $out;
-			msgLog( $out );
+			Mods::Message::msgLog( $out );
 			# https://www.perlmonks.org/?node_id=81640
 			# Thus, the exit value of the subprocess is actually ($? >> 8), and $? & 127 gives which signal, if any, the
 			# process died from, and $? & 128 reports whether there was a core dump.
 			# https://ss64.com/nt/robocopy-exit.html
 			my $res = $?;
 			$result->{result} = ( $res == 0 ) ? true : false;
-			msgVerbose( "Toops::commandByOs() return_code=$res firstly interpreted as result=$result->{result}" );
+			Mods::Message::msgVerbose( "Toops::commandByOs() return_code=$res firstly interpreted as result=$result->{result}" );
 			if( $args->{command} =~ /robocopy/i ){
 				$res = ( $res >> 8 );
 				$result->{result} = ( $res <= 7 ) ? true : false;
-				msgVerbose( "Toops::commandByOs() robocopy specific interpretation res=$res result=$result->{result}" );
+				Mods::Message::msgVerbose( "Toops::commandByOs() robocopy specific interpretation res=$res result=$result->{result}" );
 			}
 		} else {
 			$result->{result} = true;
 		}
 	}
-	msgVerbose( "Toops::commandByOs() result=$result->{result}" );
+	Mods::Message::msgVerbose( "Toops::commandByOs() result=$result->{result}" );
 	return $result;
 }
 
@@ -141,7 +141,7 @@ sub commandByOs {
 sub copyDir {
 	my ( $source, $target ) = @_;
 	my $result = false;
-	msgVerbose( "Toops::copyDir() entering with source='$source' target='$target'" );
+	Mods::Message::msgVerbose( "Toops::copyDir() entering with source='$source' target='$target'" );
 	if( ! -d $source ){
 		msgErr( "$source: source directory doesn't exist" );
 		return false;
@@ -155,7 +155,7 @@ sub copyDir {
 	});
 	if( defined $cmdres->{command} ){
 		$result = $cmdres->{result};
-		msgVerbose( "Toops::copyDir() commandByOs() result=$result" );
+		Mods::Message::msgVerbose( "Toops::copyDir() commandByOs() result=$result" );
 	} else {
 		Mods::Message::msgDummy( "dircopy( $source, $target )" );
 		if( !wantsDummy()){
@@ -164,10 +164,10 @@ sub copyDir {
 			# whereas in list context it returns the number of files and directories, number of directories only, depth level traversed.
 			my $res = dircopy( $source, $target );
 			$result = $res ? true : false;
-			msgVerbose( "Toops::copyDir() dircopy() res=$res result=$result" );
+			Mods::Message::msgVerbose( "Toops::copyDir() dircopy() res=$res result=$result" );
 		}
 	}
-	msgVerbose( "Toops::copyDir() returns result=$result" );
+	Mods::Message::msgVerbose( "Toops::copyDir() returns result=$result" );
 	return $result;
 }
 
@@ -183,7 +183,7 @@ sub copyDir {
 sub copyFile {
 	my ( $source, $target ) = @_;
 	my $result = false;
-	msgVerbose( "Toops::copyFile() entering with source='$source' target='$target'" );
+	Mods::Message::msgVerbose( "Toops::copyFile() entering with source='$source' target='$target'" );
 	# isolate the file from the source directory path
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $source );
 	my $srcpath = File::Spec->catpath( $vol, $dirs );
@@ -197,7 +197,7 @@ sub copyFile {
 	});
 	if( defined $cmdres->{command} ){
 		$result = $cmdres->{result};
-		msgVerbose( "Toops::copyFile() commandByOs() result=$result" );
+		Mods::Message::msgVerbose( "Toops::copyFile() commandByOs() result=$result" );
 	} else {
 		Mods::Message::msgDummy( "copy( $source, $target )" );
 		if( !wantsDummy()){
@@ -205,13 +205,13 @@ sub copyFile {
 			# This function returns true or false
 			$result = copy( $source, $target );
 			if( $result ){
-				msgVerbose( "Toops::copyFile() result=true" );
+				Mods::Message::msgVerbose( "Toops::copyFile() result=true" );
 			} else {
-				msgErr( "Toops::copyFile() $!" );
+				Mods::Message::msgErr( "Toops::copyFile() $!" );
 			}
 		}
 	}
-	msgVerbose( "Toops::copyFile() returns result=$result" );
+	Mods::Message::msgVerbose( "Toops::copyFile() returns result=$result" );
 	return $result;
 }
 
@@ -263,7 +263,7 @@ sub _evaluateScalar {
 	my $type = ref( $value );
 	my $evaluate = true;
 	if( $type ){
-		msgErr( "scalar expected, but '$type' found" );
+		Mods::Message::msgErr( "scalar expected, but '$type' found" );
 		$evaluate = false;
 	}
 	my $result = $value || '';
@@ -330,9 +330,9 @@ sub execReportByCommand {
 sub execReportToFile {
 	my ( $report, $opts ) = @_;
 	if( exists( $TTPVars->{config}{toops}{executionReport}{withFile} )){
-		msgVerbose( "execReportToFile() TTPVars->{config}{toops}{executionReport}{withFile}=$TTPVars->{config}{toops}{executionReport}{withFile}" );
+		Mods::Message::msgVerbose( "execReportToFile() TTPVars->{config}{toops}{executionReport}{withFile}=$TTPVars->{config}{toops}{executionReport}{withFile}" );
 	} else {
-		msgVerbose( "execReportToFile() TTPVars->{config}{toops}{executionReport}{withFile} is undef" );
+		Mods::Message::msgVerbose( "execReportToFile() TTPVars->{config}{toops}{executionReport}{withFile} is undef" );
 	}
 	if( $TTPVars->{config}{toops}{executionReport}{withFile} ){
 		my $path = File::Spec->catdir( Mods::Path::execReportsDir(), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
@@ -347,9 +347,9 @@ sub execReportToFile {
 sub execReportToMqtt {
 	my ( $report, $opts ) = @_;
 	if( exists( $TTPVars->{config}{toops}{executionReport}{withMqtt} )){
-		msgVerbose( "execReportToMqtt() TTPVars->{config}{toops}{executionReport}{withMqtt}=$TTPVars->{config}{toops}{executionReport}{withMqtt}" );
+		Mods::Message::msgVerbose( "execReportToMqtt() TTPVars->{config}{toops}{executionReport}{withMqtt}=$TTPVars->{config}{toops}{executionReport}{withMqtt}" );
 	} else {
-		msgVerbose( "execReportToMqtt() TTPVars->{config}{toops}{executionReport}{withMqtt} is undef" );
+		Mods::Message::msgVerbose( "execReportToMqtt() TTPVars->{config}{toops}{executionReport}{withMqtt} is undef" );
 	}
 	if( $TTPVars->{config}{toops}{executionReport}{withMqtt} ){
 		my %reportHash = %$report;
@@ -392,9 +392,9 @@ sub execReportToMqtt {
 sub execReportToPrometheus {
 	my ( $report, $opts ) = @_;
 	if( exists( $TTPVars->{config}{toops}{executionReport}{withPrometheus} )){
-		msgVerbose( "execReportToPrometheus() TTPVars->{config}{toops}{executionReport}{withPrometheus}=$TTPVars->{config}{toops}{executionReport}{withPrometheus}" );
+		Mods::Message::msgVerbose( "execReportToPrometheus() TTPVars->{config}{toops}{executionReport}{withPrometheus}=$TTPVars->{config}{toops}{executionReport}{withPrometheus}" );
 	} else {
-		msgVerbose( "execReportToPrometheus() TTPVars->{config}{toops}{executionReport}{withPrometheus} is undef" );
+		Mods::Message::msgVerbose( "execReportToPrometheus() TTPVars->{config}{toops}{executionReport}{withPrometheus} is undef" );
 	}
 	if( $TTPVars->{config}{toops}{executionReport}{withPrometheus} ){
 		my %reportHash = %$report;
@@ -602,7 +602,7 @@ sub getTempFileName {
 	my $fname = $TTPVars->{run}{command}{name}.'-'.$TTPVars->{run}{verb}{name};
 	my $random = getRandom();
 	my $tempfname = File::Spec->catdir( Mods::Path::logsDailyDir(), "$fname-$random.tmp" );
-	msgVerbose( "getTempFileName() tempfname='$tempfname'" );
+	Mods::Message::msgVerbose( "getTempFileName() tempfname='$tempfname'" );
 	return $tempfname;
 }
 
@@ -665,7 +665,7 @@ sub grepFileByRegex {
 # - a one-liner from the command itself
 # - and the one-liner help of each available verb
 sub helpCommand {
-	msgVerbose( "helpCommand()" );
+	Mods::Message::msgVerbose( "helpCommand()" );
 	# display the command one-line help
 	Mods::Toops::helpCommandOneline( $TTPVars->{run}{command}{path} );
 	# display each verb one-line help
@@ -714,7 +714,7 @@ sub helpCommandOneline {
 # - an optional options hash with following keys:
 #   > usage: a reference to display available options
 sub helpVerb {
-	msgVerbose( "helpVerb()" );
+	Mods::Message::msgVerbose( "helpVerb()" );
 	my ( $defaults, $opts ) = @_;
 	$opts //= {};
 	# display the command one-line help
@@ -776,13 +776,13 @@ sub hostConfigRead {
 	my ( $host ) = @_;
 	my $result = undef;
 	if( !$host ){
-		msgErr( "hostConfigRead() hostname expected" );
+		Mods::Message::msgErr( "hostConfigRead() hostname expected" );
 	} else {
 		my $hash = jsonRead( Mods::Path::hostConfigurationPath( $host ));
 		if( $hash ){
 			my $topkey = ( keys %{$hash} )[0];
 			if( $topkey ne $host ){
-				msgErr( "expected toplevel key '$host', found '$topkey'" ) ;
+				Mods::Message::msgErr( "expected toplevel key '$host', found '$topkey'" ) ;
 			} else {
 				$result = $hash->{$topkey};
 				$result->{name} = $host;
@@ -812,7 +812,7 @@ sub init {
 	}
 	$TTPVars->{Toops}{json}{host} = hostConfigRead( uc hostname );
 	ttpEvaluate();
-	msgLog( "executing $0 ".join( ' ', @ARGV ));
+	Mods::Message::msgLog( "executing $0 ".join( ' ', @ARGV ));
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -850,7 +850,7 @@ sub initSiteConfiguration {
 # - the full path to be created
 sub jsonAppend {
 	my ( $hash, $path ) = @_;
-	msgVerbose( "jsonAppend().. to '$path'" );
+	Mods::Message::msgVerbose( "jsonAppend().. to '$path'" );
 	my $json = JSON->new;
 	my $str = $json->encode( $hash );
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
@@ -866,20 +866,20 @@ sub jsonAppend {
 # - the full path to the to-be-loaded-and-interpreted json file
 sub jsonRead {
 	my ( $conf ) = @_;
-	msgVerbose( "jsonRead() conf='$conf'" );
+	Mods::Message::msgVerbose( "jsonRead() conf='$conf'" );
 	my $result = undef;
 	if( $conf && -r $conf ){
 		my $content = do {
-		   open( my $fh, "<:encoding(UTF-8)", $conf ) or msgErr( "jsonRead() $conf: $!" );
+		   open( my $fh, "<:encoding(UTF-8)", $conf ) or Mods::Message::msgErr( "jsonRead() $conf: $!" );
 		   local $/;
 		   <$fh>
 		};
 		my $json = JSON->new;
 		$result = $json->decode( $content );
 	} elsif( $conf ){
-		msgErr( "jsonRead() $conf: not found or not readable" );
+		Mods::Message::msgErr( "jsonRead() $conf: not found or not readable" );
 	} else {
-		msgErr( "jsonRead() expects a JSON path to be read" );
+		Mods::Message::msgErr( "jsonRead() expects a JSON path to be read" );
 	}
 	return $result;
 }
@@ -891,7 +891,7 @@ sub jsonRead {
 # - the full path to be created
 sub jsonWrite {
 	my ( $hash, $path ) = @_;
-	msgVerbose( "jsonWrite() to '$path'" );
+	Mods::Message::msgVerbose( "jsonWrite() to '$path'" );
 	my $json = JSON->new;
 	my $str = $json->encode( $hash );
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
@@ -908,9 +908,9 @@ sub jsonWrite {
 sub moveDir {
 	my ( $source, $target ) = @_;
 	my $result = false;
-	msgVerbose( "Toops::moveDir() source='$source' target='$target'" );
+	Mods::Message::msgVerbose( "Toops::moveDir() source='$source' target='$target'" );
 	if( ! -d $source ){
-		msgWarn( "$source: directory doesn't exist" );
+		Mods::Message::msgWarn( "$source: directory doesn't exist" );
 		return true;
 	}
 	my $cmdres = commandByOs({
@@ -925,7 +925,7 @@ sub moveDir {
 	} else {
 		$result = copyDir( $source, $target ) && removeTree( $source );
 	}
-	msgVerbose( "Toops::moveDir() result=$result" );
+	Mods::Message::msgVerbose( "Toops::moveDir() result=$result" );
 	return $result;
 }
 
@@ -944,7 +944,7 @@ sub pad {
 sub removeTree {
 	my ( $dir ) = @_;
 	my $result = true;
-	msgVerbose( "Toops::removeTree() removing '$dir'" );
+	Mods::Message::msgVerbose( "Toops::removeTree() removing '$dir'" );
 	my $error;
 	remove_tree( $dir, {
 		verbose => $TTPVars->{run}{verbose},
@@ -955,14 +955,14 @@ sub removeTree {
 		for my $diag ( @$error ){
 			my ( $file, $message ) = %$diag;
 			if( $file eq '' ){
-				msgErr( "remove_tree() $message" );
+				Mods::Message::msgErr( "remove_tree() $message" );
 			} else {
-				msgErr( "remove_tree() $file: $message" );
+				Mods::Message::msgErr( "remove_tree() $file: $message" );
 			}
 		}
 		$result = false;
 	}
-	msgVerbose( "Toops::removeTree() dir='$dir' result=$result" );
+	Mods::Message::msgVerbose( "Toops::removeTree() dir='$dir' result=$result" );
 	return $result;
 }
 
@@ -984,7 +984,7 @@ sub run {
 	# make sure the command is not a reserved word
 	if( grep( /^$command$/, @{$TTPVars->{Toops}{ReservedWords}} )){
 		Mods::Message::msgErr( "command '$command' is a Toops reserved word. Aborting." );
-		Mods::Toops::ttpExit();
+		ttpExit();
 	}
 	$TTPVars->{run}{command}{name} = $command;
 	# the directory where are stored the verbs of the command
@@ -1003,13 +1003,13 @@ sub run {
 		$TTPVars->{run}{verb}{path} = File::Spec->catdir( $TTPVars->{run}{command}{verbsDir}, $TTPVars->{run}{verb}{name}.$TTPVars->{Toops}{verbSufix} );
 		if( -f $TTPVars->{run}{verb}{path} ){
 			unless( defined do $TTPVars->{run}{verb}{path} ){
-				msgErr( "do $TTPVars->{run}{verb}{path}: ".( $! || $@ ));
+				Mods::Message::msgErr( "do $TTPVars->{run}{verb}{path}: ".( $! || $@ ));
 			}
 		} else {
 			Mods::Message::msgErr( "script not found or not readable: '$TTPVars->{run}{verb}{path}' (most probably, '$TTPVars->{run}{verb}{name}' is not a valid verb)" );
 		}
 	} else {
-		Mods::Toops::helpCommand();
+		helpCommand();
 		ttpExit();
 	}
 }
@@ -1090,9 +1090,9 @@ sub stackTrace {
 sub ttpExit {
 	my $rc = shift || $TTPVars->{run}{exitCode};
 	if( $rc ){
-		msgErr( "exiting with code $rc" );
+		Mods::Message::msgErr( "exiting with code $rc" );
 	} else {
-		msgVerbose( "exiting with code $rc" );
+		Mods::Message::msgVerbose( "exiting with code $rc" );
 	}
 	exit $rc;
 }

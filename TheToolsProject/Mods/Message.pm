@@ -24,6 +24,7 @@ use Config;
 use Data::Dumper;
 use Path::Tiny qw( path );
 use Sub::Exporter;
+use Sys::Hostname qw( hostname );
 use Term::ANSIColor;
 use if $Config{osname} eq "MSWin32", "Win32::Console::ANSI";
 
@@ -198,28 +199,6 @@ sub _msgLogAppend {
 	}
 }
 
-=pod
-# -------------------------------------------------------------------------------------------------
-# Also logs msgOut or msgVerbose (or others) messages depending of:
-# - whether the passed-in options have a truethy 'withLog'
-# - whether the corresponding option is set in Toops (resp. host) configuration
-# - defaulting to truethy (Toops default is to log everything)
-sub _msgLogIf {
-	# the ligne which has been {config}{ed
-	my $msg = shift;
-	# the caller options - we search here for a 'withLog' option
-	my $opts = shift || {};
-	# the key in site configuration
-	my $key = shift || '';
-	# where default is true
-	my $TTPVars = Mods::Toops::TTPVars();
-	my $withLog = true;
-	$withLog = $TTPVars->{config}{toops}{$key} if $key and exists $TTPVars->{config}{toops}{$key};
-	$withLog = $opts->{withLog} if exists $opts->{withLog};
-	Mods::Message::_msgLogAppend( $msg ) if $withLog;
-}
-=cut
-
 # -------------------------------------------------------------------------------------------------
 # standard message on stdout
 # (I):
@@ -255,8 +234,8 @@ sub msgVerbose {
 	my $msg = shift;
 	# be verbose to console ?
 	my $verbose = false;
+	my $TTPVars = Mods::Toops::TTPVars();
 	$verbose = $TTPVars->{run}{verbose} if exists( $TTPVars->{run}{verbose} );
-	$verbose = $opts->{verbose} if exists( $opts->{verbose} );
 	_printMsg({
 		msg => $msg,
 		level => VERBOSE,
@@ -287,9 +266,10 @@ sub _printMsg {
 	$args //= {};
 	my $line = '';
 	my $var = undef;
+	my $TTPVars = Mods::Toops::TTPVars();
 	# have a prefix ?
 	my $withPrefix = true;
-	$line .= Mods::Toops::_msgPrefix() if $withPrefix;
+	$line .= _msgPrefix() if $withPrefix;
 	# have a level marker ?
 	my $level = INFO;
 	$level = $args->{level} if exists $args->{level};
@@ -297,7 +277,7 @@ sub _printMsg {
 	$line .= $args->{msg} if exists $args->{msg};
 	# writes in log ?
 	my $withLog = true;
-	$var = Mods::Toops::var( 'Message',  $Definitions->{$level}{key}, 'withLog' ) if exists $Definitions->{$level}{key};
+	$var = Mods::Toops::var([ 'Message',  $Definitions->{$level}{key}, 'withLog' ]) if exists $Definitions->{$level}{key};
 	$withLog = $var if defined $var;
 	Mods::Message::_msgLogAppend( $line ) if $withLog;
 	# output to the console ?
@@ -308,7 +288,7 @@ sub _printMsg {
 		# global runtime option is only considered if not disabled in toops/host configuration
 		my $withColor = true;
 		$var = undef;
-		$var = Mods::Toops::var( 'Message',  $Definitions->{$level}{key}, 'withColor' ) if exists $Definitions->{$level}{key};
+		$var = Mods::Toops::var([ 'Message',  $Definitions->{$level}{key}, 'withColor' ]) if exists $Definitions->{$level}{key};
 		$withColor = $var if defined $var;
 		$withColor = $TTPVars->{run}{colored} if $withColor;
 		my $colorstart = $withColor && exists( $Definitions->{$level}{color} ) ? color( $Definitions->{$level}{color} ) : '';
