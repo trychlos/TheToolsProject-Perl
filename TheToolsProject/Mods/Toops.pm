@@ -1352,11 +1352,11 @@ sub TTPVars {
 # returns the content of a var, read from toops.json, maybe overriden in host configuration
 # (I):
 # - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
+#   each provided key is expected to address a JSON hash object
 # - an optional options hash with following keys:
-#   > config: host configuration (useful when searching for a remote host)
+#   > config: host configuration (useful when searching for a remote host), defaulting to current host config
 # (O):
 # - the evaluated value of this variable, which may be undef
-#   must be a scaler
 sub var {
 	my ( $keys, $opts ) = @_;
 	$opts //= {};
@@ -1374,10 +1374,8 @@ sub var {
 # - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
 # (O):
 # - the evaluated value of this variable, which may be undef
-#   must be a scaler
 sub varSearch {
 	my ( $keys, $base ) = @_;
-	my $result = undef;
 	my $found = true;
 	for my $k ( @{$keys} ){
 		if( exists( $base->{$k} )){
@@ -1387,10 +1385,7 @@ sub varSearch {
 			last;
 		}
 	}
-	if( $found && !ref( $base )){
-		$result = $base;
-	}
-	return $result;
+	return $found ? $base : undef;
 }
 
 # -------------------------------------------------------------------------------------------------
