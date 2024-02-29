@@ -1,8 +1,8 @@
 # Copyright (@) 2023-2024 PWI Consulting
 #
-# Message level management.
+# Message management.
 
-package Mods::MessageLevel;
+package Mods::Message;
 
 use strict;
 use warnings;

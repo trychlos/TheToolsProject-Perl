@@ -22,7 +22,7 @@ use Time::Moment;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
-use Mods::MessageLevel qw( :all );
+use Mods::Message qw( :all );
 use Mods::Metrology;
 use Mods::Path;
 
@@ -943,7 +943,7 @@ sub moveDir {
 # dummy message
 sub msgDummy {
 	if( $TTPVars->{run}{dummy} ){
-		Mods::MessageLevel::print({
+		Mods::Message::print({
 			msg => shift,
 			level => DUMMY,
 			withColor => $TTPVars->{run}{colored}
@@ -958,7 +958,7 @@ sub msgErr {
 	# let have a stack trace
 	stackTrace() if $TTPVars->{Toops}{stackOnErr};
 	# and send the message
-	Mods::MessageLevel::print({
+	Mods::Message::print({
 		msg => shift,
 		level => ERR,
 		handle => \*STDERR,
@@ -1002,7 +1002,7 @@ sub msgLogAppend {
 # -------------------------------------------------------------------------------------------------
 # Also logs msgOut or msgVerbose (or others) messages depending of:
 # - whether the passed-in options have a truethy 'withLog'
-# - whether the corresponding option is set in Toops site configuration
+# - whether the corresponding option is set in Toops (resp. host) configuration
 # - defaulting to truethy (Toops default is to log everything)
 sub msgLogIf {
 	# the ligne which has been {config}{ed
@@ -1069,7 +1069,7 @@ sub msgVerbose {
 	my $withLog = true;
 	$withLog = $TTPVars->{config}{toops}{msgVerbose}{withLog} if exists $TTPVars->{config}{toops}{msgVerbose}{withLog};
 	$withLog = $opts->{withLog} if exists $opts->{withLog};
-	Mods::MessageLevel::print({
+	Mods::Message::print({
 		msg => $msg,
 		level => VERBOSE,
 		withConsole => $verbose,
@@ -1083,7 +1083,7 @@ sub msgVerbose {
 # (E):
 # - the single warning message
 sub msgWarn {
-	Mods::MessageLevel::print({
+	Mods::Message::print({
 		msg => shift,
 		level => WARN
 	});
