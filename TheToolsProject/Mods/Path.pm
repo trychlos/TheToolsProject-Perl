@@ -38,6 +38,7 @@ use Sys::Hostname qw( hostname );
 use Time::Piece;
 
 use Mods::Constants qw( :all );
+use Mods::Message;
 use Mods::Toops;
 
 # ------------------------------------------------------------------------------------------------
@@ -129,6 +130,34 @@ sub execReportsDir {
 		Mods::Message::msgWarn( "'execReports' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the path requested by the given command
+# (E):
+# - the command to be executed
+# - an optional options hash with following keys:
+#   > mustExists, defaulting to false
+sub fromCommand {
+	my( $cmd, $opts ) = @_;
+	$opts //= {};
+	Mods::Message::msgErr( "Path::fromCommand() command is not specified" ) if !$cmd;
+	my $path = undef;
+	if( !errs()){
+		$path = `$cmd`;
+		Mods::Message::msgErr( "Path::fromCommand() command doesn't output anything" ) if !$path;
+	}
+	if( !errs()){
+		my @words = split( /\s+/, $path );
+		$path = $words[scalar @words - 1];
+	}
+	my $mustExists = false;
+	$mustExists = $opts->{mustExists} if exists $opts->{mustExists};
+	if( $mustExists && !-r $path ){
+		Mods::Message::msgErr( "Path::fromCommand() path='$path' doesn't exist or is not readable" );
+		$path = undef;
+	}
+	return $path;
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -232,6 +261,25 @@ sub makeDirExist {
 	return $result;
 }
 
+# -------------------------------------------------------------------------------------------------
+# Remove the trailing character
+sub removeTrailingChar {
+	my $line = shift;
+	my $char = shift;
+	if( substr( $line, -1 ) eq $char ){
+		$line = substr( $line, 0, length( $line )-1 );
+	}
+	return $line;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Remove the trailing path separator
+sub removeTrailingSeparator {
+	my $dir = shift;
+	my $sep = File::Spec->catdir( '' );
+	return removeTrailingChar( $dir, $sep );
+}
+
 # ------------------------------------------------------------------------------------------------
 sub siteConfigurationsDir {
 	return $ENV{TTP_CONFDIR};
@@ -246,7 +294,7 @@ sub toopsConfigurationPath {
 # Make sure we returns a path with a traiing separator
 sub withTrailingSeparator {
 	my $dir = shift;
-	$dir = Mods::Toops::pathRemoveTrailingSeparator( $dir );
+	$dir = removeTrailingSeparator( $dir );
 	my $sep = File::Spec->catdir( '' );
 	$dir .= $sep;
 	return $dir;

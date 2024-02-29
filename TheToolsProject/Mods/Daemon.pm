@@ -36,6 +36,7 @@ use Sys::Hostname qw( hostname );
 use Time::Piece;
 
 use Mods::Constants qw( :all );
+use Mods::Message;
 use Mods::MQTT;
 use Mods::Toops;
 

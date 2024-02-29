@@ -18,7 +18,7 @@ use Sys::Hostname qw( hostname );
 use Time::Moment;
 
 use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
+use Mods::Message;
 use Mods::Path;
 
 my $TTPVars = Mods::Toops::TTPVars();

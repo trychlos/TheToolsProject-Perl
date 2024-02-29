@@ -18,6 +18,8 @@
 
 use Data::Dumper;
 
+use Mods::Constants qw( :all );
+use Mods::Message;
 use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();

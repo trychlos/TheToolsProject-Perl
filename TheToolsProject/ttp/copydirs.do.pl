@@ -15,6 +15,7 @@
 use Data::Dumper;
 use File::Spec;
 
+use Mods::Message;
 use Mods::Path;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -136,10 +137,10 @@ $count += 1 if $opt_targetcmd;
 msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if $count != 1;
 
 # if we have a source cmd, get the path and check it exists
-$opt_sourcepath = Mods::Toops::pathFromCommand( $opt_sourcecmd, { mustExists => true }) if $opt_sourcecmd;
+$opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd, { mustExists => true }) if $opt_sourcecmd;
 
 # if we have a target cmd, get the path
-$opt_targetpath = Mods::Toops::pathFromCommand( $opt_targetcmd ) if $opt_targetcmd;
+$opt_targetpath = Mods::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
 
 # --dirs option must be specified at the moment
 msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;

@@ -11,6 +11,7 @@ use Data::Dumper;
 use Net::MQTT::Simple;
 
 use Mods::Constants qw( :all );
+use Mods::Message;
 use Mods::Toops;
 
 $ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;

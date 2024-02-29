@@ -16,6 +16,7 @@ use Data::Dumper;
 use Net::MQTT::Simple;
 
 use Mods::Constants qw( :all );
+use Mods::Message;
 
 my $TTPVars = Mods::Toops::TTPVars();
 

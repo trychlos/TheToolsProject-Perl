@@ -13,6 +13,7 @@ use LWP::UserAgent;
 use Sys::Hostname qw( hostname );
 
 use Mods::Constants qw( :all );
+use Mods::Message;
 use Mods::Toops;
 
 # -------------------------------------------------------------------------------------------------

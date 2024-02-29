@@ -13,6 +13,7 @@ use File::Copy::Recursive qw( dircopy );
 use File::Spec;
 
 use Mods::Constants qw( :all );
+use Mods::Message;
 use Mods::Path;
 use Mods::Toops;
 

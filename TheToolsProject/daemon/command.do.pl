@@ -19,8 +19,9 @@ use IO::Socket::INET;
 # auto-flush on socket
 $| = 1;
 
-use Mods::Constants;
+use Mods::Constants qw( :all );
 use Mods::Daemon;
+use Mods::Message;
 use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();

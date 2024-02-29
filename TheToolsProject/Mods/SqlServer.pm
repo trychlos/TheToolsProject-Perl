@@ -13,6 +13,7 @@ use Time::Piece;
 use Win32::SqlServer qw( :DEFAULT :consts );
 
 use Mods::Constants qw( :all );
+use Mods::Message;
 use Mods::Path;
 use Mods::Toops;
 
