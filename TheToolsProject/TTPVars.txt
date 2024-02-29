@@ -16,6 +16,9 @@ TTPVars
  |   |
  |   +- site
  |   +- toops
+ |   |   |
+ |   |   +- logsRoot
+ |   |
  |   +- host
  |
  +- run                     Store here dynamically computed variables

@@ -11,12 +11,12 @@
 	"toops_comments": [
 		"The global Toops configuration for your site",
 		"In Windows environment, take care of doubling your backslashes",
-		"Besides of the below 'toops' key, the site is free to set here any global configuration which will be available with $TTPVars->{config}{<key>}",
-		"May make use - in values only - of parameters between square brackets as [..]",
-		"At the moment, there is one type of parameters:",
+		"May make use - in values only - of parameters between square brackets as [eval:...]",
+		"At the moment, there is only one type of parameters:",
 		"- those specified by 'eval:' indicate some code to be evaluated at run time.",
 		"  'eval' may be prefixed with an underscore in order to delay the eval (e.g. if it refers to another dynamic variable which needs to be resolved first).",
-		"Remind that the directory where lies this 'ttops.json' must be adressed by the TTP_CONFDIR variable."
+		"Remind that the directory where lies this 'toops.json' must be adressed by the TTP_CONFDIR variable.",
+		"Also note that every variable here may be overriden on a per-host basis."
 	],
 	"toops": {
 		"logsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDayLogs",
