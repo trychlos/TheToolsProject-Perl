@@ -1,4 +1,13 @@
 {
+	"site_comments": [
+		"We can define here some variables at the site level.",
+		"These variables are free to the site integrator and NOT considered by TheToolsProject, though they can be used in below Toops JSON dynamic evaluations."
+	],
+	"site": {
+		"rootDir": "C:\\INLINGUA",
+		"commandsDir": "[eval:$TTPVars->{config}{site}{rootDir}]\\SiteResources\\Commands",
+		"daemonsDir": "[eval:$ENV{TTP_CONFDIR}]\\daemons"
+	},
 	"toops_comments": [
 		"The global Toops configuration for your site",
 		"In Windows environment, take care of doubling your backslashes",
@@ -103,14 +112,5 @@
 		"prometheus": {
 			"url": "http://localhost:9091/metrics"
 		}
-	},
-	"site_comments": [
-		"Define here common configuration to all environments/machines.",
-		"These are free to the site integrator and NOT considered by TheToolsProject though they can be used in JSON dynamic evaluations."
-	],
-	"site": {
-		"rootDir": "C:\\INLINGUA",
-		"commandsDir": "[eval:$TTPVars->{config}{site}{rootDir}]\\SiteResources\\Commands",
-		"daemonsDir": "[eval:$ENV{TTP_CONFDIR}]\\daemons"
 	}
 }

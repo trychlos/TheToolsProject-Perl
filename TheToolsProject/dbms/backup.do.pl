@@ -106,7 +106,7 @@ if( !GetOptions(
 	"compress!"			=> \$opt_compress,
 	"output=s"			=> \$opt_output )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
+		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 

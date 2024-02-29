@@ -543,7 +543,7 @@ sub getOptions {
 	#print Dumper( $optargs );
 	print "calling GetOptions()..".EOL;
 	if( !myGetOptions( @{$optargs} )){
-		Mods::Toops::msgOut( "try '$TTPVars->{command_basename} $TTPVars->{verb} --help' to get full usage syntax" );
+		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		#$TTPVars->{exitCode} += 1;
 		Mods::Toops::ttpExit();
 	}
