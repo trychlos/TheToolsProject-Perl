@@ -39,12 +39,12 @@ my $daemonConfig = undef;
 sub doStart {
 	my $program_path = $daemonConfig->{execPath};
 	my $json_path = File::Spec->rel2abs( $opt_json );
-	Mods::Toops::msgOut( "starting the daemon from '$opt_json'..." );
-	Mods::Toops::msgErr( "$program_path: not found or not readable" ) if ! -r $program_path;
+	Mods::Message::msgOut( "starting the daemon from '$opt_json'..." );
+	Mods::Message::msgErr( "$program_path: not found or not readable" ) if ! -r $program_path;
 	if( !Mods::Toops::errs()){
 		print Dumper( @ARGV );
-		my $proc = Proc::Background->new( "perl $program_path $json_path ".join( ' ', @ARGV )) or Mods::Toops::msgErr( "unable to start '$program_path'" );
-		Mods::Toops::msgOut( "success" ) if $proc;
+		my $proc = Proc::Background->new( "perl $program_path $json_path ".join( ' ', @ARGV )) or Mods::Message::msgErr( "unable to start '$program_path'" );
+		Mods::Message::msgOut( "success" ) if $proc;
 	}
 }
 
@@ -59,7 +59,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"json=s"			=> \$opt_json )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -68,17 +68,17 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found json='$opt_json'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found json='$opt_json'" );
 
 # the json is mandatory
 $daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
 # must have a listening port
-Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+Mods::Message::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
 # must have something to run
-Mods::Toops::msgErr( "daemon configuration must define an 'execPath' value, not found" ) if !$daemonConfig->{execPath};
+Mods::Message::msgErr( "daemon configuration must define an 'execPath' value, not found" ) if !$daemonConfig->{execPath};
 
 if( !Mods::Toops::errs()){
 	doStart();

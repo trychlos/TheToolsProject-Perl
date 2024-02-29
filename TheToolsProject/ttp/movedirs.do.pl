@@ -45,9 +45,9 @@ my $opt_keep = $defaults->{keep};
 # - ignore dot files and dot dirs
 # - ignore files, only considering dirs
 sub doMoveDirs {
-	Mods::Toops::msgOut( "moving from '$opt_sourcepath' to '$opt_targetpath', keeping '$opt_keep' item(s)" );
+	Mods::Message::msgOut( "moving from '$opt_sourcepath' to '$opt_targetpath', keeping '$opt_keep' item(s)" );
 	my $count = 0;
-	opendir( FD, "$opt_sourcepath" ) || Mods::Toops::msgErr( "unable to open directory $opt_sourcepath: $!" );
+	opendir( FD, "$opt_sourcepath" ) || Mods::Message::msgErr( "unable to open directory $opt_sourcepath: $!" );
 	if( !Mods::Toops::errs()){
 		my @list = ();
 		while ( my $it = readdir( FD )){
@@ -86,16 +86,16 @@ sub doMoveDirs {
 		foreach my $it ( @list ){
 			my $source = _sourcePath( $it );
 			my $target = _targetPath( $it );
-			Mods::Toops::msgOut( " moving '$source' to '$target'" );
+			Mods::Message::msgOut( " moving '$source' to '$target'" );
 			my $res = Mods::Toops::moveDir( $source, $target );
 			if( $res ){
 				$count += 1;
 			} else {
-				Mods::Toops::msgErr( "error detected" );
+				Mods::Message::msgErr( "error detected" );
 			}
 		}
 	}
-	Mods::Toops::msgOut( "$count moved directory(ies)" );
+	Mods::Message::msgOut( "$count moved directory(ies)" );
 }
 
 sub _sourcePath {
@@ -124,7 +124,7 @@ if( !GetOptions(
 	"dirs!"				=> \$opt_dirs,
 	"keep=s"			=> \$opt_keep )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -133,15 +133,15 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found sourcepath='$opt_sourcepath'" );
-Mods::Toops::msgVerbose( "found sourcecmd='$opt_sourcecmd'" );
-Mods::Toops::msgVerbose( "found targetpath='$opt_targetpath'" );
-Mods::Toops::msgVerbose( "found targetcmd='$opt_targetcmd'" );
-Mods::Toops::msgVerbose( "found dirs='".( $opt_dirs ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found keep='$opt_keep'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found sourcepath='$opt_sourcepath'" );
+Mods::Message::msgVerbose( "found sourcecmd='$opt_sourcecmd'" );
+Mods::Message::msgVerbose( "found targetpath='$opt_targetpath'" );
+Mods::Message::msgVerbose( "found targetcmd='$opt_targetcmd'" );
+Mods::Message::msgVerbose( "found dirs='".( $opt_dirs ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found keep='$opt_keep'" );
 
 # sourcecmd and sourcepath options are not compatible
 my $count = 0;

@@ -67,8 +67,6 @@ our $TTPVars = {
 		commentUsage => '^# @\(-\) ',
 		verbSufix => '.do.pl',
 		verbSed => '\.do\.pl',
-		# some runtime constants
-		stackOnErr => false
 	},
 	# a key reserved for the storage of toops+site+host raw json configuration files
 	json => undef,
@@ -109,7 +107,7 @@ sub commandByOs {
 			$result->{evaluated} =~ s/<$key>/$args->{macros}{$key}/;
 		}
 		msgVerbose( "Toops::commandByOs() evaluated to '$result->{evaluated}'" );
-		msgDummy( $result->{evaluated} );
+		Mods::Message::msgDummy( $result->{evaluated} );
 		if( !wantsDummy()){
 			my $out = `$result->{evaluated}`;
 			print $out;
@@ -159,7 +157,7 @@ sub copyDir {
 		$result = $cmdres->{result};
 		msgVerbose( "Toops::copyDir() commandByOs() result=$result" );
 	} else {
-		msgDummy( "dircopy( $source, $target )" );
+		Mods::Message::msgDummy( "dircopy( $source, $target )" );
 		if( !wantsDummy()){
 			# https://metacpan.org/pod/File::Copy::Recursive
 			# This function returns true or false: for true in scalar context it returns the number of files and directories copied,
@@ -201,7 +199,7 @@ sub copyFile {
 		$result = $cmdres->{result};
 		msgVerbose( "Toops::copyFile() commandByOs() result=$result" );
 	} else {
-		msgDummy( "copy( $source, $target )" );
+		Mods::Message::msgDummy( "copy( $source, $target )" );
 		if( !wantsDummy()){
 			# https://metacpan.org/pod/File::Copy
 			# This function returns true or false
@@ -218,16 +216,8 @@ sub copyFile {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Dump the internal variables
-sub dump {
-	foreach my $key ( keys %{$TTPVars} ){
-		Mods::Toops::msgVerbose( "$key='$TTPVars->{$key}'", { verbose => true, withLog => true });
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# is there any error
-#  exit code may be seen as an error counter as it is incremented by msgErr
+# is there any error ?
+#  exit code may be seen as an error counter as it is incremented by Message::msgErr()
 sub errs {
 	return $TTPVars->{run}{exitCode};
 }
@@ -522,7 +512,7 @@ sub getJsonHosts {
 # - var: the reference to the variable which will hold the value
 # - def: the displayed default value
 sub getOptions {
-	Mods::Toops::msgErr( "Mods::Toops::getOptions() is just a placeholder for now. Please use standard GetOptions()." );
+	Mods::Message::msgErr( "Mods::Toops::getOptions() is just a placeholder for now. Please use standard GetOptions()." );
 }
 
 =pod
@@ -543,7 +533,7 @@ sub getOptions {
 	#print Dumper( $optargs );
 	print "calling GetOptions()..".EOL;
 	if( !myGetOptions( @{$optargs} )){
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		#$TTPVars->{exitCode} += 1;
 		Mods::Toops::ttpExit();
 	}
@@ -555,7 +545,7 @@ sub getOptions {
 		Mods::Toops::helpVerb();
 		Mods::Toops::ttpExit();
 	}
-	Mods::Toops::msgVerbose( "found verbose='true'" );
+	Mods::Message::msgVerbose( "found verbose='true'" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -645,13 +635,13 @@ sub grepFileByRegex {
 	my $warnIfNone = true;
 	$warnIfNone = $opts->{warnIfNone} if exists $opts->{warnIfNone};
 	if( scalar @grepped == 0 ){
-		Mods::Toops::msgWarn( "'$filename' doesn't have any line with the searched content ('$regex')." ) if $warnIfNone;
+		Mods::Message::msgWarn( "'$filename' doesn't have any line with the searched content ('$regex')." ) if $warnIfNone;
 	} else {
 		# warn if there are several lines in the grepped result ?
 		my $warnIfSeveral = true;
 		$warnIfSeveral = $opts->{warnIfSeveral} if exists $opts->{warnIfSeveral};
 		if( scalar @grepped > 1 ){
-			Mods::Toops::msgWarn( "'$filename' has more than one line with the searched content ('$regex')." ) if $warnIfSeveral;
+			Mods::Message::msgWarn( "'$filename' has more than one line with the searched content ('$regex')." ) if $warnIfSeveral;
 		}
 	}
 	# replace the regex, and, if true, with what ?
@@ -940,156 +930,6 @@ sub moveDir {
 }
 
 # -------------------------------------------------------------------------------------------------
-# dummy message
-sub msgDummy {
-	if( $TTPVars->{run}{dummy} ){
-		Mods::Message::print({
-			msg => shift,
-			level => DUMMY,
-			withColor => $TTPVars->{run}{colored}
-		});
-	}
-	return true;
-}
-
-# -------------------------------------------------------------------------------------------------
-# Error message - always logged
-sub msgErr {
-	# let have a stack trace
-	stackTrace() if $TTPVars->{Toops}{stackOnErr};
-	# and send the message
-	Mods::Message::print({
-		msg => shift,
-		level => ERR,
-		handle => \*STDERR,
-		withColor => $TTPVars->{run}{colored}
-	});
-	$TTPVars->{run}{exitCode} += 1;
-}
-
-# -------------------------------------------------------------------------------------------------
-# prefix and log a message
-sub msgLog {
-	my $msg = shift;
-	my $ref = ref( $msg );
-	if( $ref eq 'ARRAY' ){
-		foreach my $line ( split( /[\r\n]/, @{$msg} )){
-			chomp $line;
-			msgLog( $line );
-		}
-	} elsif( !$ref ){
-		msgLogAppend( Mods::Toops::msgPrefix().$msg );
-	} else {
-		msgLog( "unmanaged type '$ref' for '$msg'" );
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# log an already prefixed message
-# do not try to write in logs while they are not initialized
-# the host config is silently reevaluated on each call to be sure we are writing in the logs of the day
-
-sub msgLogAppend {
-	my ( $msg ) = @_;
-	if( $TTPVars->{run}{logsMain} ){
-		my $host = uc hostname;
-		my $username = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME} || 'unknown'; #getpwuid( $< );
-		my $line = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%5N' )." $host $username $msg";
-		path( $TTPVars->{run}{logsMain} )->append_utf8( $line.EOL );
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# Also logs msgOut or msgVerbose (or others) messages depending of:
-# - whether the passed-in options have a truethy 'withLog'
-# - whether the corresponding option is set in Toops (resp. host) configuration
-# - defaulting to truethy (Toops default is to log everything)
-sub msgLogIf {
-	# the ligne which has been {config}{ed
-	my $msg = shift;
-	# the caller options - we search here for a 'withLog' option
-	my $opts = shift || {};
-	# the key in site configuration
-	my $key = shift || '';
-	# where default is true
-	my $withLog = true;
-	$withLog = $TTPVars->{config}{toops}{$key} if $key and exists $TTPVars->{config}{toops}{$key};
-	$withLog = $opts->{withLog} if exists $opts->{withLog};
-	Mods::Toops::msgLogAppend( $msg ) if $withLog;
-}
-
-# -------------------------------------------------------------------------------------------------
-# standard message on stdout
-# (E):
-# - the message to be {config}{ed
-# - (optional) a hash options with 'withLog=true|false'
-#   which override the site configuration , with itself overrides the Toops default which is true
-sub msgOut {
-	my $msg = shift;
-	my $opts = shift || {};
-	my $line = Mods::Toops::msgPrefix().$msg;
-	print $line.EOL;
-	Mods::Toops::msgLogIf( $line, $opts, 'msgOut' );
-}
-
-# -------------------------------------------------------------------------------------------------
-# Compute the message prefix, including a trailing space
-sub msgPrefix {
-	my $prefix = '';
-	if( $TTPVars->{run}{command}{basename} ){
-		$prefix = "[$TTPVars->{run}{command}{basename}";
-		$prefix .= ' '.$TTPVars->{run}{verb}{name} if $TTPVars->{run}{verb}{name};
-		$prefix.= '] ';
-	} elsif( $TTPVars->{run}{daemon}{name} ){
-		$prefix = "[$TTPVars->{run}{daemon}{name}";
-		$prefix .= ' '.$TTPVars->{run}{daemon}{add} if $TTPVars->{run}{daemon}{add};
-		$prefix.= '] ';
-	}
-	return $prefix;
-}
-
-# -------------------------------------------------------------------------------------------------
-# Verbose message
-# (E):
-# - the message to be {config}{ed
-# - (optional) a hash options with following options:
-#   > verbose=true|false
-#     overrides the --verbose option of the running command/verb
-#   > withLog=true|false
-#     overrides the site configuration , with itself overrides the Toops default which is true
-sub msgVerbose {
-	my $msg = shift;
-	my $opts = shift || {};
-	#my $line = Mods::Toops::msgPrefix()."(VERB) $msg";
-	# be verbose to console ?
-	my $verbose = false;
-	$verbose = $TTPVars->{run}{verbose} if exists( $TTPVars->{run}{verbose} );
-	$verbose = $opts->{verbose} if exists( $opts->{verbose} );
-	# be verbose in log ?
-	my $withLog = true;
-	$withLog = $TTPVars->{config}{toops}{msgVerbose}{withLog} if exists $TTPVars->{config}{toops}{msgVerbose}{withLog};
-	$withLog = $opts->{withLog} if exists $opts->{withLog};
-	Mods::Message::print({
-		msg => $msg,
-		level => VERBOSE,
-		withConsole => $verbose,
-		withColor => $TTPVars->{run}{colored},
-		withLog => $withLog
-	});
-}
-
-# -------------------------------------------------------------------------------------------------
-# Warning message - always logged
-# (E):
-# - the single warning message
-sub msgWarn {
-	Mods::Message::print({
-		msg => shift,
-		level => WARN
-	});
-}
-
-# -------------------------------------------------------------------------------------------------
 # pad the provided string until the specified length with the provided char
 sub pad {
 	my( $str, $length, $pad ) = @_;
@@ -1190,7 +1030,7 @@ sub run {
 	$command =~ s/\.[^.]+$//;
 	# make sure the command is not a reserved word
 	if( grep( /^$command$/, @{$TTPVars->{Toops}{ReservedWords}} )){
-		Mods::Toops::msgErr( "command '$command' is a Toops reserved word. Aborting." );
+		Mods::Message::msgErr( "command '$command' is a Toops reserved word. Aborting." );
 		Mods::Toops::ttpExit();
 	}
 	$TTPVars->{run}{command}{name} = $command;
@@ -1213,7 +1053,7 @@ sub run {
 				msgErr( "do $TTPVars->{run}{verb}{path}: ".( $! || $@ ));
 			}
 		} else {
-			Mods::Toops::msgErr( "script not found or not readable: '$TTPVars->{run}{verb}{path}' (most probably, '$TTPVars->{run}{verb}{name}' is not a valid verb)" );
+			Mods::Message::msgErr( "script not found or not readable: '$TTPVars->{run}{verb}{path}' (most probably, '$TTPVars->{run}{verb}{name}' is not a valid verb)" );
 		}
 	} else {
 		Mods::Toops::helpCommand();

@@ -45,7 +45,7 @@ my $opt_mqtt = true;
 # send the alert
 ## as far as we are concerned here, this is just writing a json file in a special directory
 sub doJsonAlert {
-	Mods::Toops::msgOut( "creating a new '$opt_level' json alert..." );
+	Mods::Message::msgOut( "creating a new '$opt_level' json alert..." );
 
 	Mods::Path::makeDirExist( $TTPVars->{config}{toops}{alerts}{dropDir} );
 	my $path = File::Spec->catdir( $TTPVars->{config}{toops}{alerts}{dropDir}, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
@@ -58,14 +58,14 @@ sub doJsonAlert {
 		stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
 	}, $path );
 
-	Mods::Toops::msgOut( "success" );
+	Mods::Message::msgOut( "success" );
 }
 
 # -------------------------------------------------------------------------------------------------
 # send the alert
 ## as far as we are concerned here, this is just publishing a MQTT message
 sub doMqttAlert {
-	Mods::Toops::msgOut( "publishing a '$opt_level' alert on MQTT bus..." );
+	Mods::Message::msgOut( "publishing a '$opt_level' alert on MQTT bus..." );
 
 	my $topic = uc hostname;
 	$topic .= "/alert";
@@ -82,7 +82,7 @@ sub doMqttAlert {
 	
 	print `mqtt.pl publish -topic $topic -payload $payload`;
 
-	Mods::Toops::msgOut( "success" );
+	Mods::Message::msgOut( "success" );
 }
 
 # =================================================================================================
@@ -100,7 +100,7 @@ if( !GetOptions(
 	"json!"				=> \$opt_json,
 	"mqtt!"				=> \$opt_mqtt )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -109,23 +109,23 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found emitter='$opt_emitter'" );
-Mods::Toops::msgVerbose( "found level='$opt_level'" );
-Mods::Toops::msgVerbose( "found message='$opt_message'" );
-Mods::Toops::msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found emitter='$opt_emitter'" );
+Mods::Message::msgVerbose( "found level='$opt_level'" );
+Mods::Message::msgVerbose( "found message='$opt_message'" );
+Mods::Message::msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
 
 # all data are mandatory (and we provide a default value for all but the message)
-Mods::Toops::msgErr( "emitter is empty, but shouldn't" ) if !$opt_emitter;
-Mods::Toops::msgErr( "message is empty, but shouldn't" ) if !$opt_message;
-Mods::Toops::msgErr( "level is empty, but shouldn't" ) if !$opt_level;
+Mods::Message::msgErr( "emitter is empty, but shouldn't" ) if !$opt_emitter;
+Mods::Message::msgErr( "message is empty, but shouldn't" ) if !$opt_message;
+Mods::Message::msgErr( "level is empty, but shouldn't" ) if !$opt_level;
 
 # at least one of json or mqtt media mus tbe specified
 if( !$opt_json && !$opt_mqtt ){
-	Mods::Toops::msgErr( "at least one of '--json' or '--mqtt' options must be specified" ) if !$opt_emitter;
+	Mods::Message::msgErr( "at least one of '--json' or '--mqtt' options must be specified" ) if !$opt_emitter;
 }
 
 if( !Mods::Toops::errs()){

@@ -22,13 +22,30 @@
 		"logsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDayLogs",
 		"logsDir": "[_eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
 
+		"Message": {
+			"msgDummy": {
+				"withColor": true,
+				"withLog": true
+			},
+			"msgErr": {
+				"withColor": true,
+				"withLog": true
+			},
+			"msgOut": {
+				"withColor": true,
+				"withLog": true
+			},
+			"msgVerbose": {
+				"withColor": true,
+				"withLog": true
+			},
+			"msgWarn": {
+				"withColor": true,
+				"withLog": true
+			}
+		},
+
 		"execReports": "[_eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports",
-		"msgOut": {
-			"withLog": true
-		},
-		"msgVerbose": {
-			"withLog": true
-		},
 		"copyDir": {
 			"byOS": {
 				"MSWin32": {

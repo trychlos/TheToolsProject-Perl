@@ -35,9 +35,9 @@ my $opt_keep = $defaults->{keep};
 # - ignore dot files and dot dirs
 # - ignore files, only considering dirs
 sub doPurgeDirs {
-	Mods::Toops::msgOut( "purging from '$opt_dirpath', keeping '$opt_keep' item(s)" );
+	Mods::Message::msgOut( "purging from '$opt_dirpath', keeping '$opt_keep' item(s)" );
 	my $count = 0;
-	opendir( FD, "$opt_dirpath" ) || Mods::Toops::msgErr( "unable to open directory $opt_dirpath: $!" );
+	opendir( FD, "$opt_dirpath" ) || Mods::Message::msgErr( "unable to open directory $opt_dirpath: $!" );
 	if( !Mods::Toops::errs()){
 		my @list = ();
 		while ( my $it = readdir( FD )){
@@ -69,13 +69,13 @@ sub doPurgeDirs {
 			# and remove the rest
 			foreach my $it ( @list ){
 				my $dir = File::Spec->catdir( $opt_dirpath, $it );
-				Mods::Toops::msgOut( " removing '$dir'" );
+				Mods::Message::msgOut( " removing '$dir'" );
 				remove_tree( $dir );
 				$count += 1;
 			}
 		}
 	}
-	Mods::Toops::msgOut( "$count purged directory(ies)" );
+	Mods::Message::msgOut( "$count purged directory(ies)" );
 }
 
 sub _sourcePath {
@@ -101,7 +101,7 @@ if( !GetOptions(
 	"dircmd=s"			=> \$opt_dircmd,
 	"keep=s"			=> \$opt_keep )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -110,12 +110,12 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dirpath='$opt_dirpath'" );
-Mods::Toops::msgVerbose( "found dircmd='$opt_dircmd'" );
-Mods::Toops::msgVerbose( "found keep='$opt_keep'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dirpath='$opt_dirpath'" );
+Mods::Message::msgVerbose( "found dircmd='$opt_dircmd'" );
+Mods::Message::msgVerbose( "found keep='$opt_keep'" );
 
 # dircmd and dirpath options are not compatible
 my $count = 0;

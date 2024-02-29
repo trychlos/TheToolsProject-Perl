@@ -36,7 +36,7 @@ my $opt_logsRoot = false;
 # list logsDir value - e.g. 'C:\INLINGUA\Logs\240201\Toops'
 sub listLogsdir {
 	my $str = "logsDir: ".Mods::Path::logsDailyDir();
-	Mods::Toops::msgVerbose( "returning '$str'" );
+	Mods::Message::msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
 
@@ -44,7 +44,7 @@ sub listLogsdir {
 # list logsRoot value - e.g. 'C:\INLINGUA\Logs'
 sub listLogsroot {
 	my $str = "logsRoot: ".Mods::Path::logsRootDir();
-	Mods::Toops::msgVerbose( "returning '$str'" );
+	Mods::Message::msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
 
@@ -52,7 +52,7 @@ sub listLogsroot {
 # list siteRoot value - e.g. 'C:\INLINGUA'
 sub listSiteroot {
 	my $str = "siteRoot: $TTPVars->{config}{site}{rootDir}";
-	Mods::Toops::msgVerbose( "returning '$str'" );
+	Mods::Message::msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
 
@@ -69,7 +69,7 @@ if( !GetOptions(
 	"logsRoot!"			=> \$opt_logsRoot,
 	"logsDir!"			=> \$opt_logsDir )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -78,12 +78,12 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found siteRoot='".( $opt_siteRoot ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found logsRoot='".( $opt_logsRoot ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found logsDir='".( $opt_logsDir ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found siteRoot='".( $opt_siteRoot ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found logsRoot='".( $opt_logsRoot ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found logsDir='".( $opt_logsDir ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
 	listSiteroot() if $opt_siteRoot;

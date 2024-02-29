@@ -71,7 +71,7 @@ sub printSummary {
 	my $maxLength = 0;
 	for( my $i=1 ; $i<=$opt_count ; ++$i ){
 		my $command = $ENV{$opt_commands.'['.$i.']'};
-		Mods::Toops::msgVerbose( "pushing i=$i command='$command'" );
+		Mods::Message::msgVerbose( "pushing i=$i command='$command'" );
 		push( @results, {
 			command => $command,
 			start => $ENV{$opt_start.'['.$i.']'},
@@ -96,7 +96,7 @@ sub printSummary {
 		my $i = 0;
 		foreach my $it ( @results ){
 			$i += 1;
-			Mods::Toops::msgVerbose( "printing i=$i execution report" );
+			Mods::Message::msgVerbose( "printing i=$i execution report" );
 			print _pad( "| $it->{command}", $maxLength+6, ' ' )._pad( "| $it->{start}", 25, ' ' )._pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
 		}
 	} else {
@@ -123,7 +123,7 @@ if( !GetOptions(
 	"rc=s"				=> \$opt_rc,
 	"count=i"			=> \$opt_count	)){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -132,15 +132,15 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found workload='$opt_workload'" );
-Mods::Toops::msgVerbose( "found commands='$opt_commands'" );
-Mods::Toops::msgVerbose( "found start='$opt_start'" );
-Mods::Toops::msgVerbose( "found end='$opt_end'" );
-Mods::Toops::msgVerbose( "found rc='$opt_rc'" );
-Mods::Toops::msgVerbose( "found count='$opt_count'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found workload='$opt_workload'" );
+Mods::Message::msgVerbose( "found commands='$opt_commands'" );
+Mods::Message::msgVerbose( "found start='$opt_start'" );
+Mods::Message::msgVerbose( "found end='$opt_end'" );
+Mods::Message::msgVerbose( "found rc='$opt_rc'" );
+Mods::Message::msgVerbose( "found count='$opt_count'" );
 
 if( !Mods::Toops::errs()){
 	printSummary();

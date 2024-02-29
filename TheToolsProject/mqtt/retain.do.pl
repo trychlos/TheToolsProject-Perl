@@ -40,17 +40,17 @@ my $count = 0;
 # -------------------------------------------------------------------------------------------------
 # get and output the retained messages
 sub doGetRetained {
-	Mods::Toops::msgOut( "getting the retained messages..." );
+	Mods::Message::msgOut( "getting the retained messages..." );
 
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgErr( "no registered broker" ) if !$hostConfig->{MQTT}{broker};
-	Mods::Toops::msgErr( "no registered username" ) if !$hostConfig->{MQTT}{username};
-	Mods::Toops::msgErr( "no registered password" ) if !$hostConfig->{MQTT}{passwd};
+	Mods::Message::msgErr( "no registered broker" ) if !$hostConfig->{MQTT}{broker};
+	Mods::Message::msgErr( "no registered username" ) if !$hostConfig->{MQTT}{username};
+	Mods::Message::msgErr( "no registered password" ) if !$hostConfig->{MQTT}{passwd};
 
 	$mqtt = Net::MQTT::Simple->new( $hostConfig->{MQTT}{broker} );
 	if( $mqtt ){
 		$mqtt->login( $hostConfig->{MQTT}{username}, $hostConfig->{MQTT}{passwd} );
-		Mods::Toops::msgVerbose( "broker login with '$hostConfig->{MQTT}{username}' account" );
+		Mods::Message::msgVerbose( "broker login with '$hostConfig->{MQTT}{username}' account" );
 		$mqtt->subscribe( '#' => \&doWork );
 		while( $loop ){
 			$mqtt->tick( 1 );
@@ -65,9 +65,9 @@ sub doGetRetained {
 	$mqtt->disconnect();
 	my $result = true;
 	if( $result ){
-		Mods::Toops::msgOut( "success: $count got messages" );
+		Mods::Message::msgOut( "success: $count got messages" );
 	} else {
-		Mods::Toops::msgErr( "NOT OK" );
+		Mods::Message::msgErr( "NOT OK" );
 	}
 }
 
@@ -78,7 +78,7 @@ sub doWork {
 	my ( $topic, $payload, $retain ) = @_;
 	if( $retain ){
 		print "$topic $payload".EOL;
-		Mods::Toops::msgLog( "$topic $payload" );
+		Mods::Message::msgLog( "$topic $payload" );
 		$last = localtime->epoch;
 		$count += 1;
 	}
@@ -96,7 +96,7 @@ if( !GetOptions(
 	"get!"				=> \$opt_get,
 	"wait=i"			=> \$opt_wait )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -105,11 +105,11 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found get='".( $opt_get ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found wait='$opt_wait'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found get='".( $opt_get ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found wait='$opt_wait'" );
 
 if( !Mods::Toops::errs()){
 	doGetRetained() if $opt_get;

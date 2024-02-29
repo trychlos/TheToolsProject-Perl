@@ -93,7 +93,7 @@ sub _interpretDbResultSet {
 # if only an instance has been specified, then search for all databases of this instance
 # at the moment, a service is stucked to a single instance
 sub doDbSize {
-	Mods::Toops::msgOut( "publishing databases size on '$hostConfig->{name}\\$opt_instance'..." );
+	Mods::Message::msgOut( "publishing databases size on '$hostConfig->{name}\\$opt_instance'..." );
 	my $mqttCount = 0;
 	my $prometheusCount = 0;
 	my $list = [];
@@ -106,7 +106,7 @@ sub doDbSize {
 	}
 	foreach my $db ( @{$list} ){
 		last if $mqttCount >= $opt_limit && $opt_limit >= 0;
-		Mods::Toops::msgOut( "  database '$db'" );
+		Mods::Message::msgOut( "  database '$db'" );
 		# sp_spaceused provides two results sets, where each one only contains one data row
 		my $resultSets = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple` ));
 		#print Dumper( $resultSets );
@@ -114,7 +114,7 @@ sub doDbSize {
 		$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$mqttCount });
 		$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db", $set, { prefix => 'metrology_dbms_dbsize_' });
 	}
-	Mods::Toops::msgOut( "$mqttCount message(s) published on MQTT bus, $prometheusCount metric(s) published to Prometheus" );
+	Mods::Message::msgOut( "$mqttCount message(s) published on MQTT bus, $prometheusCount metric(s) published to Prometheus" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -125,15 +125,15 @@ sub doTablesCount {
 	my $mqttCount = 0;
 	my $prometheusCount = 0;
 	if( !scalar @databases ){
-		Mods::Toops::msgErr( "no database specified, unable to count rows in tables.." );
+		Mods::Message::msgErr( "no database specified, unable to count rows in tables.." );
 	} else {
 		foreach my $db ( @databases ){
-			Mods::Toops::msgOut( "publishing tables rows count on '$hostConfig->{name}\\$opt_instance\\$db'..." );
+			Mods::Message::msgOut( "publishing tables rows count on '$hostConfig->{name}\\$opt_instance\\$db'..." );
 			last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 			my $tables = Mods::Toops::ttpFilter( `dbms.pl list -instance $opt_instance -database $db -listtables` );
 			foreach my $tab ( @{$tables} ){
 				last if $mqttCount >= $opt_limit && $opt_limit >= 0;
-				Mods::Toops::msgOut( "  table '$tab'" );
+				Mods::Message::msgOut( "  table '$tab'" );
 				my $resultSet = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular` ));
 				my $set = $resultSet->[0];
 				$set->{rows_count} = 0 if !defined $set->{rows_count};
@@ -142,7 +142,7 @@ sub doTablesCount {
 			}
 		}
 	}
-	Mods::Toops::msgOut( "$mqttCount message(s) published on MQTT bus, $prometheusCount metric(s) published to Prometheus" );
+	Mods::Message::msgOut( "$mqttCount message(s) published on MQTT bus, $prometheusCount metric(s) published to Prometheus" );
 }
 
 # =================================================================================================
@@ -161,7 +161,7 @@ if( !GetOptions(
 	"tabcount!"			=> \$opt_tabcount,
 	"limit=i"			=> \$opt_limit )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -170,28 +170,28 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found service='$opt_service'" );
-Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
-Mods::Toops::msgVerbose( "found database='$opt_database'" );
-Mods::Toops::msgVerbose( "found dbsize='".( $opt_dbsize ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found tabcount='".( $opt_tabcount ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found limit='$opt_limit'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found service='$opt_service'" );
+Mods::Message::msgVerbose( "found instance='$opt_instance'" );
+Mods::Message::msgVerbose( "found database='$opt_database'" );
+Mods::Message::msgVerbose( "found dbsize='".( $opt_dbsize ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found tabcount='".( $opt_tabcount ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found limit='$opt_limit'" );
 
 # depending of the measurement option, may have a service or an instance plus maybe a database
 # must have -service or -instance + -database
 if( $opt_service ){
 	if( $opt_instance || $opt_database ){
-		Mods::Toops::msgErr( "'--service' option is exclusive of '--instance' and '--database' options" );
+		Mods::Message::msgErr( "'--service' option is exclusive of '--instance' and '--database' options" );
 	} elsif( !exists( $hostConfig->{Services}{$opt_service} )){
-		Mods::Toops::msgErr( "service='$opt_service' not defined in host configuration" );
+		Mods::Message::msgErr( "service='$opt_service' not defined in host configuration" );
 	} else {
 		$opt_instance = $hostConfig->{Services}{$opt_service}{instance} if exists $hostConfig->{Services}{$opt_service}{instance};
-		Mods::Toops::msgVerbose( "setting instance='$opt_instance'" );
+		Mods::Message::msgVerbose( "setting instance='$opt_instance'" );
 		@databases = @{$hostConfig->{Services}{$opt_service}{databases}} if exists $hostConfig->{Services}{$opt_service}{databases};
-		Mods::Toops::msgVerbose( "setting databases='".join( ', ', @databases )."'" );
+		Mods::Message::msgVerbose( "setting databases='".join( ', ', @databases )."'" );
 	}
 } else {
 	push( @databases, $opt_database ) if $opt_database;
@@ -205,17 +205,17 @@ if( scalar @databases ){
 	foreach my $db ( @databases ){
 		my $exists = Mods::Dbms::checkDatabaseExists( $opt_instance, $db );
 		if( !$exists ){
-			Mods::Toops::msgErr( "database '$db' doesn't exist" );
+			Mods::Message::msgErr( "database '$db' doesn't exist" );
 		}
 	}
 } else {
-	Mods::Toops::msgWarn( "no database found nor specified, exiting gracefully" );
+	Mods::Message::msgWarn( "no database found nor specified, exiting gracefully" );
 	Mods::Toops::ttpExit();
 }
 
 # if no option is given, have a warning message
 if( !$opt_dbsize && !$opt_tabcount ){
-	Mods::Toops::msgWarn( "no measure has been requested, exiting gracefully" );
+	Mods::Message::msgWarn( "no measure has been requested, exiting gracefully" );
 
 } elsif( !Mods::Toops::errs()){
 	doDbSize() if $opt_dbsize;

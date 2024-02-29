@@ -54,12 +54,12 @@ sub doSend {
 		PeerHost => 'localhost',
 		PeerPort => $port,
 		Proto => 'tcp'
-	) or Mods::Toops::msgErr( "unable to connect: $!" ) if !$socket;
+	) or Mods::Message::msgErr( "unable to connect: $!" ) if !$socket;
 
 	# send the command
 	if( $socket ){
 		my $size = $socket->send( $opt_command );
-		Mods::Toops::msgVerbose( "sent '$opt_command' to the server ($size bytes)" );
+		Mods::Message::msgVerbose( "sent '$opt_command' to the server ($size bytes)" );
 		# notify server that request has been sent
 		$socket->shutdown( true );
 		# receive a response of up to 4096 characters from server
@@ -67,13 +67,13 @@ sub doSend {
 		$socket->recv( $response, 4096 );
 		print "$response";
 		$socket->close();
-		Mods::Toops::msgOut( "success" );
+		Mods::Message::msgOut( "success" );
 
 	# if the daemon was not active, and the '--ignore' flag has been set, the reset the current exist code
 	# and output a corresponding message to stdout
 	} elsif( $opt_ignore ){
 		$TTPVars->{run}{exitCode} = 0;
-		Mods::Toops::msgOut( "daemon is not active, but '--ignore' flag is set, so set rc to zero" );
+		Mods::Message::msgOut( "daemon is not active, but '--ignore' flag is set, so set rc to zero" );
 	}
 }
 
@@ -91,7 +91,7 @@ if( !GetOptions(
 	"command=s"			=> \$opt_command,
 	"ignore!"			=> \$opt_ignore )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -100,31 +100,31 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found json='$opt_json'" );
-Mods::Toops::msgVerbose( "found port='$opt_port'" );
-Mods::Toops::msgVerbose( "found command='$opt_command'" );
-Mods::Toops::msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found json='$opt_json'" );
+Mods::Message::msgVerbose( "found port='$opt_port'" );
+Mods::Message::msgVerbose( "found command='$opt_command'" );
+Mods::Message::msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
 
 # either the json or the port must be specified (and not both)
 my $count = 0;
 $count += 1 if $opt_json;
 $count += 1 if $opt_port != -1;
 if( $count == 0 ){
-	Mods::Toops::msgErr( "one of '--json' or '--port' options must be specified, none found" );
+	Mods::Message::msgErr( "one of '--json' or '--port' options must be specified, none found" );
 } elsif( $count > 1 ){
-	Mods::Toops::msgErr( "one of '--json' or '--port' options must be specified, both were found" );
+	Mods::Message::msgErr( "one of '--json' or '--port' options must be specified, both were found" );
 }
 #if a json is specified, must have a listeningPort
 if( $opt_json ){
 	$daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
 	# must have a listening port
-	Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+	Mods::Message::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
 }
 # and a command too
-Mods::Toops::msgErr( "'--command' option is mandatory, but is not specified" ) if !$opt_command;
+Mods::Message::msgErr( "'--command' option is mandatory, but is not specified" ) if !$opt_command;
 
 if( !Mods::Toops::errs()){
 	doSend();

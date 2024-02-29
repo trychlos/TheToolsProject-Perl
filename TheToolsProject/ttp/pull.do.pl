@@ -39,7 +39,7 @@ my $opt_fromhost = $defaults->{fromhost};
 sub doPull {
 	my ( $pullConfig ) = @_;
 	my $result = false;
-	Mods::Toops::msgOut( "pulling from '$opt_fromhost'..." );
+	Mods::Message::msgOut( "pulling from '$opt_fromhost'..." );
 	my $asked = 0;
 	my $done = 0;
 	# have pull share
@@ -49,15 +49,15 @@ sub doPull {
 		my ( $pull_vol, $pull_dirs, $pull_file ) = File::Spec->splitpath( $pullShare );
 		# if a byOS command is specified, then use it
 		my $command = $TTPVars->{config}{toops}{deployments}{byOS}{$Config{osname}}{command};
-		Mods::Toops::msgVerbose( "found command='$command'" );
+		Mods::Message::msgVerbose( "found command='$command'" );
 		# may have several source dirs: iterate on each
 		foreach my $pullDir ( @{$TTPVars->{config}{toops}{deployments}{sourceDirs}} ){
-			Mods::Toops::msgVerbose( "pulling '$pullDir'" );
+			Mods::Message::msgVerbose( "pulling '$pullDir'" );
 			my ( $dir_vol, $dir_dirs, $dir_file ) = File::Spec->splitpath( $pullDir );
 			my $srcPath = File::Spec->catpath( $pull_vol, $dir_dirs, $dir_file );
 			if( $command ){
 				$asked += 1;
-				Mods::Toops::msgVerbose( "source='$srcPath' target='$pullDir'" );
+				Mods::Message::msgVerbose( "source='$srcPath' target='$pullDir'" );
 				my $cmdres = Mods::Toops::commandByOs({
 					command => $command,
 					macros => {
@@ -67,7 +67,7 @@ sub doPull {
 				});
 				$done += 1 if $cmdres->{result};
 			} else {
-				opendir( FD, "$srcPath" ) or Mods::Toops::msgErr( "unable to open directory $srcPath: $!" );
+				opendir( FD, "$srcPath" ) or Mods::Message::msgErr( "unable to open directory $srcPath: $!" );
 				if( !Mods::Toops::errs()){
 					$result = true;
 					while( my $it = readdir( FD )){
@@ -76,13 +76,13 @@ sub doPull {
 						$asked += 1;
 						my $pull_path = File::Spec->catdir( $srcPath, $it );
 						my $dst_path = File::Spec->catdir( $pullDir, $it );
-						Mods::Toops::msgOut( "  resetting from '$pull_path' into '$dst_path'" );
-						Mods::Toops::msgDummy( "Mods::Toops::removeTree( $dst_path )" );
+						Mods::Message::msgOut( "  resetting from '$pull_path' into '$dst_path'" );
+						Mods::Message::msgDummy( "Mods::Toops::removeTree( $dst_path )" );
 						if( !Mods::Toops::wantsDummy()){
 							$result = Mods::Toops::removeTree( $dst_path );
 						}
 						if( $result ){
-							Mods::Toops::msgDummy( "dircopy( $pull_path, $dst_path )" );
+							Mods::Message::msgDummy( "dircopy( $pull_path, $dst_path )" );
 							if( !Mods::Toops::wantsDummy()){
 								$result = dircopy( $pull_path, $dst_path );
 								msgVerbose( "dircopy() result=$result" );
@@ -91,7 +91,7 @@ sub doPull {
 						if( $result ){
 							$done += 1;
 						} else {
-							Mods::Toops::msgWarn( "error when copying from '$pull_path' to '$dst_path'" );
+							Mods::Message::msgWarn( "error when copying from '$pull_path' to '$dst_path'" );
 						}
 					}
 					closedir( FD );
@@ -99,13 +99,13 @@ sub doPull {
 			}
 		}
 	} else {
-		Mods::Toops::msgErr( "remoteShare is not specified in '$opt_fromhost' host configuration" );
+		Mods::Message::msgErr( "remoteShare is not specified in '$opt_fromhost' host configuration" );
 	}
 	my $str = "$done/$asked subdirs copied";
 	if( $done == $asked && !Mods::Toops::errs()){
-		Mods::Toops::msgOut( "success ($str)" );
+		Mods::Message::msgOut( "success ($str)" );
 	} else {
-		Mods::Toops::msgErr( "NOT OK ($str)" );
+		Mods::Message::msgErr( "NOT OK ($str)" );
 	}
 }
 
@@ -120,7 +120,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"fromhost=s"		=> \$opt_fromhost )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -129,13 +129,13 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found fromhost='$opt_fromhost'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found fromhost='$opt_fromhost'" );
 
 # a pull host must be defined in command-line and have a json configuration file
-Mods::Toops::msgErr( "'--fromhost' value is required, but not specified" ) if !$opt_fromhost;
+Mods::Message::msgErr( "'--fromhost' value is required, but not specified" ) if !$opt_fromhost;
 my $config = Mods::Toops::getHostConfig( $opt_fromhost );
 
 if( !Mods::Toops::errs()){

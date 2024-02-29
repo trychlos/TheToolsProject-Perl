@@ -60,7 +60,7 @@ sub doBackup {
 	my $count = 0;
 	my $asked = 0;
 	foreach my $db ( @{$databases} ){
-		Mods::Toops::msgOut( "backuping database '$hostConfig->{name}\\$opt_instance\\$db'" );
+		Mods::Message::msgOut( "backuping database '$hostConfig->{name}\\$opt_instance\\$db'" );
 		my $res = Mods::Dbms::backupDatabase({
 			instance => $opt_instance,
 			database => $db,
@@ -83,9 +83,9 @@ sub doBackup {
 	}
 	my $str = "$count/$asked backuped database(s)";
 	if( $count == $asked ){
-		Mods::Toops::msgOut( "success: $str" );
+		Mods::Message::msgOut( "success: $str" );
 	} else {
-		Mods::Toops::msgErr( "NOT OK: $str" );
+		Mods::Message::msgErr( "NOT OK: $str" );
 	}
 }
 
@@ -106,7 +106,7 @@ if( !GetOptions(
 	"compress!"			=> \$opt_compress,
 	"output=s"			=> \$opt_output )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -115,28 +115,28 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found service='$opt_service'" );
-Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
-Mods::Toops::msgVerbose( "found database='$opt_database'" );
-Mods::Toops::msgVerbose( "found full='".( $opt_full ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found diff='".( $opt_diff ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found compress='".( $opt_compress ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found output='$opt_output'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found service='$opt_service'" );
+Mods::Message::msgVerbose( "found instance='$opt_instance'" );
+Mods::Message::msgVerbose( "found database='$opt_database'" );
+Mods::Message::msgVerbose( "found full='".( $opt_full ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found diff='".( $opt_diff ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found compress='".( $opt_compress ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found output='$opt_output'" );
 
 # must have -service or -instance + -database
 if( $opt_service ){
 	if( $opt_instance || $opt_database ){
-		Mods::Toops::msgErr( "'--service' option is exclusive of '--instance' and '--database' options" );
+		Mods::Message::msgErr( "'--service' option is exclusive of '--instance' and '--database' options" );
 	} elsif( !exists( $hostConfig->{Services}{$opt_service} )){
-		Mods::Toops::msgErr( "service='$opt_service' not defined in host configuration" );
+		Mods::Message::msgErr( "service='$opt_service' not defined in host configuration" );
 	} else {
 		$opt_instance = $hostConfig->{Services}{$opt_service}{instance} if exists $hostConfig->{Services}{$opt_service}{instance};
-		Mods::Toops::msgVerbose( "setting instance='$opt_instance'" );
+		Mods::Message::msgVerbose( "setting instance='$opt_instance'" );
 		$databases = $hostConfig->{Services}{$opt_service}{databases} if exists $hostConfig->{Services}{$opt_service}{databases};
-		Mods::Toops::msgVerbose( "setting databases='".join( ', ', @{$databases} )."'" );
+		Mods::Message::msgVerbose( "setting databases='".join( ', ', @{$databases} )."'" );
 	}
 } else {
 	push( @{$databases}, $opt_database ) if $opt_database;
@@ -149,24 +149,24 @@ if( scalar @{$databases} ){
 	foreach my $db ( @{$databases} ){
 		my $exists = Mods::Dbms::checkDatabaseExists( $opt_instance, $db );
 		if( !$exists ){
-			Mods::Toops::msgErr( "database '$db' doesn't exist" );
+			Mods::Message::msgErr( "database '$db' doesn't exist" );
 		}
 	}
 } else {
-	Mods::Toops::msgErr( "'--database' option is required (or '--service'), but is not specified" );
+	Mods::Message::msgErr( "'--database' option is required (or '--service'), but is not specified" );
 }
 
 my $count = 0;
 $count += 1 if $opt_full;
 $count += 1 if $opt_diff;
 if( $count != 1 ){
-	Mods::Toops::msgErr( "one of '--full' or '--diff' options must be specified" );
+	Mods::Message::msgErr( "one of '--full' or '--diff' options must be specified" );
 }
 
 if( !$opt_output ){
 	msgVerbose( "'--output' option not specified, will use the computed default" );
 } elsif( scalar @{$databases} > 1 ){
-	Mods::Toops::msgErr( "cowardly refuse to backup several databases in a single output file" );
+	Mods::Message::msgErr( "cowardly refuse to backup several databases in a single output file" );
 }
 
 if( !Mods::Toops::errs()){

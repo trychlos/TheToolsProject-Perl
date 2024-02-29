@@ -100,7 +100,7 @@ sub daemonAdvertize {
 	if( !$daemon->{lastAdvertized} || $now-$daemon->{lastAdvertized} >= $daemon->{advertizeInterval} ){
 		my $topic = _topic( $daemon->{name} );
 		my $payload = _running();
-		Mods::Toops::msgLog( "$topic [$payload]" );
+		Mods::Message::msgLog( "$topic [$payload]" );
 		if( $daemon->{mqtt} ){
 			$daemon->{mqtt}->retain( $topic, $payload );
 		}
@@ -112,7 +112,7 @@ sub daemonAdvertize {
 # the daemon answers to the client
 sub daemonAnswer {
 	my ( $daemon, $req, $answer ) = @_;
-	Mods::Toops::msgLog( "answering '$answer'" );
+	Mods::Message::msgLog( "answering '$answer'" );
 	$req->{socket}->send( "$answer\n" );
 	$req->{socket}->shutdown( true );
 }
@@ -178,13 +178,13 @@ sub daemonInitToops {
 	my $config = $raw ? getEvaluatedConfig( $raw ) : undef;
 	# listening port
 	if( !$config->{listeningPort} ){
-		Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" );
+		Mods::Message::msgErr( "daemon configuration must define a 'listeningPort' value, not found" );
 	}
 	# listen interval
 	my $listenInterval = DEFAULT_LISTEN_INTERVAL;
 	if( $config && exists( $config->{listenInterval} )){
 		if( $config->{listenInterval} < MIN_LISTEN_INTERVAL ){
-			Mods::Toops::msgVerbose( "defined listenInterval=$config->{listenInterval} less than minimum accepted ".MIN_LISTEN_INTERVAL.", ignored" );
+			Mods::Message::msgVerbose( "defined listenInterval=$config->{listenInterval} less than minimum accepted ".MIN_LISTEN_INTERVAL.", ignored" );
 		} else {
 			$listenInterval = $config->{listenInterval};
 		}
@@ -193,13 +193,13 @@ sub daemonInitToops {
 	my $advertizeInterval = DEFAULT_ADVERTIZE_INTERVAL;
 	if( exists( $config->{advertizeInterval} )){
 		if( $config->{advertizeInterval} < MIN_ADVERTIZE_INTERVAL ){
-			Mods::Toops::msgVerbose( "defined advertizedInterval=$config->{advertizeInterval} less than minimum accepted ".MIN_ADVERTIZE_INTERVAL.", ignored" );
+			Mods::Message::msgVerbose( "defined advertizedInterval=$config->{advertizeInterval} less than minimum accepted ".MIN_ADVERTIZE_INTERVAL.", ignored" );
 		} else {
 			$advertizeInterval = $config->{advertizeInterval};
 		}
 	}
 	if( !Mods::Toops::errs()){
-		Mods::Toops::msgVerbose( "listeningPort='$config->{listeningPort}' listenInterval='$listenInterval' advertizeInterval='$advertizeInterval'" );
+		Mods::Message::msgVerbose( "listeningPort='$config->{listeningPort}' listenInterval='$listenInterval' advertizeInterval='$advertizeInterval'" );
 	}
 
 	# create a listening socket
@@ -213,7 +213,7 @@ sub daemonInitToops {
 			ReuseAddr => true,
 			Blocking => false,
 			Timeout => 0
-		) or Mods::Toops::msgErr( "unable to create a listening socket: $!" );
+		) or Mods::Message::msgErr( "unable to create a listening socket: $!" );
 	}
 
 	# connect to MQTT communication bus if the host is configured for
@@ -274,7 +274,7 @@ sub daemonListen {
 		$client->recv( $data, BUFSIZE );
 	}
 	if( $result ){
-		Mods::Toops::msgLog( "received '$data' from '$result->{peerhost}':'$result->{peeraddr}':'$result->{peerport}'" );
+		Mods::Message::msgLog( "received '$data' from '$result->{peerhost}':'$result->{peeraddr}':'$result->{peerport}'" );
 		my @words = split( /\s+/, $data );
 		$result->{command} = shift( @words );
 		$result->{args} = \@words;
@@ -320,11 +320,11 @@ sub getEvaluatedConfig {
 # - the raw result hash
 sub getRawConfigByPath {
 	my ( $json ) = @_;
-	Mods::Toops::msgVerbose( "Daemon::getRawConfigByPath() json='$json'" );
+	Mods::Message::msgVerbose( "Daemon::getRawConfigByPath() json='$json'" );
 	my $result = Mods::Toops::jsonRead( $json );
 	my $ref = ref( $result );
 	if( $ref ne 'HASH' ){
-		Mods::Toops::msgErr( "Daemon::getRawConfigByPath() expected a hash, found a ".( $ref || 'scalar' ));
+		Mods::Message::msgErr( "Daemon::getRawConfigByPath() expected a hash, found a ".( $ref || 'scalar' ));
 		$result = undef;
 	}
 	return $result;
@@ -353,7 +353,7 @@ sub terminate {
 	# close TCP connection
 	$daemon->{socket}->close();
 	# have a log line
-	Mods::Toops::msgLog( "terminating" );
+	Mods::Message::msgLog( "terminating" );
 	# and quit the program
 	Mods::Toops::ttpExit();
 }

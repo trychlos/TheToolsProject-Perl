@@ -56,23 +56,23 @@ my $hostConfig = Mods::Toops::getHostConfig();
 # -------------------------------------------------------------------------------------------------
 # list the defined DBMS instances (which may be not all the running instances)
 sub listDbms {
-	Mods::Toops::msgOut( "displaying DBMS instances defined on $hostConfig->{name}..." );
+	Mods::Message::msgOut( "displaying DBMS instances defined on $hostConfig->{name}..." );
 	my @list = Mods::Services::getDefinedDBMSInstances( $hostConfig );
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
-	Mods::Toops::msgOut( scalar @list." found defined DBMS instance(s)" );
+	Mods::Message::msgOut( scalar @list." found defined DBMS instance(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
 # list the databases registered with a service
 sub listServiceDatabases {
-	Mods::Toops::msgOut( "displaying databases registered with on '$hostConfig->{name}\\$opt_service' service..." );
+	Mods::Message::msgOut( "displaying databases registered with on '$hostConfig->{name}\\$opt_service' service..." );
 	my $instance = $hostConfig->{Services}{$opt_service}{instance};
 	my $databases = $hostConfig->{Services}{$opt_service}{databases};
 	my $count = 0;
 	if( !$instance ){
-		Mods::Toops::msgOut( "no instance registered with this service (databases may be present, but are ignored)" );
+		Mods::Message::msgOut( "no instance registered with this service (databases may be present, but are ignored)" );
 	} else {
 		print "+ instance: $instance".EOL; 
 		foreach my $db ( @{$databases} ){
@@ -81,7 +81,7 @@ sub listServiceDatabases {
 			$count += 1;
 		}
 	}
-	Mods::Toops::msgOut("$count found defined databases(s)" );
+	Mods::Message::msgOut("$count found defined databases(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -91,30 +91,30 @@ sub listServiceDatabases {
 # in this particular case of listing services, which is handled both as services.pl list and as ttp.pl list,
 # this code is so duplicated..
 sub listServices {
-	Mods::Toops::msgOut( "displaying services defined on $hostConfig->{name}..." );
+	Mods::Message::msgOut( "displaying services defined on $hostConfig->{name}..." );
 	my @list = Mods::Services::getDefinedServices( $hostConfig, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
-	Mods::Toops::msgOut( scalar @list." found defined service(s)" );
+	Mods::Message::msgOut( scalar @list." found defined service(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
 # list all the workloads used on this host with names sorted in ascii order
 sub listWorkloads {
-	Mods::Toops::msgOut( "displaying workloads used on $hostConfig->{name}..." );
+	Mods::Message::msgOut( "displaying workloads used on $hostConfig->{name}..." );
 	my @list = Mods::Services::getUsedWorkloads( $hostConfig, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
-	Mods::Toops::msgOut( scalar @list." found used workload(s)" );
+	Mods::Message::msgOut( scalar @list." found used workload(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
 # list all (but only) the commands in this workload
 # the commands are listed in the order if their service name
 sub listWorkloadCommands {
-	Mods::Toops::msgOut( "displaying workload commands defined in $hostConfig->{name}\\$opt_workload..." );
+	Mods::Message::msgOut( "displaying workload commands defined in $hostConfig->{name}\\$opt_workload..." );
 	my @list = Mods::Services::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
 	my $count = 0;
 	foreach my $it ( @list ){
@@ -125,19 +125,19 @@ sub listWorkloadCommands {
 			}
 		}
 	}
-	Mods::Toops::msgOut( "$count found defined command(s)" );
+	Mods::Message::msgOut( "$count found defined command(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
 # list the detailed tasks for the specified workload
 # They are displayed in the order of their service name
 sub listWorkloadDetails {
-	Mods::Toops::msgOut( "displaying detailed workload tasks defined in $hostConfig->{name}\\$opt_workload..." );
+	Mods::Message::msgOut( "displaying detailed workload tasks defined in $hostConfig->{name}\\$opt_workload..." );
 	my @list = Mods::Services::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		printWorkloadTask( $it );
 	}
-	Mods::Toops::msgOut( scalar @list." found defined task(s)" );
+	Mods::Message::msgOut( scalar @list." found defined task(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -215,7 +215,7 @@ if( !GetOptions(
 	"service=s"			=> \$opt_service,
 	"databases!"		=> \$opt_databases )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -224,20 +224,20 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dbms='".( $opt_dbms ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found hidden='".( $opt_hidden ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found workloads='".( $opt_workloads ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found workload='$opt_workload'" );
-Mods::Toops::msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found service='$opt_service'" );
-Mods::Toops::msgVerbose( "found databases='".( $opt_databases ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dbms='".( $opt_dbms ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found hidden='".( $opt_hidden ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found workloads='".( $opt_workloads ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found workload='$opt_workload'" );
+Mods::Message::msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found service='$opt_service'" );
+Mods::Message::msgVerbose( "found databases='".( $opt_databases ? 'true':'false' )."'" );
 
 if( $opt_service && !$opt_databases ){
-	Mods::Toops::msgWarn( "a service is specified, but without any requested information" );
+	Mods::Message::msgWarn( "a service is specified, but without any requested information" );
 }
 
 if( !Mods::Toops::errs()){

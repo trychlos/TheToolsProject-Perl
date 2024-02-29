@@ -38,17 +38,17 @@ my $opt_payload = $defaults->{payload};
 # send the alert
 # as far as we are concerned here, this is just writing a json file in a special directory
 sub doPublish {
-	Mods::Toops::msgOut( "publishing '$opt_topic [$opt_payload]'..." );
+	Mods::Message::msgOut( "publishing '$opt_topic [$opt_payload]'..." );
 
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgErr( "no registered broker" ) if !$hostConfig->{MQTT}{broker};
-	Mods::Toops::msgErr( "no registered username" ) if !$hostConfig->{MQTT}{username};
-	Mods::Toops::msgErr( "no registered password" ) if !$hostConfig->{MQTT}{passwd};
+	Mods::Message::msgErr( "no registered broker" ) if !$hostConfig->{MQTT}{broker};
+	Mods::Message::msgErr( "no registered username" ) if !$hostConfig->{MQTT}{username};
+	Mods::Message::msgErr( "no registered password" ) if !$hostConfig->{MQTT}{passwd};
 
 	my $mqtt = Net::MQTT::Simple->new( $hostConfig->{MQTT}{broker} );
 	if( $mqtt ){
 		$mqtt->login( $hostConfig->{MQTT}{username}, $hostConfig->{MQTT}{passwd} );
-		Mods::Toops::msgVerbose( "broker login with '$hostConfig->{MQTT}{username}' account" );
+		Mods::Message::msgVerbose( "broker login with '$hostConfig->{MQTT}{username}' account" );
 		if( $opt_retain ){
 			$mqtt->retain( $opt_topic, $opt_payload );
 		} else {
@@ -60,9 +60,9 @@ sub doPublish {
 	my $result = true;
 
 	if( $result ){
-		Mods::Toops::msgOut( "success" );
+		Mods::Message::msgOut( "success" );
 	} else {
-		Mods::Toops::msgErr( "NOT OK" );
+		Mods::Message::msgErr( "NOT OK" );
 	}
 }
 
@@ -79,7 +79,7 @@ if( !GetOptions(
 	"payload=s"			=> \$opt_payload,
 	"retain!"			=> \$opt_retain	)){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -88,16 +88,16 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found topic='$opt_topic'" );
-Mods::Toops::msgVerbose( "found payload='$opt_payload'" );
-Mods::Toops::msgVerbose( "found retain='".( $opt_retain ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found topic='$opt_topic'" );
+Mods::Message::msgVerbose( "found payload='$opt_payload'" );
+Mods::Message::msgVerbose( "found retain='".( $opt_retain ? 'true':'false' )."'" );
 
 # topic is mandatory
-Mods::Toops::msgErr( "topic is required, but is not specified" ) if !$opt_topic;
-Mods::Toops::msgWarn( "payload is empty, but shouldn't" ) if !$opt_payload;
+Mods::Message::msgErr( "topic is required, but is not specified" ) if !$opt_topic;
+Mods::Message::msgWarn( "payload is empty, but shouldn't" ) if !$opt_payload;
 
 if( !Mods::Toops::errs()){
 	doPublish();

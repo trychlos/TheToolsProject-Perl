@@ -31,28 +31,28 @@ sub doPublish {
 	#my ( $pullConfig ) = @_;
 	my $result = false;
 	my $tohost = $TTPVars->{config}{toops}{deployments}{pullReference};
-	Mods::Toops::msgOut( "publishing to '$tohost'..." );
+	Mods::Message::msgOut( "publishing to '$tohost'..." );
 	my $asked = 0;
 	my $done = 0;
 	foreach my $dir ( @{$TTPVars->{config}{toops}{deployments}{sourceDirs}} ){
 		$asked += 1;
 		my @dirs = File::Spec->splitdir( $dir );
 		my $srcdir = File::Spec->rel2abs( File::Spec->catdir( File::Spec->curdir(), $dirs[scalar @dirs - 1] ));
-		Mods::Toops::msgOut( "  to $dir" );
-		Mods::Toops::msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
+		Mods::Message::msgOut( "  to $dir" );
+		Mods::Message::msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
 		if( !Mods::Toops::wantsDummy()){
 			my( $num_of_files_and_dirs, $num_of_dirs, $depth_traversed ) = dircopy( $srcdir, $dir );
-			Mods::Toops::msgVerbose( "num_of_files_and_dirs='$num_of_files_and_dirs'" );
-			Mods::Toops::msgVerbose( "num_of_dirs='$num_of_dirs'" );
-			Mods::Toops::msgVerbose( "depth_traversed='$depth_traversed'" );
+			Mods::Message::msgVerbose( "num_of_files_and_dirs='$num_of_files_and_dirs'" );
+			Mods::Message::msgVerbose( "num_of_dirs='$num_of_dirs'" );
+			Mods::Message::msgVerbose( "depth_traversed='$depth_traversed'" );
 		}
 		$done += 1;
 	}
 	my $str = "$done/$asked subdirs copied";
 	if( $done == $asked && !Mods::Toops::errs()){
-		Mods::Toops::msgOut( "success ($str)" );
+		Mods::Message::msgOut( "success ($str)" );
 	} else {
-		Mods::Toops::msgErr( "NOT OK ($str)" );
+		Mods::Message::msgErr( "NOT OK ($str)" );
 	}
 }
 
@@ -66,7 +66,7 @@ if( !GetOptions(
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy} )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -75,9 +75,9 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 
 # must publish a clean development environment from master branch
 my $status = `git status`;
@@ -103,24 +103,24 @@ foreach my $line ( @status ){
 	}
 }
 if( $branch ne 'master' ){
-	Mods::Toops::msgErr( "must publish from 'master' branch, found '$branch'" );
+	Mods::Message::msgErr( "must publish from 'master' branch, found '$branch'" );
 } else {
-	Mods::Toops::msgVerbose( "publishing from '$branch' branch: fine" );
+	Mods::Message::msgVerbose( "publishing from '$branch' branch: fine" );
 }
 if( $changes ){
-	Mods::Toops::msgErr( "have found uncommitted changes, but shouldn't" );
+	Mods::Message::msgErr( "have found uncommitted changes, but shouldn't" );
 } else {
-	Mods::Toops::msgVerbose( "no uncommitted change found: fine" );
+	Mods::Message::msgVerbose( "no uncommitted change found: fine" );
 }
 if( $untracked ){
-	Mods::Toops::msgErr( "have found untracked files, but shouldn't (maybe move them to uncommitted/)" );
+	Mods::Message::msgErr( "have found untracked files, but shouldn't (maybe move them to uncommitted/)" );
 } else {
-	Mods::Toops::msgVerbose( "no untracked file found: fine" );
+	Mods::Message::msgVerbose( "no untracked file found: fine" );
 }
 if( !$clean ){
-	Mods::Toops::msgErr( "must publish from a clean working tree, but this one is not" );
+	Mods::Message::msgErr( "must publish from a clean working tree, but this one is not" );
 } else {
-	Mods::Toops::msgVerbose( "found clean working tree: fine" );
+	Mods::Message::msgVerbose( "found clean working tree: fine" );
 }
 
 if( !Mods::Toops::errs()){

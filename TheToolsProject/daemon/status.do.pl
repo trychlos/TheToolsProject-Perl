@@ -36,7 +36,7 @@ my $opt_port = -1;
 # -------------------------------------------------------------------------------------------------
 # get a daemon status
 sub doStatus {
-	Mods::Toops::msgOut( "requesting the daemon for its status..." );
+	Mods::Message::msgOut( "requesting the daemon for its status..." );
 	my $cmd = "daemon.pl command -command status";
 	$cmd .= " -verbose" if $TTPVars->{run}{verbose};
 	if( $opt_json ){
@@ -47,10 +47,10 @@ sub doStatus {
 	my $res = `$cmd`;
 	if( $res && length $res && !$? ){
 		print "$res";
-		Mods::Toops::msgOut( "done" );
+		Mods::Message::msgOut( "done" );
 	} else {
-		Mods::Toops::msgWarn( "no answer from the daemon" );
-		Mods::Toops::msgErr( "NOT OK" );
+		Mods::Message::msgWarn( "no answer from the daemon" );
+		Mods::Message::msgErr( "NOT OK" );
 	}
 }
 
@@ -66,7 +66,7 @@ if( !GetOptions(
 	"json=s"			=> \$opt_json,
 	"port=i"			=> \$opt_port )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -75,26 +75,26 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found json='$opt_json'" );
-Mods::Toops::msgVerbose( "found port='$opt_port'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found json='$opt_json'" );
+Mods::Message::msgVerbose( "found port='$opt_port'" );
 
 # either the json or the port must be specified (and not both)
 my $count = 0;
 $count += 1 if $opt_json;
 $count += 1 if $opt_port != -1;
 if( $count == 0 ){
-	Mods::Toops::msgErr( "one of '--json' or '--port' options must be specified, none found" );
+	Mods::Message::msgErr( "one of '--json' or '--port' options must be specified, none found" );
 } elsif( $count > 1 ){
-	Mods::Toops::msgErr( "one of '--json' or '--port' options must be specified, both were found" );
+	Mods::Message::msgErr( "one of '--json' or '--port' options must be specified, both were found" );
 }
 #if a json is specified, must have a listeningPort
 if( $opt_json ){
 	my $daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
 	# must have a listening port
-	Mods::Toops::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+	Mods::Message::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
 }
 
 if( !Mods::Toops::errs()){

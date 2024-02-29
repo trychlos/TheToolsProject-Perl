@@ -59,7 +59,7 @@ sub dbmsArchivesDir {
 		# at least do not try to test them each time we need this address
 		#makeDirExist( $dir );
 	} else {
-		Mods::Toops::msgWarn( "'archivesDir' is not defined in toops.json nor in host configuration" );
+		Mods::Message::msgWarn( "'archivesDir' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -75,7 +75,7 @@ sub dbmsArchivesRoot {
 		# at least do not try to test them each time we need this address
 		#makeDirExist( $dir );
 	} else {
-		Mods::Toops::msgWarn( "'archivesRoot' is not defined in toops.json nor in host configuration" );
+		Mods::Message::msgWarn( "'archivesRoot' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -94,7 +94,7 @@ sub dbmsBackupsDir {
 	if( defined $dir ){
 		makeDirExist( $dir );
 	} else {
-		Mods::Toops::msgWarn( "'backupsDir' is not defined in toops.json nor in host configuration" );
+		Mods::Message::msgWarn( "'backupsDir' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -108,7 +108,7 @@ sub dbmsBackupsRoot {
 	if( defined $dir ){
 		makeDirExist( $dir );
 	} else {
-		Mods::Toops::msgWarn( "'backupsRoot' is not defined in toops.json nor in host configuration" );
+		Mods::Message::msgWarn( "'backupsRoot' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -126,7 +126,7 @@ sub execReportsDir {
 	if( defined $dir ){
 		makeDirExist( $dir );
 	} else {
-		Mods::Toops::msgWarn( "'execReports' is not defined in toops.json nor in host configuration" );
+		Mods::Message::msgWarn( "'execReports' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -205,10 +205,10 @@ sub makeDirExist {
 	my ( $dir ) = @_;
 	my $result = false;
 	if( -d $dir ){
-		#Mods::Toops::msgVerbose( "Path::makeDirExist() dir='$dir' exists" );
+		#Mods::Message::msgVerbose( "Path::makeDirExist() dir='$dir' exists" );
 		$result = true;
 	} else {
-		Mods::Toops::msgVerbose( "Path::makeDirExist() make_path() dir='$dir'" );
+		Mods::Message::msgVerbose( "Path::makeDirExist() make_path() dir='$dir'" );
 		my $error;
 		$result = true;
 		make_path( $dir, {
@@ -220,14 +220,14 @@ sub makeDirExist {
 			for my $diag ( @$error ){
 				my ( $file, $message ) = %$diag;
 				if( $file eq '' ){
-					Mods::Toops::msgErr( $message );
+					Mods::Message::msgErr( $message );
 				} else {
-					Mods::Toops::msgErr( "$file: $message" );
+					Mods::Message::msgErr( "$file: $message" );
 				}
 			}
 			$result = false;
 		}
-		Mods::Toops::msgVerbose( "Path::makeDirExist() dir='$dir' result=$result" );
+		Mods::Message::msgVerbose( "Path::makeDirExist() dir='$dir' result=$result" );
 	}
 	return $result;
 }

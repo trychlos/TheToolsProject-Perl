@@ -31,9 +31,9 @@ sub connect {
 	my ( $args ) = @_;
 	my $mqtt = undef;
 
-	Mods::Toops::msgErr( "no registered broker" ) if !$args->{broker};
-	Mods::Toops::msgErr( "no registered username" ) if !$args->{username};
-	Mods::Toops::msgErr( "no registered password" ) if !$args->{password};
+	Mods::Message::msgErr( "no registered broker" ) if !$args->{broker};
+	Mods::Message::msgErr( "no registered username" ) if !$args->{username};
+	Mods::Message::msgErr( "no registered password" ) if !$args->{password};
 
 	$mqtt = Net::MQTT::Simple->new( $args->{broker} );
 	if( $mqtt ){
@@ -50,7 +50,7 @@ sub connect {
 			}
 		}
 		my $logged = $mqtt->login( $args->{username}, $args->{password} );
-		Mods::Toops::msgVerbose( "MQTT::connect() logged-in with '$logged' account" );
+		Mods::Message::msgVerbose( "MQTT::connect() logged-in with '$logged' account" );
 	}
 	
 	return $mqtt;
@@ -72,7 +72,7 @@ sub disconnect {
 		}
 		$handle->disconnect();
 	} else {
-		Mods::Toops::msgErr( "MQTT::disconnect() undefined connection handle" );
+		Mods::Message::msgErr( "MQTT::disconnect() undefined connection handle" );
 	}
 }
 

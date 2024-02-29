@@ -30,12 +30,12 @@ my $opt_services = false;
 # -------------------------------------------------------------------------------------------------
 # list the available commands (same than services.pl list -services)
 sub listCommands {
-	Mods::Toops::msgOut( "displaying available commands..." );
+	Mods::Message::msgOut( "displaying available commands..." );
 	my @commands = Mods::Toops::getAvailableCommands();
 	foreach my $it ( @commands ){
 		Mods::Toops::helpCommandOneline( $it, { prefix => ' ' });
 	}
-	Mods::Toops::msgOut( scalar @commands." found command(s)" );
+	Mods::Message::msgOut( scalar @commands." found command(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -46,12 +46,12 @@ sub listCommands {
 # this code is so duplicated..
 sub listServices {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Toops::msgOut( "displaying services defined on $hostConfig->{name}..." );
+	Mods::Message::msgOut( "displaying services defined on $hostConfig->{name}..." );
 	my @list = Mods::Services::getDefinedServices( $hostConfig );
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
-	Mods::Toops::msgOut( scalar @list." found defined service(s)" );
+	Mods::Message::msgOut( scalar @list." found defined service(s)" );
 }
 
 # =================================================================================================
@@ -66,7 +66,7 @@ if( !GetOptions(
 	"commands!"			=> \$opt_commands,
 	"services!"			=> \$opt_services )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -75,11 +75,11 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
 	listCommands() if $opt_commands;

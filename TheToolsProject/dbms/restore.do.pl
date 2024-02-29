@@ -44,9 +44,9 @@ my $fname = undef;
 sub doRestore {
 	my $hostConfig = Mods::Toops::getHostConfig();
 	if( $opt_verifyonly ){
-		Mods::Toops::msgOut( "verifying the restorability of '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
+		Mods::Message::msgOut( "verifying the restorability of '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
 	} else {
-		Mods::Toops::msgOut( "restoring database '$hostConfig->{name}\\$opt_instance\\$opt_database' from '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
+		Mods::Message::msgOut( "restoring database '$hostConfig->{name}\\$opt_instance\\$opt_database' from '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
 	}
 	my $res = Mods::Dbms::restoreDatabase({
 		instance => $opt_instance,
@@ -69,9 +69,9 @@ sub doRestore {
 		});
 	}
 	if( $res ){
-		Mods::Toops::msgOut( "success" );
+		Mods::Message::msgOut( "success" );
 	} else {
-		Mods::Toops::msgErr( "NOT OK" );
+		Mods::Message::msgErr( "NOT OK" );
 	}
 }
 
@@ -90,7 +90,7 @@ if( !GetOptions(
 	"diff=s"			=> \$opt_diff,
 	"verifyonly!"		=> \$opt_verifyonly )){
 
-		Mods::Toops::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -99,20 +99,20 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Toops::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Toops::msgVerbose( "found instance='$opt_instance'" );
-Mods::Toops::msgVerbose( "found database='$opt_database'" );
-Mods::Toops::msgVerbose( "found full='$opt_full'" );
-Mods::Toops::msgVerbose( "found diff='$opt_diff'" );
-Mods::Toops::msgVerbose( "found verifyonly='".( $opt_verifyonly ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found instance='$opt_instance'" );
+Mods::Message::msgVerbose( "found database='$opt_database'" );
+Mods::Message::msgVerbose( "found full='$opt_full'" );
+Mods::Message::msgVerbose( "found diff='$opt_diff'" );
+Mods::Message::msgVerbose( "found verifyonly='".( $opt_verifyonly ? 'true':'false' )."'" );
 
 my $instance = Mods::Dbms::checkInstanceOpt( $opt_instance );
 
-Mods::Toops::msgErr( "'--database' option is mandatory, but is not specified" ) if !$opt_database && !$opt_verifyonly;
-Mods::Toops::msgErr( "'--full' option is mandatory, but is not specified" ) if !$opt_full;
-Mods::Toops::msgErr( "$opt_diff: file not found or not readable" ) if $opt_diff && ! -f $opt_diff;
+Mods::Message::msgErr( "'--database' option is mandatory, but is not specified" ) if !$opt_database && !$opt_verifyonly;
+Mods::Message::msgErr( "'--full' option is mandatory, but is not specified" ) if !$opt_full;
+Mods::Message::msgErr( "$opt_diff: file not found or not readable" ) if $opt_diff && ! -f $opt_diff;
 
 if( !Mods::Toops::errs()){
 	doRestore();

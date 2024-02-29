@@ -129,7 +129,7 @@ sub computeMacrosRec {
 		$result =~ s/<REMOTEHOST>/$daemon->{monitored}{host}/g;
 		$result =~ s/<REMOTESHARE>/$daemon->{monitored}{config}{remoteShare}/g;
 	}
-	#Mods::Toops::msgVerbose( "var='$var' ref='$ref' result='$result'" );
+	#Mods::Message::msgVerbose( "var='$var' ref='$ref' result='$result'" );
 	return $result;
 }
 
@@ -172,21 +172,21 @@ sub locallySyncedBackups {
 		# -> first thing: do we remember the last full ?
 		if( exists( $full->{$report->{instance}}{$report->{database}} )){
 			$result->{full} = $full->{$report->{instance}}{$report->{database}};
-			Mods::Toops::msgVerbose( "found last full as remembered '$full->{$report->{instance}}{$report->{database}}'" );
+			Mods::Message::msgVerbose( "found last full as remembered '$full->{$report->{instance}}{$report->{database}}'" );
 		} else {
 			# -> second: try to search in the localDir, hoping that the file has the old-classic name
 			my $lastfull = locallySearchLastFull( $report );
 			if( $lastfull ){
 				$full->{$report->{instance}}{$report->{database}} = $lastfull;
 				$result->{full} = $lastfull;
-				Mods::Toops::msgVerbose( "found last full as local '$lastfull'" );
+				Mods::Message::msgVerbose( "found last full as local '$lastfull'" );
 			} else {
 				# -> last chance it to scan remote execution reports
 				$lastfull = remoteSearchLastFull( $report );
 				if( $lastfull ){
 					$full->{$report->{instance}}{$report->{database}} = $lastfull;
 					$result->{full} = $lastfull;
-					Mods::Toops::msgVerbose( "found remote last full, transferred to '$lastfull'" );
+					Mods::Message::msgVerbose( "found remote last full, transferred to '$lastfull'" );
 				}
 			}
 		}
@@ -207,7 +207,7 @@ sub locallySearchLastFull {
 	# hardcoding the expected format file name as host-instance-database ... -mode.backup
 	# this should be enough in most situations
 	my $dir = $daemon->{config}{localDir};
-	Mods::Toops::msgVerbose( "searching for full backup in '$dir'" );
+	Mods::Message::msgVerbose( "searching for full backup in '$dir'" );
 	$_localdata = {};
 	$_localdata->{host} = $report->{host};
 	$_localdata->{instance} = $report->{instance};
@@ -258,22 +258,22 @@ sub remoteSearchLastFull_wanted {
 # - returns the local path, or undef in case of an error
 sub syncedPath {
 	my ( $localSource ) = @_;
-	Mods::Toops::msgVerbose( "localSource='$localSource'" );
+	Mods::Message::msgVerbose( "localSource='$localSource'" );
 	# the output file is specified as a local filename in the remote host
 	# we need to get a the remote filename (source of the copy) and the local filename (target of the copy)
 	my( $rl_vol, $rl_dirs, $rl_file ) = File::Spec->splitpath( $localSource );
 	my $remoteSource = File::Spec->catpath( $daemon->{monitored}{config}{remoteShare}, $rl_dirs, $rl_file );
-	Mods::Toops::msgVerbose( "remoteSource='$remoteSource'" );
+	Mods::Message::msgVerbose( "remoteSource='$remoteSource'" );
 	# local target
 	my $localTarget = Mods::Path::withTrailingSeparator( $daemon->{config}{localDir} );
-	Mods::Toops::msgVerbose( "localTarget='$localTarget'" );
+	Mods::Message::msgVerbose( "localTarget='$localTarget'" );
 	Mods::Path::makeDirExist( $daemon->{config}{localDir} );
 	my $res = Mods::Toops::copyFile( $remoteSource, $localTarget );
 	if( $res ){
-		Mods::Toops::msgVerbose( "successfully copied '$remoteSource' to '$localTarget'" );
+		Mods::Message::msgVerbose( "successfully copied '$remoteSource' to '$localTarget'" );
 		$localTarget = File::Spec->catpath( $localTarget, $rl_file );
 	} else {
-		Mods::Toops::msgErr( "unable to copy '$remoteSource' to '$localTarget': $!" );
+		Mods::Message::msgErr( "unable to copy '$remoteSource' to '$localTarget': $!" );
 		$localTarget = undef;
 	}
 	return $localTarget;
@@ -288,20 +288,20 @@ sub doWithNew {
 	#print "newFiles".EOL.Dumper( @runningScan );
 	foreach my $report ( @newFiles ){
 		$stats->{count} += 1;
-		Mods::Toops::msgVerbose( "new report '$report'" );
+		Mods::Message::msgVerbose( "new report '$report'" );
 		my $data = Mods::Toops::jsonRead( $report );
 		if( exists( $data->{command} ) && $data->{command} eq "dbms.pl" && exists( $data->{verb} ) && $data->{verb} eq "backup" && ( !exists( $data->{dummy} ) || !$data->{dummy} )){
 
 			my $instance = $data->{instance};
 			if( $instance ne $daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}}{instance} ){
-				Mods::Toops::msgVerbose( "instance='$instance' ignored" );
+				Mods::Message::msgVerbose( "instance='$instance' ignored" );
 				$stats->{ignored} += 1;
 				next;
 			}
 
 			my $database = $data->{database};
 			if( !grep ( /$database/, @{$daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}}{databases}} )){
-				Mods::Toops::msgVerbose( "database='$database' ignored" );
+				Mods::Message::msgVerbose( "database='$database' ignored" );
 				$stats->{ignored} += 1;
 				next;
 			}
@@ -319,12 +319,12 @@ sub doWithNew {
 				my $command = "dbms.pl restore -instance $restoreInstance -database $database ";
 				$command .= " -full $result->{full}";
 				$command .= " -diff $result->{diff}" if $result->{diff};
-				Mods::Toops::msgVerbose( "executing $command" );
+				Mods::Message::msgVerbose( "executing $command" );
 				my $out = `$command`;
 				print $out;
-				Mods::Toops::msgLog( $out );
+				Mods::Message::msgLog( $out );
 			} else {
-				Mods::Toops::msgWarn( "result is undefined, unable to restore" );
+				Mods::Message::msgWarn( "result is undefined, unable to restore" );
 			}
 		}
 	}
@@ -334,7 +334,7 @@ sub doWithNew {
 # we find less files in this iteration than in the previous - maybe some files have been purged, deleted
 # moved, or we have a new directory, or another reason - just reset and restart over
 sub varReset {
-	Mods::Toops::msgVerbose( "varReset()" );
+	Mods::Message::msgVerbose( "varReset()" );
 	@previousScan = ();
 }
 
@@ -381,7 +381,7 @@ sub works {
 # - monitored host must have a json configuration file
 # - the daemon configuration must have monitoredService and localDir keys
 if( scalar @ARGV != 2 ){
-	Mods::Toops::msgErr( "not enough arguments, expected <json> <host>, found ".join( ' ', @ARGV )); 
+	Mods::Message::msgErr( "not enough arguments, expected <json> <host>, found ".join( ' ', @ARGV )); 
 } else {
 	$daemon->{monitored}{host} = $ARGV[1];
 	$daemon->{monitored}{raw} = Mods::Toops::getHostConfig( $daemon->{monitored}{host}, { withEvaluate => false });
@@ -390,25 +390,25 @@ if( scalar @ARGV != 2 ){
 	# set TTPVars->{run}{daemon}{add} to improve logs
 	if( exists( $daemon->{config}{monitoredService} )){
 		if( exists( $daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}} )){
-			Mods::Toops::msgVerbose( "monitored service '$daemon->{config}{monitoredService}' successfully found in remote host '$daemon->{monitored}{host}' configuration file" );
+			Mods::Message::msgVerbose( "monitored service '$daemon->{config}{monitoredService}' successfully found in remote host '$daemon->{monitored}{host}' configuration file" );
 			$TTPVars->{run}{daemon}{add} = $daemon->{config}{monitoredService};
 		} else {
-			Mods::Toops::msgErr( "monitored service '$daemon->{config}{monitoredService}' doesn't exist in remote host '$daemon->{monitored}{host}' configuration file" );
+			Mods::Message::msgErr( "monitored service '$daemon->{config}{monitoredService}' doesn't exist in remote host '$daemon->{monitored}{host}' configuration file" );
 		}
 	} else {
-		Mods::Toops::msgErr( "'monitoredService' must be specified in daemon configuration, not found" );
+		Mods::Message::msgErr( "'monitoredService' must be specified in daemon configuration, not found" );
 	}
 	# daemon: localDir
 	if( exists( $daemon->{config}{localDir} )){
-		Mods::Toops::msgVerbose( "local dir '$daemon->{config}{localDir}' successfully found in daemon configuration file" );
+		Mods::Message::msgVerbose( "local dir '$daemon->{config}{localDir}' successfully found in daemon configuration file" );
 	} else {
-		Mods::Toops::msgErr( "'localDir' must be specified in daemon configuration, not found" );
+		Mods::Message::msgErr( "'localDir' must be specified in daemon configuration, not found" );
 	}
 	# host: remoteShare
 	if( exists( $daemon->{monitored}{config}{remoteShare} )){
-		Mods::Toops::msgVerbose( "found remoteShare='$daemon->{monitored}{config}{remoteShare}'" );
+		Mods::Message::msgVerbose( "found remoteShare='$daemon->{monitored}{config}{remoteShare}'" );
 	} else {
-		Mods::Toops::msgErr( "remote share must be specified in remote host '$daemon->{monitored}{host}' configuration, not found" );
+		Mods::Message::msgErr( "remote share must be specified in remote host '$daemon->{monitored}{host}' configuration, not found" );
 	}
 }
 if( Mods::Toops::errs()){
@@ -423,8 +423,8 @@ my $sleepTime = Mods::Daemon::getSleepTime(
 	$scanInterval
 );
 
-Mods::Toops::msgVerbose( "sleepTime='$sleepTime'" );
-Mods::Toops::msgVerbose( "scanInterval='$scanInterval'" );
+Mods::Message::msgVerbose( "sleepTime='$sleepTime'" );
+Mods::Message::msgVerbose( "scanInterval='$scanInterval'" );
 
 while( !$daemon->{terminating} ){
 	my $res = Mods::Daemon::daemonListen( $daemon, $commands );

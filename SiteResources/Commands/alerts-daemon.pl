@@ -44,7 +44,7 @@ my @runningScan = ();
 sub doWithNew {
 	my ( @newFiles ) = @_;
 	foreach my $file ( @newFiles ){
-		Mods::Toops::msgVerbose( "new alert '$file'" );
+		Mods::Message::msgVerbose( "new alert '$file'" );
 		my $data = Mods::Toops::jsonRead( $file );
 	}
 }
@@ -53,7 +53,7 @@ sub doWithNew {
 # we find less files in this iteration than in the previous - maybe some files have been purged, deleted
 # moved, or we have a new directory, or another reason - just reset and restart over
 sub varReset {
-	Mods::Toops::msgVerbose( "varReset()" );
+	Mods::Message::msgVerbose( "varReset()" );
 	@previousScan = ();
 }
 
@@ -94,12 +94,12 @@ sub works {
 # first check arguments
 # - the daemon configuration must have monitoredDir key
 if( scalar @ARGV != 1 ){
-	Mods::Toops::msgErr( "not enough arguments, expected <json>, found ".join( ' ', @ARGV )); 
+	Mods::Message::msgErr( "not enough arguments, expected <json>, found ".join( ' ', @ARGV )); 
 } else {
 	if( exists( $daemon->{config}{monitoredDir} )){
-		Mods::Toops::msgVerbose( "monitored dir '$daemon->{config}{monitoredDir}' successfully found in daemon configuration file" );
+		Mods::Message::msgVerbose( "monitored dir '$daemon->{config}{monitoredDir}' successfully found in daemon configuration file" );
 	} else {
-		Mods::Toops::msgErr( "'monitoredDir' must be specified in daemon configuration, not found" );
+		Mods::Message::msgErr( "'monitoredDir' must be specified in daemon configuration, not found" );
 	}
 }
 if( Mods::Toops::errs()){
@@ -114,8 +114,8 @@ my $sleepTime = Mods::Daemon::getSleepTime(
 	$scanInterval
 );
 
-Mods::Toops::msgVerbose( "sleepTime='$sleepTime'" );
-Mods::Toops::msgVerbose( "scanInterval='$scanInterval'" );
+Mods::Message::msgVerbose( "sleepTime='$sleepTime'" );
+Mods::Message::msgVerbose( "scanInterval='$scanInterval'" );
 
 while( !$daemon->{terminating} ){
 	my $res = Mods::Daemon::daemonListen( $daemon, $commands );

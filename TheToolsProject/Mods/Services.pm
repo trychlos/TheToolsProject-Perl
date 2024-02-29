@@ -27,13 +27,13 @@ use Mods::Toops;
 sub checkServiceOpt {
 	my ( $name, $opts ) = @_;
 	$opts //= {};
-	Mods::Toops::msgVerbose( "checkServiceOpt() entering with name='".( $name || '(undef)' )."'" );
+	Mods::Message::msgVerbose( "checkServiceOpt() entering with name='".( $name || '(undef)' )."'" );
 	my $service = undef;
 	if( $name ){
 		my $config = Mods::Toops::getHostConfig();
 		if( $config->{Services} ){
 			if( exists( $config->{Services}{$name} )){
-				Mods::Toops::msgVerbose( "found service='$name'" );
+				Mods::Message::msgVerbose( "found service='$name'" );
 				$service = $name;
 				my $TTPVars = Mods::Toops::TTPVars();
 				$TTPVars->{$TTPVars->{run}{command}{name}}{service} = {
@@ -42,21 +42,21 @@ sub checkServiceOpt {
 				};
 				#print Dumper( $TTPVars->{$TTPVars->{run}{command}{name}} );
 			} else {
-				Mods::Toops::msgErr( "service '$name' is not defined in host configuration" );
+				Mods::Message::msgErr( "service '$name' is not defined in host configuration" );
 			}
 		} else {
-			Mods::Toops::msgErr( "no 'Services' defined in host configuration" );
+			Mods::Message::msgErr( "no 'Services' defined in host configuration" );
 		}
 	} else {
 		my $mandatory = true;
 		$mandatory = $opts->{mandatory} if exists $opts->{mandatory};
 		if( $mandatory ){
-			Mods::Toops::msgErr( "'--service' option is mandatory, but none as been found" );
+			Mods::Message::msgErr( "'--service' option is mandatory, but none as been found" );
 		} else {
-			Mods::Toops::msgVerbose( "'--service' option is optional, has not been specified" );
+			Mods::Message::msgVerbose( "'--service' option is optional, has not been specified" );
 		}
 	}
-	Mods::Toops::msgVerbose( "checkServiceOpt() returning with service='".( $service || '(undef)' )."'" );
+	Mods::Message::msgVerbose( "checkServiceOpt() returning with service='".( $service || '(undef)' )."'" );
 	return $service;
 }
 

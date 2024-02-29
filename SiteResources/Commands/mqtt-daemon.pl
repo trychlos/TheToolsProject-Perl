@@ -48,7 +48,7 @@ my $sysReceived = false;
 # - args
 sub doCommand {
 	my ( $req ) = @_;
-	Mods::Toops::msgLog( "command='$req->{command}' sysReceived=$sysReceived" );
+	Mods::Message::msgLog( "command='$req->{command}' sysReceived=$sysReceived" );
 	my @answer = ();
 	my $count = 0;
 	foreach my $it ( keys %{$kept->{$req->{command}}} ){
@@ -77,7 +77,7 @@ sub doMatched {
 		$logged .= " topic='$topic'" if $logTopic;
 		$logged .= " logMessage=$logMessage";
 		$logged .= " payload='$payload'" if $logMessage;
-		Mods::Toops::msgLog( "$logged" );
+		Mods::Message::msgLog( "$logged" );
 	}
 	# do we want keep and answer with the received data ?
 	my $command = undef;
@@ -121,17 +121,17 @@ sub works {
 # MAIN
 # =================================================================================================
 
-Mods::Toops::msgErr( "no registered broker" ) if !$TTPVars->{config}{host}{MQTT}{broker};
-Mods::Toops::msgErr( "no registered username" ) if !$TTPVars->{config}{host}{MQTT}{username};
-Mods::Toops::msgErr( "no registered password" ) if !$TTPVars->{config}{host}{MQTT}{passwd};
+Mods::Message::msgErr( "no registered broker" ) if !$TTPVars->{config}{host}{MQTT}{broker};
+Mods::Message::msgErr( "no registered username" ) if !$TTPVars->{config}{host}{MQTT}{username};
+Mods::Message::msgErr( "no registered password" ) if !$TTPVars->{config}{host}{MQTT}{passwd};
 
 if( !Mods::Toops::errs()){
 	$mqtt = Net::MQTT::Simple->new( $TTPVars->{config}{host}{MQTT}{broker} );
-	Mods::Toops::msgErr( "unable to open a connection to '$TTPVars->{config}{host}{MQTT}{broker}'" ) if !$mqtt;
+	Mods::Message::msgErr( "unable to open a connection to '$TTPVars->{config}{host}{MQTT}{broker}'" ) if !$mqtt;
 }
 if( !Mods::Toops::errs()){
 	my $user = $mqtt->login( $TTPVars->{config}{host}{MQTT}{username}, $TTPVars->{config}{host}{MQTT}{passwd} );
-	Mods::Toops::msgLog( "login(): $user" );
+	Mods::Message::msgLog( "login(): $user" );
 	$mqtt->subscribe( '#' => \&works, '$SYS/#' => \&works );
 	setCommands();
 }

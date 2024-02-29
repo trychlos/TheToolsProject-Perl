@@ -50,7 +50,7 @@ TTPVars
 	 +- daemon
 	     |
 		 +- started
-		 +- name
-		 +- add
+		 +- name            Used to prefix the messages sent by the daemons
+		 +- add             Used to prefix the messages sent by the daemons
  |
  +- dbms					Toops.pm 1202 $TTPVars->{$command} = {};

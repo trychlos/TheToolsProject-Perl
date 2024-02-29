@@ -77,9 +77,9 @@ sub mqttPublish {
 	$opts //= {};
 	my $TTPVars = Mods::Toops::TTPVars();
 	if( exists( $TTPVars->{config}{toops}{metrology}{withMqtt} )){
-		Mods::Toops::msgVerbose( "Metrology::mqttPublish() TTPVars->{config}{toops}{metrology}{withMqtt}=$TTPVars->{config}{toops}{metrology}{withMqtt}" );
+		Mods::Message::msgVerbose( "Metrology::mqttPublish() TTPVars->{config}{toops}{metrology}{withMqtt}=$TTPVars->{config}{toops}{metrology}{withMqtt}" );
 	} else {
-		Mods::Toops::msgVerbose( "Metrology::mqttPublish() TTPVars->{config}{toops}{metrology}{withMqtt} is undef" );
+		Mods::Message::msgVerbose( "Metrology::mqttPublish() TTPVars->{config}{toops}{metrology}{withMqtt} is undef" );
 	}
 	my $count = 0;
 	if( $TTPVars->{config}{toops}{metrology}{withMqtt} ){
@@ -89,7 +89,7 @@ sub mqttPublish {
 		foreach my $key ( keys %{$set} ){
 			last if $count >= $max && $max >= 0;
 			my $command = "mqtt.pl publish -topic $host/metrology/$root/$key -payload \"$set->{$key}\"";
-			Mods::Toops::msgVerbose( $command );
+			Mods::Message::msgVerbose( $command );
 			`$command`;
 			$count += 1;
 		}
@@ -113,11 +113,11 @@ sub prometheusPublish {
 	my $withPrometheus = false;
 	if( exists $TTPVars->{config}{toops}{metrology}{withPrometheus} ){
 		$withPrometheus = $TTPVars->{config}{toops}{metrology}{withPrometheus};
-		Mods::Toops::msgVerbose( "setting withPrometheus='".( $withPrometheus ? 'true' : 'false' )."' from toops configuration" );
+		Mods::Message::msgVerbose( "setting withPrometheus='".( $withPrometheus ? 'true' : 'false' )."' from toops configuration" );
 	}
 	if( exists $TTPVars->{config}{host}{metrology}{withPrometheus} ){
 		$withPrometheus = $TTPVars->{config}{host}{metrology}{withPrometheus};
-		Mods::Toops::msgVerbose( "setting withPrometheus='".( $withPrometheus ? 'true' : 'false' )."' from host configuration" );
+		Mods::Message::msgVerbose( "setting withPrometheus='".( $withPrometheus ? 'true' : 'false' )."' from host configuration" );
 	}
 	my $count = 0;
 	if( $withPrometheus ){
@@ -133,12 +133,12 @@ sub prometheusPublish {
 			$metric =~ s/\./_/g;
 			my $str = "# TYPE $metric gauge\n";
 			$str .= "$metric $set->{$key}\n";
-			Mods::Toops::msgVerbose( "Metrology::prometheusPublish() posting '$str' to url='$url'" );
+			Mods::Message::msgVerbose( "Metrology::prometheusPublish() posting '$str' to url='$url'" );
 			$req->content( $str );
 			my $response = $ua->request( $req );
-			Mods::Toops::msgVerbose( "Metrology::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
+			Mods::Message::msgVerbose( "Metrology::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
 			$count += 1 if $response->is_success;
-			Mods::Toops::msgWarn( "Metrology::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content ) if !$response->is_success;
+			Mods::Message::msgWarn( "Metrology::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content ) if !$response->is_success;
 		}
 	}
 	return $count;
@@ -167,14 +167,14 @@ sub prometheusPush {
 			push( @{$fields}, "$key $values->{$key}" );
 		}
 		$str .= "\n".join( "\n", @{$fields} )."\n";
-		Mods::Toops::msgVerbose( "Metrology::prometheusPush() posting '$str' to url='$url'" );
+		Mods::Message::msgVerbose( "Metrology::prometheusPush() posting '$str' to url='$url'" );
 		$req->content( $str );
 		my $response = $ua->request( $req );
 		$res = $response->is_success;
 		#print Dumper( $response );
-		Mods::Toops::msgVerbose( "Metrology::prometheusPush() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
+		Mods::Message::msgVerbose( "Metrology::prometheusPush() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
 	} else {
-		Mods::Toops::msgVerbose( "calling Metrology::prometheusPush() while TTPVars->{config}{toops}{prometheus}{url} is undef" );
+		Mods::Message::msgVerbose( "calling Metrology::prometheusPush() while TTPVars->{config}{toops}{prometheus}{url} is undef" );
 	}
 	return $res;
 }
