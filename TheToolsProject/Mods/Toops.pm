@@ -268,8 +268,15 @@ sub _evaluateScalar {
 	}
 	my $result = $value || '';
 	if( $evaluate ){
+		my $re = qr/
+			[^\[]*	# anything which doesn't contain any '['
+			|
+			[^\[]*
+			\[(?>[^\[\]]|(?R))*\]
+			[^\[]*
+		/x;
 		# this weird code to let us manage some level of pseudo recursivity
-		$result =~ s/\[eval:([^\]]+)\]/_evaluatePrint( $1 )/eg;
+		$result =~ s/\[eval:($re)\]/_evaluatePrint( $1 )/eg;
 		$result =~ s/\[_eval:/[eval:/g;
 		$result =~ s/\[__eval:/[_eval:/g;
 		$result =~ s/\[___eval:/[__eval:/g;
