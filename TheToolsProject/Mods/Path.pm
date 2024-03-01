@@ -123,11 +123,11 @@ sub dbmsBackupsRoot {
 sub execReportsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = Mods::Toops::var([ 'executionReports', 'dropDir' ], $opts );
+	my $dir = Mods::Toops::var([ 'executionReports', 'withFile', 'dropDir' ], $opts );
 	if( defined $dir ){
 		makeDirExist( $dir );
 	} else {
-		Mods::Message::msgWarn( "'executionReports/dropDir' is not defined in toops.json nor in host configuration" );
+		Mods::Message::msgWarn( "'executionReports/withFile/dropDir' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -181,6 +181,9 @@ sub hostsConfigurationsDir {
 }
 
 # ------------------------------------------------------------------------------------------------
+# (I):
+# - an optional flag to say if makeDirExist() must be run, defaulting to true
+#   this is useful when this function is called from a to-be-evaluated json configuration file
 # (O):
 # returns the root of the logs tree
 # this is an optional value read from toops.json, defaulting to user temp directory, itself defaulting to /tmp (or C:\Temp)
@@ -188,6 +191,8 @@ sub hostsConfigurationsDir {
 # logs hierarchy while logsDailyDir is the logs of the day (which may be the same by the fact and this is a decision of
 # the site integrator)
 sub logsDailyDir {
+	my( $testDir ) = @_;
+	$testDir = true if not defined $testDir;
 	my $dir;
 	my $TTPVars = Mods::Toops::TTPVars();
 	if( exists( $TTPVars->{config}{host}{logsDir} )){
@@ -197,11 +202,14 @@ sub logsDailyDir {
 	} else {
 		$dir = File::Spec->catdir( logsRootDir(), 'Toops', 'logs' );
 	}
-	makeDirExist( $dir );
+	makeDirExist( $dir ) if $testDir;
 	return $dir;
 }
 
 # ------------------------------------------------------------------------------------------------
+# (I):
+# - an optional flag to say if makeDirExist() must be run, defaulting to true
+#   this is useful when this function is called from a to-be-evaluated json configuration file
 # (O):
 # returns the root of the logs tree, making sure it exists
 # this is an optional value read from toops.json, defaulting to user temp directory, itself defaulting to per-OS temp directory
@@ -209,6 +217,8 @@ sub logsDailyDir {
 # logs hierarchy while logsDailyDir is the logs of the day (which may be the same by the fact and this is a decision of
 # the site integrator)
 sub logsRootDir {
+	my( $testDir ) = @_;
+	$testDir = true if not defined $testDir;
 	my $dir;
 	my $TTPVars = Mods::Toops::TTPVars();
 	if( exists( $TTPVars->{config}{host}{logsRoot} )){
@@ -222,7 +232,7 @@ sub logsRootDir {
 	} else {
 		$dir = $TTPVars->{Toops}{defaults}{$Config{osname}}{tempDir};
 	}
-	makeDirExist( $dir );
+	makeDirExist( $dir ) if $testDir;
 	return $dir;
 }
 

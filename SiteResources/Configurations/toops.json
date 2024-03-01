@@ -20,7 +20,7 @@
 	],
 	"toops": {
 		"logsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDayLogs",
-		"logsDir": "[_eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
+		"logsDir": "[eval:Mods::Path::logsRootDir( false )]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
 		"Message": {
 			"msgDummy": {
 				"withColor": true,
@@ -44,10 +44,16 @@
 			}
 		},
 		"executionReports": {
-			"dropDir": "[_eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports",
-			"withFile": true,
-			"withMqtt": true,
-			"withPrometheus": true
+			"withFile": {
+				"enabled": true,
+				"dropDir": "[eval:Mods::Path::logsRootDir( false )]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports"
+			},
+			"withMqtt": {
+				"enabled": true
+			},
+			"withPrometheus": {
+				"enabled": true
+			}
 		},
 		"copyDir": {
 			"byOS": {
@@ -70,38 +76,53 @@
 				}
 			}
 		},
+		"alerts": {
+			"withFile": {
+				"enabled": true,
+				"dropDir": "[eval:Mods::Path::logsRootDir( false )]\\[eval:localtime->strftime( '%y%m%d' )]\\Alerts"
+			},
+			"withMqtt": {
+				"enabled": true
+			},
+			"withMail" : {
+				"enabled": false,
+				"gateway" : "SMTPGateway",
+				"mailto": [
+					"alerts@trychlos.org",
+					"pierre@pwi-consulting.fr"
+				]
+			},
+			"withSms" : {
+				"enabled": false,
+				"gateway" : {
+					"type": "mail2sms",
+					"address" : [
+						"SMTP"
+					]
+				},
+				"smsto": [
+				]
+			}
+		},
+		"SMTPGateway": {
+			"host": "mail.trychlos.org",
+			"port": 465,
+			"security" : "ssl",
+			"authent": "PLAIN",
+			"username": "inlingua-adm@trychlos.org",
+			"password": "X-aUnGv+pV8t!O8m",
+			"mailfrom": "No Reply <no-reply@blingua.fr>",
+			"mail2sms": {
+				"to": "forwarder@trychlos.org",
+				"subject": "SMSTO: +33607797792"
+			}
+		},
 
 		"dbms": {
 			"backupsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDaySQLBackups",
 			"backupsDir": "[eval:$TTPVars->{config}{toops}{dbms}{backupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:uc hostname]",
 			"archivesRoot": "",
 			"archivesDir": "[eval:Mods::Path::dbmsArchivesRoot()]\\[eval:localtime->strftime( '%y%m%d' )]"
-		},
-		"alerts": {
-			"dropDir": "[eval:$TTPVars->{config}{toops}{logsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\Alerts",
-			"levels": {
-				"default": {
-					"mail": {
-						"from": "inlingua-adm@trychos.org",
-						"mailto": [
-							"alerts@trychlos.org",
-							"pierre@pwi-consulting.fr"
-						],
-						"smsto": [
-							{
-								"to": "forwarder@trychlos.org",
-								"subject": "SMSTO: +33607797792"
-							}
-						]
-					}
-				}
-			}
-		},
-		"SMTP": {
-			"host": "mail.trychlos.org",
-			"port": 587,
-			"username": "inlingua-adm@trychlos.org",
-			"password": "ZCY2O5pMFab7kl8g"
 		},
 		"deployments": {
 			"sourceDirs": [

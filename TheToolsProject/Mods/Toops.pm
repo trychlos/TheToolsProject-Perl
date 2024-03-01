@@ -271,10 +271,15 @@ sub _evaluateScalar {
 		my $re = qr/
 			[^\[]*	# anything which doesn't contain any '['
 			|
-			[^\[]*
-			\[(?>[^\[\]]|(?R))*\]
-			[^\[]*
+			[^\[]* \[(?>[^\[\]]|(?R))*\] [^\[]*
 		/x;
+		
+		if( false ){
+			my @matches = $result =~ /\[eval:($re)\]/g;
+			print "line='$result'".EOL;
+			print Dumper( @matches );
+		}
+		
 		# this weird code to let us manage some level of pseudo recursivity
 		$result =~ s/\[eval:($re)\]/_evaluatePrint( $1 )/eg;
 		$result =~ s/\[_eval:/[eval:/g;
@@ -336,8 +341,8 @@ sub execReportByCommand {
 # - the data to be written
 sub execReportToFile {
 	my ( $report, $opts ) = @_;
-	my $withFile = var([ 'executionReports', 'withFile' ]);
-	Mods::Message::msgVerbose( "execReportToFile() var({executionReports}{withFile})='".( defined $withFile ? $withFile : 'undef' )."'");
+	my $withFile = var([ 'executionReports', 'withFile', 'enabled' ]);
+	Mods::Message::msgVerbose( "execReportToFile() var({executionReports}{withFile}{enabled})='".( defined $withFile ? $withFile : 'undef' )."'");
 	if( $withFile ){
 		my $path = File::Spec->catdir( Mods::Path::execReportsDir(), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
 		jsonWrite( $report, $path );
@@ -350,8 +355,8 @@ sub execReportToFile {
 # - the data to be written
 sub execReportToMqtt {
 	my ( $report, $opts ) = @_;
-	my $withMqtt = var([ 'executionReports', 'withMqtt' ]);
-	Mods::Message::msgVerbose( "execReportToFile() var({executionReports}{withMqtt})='".( defined $withMqtt ? $withMqtt : 'undef' )."'");
+	my $withMqtt = var([ 'executionReports', 'withMqtt', 'enabled' ]);
+	Mods::Message::msgVerbose( "execReportToMqtt() var({executionReports}{withMqtt}{enabled})='".( defined $withMqtt ? $withMqtt : 'undef' )."'");
 	if( $withMqtt ){
 		my %reportHash = %$report;
 		my $reportCopy = \%reportHash;
@@ -392,8 +397,8 @@ sub execReportToMqtt {
 # - the data to be written
 sub execReportToPrometheus {
 	my ( $report, $opts ) = @_;
-	my $withPrometheus = var([ 'executionReports', 'withPrometheus' ]);
-	Mods::Message::msgVerbose( "execReportToFile() var({executionReports}{withPrometheus})='".( defined $withPrometheus ? $withPrometheus : 'undef' )."'");
+	my $withPrometheus = var([ 'executionReports', 'withPrometheus', 'enabled' ]);
+	Mods::Message::msgVerbose( "execReportToPrometheus() var({executionReports}{withPrometheus}{enabled})='".( defined $withPrometheus ? $withPrometheus : 'undef' )."'");
 	if( $withPrometheus ){
 		my %reportHash = %$report;
 		my $reportCopy = \%reportHash;

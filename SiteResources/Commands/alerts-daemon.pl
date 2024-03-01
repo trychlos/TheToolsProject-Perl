@@ -40,7 +40,7 @@ my @runningScan = ();
 
 # -------------------------------------------------------------------------------------------------
 # new alert
-# should never arrive as all alerts must be sent through MQTT bus
+# should never arrive as all alerts should also be sent through MQTT bus which is the preferred way of dealing with these alerts
 sub doWithNew {
 	my ( @newFiles ) = @_;
 	foreach my $file ( @newFiles ){

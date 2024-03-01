@@ -129,6 +129,18 @@ my $Definitions = {
 $Term::ANSIColor::EACHLINE = EOL;
 
 # -------------------------------------------------------------------------------------------------
+# whether a user-provided level is known - level is case insensitive
+# (I):
+# - a level string
+# (O):
+# - true|false
+sub isKnownLevel {
+	my ( $level ) = @_;
+	my $res = grep( /$level/i, keys %{$Definitions} );
+	return $res;
+}
+
+# -------------------------------------------------------------------------------------------------
 # dummy message
 # (I):
 # - the message to be printed (usually the command to be run in dummy mode)

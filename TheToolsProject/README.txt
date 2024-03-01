@@ -13,6 +13,7 @@ Toops for Windows:
 	> update the PATH to address all your Toops/bin directories
 	> install CPAN packages
 	  Data::UUID
+	  MIME::Lite
 	  Net::MQTT::Simple
 	  Proc::Background
 
