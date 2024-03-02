@@ -107,8 +107,7 @@
 		"SMTPGateway": {
 			"host": "mail.trychlos.org",
 			"port": 465,
-			"security" : "ssl",
-			"authent": "PLAIN",
+			"debug": true,
 			"username": "inlingua-adm@trychlos.org",
 			"password": "X-aUnGv+pV8t!O8m",
 			"mailfrom": "No Reply <no-reply@blingua.fr>",

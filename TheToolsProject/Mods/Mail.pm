@@ -40,24 +40,14 @@ sub send {
 	my ( $msg, $gateway ) = @_;
 	Mods::Message::msgErr( "expect message, not found" ) if !$msg;
 	Mods::Message::msgErr( "expect smtp gateway, not found" ) if !$gateway;
+	Mods::Message::msgErr( "password is mandatory if a username is specified" ) if $gateway && $gateway->{username} && !$gateway->{password};
 	my $res = false;
 	if( !Mods::Toops::errs()){
 		my $sender = $gateway->{mailfrom};
 		my $mailto = join( ', ', @{$msg->{mailto}} );
 		my $subject = $msg->{subject};
 		my $message = $msg->{message};
-		
-		my $mailer = Net::SMTP->new( $gateway->{host}, Port => $gateway->{port}, Debug => 1 );
-		Mods::Message::msgErr( "SMTP->new() ".$! ) if !$mailer;
-		my $sasl = Authen::SASL->new(
-			mechanism => $gateway->{authent},
-			callback => { user => $gateway->{username}, pass => $gateway->{password} }
-		);
-		Mods::Message::msgErr( $! ) if !$sasl;
-		my $res = $mailer->auth( $sasl );
-		print Dumper( $res );
 
-=pod
 		my $email = Email::MIME->create(
 			header_str => [
 				From    => $sender,
@@ -70,39 +60,41 @@ sub send {
 			},
 			body_str => $message,
 		);
-		my $sasl = Authen::SASL->new(
-			mechanism => $gateway->{authent},
-			callback => { user => $gateway->{username}, pass => $gateway->{password} }
-		);
-		print Dumper( $sasl );
-		my $transport = Email::Sender::Transport::SMTP->new({
-			host => $gateway->{host},
-			port => $gateway->{port},
-			sasl_authenticator => $sasl,
-			helo => uc hostname,
-			#ssl => $gateway->{security},
-			Debug => 1
-		});
-		print Dumper( $transport );
+
+		# Authen::SASL accepts mechanism = CRAM-MD5 PLAIN ANONYMOUS
+		# it automatically chooses the best suited for the server
+		# which may be forced with 'authent' JSON key
+		my $opts = {};
+		$opts->{callback} = { user => $gateway->{username}, pass => $gateway->{password} } if $gateway->{username};
+		$opts->{mechanism} = $gateway->{authent} if $gateway->{authent};
+		my $sasl = Authen::SASL->new( %{$opts} );
+		#print Dumper( $sasl );
+
+		# Email::Sender::Transport::SMTP is able to choose a default port if we set the 'ssl' option to 'ssl' or true
+		# but is not able to set a default ssl option starting from the port - fix that here
+		$opts = {};
+		$opts->{host} = $gateway->{host} || 'localhost';
+		$opts->{port} = $gateway->{port} if $gateway->{port};
+		$opts->{sasl_authenticator} = $sasl;
+		$opts->{helo} = uc hostname;
+		$opts->{ssl} = $gateway->{security} if $gateway->{security};
+		if( $gateway->{port} && !$gateway->{security} ){
+			$opts->{ssl} = 'ssl' if $gateway->{port} == 465;
+			$opts->{ssl} = 'starttls' if $gateway->{port} == 587;
+		}
+		$opts->{timeout} = $gateway->{timeout} || 60;
+		$opts->{debug} = false;
+		$opts->{debug} = $gateway->{debug} if exists $gateway->{debug};
+		$opts->{ssl_options} = { SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE };
+		my $transport = Email::Sender::Transport::SMTP->new( $opts );
+		#print Dumper( $transport );
+
+		# catching IO::Handle timeout doesn't work here - it abends with 'Bad file descriptor' error message
 		try {
 			sendmail( $email, { transport => $transport });
 		} catch {
 			Mods::Message::msgWarn( $_ );
 		};
-=cut
-
-=pod
-		my $email = MIME::Lite->new(
-			From     => $sender,
-            To       => $mailto,
-            Subject  => $subject,
-            Data     => $message
-		);
-		print "send( \"smtp\", $gateway->{host}, Port => $gateway->{port}, AuthUser => $gateway->{username}, AuthPass => $gateway->{password} )".EOL;
-		$res = $email->send( "smtp", , Debug => true, Port => , AuthUser => $gateway->{username}, AuthPass => $gateway->{password} );
-		print Dumper( $res );
-		$res = true;
-=cut
 	}
 	return $res;
 }
