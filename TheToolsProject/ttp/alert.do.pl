@@ -137,12 +137,36 @@ sub doMqttAlert {
 }
 
 # -------------------------------------------------------------------------------------------------
-# send the alert by mqtt
-# as far as we are concerned here, this is just publishing a MQTT message with the special 'alert' topic
+# send the alert by SMS
+# Expects have some sort of configuration in Toops json
 sub doSmsAlert {
-	Mods::Message::msgOut( "publishing a '$opt_level' alert by SMS..." );
+	Mods::Message::msgOut( "sending a '$opt_level' alert by SMS..." );
 	my $res = false;
-
+	my $gateway = Mods::Toops::var([ 'alerts', 'withSms', 'gateway' ]);
+	if( $gateway eq "mail2sms" ){
+		my $subject = Mods::Toops::var([ 'alerts', 'withSms', 'subject' ]);
+		my $mailto = Mods::Toops::var([ 'alerts', 'withSms', 'mailto' ]);
+		Mods::Message::msgErr( "alerts are configured with 'withSms=true' and 'gateway=mail2sms', but 'mailto' is left undefined" ) if !$mailto || !scalar @{$mailto};
+		if( !Mods::Toops::errs()){
+			my $text = "Hi,
+An alert has been raised:
+- level is $opt_level
+- timestamp is ".localtime->strftime( "%Y-%m-%d %H:%M:%S" )."
+- emitter is $opt_emitter
+- message is '$opt_message'
+Best regards.
+";
+			my $textfname = Mods::Toops::getTempFileName();
+			my $texthandle = path( $textfname );
+			$texthandle->spew( $text );
+			my $command = "ttp.pl sendmail -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname";
+			my $out = `$command`;
+			$res = $? == 0;
+			print $out;
+		}
+	} else {
+		Mods::Toops::msgWarn( "unknown SMS gateway: '$gateway'" );
+	}
 	if( $res ){
 		Mods::Message::msgOut( "success" );
 	} else {

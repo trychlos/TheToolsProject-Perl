@@ -85,7 +85,7 @@
 				"enabled": true
 			},
 			"withMail" : {
-				"enabled": false,
+				"enabled": true,
 				"mailto": [
 					"alerts@trychlos.org",
 					"inlingua-adm@trychlos.org"
@@ -93,14 +93,11 @@
 			},
 			"withSms" : {
 				"enabled": false,
-				"gateway" : {
-					"type": "mail2sms",
-					"address" : [
-						"SMTP"
-					]
-				},
-				"smsto": [
-				]
+				"gateway": "mail2sms",
+				"mailto": [
+					"forwarder@trychlos.org"
+				],
+				"subject": "SMSTO: +33607797792"
 			}
 		},
 		"SMTPGateway": {
@@ -108,11 +105,7 @@
 			"port": 465,
 			"username": "inlingua-adm@trychlos.org",
 			"password": "X-aUnGv+pV8t!O8m",
-			"mailfrom": "No Reply <no-reply@blingua.fr>",
-			"mail2sms": {
-				"to": "forwarder@trychlos.org",
-				"subject": "SMSTO: +33607797792"
-			}
+			"mailfrom": "No Reply <no-reply@blingua.fr>"
 		},
 
 		"dbms": {

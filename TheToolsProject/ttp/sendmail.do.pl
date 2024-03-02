@@ -10,6 +10,7 @@
 # @(-) --html=<html>           the HTML body [${html}]
 # @(-) --htmlfname=<filename>  the filename which contains the HTML body [${htmlfname}]
 # @(-) --to=<to>               a comma-separated list of target email addresses [${to}]
+# @(-) --[no]debug             debug the SMTP transport phase [${debug}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -32,7 +33,8 @@ my $defaults = {
 	textfname => '',
 	html => '',
 	htmlfname => '',
-	to => ''
+	to => '',
+	debug => 'no'
 };
 
 my $opt_subject = $defaults->{subject};
@@ -41,6 +43,7 @@ my $opt_textfname = $defaults->{textfname};
 my $opt_html = $defaults->{html};
 my $opt_htmlfname = $defaults->{htmlfname};
 my $opt_to = $defaults->{to};
+my $opt_debug = undef;
 
 # -------------------------------------------------------------------------------------------------
 # send the email
@@ -63,7 +66,8 @@ sub doSendmail {
 		subject => $opt_subject,
 		text => $text,
 		html => $shtml,
-		to => \@to
+		to => \@to,
+		debug => $opt_debug
 	});
 	if( $res ){
 		Mods::Message::msgOut( "success" );
@@ -86,7 +90,8 @@ if( !GetOptions(
 	"textfname=s"		=> \$opt_textfname,
 	"html=s"			=> \$opt_html,
 	"htmlfname=s"		=> \$opt_htmlfname,
-	"to=s"				=> \$opt_to )){
+	"to=s"				=> \$opt_to,
+	"debug!"			=> \$opt_debug )){
 
 		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -106,6 +111,7 @@ Mods::Message::msgVerbose( "found textfname='$opt_textfname'" );
 Mods::Message::msgVerbose( "found html='$opt_html'" );
 Mods::Message::msgVerbose( "found htmlfname='$opt_htmlfname'" );
 Mods::Message::msgVerbose( "found to='$opt_to'" );
+Mods::Message::msgVerbose( "found debug='".( defined $opt_debug ? ( $opt_debug ? 'true':'false' ) : '(undef)' )."'" );
 
 # all data are mandatory, and we must provide some content, either text or html
 Mods::Message::msgErr( "subject is empty, but shouldn't" ) if !$opt_subject;

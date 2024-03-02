@@ -64,7 +64,7 @@ sub send {
 
 		my $debug = false;
 		$debug = $gateway->{debug} if exists $gateway->{debug};
-		$debug = $msg->{debug} if exists $msg->{debug};
+		$debug = $msg->{debug} if exists $msg->{debug} && defined $msg->{debug};
 
 		# Email::Sender::Transport::SMTP is able to choose a default port if we set the 'ssl' option to 'ssl' or true
 		# but is not able to set a default ssl option starting from the port - fix that here
@@ -81,7 +81,7 @@ sub send {
 			$opts->{ssl} = 'starttls' if $gateway->{port} == 587;
 		}
 		$opts->{timeout} = $gateway->{timeout} || 60;
-		$opts->{debug} = true; #$debug;
+		$opts->{debug} = $debug;
 		$opts->{ssl_options} = { SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE };
 		my $transport = Email::Sender::Transport::SMTP->new( $opts );
 		#print Dumper( $transport );
