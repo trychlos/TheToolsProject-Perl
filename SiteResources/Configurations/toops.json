@@ -97,7 +97,7 @@
 				]
 			},
 			"withSms" : {
-				"enabled": false,
+				"enabled": true,
 				"gateway": "mail2sms",
 				"mailto": [
 					"forwarder@trychlos.org"
