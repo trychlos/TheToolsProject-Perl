@@ -16,6 +16,7 @@
 
 use Data::Dumper;
 use JSON;
+use Path::Tiny;
 use Sys::Hostname qw( hostname );
 use Time::Moment;
 
@@ -75,33 +76,29 @@ sub doJsonAlert {
 
 # -------------------------------------------------------------------------------------------------
 # send the alert by email
-# send the mail through the designated mail gateway
+# send the mail through the configured mail gateway
 sub doMailAlert {
 	Mods::Message::msgOut( "publishing a '$opt_level' alert by email..." );
 	my $res = false;
-	my $gateway = Mods::Toops::var([ 'alerts', 'withMail', 'gateway' ]);
-	if( $gateway ){
-		my $smtpGateway = Mods::Toops::var([ $gateway ]);
-		if( $smtpGateway ){
-			my $mailto = Mods::Toops::var([ 'alerts', 'withMail', 'mailto' ]);
-			if( !$mailto || !scalar @{$mailto} ){
-				$mailto = [ 'admin@blingua.fr' ];
-			}
-			my $message = "Hi,
-Level is $opt_level
-Stamp is ".localtime->strftime( "%Y-%m-%d %H:%M:%S" )."
-Emitter is $opt_emitter
+	my $subject = "[$opt_level] Alert";
+	my $mailto = Mods::Toops::var([ 'alerts', 'withMail', 'mailto' ]);
+	Mods::Message::msgErr( "alerts are configured with 'withMail=true', but 'mailto' is left undefined" ) if !$mailto || !scalar @{$mailto};
+	if( !Mods::Toops::errs()){
+		my $text = "Hi,
+An alert has been raised:
+- level is $opt_level
+- timestamp is ".localtime->strftime( "%Y-%m-%d %H:%M:%S" )."
+- emitter is $opt_emitter
+- message is '$opt_message'
+Best regards.
 ";
-			$res = Mods::Mail::send({
-				subject => 'Alert',
-				message => $message,
-				mailto => $mailto
-			}, $smtpGateway );
-		} else {
-			Mods::Message::msgWarn( "smtpGateway '$gateway' not defined or not found" );
-		}
-	} else {
-		Mods::Message::msgWarn( "alerts/withMail/gateway is not defined neither in toops nor in host configuration" );
+		my $textfname = Mods::Toops::getTempFileName();
+		my $texthandle = path( $textfname );
+		$texthandle->spew( $text );
+		my $command = "ttp.pl sendmail -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname";
+		my $out = `$command`;
+		$res = $? == 0;
+		print $out;
 	}
 	if( $res ){
 		Mods::Message::msgOut( "success" );

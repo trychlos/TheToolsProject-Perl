@@ -86,10 +86,9 @@
 			},
 			"withMail" : {
 				"enabled": false,
-				"gateway" : "SMTPGateway",
 				"mailto": [
 					"alerts@trychlos.org",
-					"pierre@pwi-consulting.fr"
+					"inlingua-adm@trychlos.org"
 				]
 			},
 			"withSms" : {
@@ -107,7 +106,6 @@
 		"SMTPGateway": {
 			"host": "mail.trychlos.org",
 			"port": 465,
-			"debug": true,
 			"username": "inlingua-adm@trychlos.org",
 			"password": "X-aUnGv+pV8t!O8m",
 			"mailfrom": "No Reply <no-reply@blingua.fr>",
