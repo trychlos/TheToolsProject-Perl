@@ -17,6 +17,7 @@
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
+use Path::Tiny;
 
 use Mods::Constants qw( :all );
 use Mods::Message;
@@ -89,24 +90,38 @@ sub printSummary {
 	}
 	# display the summary
 	my $totLength = $maxLength + 63;
-	print _pad( "+", $totLength-1, '=' )."+".EOL;
-	print _pad( "| WORKLOAD SUMMARY for <$opt_workload>", $totLength-1, ' ' )."|".EOL;
-	print _pad( "|", $maxLength+8, ' ' )._pad( "started at", 25, ' ' )._pad( "ended at", 25, ' ' )." RC |".EOL;
-	print _pad( "+", $maxLength+6, '-' )._pad( "+", 25, '-' )._pad( "+", 25, '-' )."+-----+".EOL;
+	my $stdout = "";
+	$stdout .= _pad( "+", $totLength-1, '=' )."+".EOL;
+	$stdout .= _pad( "| WORKLOAD SUMMARY for <$opt_workload>", $totLength-1, ' ' )."|".EOL;
+	$stdout .= _pad( "|", $maxLength+8, ' ' )._pad( "started at", 25, ' ' )._pad( "ended at", 25, ' ' )." RC |".EOL;
+	$stdout .= _pad( "+", $maxLength+6, '-' )._pad( "+", 25, '-' )._pad( "+", 25, '-' )."+-----+".EOL;
 	# display the result or an empty output
 	if( $opt_count > 0 ){
 		my $i = 0;
 		foreach my $it ( @results ){
 			$i += 1;
 			Mods::Message::msgVerbose( "printing i=$i execution report" );
-			print _pad( "| $it->{command}", $maxLength+6, ' ' )._pad( "| $it->{start}", 25, ' ' )._pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
+			$stdout .= _pad( "| $it->{command}", $maxLength+6, ' ' )._pad( "| $it->{start}", 25, ' ' )._pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
 		}
 	} else {
 		#print _pad( "|", $totLength-1, ' ' )."|".EOL;
-		print _pad( "|", $totLength/2 - 6, ' ' )._pad( "EMPTY OUTPUT", $totLength/2 + 5, ' ' )."|".EOL;
+		$stdout .= _pad( "|", $totLength/2 - 6, ' ' )._pad( "EMPTY OUTPUT", $totLength/2 + 5, ' ' )."|".EOL;
 		#print _pad( "|", $totLength-1, ' ' )."|".EOL;
 	}
-	print "+"._pad( "", $totLength-2, '=' )."+".EOL;
+	$stdout .= "+"._pad( "", $totLength-2, '=' )."+".EOL;
+	# both send the summary to the log (here to stdout) and by email
+	my $mailto = Mods::Toops::var([ 'executionReports', 'workloadSummary' ]);
+	if( scalar @{$mailto} ){
+		my $textfname = Mods::Toops::getTempFileName();
+		my $texthandle = path( $textfname );
+		$texthandle->spew( $sdout );
+		my $command = "ttp.pl sendmail -subject \"[$opt_workload] workload summary\" -to ".join( ',', @{$mailto} )." -textfname $textfname";
+		my $out = `$command`;
+		$res = $? == 0;
+		#print $out;
+	}
+	# and to stdout (at last)
+	print $stdout;
 }
 
 # =================================================================================================

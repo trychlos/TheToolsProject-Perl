@@ -53,6 +53,11 @@
 			},
 			"withPrometheus": {
 				"enabled": true
+			},
+			"workloadSummary": {
+				"mailto": [
+					"inlingua-adm@trychlos.org"
+				]
 			}
 		},
 		"copyDir": {
