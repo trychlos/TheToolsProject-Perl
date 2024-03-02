@@ -14,12 +14,10 @@ package Mods::Mail;
 use strict;
 use warnings;
 
-use Authen::SASL;
 use Data::Dumper;
 use Email::MIME;
 use Email::Sender::Simple qw( sendmail );
 use Email::Sender::Transport::SMTP;
-use Net::SMTP;
 use Sys::Hostname qw( hostname );
 
 use Mods::Constants qw( :all );
@@ -65,9 +63,9 @@ sub send {
 		# it automatically chooses the best suited for the server
 		# which may be forced with 'authent' JSON key
 		my $opts = {};
-		$opts->{callback} = { user => $gateway->{username}, pass => $gateway->{password} } if $gateway->{username};
-		$opts->{mechanism} = $gateway->{authent} if $gateway->{authent};
-		my $sasl = Authen::SASL->new( %{$opts} );
+		#$opts->{callback} = { user => $gateway->{username}, pass => $gateway->{password} } if $gateway->{username};
+		#$opts->{mechanism} = $gateway->{authent} if $gateway->{authent};
+		#my $sasl = Authen::SASL->new( %{$opts} );
 		#print Dumper( $sasl );
 
 		# Email::Sender::Transport::SMTP is able to choose a default port if we set the 'ssl' option to 'ssl' or true
@@ -75,8 +73,10 @@ sub send {
 		$opts = {};
 		$opts->{host} = $gateway->{host} || 'localhost';
 		$opts->{port} = $gateway->{port} if $gateway->{port};
-		$opts->{sasl_authenticator} = $sasl;
-		$opts->{helo} = uc hostname;
+		#$opts->{sasl_authenticator} = $sasl;
+		$opts->{sasl_username} = $gateway->{username} if $gateway->{username};
+		$opts->{sasl_password} = $gateway->{password} if $gateway->{username};
+		$opts->{helo} = $gateway->{helo} || uc hostname.".localdomain";
 		$opts->{ssl} = $gateway->{security} if $gateway->{security};
 		if( $gateway->{port} && !$gateway->{security} ){
 			$opts->{ssl} = 'ssl' if $gateway->{port} == 465;
@@ -91,9 +91,10 @@ sub send {
 
 		# catching IO::Handle timeout doesn't work here - it abends with 'Bad file descriptor' error message
 		try {
-			sendmail( $email, { transport => $transport });
+			my $res = sendmail( $email, { transport => $transport });
 		} catch {
-			Mods::Message::msgWarn( $_ );
+			Mods::Message::msgWarn( "sendmail() $!" );
+			print Dumper( $res );
 		};
 	}
 	return $res;
