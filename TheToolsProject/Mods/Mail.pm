@@ -19,6 +19,7 @@ use Data::Dumper;
 use Email::MIME;
 use Email::Sender::Simple qw( sendmail );
 use Email::Sender::Transport::SMTP;
+use Net::SMTP;
 use Sys::Hostname qw( hostname );
 
 use Mods::Constants qw( :all );
@@ -45,6 +46,18 @@ sub send {
 		my $mailto = join( ', ', @{$msg->{mailto}} );
 		my $subject = $msg->{subject};
 		my $message = $msg->{message};
+		
+		my $mailer = Net::SMTP->new( $gateway->{host}, Port => $gateway->{port}, Debug => 1 );
+		Mods::Message::msgErr( "SMTP->new() ".$! ) if !$mailer;
+		my $sasl = Authen::SASL->new(
+			mechanism => $gateway->{authent},
+			callback => { user => $gateway->{username}, pass => $gateway->{password} }
+		);
+		Mods::Message::msgErr( $! ) if !$sasl;
+		my $res = $mailer->auth( $sasl );
+		print Dumper( $res );
+
+=pod
 		my $email = Email::MIME->create(
 			header_str => [
 				From    => $sender,
@@ -76,6 +89,8 @@ sub send {
 		} catch {
 			Mods::Message::msgWarn( $_ );
 		};
+=cut
+
 =pod
 		my $email = MIME::Lite->new(
 			From     => $sender,

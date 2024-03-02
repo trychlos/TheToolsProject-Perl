@@ -143,11 +143,11 @@ sub fromCommand {
 	$opts //= {};
 	Mods::Message::msgErr( "Path::fromCommand() command is not specified" ) if !$cmd;
 	my $path = undef;
-	if( !errs()){
+	if( !Mods::Toops::errs()){
 		$path = `$cmd`;
 		Mods::Message::msgErr( "Path::fromCommand() command doesn't output anything" ) if !$path;
 	}
-	if( !errs()){
+	if( !Mods::Toops::errs()){
 		my @words = split( /\s+/, $path );
 		$path = $words[scalar @words - 1];
 	}
