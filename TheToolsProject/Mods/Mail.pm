@@ -19,6 +19,7 @@ use Email::MIME;
 use Email::Sender::Simple qw( sendmail );
 use Email::Sender::Transport::SMTP;
 use Sys::Hostname qw( hostname );
+use Try::Tiny;
 
 use Mods::Constants qw( :all );
 use Mods::Message;
