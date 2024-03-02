@@ -975,46 +975,51 @@ sub removeTree {
 # and @ARGV the command-line arguments
 sub run {
 	init();
-	$TTPVars->{run}{command}{path} = $0;
-	$TTPVars->{run}{command}{started} = Time::Moment->now;
-	my @command_args = @ARGV;
-	$TTPVars->{run}{command}{args} = \@ARGV;
-	my ( $volume, $directories, $file ) = File::Spec->splitpath( $TTPVars->{run}{command}{path} );
-	my $command = $file;
-	$TTPVars->{run}{command}{basename} = $command;
-	$TTPVars->{run}{command}{directory} = Mods::Path::removeTrailingSeparator( $directories );
-	$command =~ s/\.[^.]+$//;
-	# make sure the command is not a reserved word
-	if( grep( /^$command$/, @{$TTPVars->{Toops}{ReservedWords}} )){
-		Mods::Message::msgErr( "command '$command' is a Toops reserved word. Aborting." );
-		ttpExit();
-	}
-	$TTPVars->{run}{command}{name} = $command;
-	# the directory where are stored the verbs of the command
-	my @dirs = File::Spec->splitdir( $TTPVars->{run}{command}{directory} );
-	pop( @dirs );
-	$TTPVars->{run}{command}{verbsDir} = File::Spec->catdir( $volume, @dirs, $command );
-	# prepare for the datas of the command
-	$TTPVars->{$command} = {};
-	# first argument is supposed to be the verb
-	if( scalar @command_args ){
-		$TTPVars->{run}{verb}{name} = shift( @command_args );
-		$TTPVars->{run}{verb}{args} = \@command_args;
-		# as verbs are written as Perl scripts, they are dynamically ran from here
-		local @ARGV = @command_args;
-		$TTPVars->{run}{help} = scalar @ARGV ? false : true;
-		$TTPVars->{run}{verb}{path} = File::Spec->catdir( $TTPVars->{run}{command}{verbsDir}, $TTPVars->{run}{verb}{name}.$TTPVars->{Toops}{verbSufix} );
-		if( -f $TTPVars->{run}{verb}{path} ){
-			unless( defined do $TTPVars->{run}{verb}{path} ){
-				Mods::Message::msgErr( "do $TTPVars->{run}{verb}{path}: ".( $! || $@ ));
+	try {
+		$TTPVars->{run}{command}{path} = $0;
+		$TTPVars->{run}{command}{started} = Time::Moment->now;
+		my @command_args = @ARGV;
+		$TTPVars->{run}{command}{args} = \@ARGV;
+		my ( $volume, $directories, $file ) = File::Spec->splitpath( $TTPVars->{run}{command}{path} );
+		my $command = $file;
+		$TTPVars->{run}{command}{basename} = $command;
+		$TTPVars->{run}{command}{directory} = Mods::Path::removeTrailingSeparator( $directories );
+		$command =~ s/\.[^.]+$//;
+		# make sure the command is not a reserved word
+		if( grep( /^$command$/, @{$TTPVars->{Toops}{ReservedWords}} )){
+			Mods::Message::msgErr( "command '$command' is a Toops reserved word. Aborting." );
+			ttpExit();
+		}
+		$TTPVars->{run}{command}{name} = $command;
+		# the directory where are stored the verbs of the command
+		my @dirs = File::Spec->splitdir( $TTPVars->{run}{command}{directory} );
+		pop( @dirs );
+		$TTPVars->{run}{command}{verbsDir} = File::Spec->catdir( $volume, @dirs, $command );
+		# prepare for the datas of the command
+		$TTPVars->{$command} = {};
+		# first argument is supposed to be the verb
+		if( scalar @command_args ){
+			$TTPVars->{run}{verb}{name} = shift( @command_args );
+			$TTPVars->{run}{verb}{args} = \@command_args;
+			# as verbs are written as Perl scripts, they are dynamically ran from here
+			local @ARGV = @command_args;
+			$TTPVars->{run}{help} = scalar @ARGV ? false : true;
+			$TTPVars->{run}{verb}{path} = File::Spec->catdir( $TTPVars->{run}{command}{verbsDir}, $TTPVars->{run}{verb}{name}.$TTPVars->{Toops}{verbSufix} );
+			if( -f $TTPVars->{run}{verb}{path} ){
+				unless( defined do $TTPVars->{run}{verb}{path} ){
+					Mods::Message::msgErr( "do $TTPVars->{run}{verb}{path}: ".( $! || $@ ));
+				}
+			} else {
+				Mods::Message::msgErr( "script not found or not readable: '$TTPVars->{run}{verb}{path}' (most probably, '$TTPVars->{run}{verb}{name}' is not a valid verb)" );
 			}
 		} else {
-			Mods::Message::msgErr( "script not found or not readable: '$TTPVars->{run}{verb}{path}' (most probably, '$TTPVars->{run}{verb}{name}' is not a valid verb)" );
+			helpCommand();
+			ttpExit();
 		}
-	} else {
-		helpCommand();
+	} catch {
+		Mods::Message::msgVerbose( "catching exit" );
 		ttpExit();
-	}
+	};
 }
 
 # -------------------------------------------------------------------------------------------------
