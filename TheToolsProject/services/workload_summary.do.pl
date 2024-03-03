@@ -110,7 +110,7 @@ sub printSummary {
 	}
 	$stdout .= "+"._pad( "", $totLength-2, '=' )."+".EOL;
 	# both send the summary to the log (here to stdout) and by email
-	my $mailto = Mods::Toops::var([ 'executionReports', 'workloadSummary' ]);
+	my $mailto = Mods::Toops::var([ 'executionReports', 'workloadSummary', 'mailto' ]);
 	if( scalar @{$mailto} ){
 		my $textfname = Mods::Toops::getTempFileName();
 		my $texthandle = path( $textfname );
