@@ -99,10 +99,13 @@ sub doDbSize {
 	my $mqttCount = 0;
 	my $prometheusCount = 0;
 	my $list = [];
+	my $colored = $opt_colored ? "-colored" : "-nocolored";
+	my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
+	my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
 	if( $opt_service ){
 		$list = \@databases;
 	} elsif( !$opt_database ){
-		$list = Mods::Toops::ttpFilter( `dbms.pl list -instance $opt_instance -listdb` );
+		$list = Mods::Toops::ttpFilter( `dbms.pl list -instance $opt_instance -listdb $colored $dummy $verbose` );
 	} else {
 		push( @{$list}, $opt_database );
 	}
@@ -110,7 +113,7 @@ sub doDbSize {
 		last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 		Mods::Message::msgOut( "  database '$db'" );
 		# sp_spaceused provides two results sets, where each one only contains one data row
-		my $resultSets = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple` ));
+		my $resultSets = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple $colored $dummy $verbose` ));
 		#print Dumper( $resultSets );
 		my $set = _interpretDbResultSet( $resultSets );
 		$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$mqttCount });
@@ -129,14 +132,17 @@ sub doTablesCount {
 	if( !scalar @databases ){
 		Mods::Message::msgErr( "no database specified, unable to count rows in tables.." );
 	} else {
+		my $colored = $opt_colored ? "-colored" : "-nocolored";
+		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
+		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
 		foreach my $db ( @databases ){
 			Mods::Message::msgOut( "publishing tables rows count on '$hostConfig->{name}\\$opt_instance\\$db'..." );
 			last if $mqttCount >= $opt_limit && $opt_limit >= 0;
-			my $tables = Mods::Toops::ttpFilter( `dbms.pl list -instance $opt_instance -database $db -listtables` );
+			my $tables = Mods::Toops::ttpFilter( `dbms.pl list -instance $opt_instance -database $db -listtables $colored $dummy $verbose` );
 			foreach my $tab ( @{$tables} ){
 				last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 				Mods::Message::msgOut( "  table '$tab'" );
-				my $resultSet = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular` ));
+				my $resultSet = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular $colored $dummy $verbose` ));
 				my $set = $resultSet->[0];
 				$set->{rows_count} = 0 if !defined $set->{rows_count};
 				$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/table/$tab", $set );

@@ -381,11 +381,12 @@ sub execReportToMqtt {
 		}
 		my $json = JSON->new;
 		my $message = $json->encode( $reportCopy );
-		my $verbose = '';
-		$verbose = "-verbose" if $TTPVars->{run}{verbose};
+		my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
+		my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
+		my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
 		my $retain = '';
 		$retain = '-retain' if $opts->{retain};
-		my $stdout = `mqtt.pl publish -topic $topic -payload "\"$message\"" $verbose $retain`;
+		my $stdout = `mqtt.pl publish -topic $topic -payload "\"$message\"" $colored $dummy $verbose $retain`;
 		print $stdout;
 	}
 }

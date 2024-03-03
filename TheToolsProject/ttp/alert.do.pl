@@ -93,12 +93,14 @@ An alert has been raised:
 Best regards.
 ";
 		my $textfname = Mods::Toops::getTempFileName();
-		my $texthandle = path( $textfname );
-		$texthandle->spew( $text );
-		my $command = "ttp.pl sendmail -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname";
-		my $out = `$command`;
+		my $fh = path( $textfname );
+		$fh->spew( $text );
+		my $colored = $opt_colored ? "-colored" : "-nocolored";
+		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
+		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
+		my $command = "ttp.pl sendmail -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
+		print `$command`;
 		$res = $? == 0;
-		print $out;
 	}
 	if( $res ){
 		Mods::Message::msgOut( "success" );
@@ -125,8 +127,10 @@ sub doMqttAlert {
 	};
 	my $json = JSON->new;
 	my $payload = $json->encode( $hash );
-	
-	print `mqtt.pl publish -topic $topic -payload $payload`;
+	my $colored = $opt_colored ? "-colored" : "-nocolored";
+	my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
+	my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
+	print `mqtt.pl publish -topic $topic -payload $payload $colored $dummy $verbose`;
 	my $res = $?;
 
 	if( $res == 0 ){
@@ -157,12 +161,14 @@ An alert has been raised:
 Best regards.
 ";
 			my $textfname = Mods::Toops::getTempFileName();
-			my $texthandle = path( $textfname );
-			$texthandle->spew( $text );
-			my $command = "ttp.pl sendmail -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname";
-			my $out = `$command`;
+			my $fh = path( $textfname );
+			$fh->spew( $text );
+			my $colored = $opt_colored ? "-colored" : "-nocolored";
+			my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
+			my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
+			my $command = "ttp.pl sendmail -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
+			print `$command`;
 			$res = $? == 0;
-			print $out;
 		}
 	} else {
 		Mods::Toops::msgWarn( "unknown SMS gateway: '$gateway'" );

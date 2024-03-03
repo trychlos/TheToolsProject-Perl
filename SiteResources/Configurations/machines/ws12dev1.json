@@ -68,9 +68,9 @@
 							"label": "Purge directories",
 							"order": "00",
 							"commands": [
-								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -backupsRoot\" -keep 7",
-								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -archivesRoot\" -keep 7",
-								"ttp.pl purgedirs -nocolored -dircmd \"ttp.pl vars -logsRoot\" -keep 7"
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -nocolored -backupsRoot\" -keep 7",
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -nocolored -archivesRoot\" -keep 7",
+								"ttp.pl purgedirs -nocolored -dircmd \"ttp.pl vars -nocolored -logsRoot\" -keep 7"
 							]
 						}
 					],
@@ -86,16 +86,16 @@
 						{
 							"label": "test workload",
 							"commands_x": [
-								"dbms.pl backup -instance DEV -database Dom1 -diff",
-								"ttp.pl list -services",
+								"dbms.pl backup -nocolored -instance DEV -database Dom1 -diff",
+								"ttp.pl list -nocolored -services",
 								"mkdir \\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\TEST",
 								"robocopy \"C:\\INLINGUA - Copy\" \\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\TEST /E",
 								"robocopy \"C:\\INLINGUA - Copy\" \\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\TEST2 /E /V /TS /FP /NP",
-								"ttp.pl list -commands",
-								"ttp.pl list -services"
+								"ttp.pl list -nocolored -commands",
+								"ttp.pl list -nocolored -services"
 							],
 							"commands": [
-								"daemon.pl start -json [eval:$ENV{TTP_CONFDIR}\\daemons\\tom59-backup-monitor-daemon.json NS3232346 Tom59"
+								"daemon.pl start -nocolored -json [eval:$ENV{TTP_CONFDIR}\\daemons\\tom59-backup-monitor-daemon.json NS3232346 Tom59"
 							]
 						}
 					]

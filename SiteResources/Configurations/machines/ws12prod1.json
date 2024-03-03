@@ -12,7 +12,7 @@
 							"label": "(Production Live) Sauvegarde quotidienne de la base Canall33",
 							"commands": [
 								"dbms.pl backup -nocolored -service Canal33.db -full",
-								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs",
+								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -nocolored -backupsDir\" -targetcmd \"dbms.pl vars -nocolored -archivesDir\" -dirs",
 								"dbms.pl metrology -nocolored -service Canal33.db -dbsize",
 								"dbms.pl metrology -nocolored -service Canal33.db -tabcount"
 							]
@@ -24,7 +24,7 @@
 							"commands_x": [
 								"-> désactivée sur ns230134 faute d'espace disque suffisant",
 								"dbms.pl backup -nocolored -service Canal33.db -diff",
-								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -backupsDir\" -targetcmd \"dbms.pl vars -archivesDir\" -dirs"
+								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -nocolored -backupsDir\" -targetcmd \"dbms.pl vars -nocolored -archivesDir\" -dirs"
 							]
 						}
 					],
@@ -60,9 +60,9 @@
 							],
 							"commands": [
 								"ttp.pl pull -nocolored",
-								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -backupsRoot\" -keep 0",
-								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -archivesRoot\" -keep 5",
-								"ttp.pl purgedirs -nocolored -dircmd \"ttp.pl vars -logsRoot\" -keep 7"
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -nocolored -backupsRoot\" -keep 0",
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -nocolored -archivesRoot\" -keep 5",
+								"ttp.pl purgedirs -nocolored -dircmd \"ttp.pl vars -nocolored -logsRoot\" -keep 7"
 							]
 						},
 						{

@@ -316,7 +316,7 @@ sub doWithNew {
 				# restore instance if the instance defined for this service in this host
 				my $hostConfig = Mods::Toops::getHostConfig();
 				my $restoreInstance = $hostConfig->{Services}{$daemon->{config}{monitoredService}}{instance};
-				my $command = "dbms.pl restore -instance $restoreInstance -database $database ";
+				my $command = "dbms.pl restore -nocolored -instance $restoreInstance -database $database ";
 				$command .= " -full $result->{full}";
 				$command .= " -diff $result->{diff}" if $result->{diff};
 				Mods::Message::msgVerbose( "executing $command" );

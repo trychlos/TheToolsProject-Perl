@@ -1,4 +1,4 @@
-# @(#) execute a SQL command or script on a DBMS instance
+# @(#) execute a SQL command or a script on a DBMS instance
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]

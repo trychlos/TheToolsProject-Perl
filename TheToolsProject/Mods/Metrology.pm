@@ -87,12 +87,15 @@ sub mqttPublish {
 		my $host = uc hostname;
 		my $max = -1;
 		$max = $opts->{maxCount} if exists( $opts->{maxCount} ) && $opts->{maxCount} >= 0;
+		my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
+		my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
+		my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
 		foreach my $key ( keys %{$set} ){
 			last if $count >= $max && $max >= 0;
-			my $command = "mqtt.pl publish -topic $host/metrology/$root/$key -payload \"$set->{$key}\"";
+			my $command = "mqtt.pl publish -topic $host/metrology/$root/$key -payload \"$set->{$key}\" $colored $dummy $verbose";
 			Mods::Message::msgVerbose( $command );
-			`$command`;
-			$count += 1;
+			print `$command`;
+			$count += 1 if $? == 0;
 		}
 	}
 	return $count;
