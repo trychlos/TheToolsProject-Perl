@@ -113,9 +113,12 @@ sub printSummary {
 	my $mailto = Mods::Toops::var([ 'executionReports', 'workloadSummary', 'mailto' ]);
 	if( scalar @{$mailto} ){
 		my $textfname = Mods::Toops::getTempFileName();
-		my $texthandle = path( $textfname );
-		$texthandle->spew( $sdout );
-		my $command = "ttp.pl sendmail -subject \"[$opt_workload] workload summary\" -to ".join( ',', @{$mailto} )." -textfname $textfname";
+		my $fh = path( $textfname );
+		$fh->spew( $stdout );
+		my $colored = $opt_colored ? "-colored" : "";
+		my $dummy = $opt_dummy ? "-dummy" : "";
+		my $verbose = $opt_verbose ? "-verbose" : "";
+		my $command = "ttp.pl sendmail -subject \"[$opt_workload] workload summary\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
 		my $out = `$command`;
 		$res = $? == 0;
 		#print $out;

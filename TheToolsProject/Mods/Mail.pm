@@ -39,15 +39,15 @@ use Mods::Toops;
 sub send {
 	my ( $msg ) = @_;
 	my $res = false;
-	Mods::Message::msgErr( "expect parms as a hashref, not found" ) if !$msg || ref( $msg ) ne 'HASH';
-	Mods::Message::msgErr( "expect subject, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{subject};
-	Mods::Message::msgErr( "expect a content, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{text} && !$msg->{html};
-	Mods::Message::msgErr( "expect at least one target email address, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{to};
+	Mods::Message::msgErr( "Mail::send() expect parms as a hashref, not found" ) if !$msg || ref( $msg ) ne 'HASH';
+	Mods::Message::msgErr( "Mail::send() expect subject, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{subject};
+	Mods::Message::msgErr( "Mail::send() expect a content, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{text} && !$msg->{html};
+	Mods::Message::msgErr( "Mail::send() expect at least one target email address, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{to};
 	my $gateway = undef;
 	if( !Mods::Toops::errs()){
 		$gateway = Mods::Toops::var([ 'SMTPGateway' ]);
-		Mods::Message::msgErr( "expect smtp gateway, not found" ) if !$gateway;
-		Mods::Message::msgErr( "password is mandatory if a username is specified" ) if $gateway && $gateway->{username} && !$gateway->{password};
+		Mods::Message::msgErr( "Mail::send() expect smtp gateway, not found" ) if !$gateway;
+		Mods::Message::msgErr( "Mail::send() password is mandatory if a username is specified" ) if $gateway && $gateway->{username} && !$gateway->{password};
 	}
 	if( !Mods::Toops::errs()){
 		my $sender = 'me@localhost';
@@ -84,14 +84,12 @@ sub send {
 		$opts->{debug} = $debug;
 		$opts->{ssl_options} = { SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE };
 		my $transport = Email::Sender::Transport::SMTP->new( $opts );
-		#print Dumper( $transport );
+		$email->transport( $transport );
 
-		# catching IO::Handle timeout doesn't work here - it abends with 'Bad file descriptor' error message
 		try {
-			$email->transport( $transport );
 			$res = $email->send();
 		} catch {
-			Mods::Message::msgWarn( "sendmail() $!" );
+			Mods::Message::msgWarn( "Mail::send() $!" );
 			print Dumper( $res );
 		};
 	}
