@@ -16,8 +16,8 @@
 							"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom17",
 							"commands": [
 								"dbms.pl backup -nocolored -service Tom17 -full",
-								"dbms.pl metrology -nocolored -service Tom17 -dbsize",
-								"dbms.pl metrology -nocolored -service Tom17 -tabcount"
+								"dbms.pl telemetry -nocolored -service Tom17 -dbsize",
+								"dbms.pl telemetry -nocolored -service Tom17 -tabcount"
 							]
 						}
 					],
@@ -53,8 +53,8 @@
 							"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom21",
 							"commands": [
 								"dbms.pl backup -nocolored -service Tom21 -full",
-								"dbms.pl metrology -nocolored -service Tom21 -dbsize",
-								"dbms.pl metrology -nocolored -service Tom21 -tabcount"
+								"dbms.pl telemetry -nocolored -service Tom21 -dbsize",
+								"dbms.pl telemetry -nocolored -service Tom21 -tabcount"
 							]
 						}
 					],
@@ -90,8 +90,8 @@
 							"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom59",
 							"commands": [
 								"dbms.pl backup -nocolored -service Tom59 -full",
-								"dbms.pl metrology -nocolored -service Tom59 -dbsize",
-								"dbms.pl metrology -nocolored -service Tom59 -tabcount"
+								"dbms.pl telemetry -nocolored -service Tom59 -dbsize",
+								"dbms.pl telemetry -nocolored -service Tom59 -tabcount"
 							]
 						}
 					],

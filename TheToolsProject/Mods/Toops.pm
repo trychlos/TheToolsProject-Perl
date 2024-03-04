@@ -23,7 +23,7 @@ use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Message;
-use Mods::Metrology;
+use Mods::Telemetry;
 use Mods::Path;
 
 # autoflush STDOUT
@@ -428,25 +428,65 @@ sub execReportToPrometheus {
 		delete $reportCopy->{host};
 		my $labels = "{".join( ',', @{$labelsArray} )."}";
 		my $metric = $metricRoot."_code";
-		Mods::Metrology::prometheusPush( $path, [
+		Mods::Telemetry::prometheusPush( $path, [
 			"# HELP $metric Job exit code (0=success)",
 			"# TYPE $metric gauge" ], {
 			"$metric$labels" => $reportCopy->{code}
 		});
 		$metric = $metricRoot."_started";
-		Mods::Metrology::prometheusPush( $path, [
+		Mods::Telemetry::prometheusPush( $path, [
 			"# HELP $metric Job start timestamp",
 			"# TYPE $metric gauge" ], {
 			"$metric$labels" => ( $TTPVars->{run}{command}{started}->epoch * 1000 )+$TTPVars->{run}{command}{started}->millisecond
 		});
 		$metric = $metricRoot."_ended";
 		my $tm = Time::Moment->now;
-		Mods::Metrology::prometheusPush( $path, [
+		Mods::Telemetry::prometheusPush( $path, [
 			"# HELP $metric Job end timestamp",
 			"# TYPE $metric gauge" ], {
 			"$metric$labels" => ( $tm->epoch * 1000 )+$tm->millisecond
 		});
 	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# report an execution
+# The exact data, the target to report to, the used medium is up to the caller.
+# We are able to manager here:
+# - execution report as a JSON file
+# - execution report as a MQTT message
+# - execution report as a telemetry message
+# - execution report as a mail message
+# These different medias are only evaluated if and only if:
+# - the corresponding 'enabled' option is 'true' for the considered host
+# - and the relevant options are provided by the caller. 
+# (I):
+# - A ref to a hash with following keys:
+#   > file: a ref to a hash with following keys:
+#     - data: a ref to a hash to be written as JSON execution report data
+#   > mqtt: a ref to a hash with following keys:
+#     - data: a ref to a hash to be written as JSON execution report data
+# This function automatically appends:
+# - hostname
+# - start timestamp
+# - end timestamp
+# - return code
+# - full run command
+sub executionReport {
+	my ( $data, $opts ) = @_;
+	$opts //= {};
+	# add some auto elements
+	$data->{cmdline} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
+	$data->{command} = $TTPVars->{run}{command}{basename};
+	$data->{verb} = $TTPVars->{run}{verb}{name};
+	$data->{host} = uc hostname;
+	$data->{code} = $TTPVars->{run}{exitCode};
+	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
+	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
+	$data->{dummy} = $TTPVars->{run}{dummy};
+	execReportToFile( $data, $opts );
+	execReportToMqtt( $data, $opts );
+	execReportToPrometheus( $data, $opts );
 }
 
 # -------------------------------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 # Copyright (@) 2023-2024 PWI Consulting
 #
-# Metrology
+# Telemetry
 
-package Mods::Metrology;
+package Mods::Telemetry;
 
 use strict;
 use warnings;
@@ -77,13 +77,13 @@ sub mqttPublish {
 	my ( $root, $set, $opts ) = @_;
 	$opts //= {};
 	my $TTPVars = Mods::Toops::TTPVars();
-	if( exists( $TTPVars->{config}{toops}{metrology}{withMqtt} )){
-		Mods::Message::msgVerbose( "Metrology::mqttPublish() TTPVars->{config}{toops}{metrology}{withMqtt}=$TTPVars->{config}{toops}{metrology}{withMqtt}" );
+	if( exists( $TTPVars->{config}{toops}{telemetry}{withMqtt} )){
+		Mods::Message::msgVerbose( "Telemetry::mqttPublish() TTPVars->{config}{toops}{telemetry}{withMqtt}=$TTPVars->{config}{toops}{telemetry}{withMqtt}" );
 	} else {
-		Mods::Message::msgVerbose( "Metrology::mqttPublish() TTPVars->{config}{toops}{metrology}{withMqtt} is undef" );
+		Mods::Message::msgVerbose( "Telemetry::mqttPublish() TTPVars->{config}{toops}{telemetry}{withMqtt} is undef" );
 	}
 	my $count = 0;
-	if( $TTPVars->{config}{toops}{metrology}{withMqtt} ){
+	if( $TTPVars->{config}{toops}{telemetry}{withMqtt} ){
 		my $host = uc hostname;
 		my $max = -1;
 		$max = $opts->{maxCount} if exists( $opts->{maxCount} ) && $opts->{maxCount} >= 0;
@@ -92,7 +92,7 @@ sub mqttPublish {
 		my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
 		foreach my $key ( keys %{$set} ){
 			last if $count >= $max && $max >= 0;
-			my $command = "mqtt.pl publish -topic $host/metrology/$root/$key -payload \"$set->{$key}\" $colored $dummy $verbose";
+			my $command = "mqtt.pl publish -topic $host/telemetry/$root/$key -payload \"$set->{$key}\" $colored $dummy $verbose";
 			Mods::Message::msgVerbose( $command );
 			print `$command`;
 			$count += 1 if $? == 0;
@@ -115,12 +115,12 @@ sub prometheusPublish {
 	$opts //= {};
 	my $TTPVars = Mods::Toops::TTPVars();
 	my $withPrometheus = false;
-	if( exists $TTPVars->{config}{toops}{metrology}{withPrometheus} ){
-		$withPrometheus = $TTPVars->{config}{toops}{metrology}{withPrometheus};
+	if( exists $TTPVars->{config}{toops}{telemetry}{withPrometheus} ){
+		$withPrometheus = $TTPVars->{config}{toops}{telemetry}{withPrometheus};
 		Mods::Message::msgVerbose( "setting withPrometheus='".( $withPrometheus ? 'true' : 'false' )."' from toops configuration" );
 	}
-	if( exists $TTPVars->{config}{host}{metrology}{withPrometheus} ){
-		$withPrometheus = $TTPVars->{config}{host}{metrology}{withPrometheus};
+	if( exists $TTPVars->{config}{host}{telemetry}{withPrometheus} ){
+		$withPrometheus = $TTPVars->{config}{host}{telemetry}{withPrometheus};
 		Mods::Message::msgVerbose( "setting withPrometheus='".( $withPrometheus ? 'true' : 'false' )."' from host configuration" );
 	}
 	my $count = 0;
@@ -128,7 +128,7 @@ sub prometheusPublish {
 		my $prefix = "";
 		$prefix = $opts->{prefix} if $opts->{prefix};
 		my $url = $TTPVars->{config}{toops}{prometheus}{url};
-		$url .= "/job/metrology/host/".uc hostname;
+		$url .= "/job/telemetry/host/".uc hostname;
 		$url .= "/$path" if length $path;
 		my $ua = LWP::UserAgent->new();
 		my $req = HTTP::Request->new( POST => $url );
@@ -137,12 +137,12 @@ sub prometheusPublish {
 			$metric =~ s/\./_/g;
 			my $str = "# TYPE $metric gauge\n";
 			$str .= "$metric $set->{$key}\n";
-			Mods::Message::msgVerbose( "Metrology::prometheusPublish() posting '$str' to url='$url'" );
+			Mods::Message::msgVerbose( "Telemetry::prometheusPublish() posting '$str' to url='$url'" );
 			$req->content( $str );
 			my $response = $ua->request( $req );
-			Mods::Message::msgVerbose( "Metrology::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
+			Mods::Message::msgVerbose( "Telemetry::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
 			$count += 1 if $response->is_success;
-			Mods::Message::msgWarn( "Metrology::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content ) if !$response->is_success;
+			Mods::Message::msgWarn( "Telemetry::prometheusPublish() Code: ".$response->code." MSG: ".$response->decoded_content ) if !$response->is_success;
 		}
 	}
 	return $count;
@@ -171,14 +171,14 @@ sub prometheusPush {
 			push( @{$fields}, "$key $values->{$key}" );
 		}
 		$str .= "\n".join( "\n", @{$fields} )."\n";
-		Mods::Message::msgVerbose( "Metrology::prometheusPush() posting '$str' to url='$url'" );
+		Mods::Message::msgVerbose( "Telemetry::prometheusPush() posting '$str' to url='$url'" );
 		$req->content( $str );
 		my $response = $ua->request( $req );
 		$res = $response->is_success;
 		#print Dumper( $response );
-		Mods::Message::msgVerbose( "Metrology::prometheusPush() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
+		Mods::Message::msgVerbose( "Telemetry::prometheusPush() Code: ".$response->code." MSG: ".$response->decoded_content." Success: ".$response->is_success );
 	} else {
-		Mods::Message::msgVerbose( "calling Metrology::prometheusPush() while TTPVars->{config}{toops}{prometheus}{url} is undef" );
+		Mods::Message::msgVerbose( "calling Telemetry::prometheusPush() while TTPVars->{config}{toops}{prometheus}{url} is undef" );
 	}
 	return $res;
 }

@@ -1,4 +1,4 @@
-# @(#) get and publish some databases metrology data
+# @(#) get and publish some databases telemetry data
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
@@ -20,7 +20,7 @@ use Data::Dumper;
 use Mods::Constants qw( :all );
 use Mods::Dbms;
 use Mods::Message;
-use Mods::Metrology;
+use Mods::Telemetry;
 use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -116,8 +116,8 @@ sub doDbSize {
 		my $resultSets = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple $colored $dummy $verbose` ));
 		#print Dumper( $resultSets );
 		my $set = _interpretDbResultSet( $resultSets );
-		$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$mqttCount });
-		$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db", $set, { prefix => 'metrology_dbms_dbsize_' });
+		$mqttCount += Mods::Telemetry::mqttPublish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$mqttCount });
+		$prometheusCount += Mods::Telemetry::prometheusPublish( "instance/$opt_instance/database/$db", $set, { prefix => 'telemetry_dbms_dbsize_' });
 	}
 	Mods::Message::msgOut( "$mqttCount message(s) published on MQTT bus, $prometheusCount metric(s) published to Prometheus" );
 }
@@ -145,8 +145,8 @@ sub doTablesCount {
 				my $resultSet = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular $colored $dummy $verbose` ));
 				my $set = $resultSet->[0];
 				$set->{rows_count} = 0 if !defined $set->{rows_count};
-				$mqttCount += Mods::Metrology::mqttPublish( "dbms/$opt_instance/database/$db/table/$tab", $set );
-				$prometheusCount += Mods::Metrology::prometheusPublish( "instance/$opt_instance/database/$db/table/$tab", $set, { prefix => 'metrology_dbms_' });
+				$mqttCount += Mods::Telemetry::mqttPublish( "dbms/$opt_instance/database/$db/table/$tab", $set );
+				$prometheusCount += Mods::Telemetry::prometheusPublish( "instance/$opt_instance/database/$db/table/$tab", $set, { prefix => 'telemetry_dbms_' });
 			}
 		}
 	}
