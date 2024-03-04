@@ -12,9 +12,10 @@
 # @(-) --[no]compress          compress the outputed backup [${compress}]
 # @(-) --output=<filename>     target filename [${output}]
 #
-# @(@) Note: remind that differential backup is the difference of the current state and the last full backup.
-# @(@) Note: the default output filename is computed as:
-# @(@)       <instance_backup_path>\<yymmdd>\<host>-<instance>-<database>-<yymmdd>-<hhmiss>-<mode>.backup
+# @(@) Note 1: remind that differential backup is the difference of the current state and the last full backup.
+# @(@) Note 2: the default output filename is computed as:
+# @(@)         <instance_backup_path>\<yymmdd>\<host>-<instance>-<database>-<yymmdd>-<hhmiss>-<mode>.backup
+# @(@) Note 3: "dbms.pl backup" provides an execution report according to the configured options.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 

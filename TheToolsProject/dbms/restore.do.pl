@@ -10,8 +10,9 @@
 # @(-) --diff=<filename>       restore with this differential backup [${diff}]
 # @(-) --[no]verifyonly        only check the backup restorability [${verifyonly}]
 #
-# @(@) You must at least provide a full backup to restore, and may also provide an additional differential backup file.
-# @(@) Target database is mandatory unless you just want a backup restorability check, in which case '--dummy' option is not honored.
+# @(@) Note 1: you must at least provide a full backup to restore, and may also provide an additional differential backup file.
+# @(@) Note 2: target database is mandatory unless you only want a backup restorability check, in which case '--dummy' option is not honored.
+# @(@) Note 3: "dbms.pl restore" provides an execution report according to the configured options.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
