@@ -20,6 +20,7 @@ use Sys::Hostname qw( hostname );
 use Test::Deep;
 use Time::Moment;
 use Time::Piece;
+use Try::Tiny;
 
 use Mods::Constants qw( :all );
 use Mods::Message;
@@ -465,7 +466,17 @@ sub execReportToPrometheus {
 #   > file: a ref to a hash with following keys:
 #     - data: a ref to a hash to be written as JSON execution report data
 #   > mqtt: a ref to a hash with following keys:
-#     - data: a ref to a hash to be written as JSON execution report data
+#     - data: a ref to a hash to be written as MQTT payload (in JSON format)
+#     - topic
+#     - retain, optional, defaulting to false
+#   > telemetry: a ref to a hash with following keys:
+#     - macros: a hash of the macros to be replaced where:
+#       > key is the macro name, must be labeled in the toops.json as '<macro>' (i.e. between angle brackets)
+#       > value is the value to be replaced
+#   > mail: a ref to a hash with following keys:
+#     - macros: a hash of the macros to be replaced where:
+#       > key is the macro name, must be labeled in the toops.json as '<macro>' (i.e. between angle brackets)
+#       > value is the value to be replaced
 # This function automatically appends:
 # - hostname
 # - start timestamp
@@ -889,24 +900,28 @@ sub initSiteConfiguration {
 
 # -------------------------------------------------------------------------------------------------
 # Append a JSON element to a file
-# (E):
+# (I):
 # - the hash to be written into
 # - the full path to be created
+# (O):
+# - returns true|false
 sub jsonAppend {
 	my ( $hash, $path ) = @_;
-	Mods::Message::msgVerbose( "jsonAppend().. to '$path'" );
+	Mods::Message::msgVerbose( "jsonAppend() to '$path'" );
 	my $json = JSON->new;
 	my $str = $json->encode( $hash );
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
 	Mods::Path::makeDirExist( File::Spec->catdir( $vol, $dirs ));
 	# some daemons may monitor this file in order to be informed of various executions - make sure each record has an EOL
-	path( $path )->append_utf8( $str.EOL );
+	my $res = path( $path )->append_utf8( $str.EOL );
+	Mods::Message::msgVerbose( "jsonAppend() returns ".Dumper( $res ));
+	return $res ? true : false;
 }
 
 # -------------------------------------------------------------------------------------------------
 # Read a JSON file into a hash
 # Do not evaluate here, just read the file data
-# (E):
+# (I):
 # - the full path to the to-be-loaded-and-interpreted json file
 sub jsonRead {
 	my ( $conf ) = @_;
@@ -930,9 +945,11 @@ sub jsonRead {
 
 # -------------------------------------------------------------------------------------------------
 # Write a hash to a JSON file
-# (E):
+# (I):
 # - the hash to be written into
 # - the full path to be created
+# (O):
+# - returns true|false
 sub jsonWrite {
 	my ( $hash, $path ) = @_;
 	Mods::Message::msgVerbose( "jsonWrite() to '$path'" );
@@ -941,7 +958,10 @@ sub jsonWrite {
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
 	Mods::Path::makeDirExist( File::Spec->catdir( $vol, $dirs ));
 	# some daemons may monitor this file in order to be informed of various executions - make sure each record has an EOL
-	path( $path )->spew_utf8( $str.EOL );
+	# '$res' is an array with the original (twice)
+	my $res = path( $path )->spew_utf8( $str.EOL );
+	Mods::Message::msgVerbose( "jsonWrite() returns ".Dumper( $res ));
+	return ref( $res ) eq 'ARRAY' && scalar( @{$res} );
 }
 
 # -------------------------------------------------------------------------------------------------

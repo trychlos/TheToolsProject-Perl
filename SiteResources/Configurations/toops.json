@@ -49,12 +49,10 @@
 				"dropDir": "[eval:Mods::Path::logsRootDir( false )]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports"
 			},
 			"withMqtt": {
-				"enabled": true,
-				"command": "mqtt.pl publish -topic <TOPIC> -payload <PAYLAD> <OPTIONS>"
+				"enabled": true
 			},
 			"withTelemetry": {
-				"enabled": true,
-				"command": "telemetry.pl public -item <ITEM> -measure <MEASURE>"
+				"enabled": true
 			},
 			"workloadSummary": {
 				"mailto": [
