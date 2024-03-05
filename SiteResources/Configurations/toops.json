@@ -20,7 +20,7 @@
 	],
 	"toops": {
 		"logsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDayLogs",
-		"logsDir": "[eval:Mods::Path::logsRootDir( false )]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
+		"logsDir": "[eval:Mods::Path::logsRootDir({ makeDirExist => false })]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
 		"Message": {
 			"msgDummy": {
 				"withColor": true,
@@ -46,7 +46,7 @@
 		"executionReports": {
 			"withFile": {
 				"enabled": true,
-				"dropDir": "[eval:Mods::Path::logsRootDir( false )]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports",
+				"dropDir": "[eval:Mods::Path::logsRootDir({ makeDirExist => false })]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports",
 				"command": "ttp.pl writejson -file [eval:Mods::Path::execReportsDir({ makeDirExist => false })]\\[eval:Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' )].json -data \"<DATA>\""
 			},
 			"withMqtt": {
@@ -86,7 +86,7 @@
 		"alerts": {
 			"withFile": {
 				"enabled": true,
-				"dropDir": "[eval:Mods::Path::logsRootDir( false )]\\[eval:localtime->strftime( '%y%m%d' )]\\Alerts"
+				"dropDir": "[eval:Mods::Path::logsRootDir({ makeDirExist => false })]\\[eval:localtime->strftime( '%y%m%d' )]\\Alerts"
 			},
 			"withMqtt": {
 				"enabled": true

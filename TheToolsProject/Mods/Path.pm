@@ -118,7 +118,7 @@ sub dbmsBackupsRoot {
 # (I):
 # - an optional options hash with following keys:
 #   > config: host configuration (useful when searching for a remote host)
-#   > makeDirExist: whether to create the direction if it doesn't exist, defaulting to true
+#   > makeDirExist: whether to create the directory if it doesn't yet exist, defaulting to true
 # (O):
 # - the (maybe daily) execution reports directory
 sub execReportsDir {
@@ -185,17 +185,17 @@ sub hostsConfigurationsDir {
 
 # ------------------------------------------------------------------------------------------------
 # (I):
-# - an optional flag to say if makeDirExist() must be run, defaulting to true
-#   this is useful when this function is called from a to-be-evaluated json configuration file
+# - an optional options hash with following keys:
+#   > makeDirExist: whether to create the directory if it doesn't yet exist, defaulting to true
 # (O):
-# returns the root of the logs tree
+# returns the logs tree for the day
 # this is an optional value read from toops.json, defaulting to user temp directory, itself defaulting to /tmp (or C:\Temp)
-# Though TheToolsProject doesn't force that, we encourage to have a by-daya logs tree. Thus logsRoot is the top of the
-# logs hierarchy while logsDailyDir is the logs of the day (which may be the same by the fact and this is a decision of
+# Though TheToolsProject doesn't force that, we encourage to have a by-day logs tree. Thus logsRoot is the top of the
+# logs hierarchy while logsDailyDir is the logs of the day (which may be the same by the fact, and this is a decision of
 # the site integrator)
 sub logsDailyDir {
-	my( $testDir ) = @_;
-	$testDir = true if not defined $testDir;
+	my ( $opts ) = @_;
+	$opts //= {};
 	my $dir;
 	my $TTPVars = Mods::Toops::TTPVars();
 	if( exists( $TTPVars->{config}{host}{logsDir} )){
@@ -203,16 +203,19 @@ sub logsDailyDir {
 	} elsif( exists( $TTPVars->{config}{toops}{logsDir} )){
 		$dir = $TTPVars->{config}{toops}{logsDir};
 	} else {
-		$dir = File::Spec->catdir( logsRootDir(), 'Toops', 'logs' );
+		$dir = File::Spec->catdir( logsRootDir( $opts ), 'Toops', 'logs' );
 	}
-	makeDirExist( $dir ) if $testDir;
+	my $makeDirExist = true;
+	$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
+	makeDirExist( $dir ) if $makeDirExist;
 	return $dir;
 }
 
 # ------------------------------------------------------------------------------------------------
 # (I):
-# - an optional flag to say if makeDirExist() must be run, defaulting to true
-#   this is useful when this function is called from a to-be-evaluated json configuration file
+# - an optional options hash with following keys:
+#   > makeDirExist: whether to create the directory if it doesn't yet exist, defaulting to true
+#     this is useful when this function is called from a to-be-evaluated json configuration file
 # (O):
 # returns the root of the logs tree, making sure it exists
 # this is an optional value read from toops.json, defaulting to user temp directory, itself defaulting to per-OS temp directory
@@ -220,8 +223,8 @@ sub logsDailyDir {
 # logs hierarchy while logsDailyDir is the logs of the day (which may be the same by the fact and this is a decision of
 # the site integrator)
 sub logsRootDir {
-	my( $testDir ) = @_;
-	$testDir = true if not defined $testDir;
+	my ( $opts ) = @_;
+	$opts //= {};
 	my $dir;
 	my $TTPVars = Mods::Toops::TTPVars();
 	if( exists( $TTPVars->{config}{host}{logsRoot} )){
@@ -235,13 +238,15 @@ sub logsRootDir {
 	} else {
 		$dir = $TTPVars->{Toops}{defaults}{$Config{osname}}{tempDir};
 	}
-	makeDirExist( $dir ) if $testDir;
+	my $makeDirExist = true;
+	$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
+	makeDirExist( $dir ) if $makeDirExist;
 	return $dir;
 }
 
 # -------------------------------------------------------------------------------------------------
 # make sure a directory exist
-# note that this does NOT honor the '-dummy' option as creating a directory is easy and a work may blocked without that
+# note that this does NOT honor the '-dummy' option as creating a directory is easy and a work may be blocked without that
 # returns true|false
 sub makeDirExist {
 	my ( $dir ) = @_;
@@ -304,7 +309,7 @@ sub toopsConfigurationPath {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Make sure we returns a path with a traiing separator
+# Make sure we returns a path with a trailing separator
 sub withTrailingSeparator {
 	my $dir = shift;
 	$dir = removeTrailingSeparator( $dir );
