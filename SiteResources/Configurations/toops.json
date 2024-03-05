@@ -146,6 +146,9 @@
 		},
 		"prometheus": {
 			"url": "http://localhost:9091/metrics"
+		},
+		"MQTTGateway": {
+			"broker": "10.122.1.15"
 		}
 	}
 }

@@ -13,14 +13,12 @@
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
-use Net::MQTT::Simple;
 
 use Mods::Constants qw( :all );
 use Mods::Message;
+use Mods::MQTT;
 
 my $TTPVars = Mods::Toops::TTPVars();
-
-$ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;
 
 my $defaults = {
 	help => 'no',
@@ -41,21 +39,14 @@ my $opt_payload = $defaults->{payload};
 sub doPublish {
 	Mods::Message::msgOut( "publishing '$opt_topic [$opt_payload]'..." );
 
-	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Message::msgErr( "no registered broker" ) if !$hostConfig->{MQTT}{broker};
-	Mods::Message::msgErr( "no registered username" ) if !$hostConfig->{MQTT}{username};
-	Mods::Message::msgErr( "no registered password" ) if !$hostConfig->{MQTT}{passwd};
-
-	my $mqtt = Net::MQTT::Simple->new( $hostConfig->{MQTT}{broker} );
+	my $mqtt = Mods::MQTT::connect();
 	if( $mqtt ){
-		$mqtt->login( $hostConfig->{MQTT}{username}, $hostConfig->{MQTT}{passwd} );
-		Mods::Message::msgVerbose( "broker login with '$hostConfig->{MQTT}{username}' account" );
 		if( $opt_retain ){
 			$mqtt->retain( $opt_topic, $opt_payload );
 		} else {
 			$mqtt->publish( $opt_topic, $opt_payload );
 		}
-		$mqtt->disconnect();
+		Mods::MQTT::disconnect( $mqtt );
 	}
 
 	my $result = true;

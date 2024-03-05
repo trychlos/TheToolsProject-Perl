@@ -55,6 +55,7 @@ sub _hostname {
 }
 
 # ------------------------------------------------------------------------------------------------
+# build and returns the last will MQTT message for the daemon
 sub _lastwill {
 	my ( $name ) = @_;
 	return {
@@ -220,15 +221,9 @@ sub daemonInitToops {
 	# connect to MQTT communication bus if the host is configured for
 	my $mqtt = undef;
 	if( !Mods::Toops::errs()){
-		my $hostConfig = Mods::Toops::getHostConfig();
-		if( $hostConfig->{MQTT}{broker} && $hostConfig->{MQTT}{username} && $hostConfig->{MQTT}{passwd} ){
-			$mqtt = Mods::MQTT::connect({
-				broker => $hostConfig->{MQTT}{broker},
-				username => $hostConfig->{MQTT}{username},
-				password => $hostConfig->{MQTT}{passwd},
-				will => _lastwill( $jfile )
-			});
-		}
+		$mqtt = Mods::MQTT::connect({
+			will => _lastwill( $jfile )
+		});
 	}
 	if( !Mods::Toops::errs()){
 		$SIG{INT} = sub { $socket->close(); Mods::Toops::ttpExit(); };
@@ -351,10 +346,13 @@ sub terminate {
 
 	# close MQTT connection
 	Mods::MQTT::disconnect( $daemon->{mqtt} ) if $daemon->{mqtt};
+
 	# close TCP connection
 	$daemon->{socket}->close();
+
 	# have a log line
 	Mods::Message::msgLog( "terminating" );
+
 	# and quit the program
 	Mods::Toops::ttpExit();
 }

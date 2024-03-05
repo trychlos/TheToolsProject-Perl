@@ -35,10 +35,9 @@
 			}
 		},
 		"remoteShare": "\\\\10.122.1.12\\C",
-		"MQTT": {
-			"broker": "10.122.1.15",
+		"MQTTGateway": {
 			"username": "[eval:uc hostname]",
-			"passwd": "q6G7YanFDf5zXsqvQ1og"
+			"password": "q6G7YanFDf5zXsqvQ1og"
 		}
 	}
 }

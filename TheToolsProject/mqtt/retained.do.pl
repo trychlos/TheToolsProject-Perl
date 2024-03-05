@@ -10,15 +10,13 @@
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
-use Net::MQTT::Simple;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Message;
+use Mods::MQTT;
 
 my $TTPVars = Mods::Toops::TTPVars();
-
-$ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;
 
 my $defaults = {
 	help => 'no',
@@ -43,15 +41,8 @@ my $count = 0;
 sub doGetRetained {
 	Mods::Message::msgOut( "getting the retained messages..." );
 
-	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Message::msgErr( "no registered broker" ) if !$hostConfig->{MQTT}{broker};
-	Mods::Message::msgErr( "no registered username" ) if !$hostConfig->{MQTT}{username};
-	Mods::Message::msgErr( "no registered password" ) if !$hostConfig->{MQTT}{passwd};
-
-	$mqtt = Net::MQTT::Simple->new( $hostConfig->{MQTT}{broker} );
+	$mqtt = Mods::MQTT::connect();
 	if( $mqtt ){
-		$mqtt->login( $hostConfig->{MQTT}{username}, $hostConfig->{MQTT}{passwd} );
-		Mods::Message::msgVerbose( "broker login with '$hostConfig->{MQTT}{username}' account" );
 		$mqtt->subscribe( '#' => \&doWork );
 		while( $loop ){
 			$mqtt->tick( 1 );
@@ -63,7 +54,7 @@ sub doGetRetained {
 			}
 		}
 	}
-	$mqtt->disconnect();
+	Mods::MQTT::disconnect( $mqtt );
 	my $result = true;
 	if( $result ){
 		Mods::Message::msgOut( "success: $count got messages" );

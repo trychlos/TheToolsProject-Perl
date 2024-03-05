@@ -15,17 +15,15 @@ use strict;
 use warnings;
 
 use Data::Dumper;
-use Net::MQTT::Simple;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Daemon;
+use Mods::MQTT;
 use Mods::Toops;
 
 # auto-flush on socket
 $| = 1;
-
-$ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;
 
 my $commands = {
 	#help => \&help,
@@ -121,17 +119,10 @@ sub works {
 # MAIN
 # =================================================================================================
 
-Mods::Message::msgErr( "no registered broker" ) if !$TTPVars->{config}{host}{MQTT}{broker};
-Mods::Message::msgErr( "no registered username" ) if !$TTPVars->{config}{host}{MQTT}{username};
-Mods::Message::msgErr( "no registered password" ) if !$TTPVars->{config}{host}{MQTT}{passwd};
-
 if( !Mods::Toops::errs()){
-	$mqtt = Net::MQTT::Simple->new( $TTPVars->{config}{host}{MQTT}{broker} );
-	Mods::Message::msgErr( "unable to open a connection to '$TTPVars->{config}{host}{MQTT}{broker}'" ) if !$mqtt;
+	$mqtt = Mods::MQTT::connect();
 }
 if( !Mods::Toops::errs()){
-	my $user = $mqtt->login( $TTPVars->{config}{host}{MQTT}{username}, $TTPVars->{config}{host}{MQTT}{passwd} );
-	Mods::Message::msgLog( "login(): $user" );
 	$mqtt->subscribe( '#' => \&works, '$SYS/#' => \&works );
 	setCommands();
 }
@@ -148,5 +139,5 @@ while( !$daemon->{terminating} ){
 	$mqtt->tick( $daemon->{listenInterval} ) if $mqtt;
 }
 
-$mqtt->disconnect();
+Mods::MQTT::disconnect( $mqtt );
 Mods::Daemon::terminate( $daemon );

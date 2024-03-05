@@ -163,10 +163,9 @@
 			"archivesRoot": "\\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\[eval:uc hostname]\\SQLBackups"
 		},
 		"remoteShare": "\\\\10.122.1.11\\C",
-		"MQTT": {
-			"broker": "10.122.1.15",
+		"MQTTGateway": {
 			"username": "[eval:uc hostname]",
-			"passwd": "Cf1FgRCUCu9kP60ArWwi"
+			"password": "Cf1FgRCUCu9kP60ArWwi"
 		}
 	}
 }

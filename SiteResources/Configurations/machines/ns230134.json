@@ -139,10 +139,9 @@
 			"withPrometheus": false
 		},
 		"remoteShare": "\\\\ns230134.ovh.net\\C",
-		"MQTT": {
-			"broker": "10.122.1.15",
+		"MQTTGateway": {
 			"username": "[eval:uc hostname]",
-			"passwd": "bwhJLSN3F5Y9f2263nex"
+			"password": "bwhJLSN3F5Y9f2263nex"
 		}
 	}
 }
