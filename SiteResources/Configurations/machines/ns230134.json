@@ -145,6 +145,16 @@
 		"MQTTGateway": {
 			"username": "[eval:uc hostname]",
 			"password": "bwhJLSN3F5Y9f2263nex"
+		},
+		"Environment": {
+			"type_comments": [
+				"X is production; this same indicator must be used both for production live and for production backup",
+				"D is for development"
+			],
+			"type": "X",
+			"physical": {
+				"ovh": "ns230134.ovh.net"
+			}
 		}
 	}
 }

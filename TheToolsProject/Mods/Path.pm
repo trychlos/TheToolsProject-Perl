@@ -42,6 +42,27 @@ use Mods::Message;
 use Mods::Toops;
 
 # ------------------------------------------------------------------------------------------------
+# (I):
+# - an optional options hash with following keys:
+#   > config: host configuration (useful when searching for a remote host)
+#   > makeDirExist: whether to create the directory if it doesn't yet exist, defaulting to true
+# (O):
+# - the (maybe daily) alerts directory
+sub alertsDir {
+	my ( $opts ) = @_;
+	$opts //= {};
+	my $dir = Mods::Toops::var([ 'alerts', 'withFile', 'dropDir' ], $opts );
+	if( defined $dir ){
+		my $makeDirExist = true;
+		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
+		makeDirExist( $dir ) if $makeDirExist;
+	} else {
+		Mods::Message::msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
+	}
+	return $dir;
+}
+
+# ------------------------------------------------------------------------------------------------
 # (O):
 # returns the directory which contains the daemons configurations
 # at the moment, a non-configurable subdirectory of TTP_CONFDIR

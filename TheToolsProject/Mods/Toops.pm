@@ -362,6 +362,8 @@ sub _executionReportCompleteData {
 # -------------------------------------------------------------------------------------------------
 # write an execution report to a file
 # the needed command is expected to be configured
+# managed macros:
+# - DATA
 # (I):
 # - a hash ref with following keys:
 #   > data, a hash ref
@@ -398,6 +400,10 @@ sub _executionReportToFile {
 
 # -------------------------------------------------------------------------------------------------
 # send an execution report on the MQTT bus if Toops is configured for
+# managed macros:
+# - TOPIC
+# - PAYLOAD
+# - OPTIONS
 # (I):
 # - a hash ref with following keys:
 #   > data, a hash ref

@@ -9,7 +9,7 @@
 # @(-) --message=<name>        the alert message [${message}]
 # @(-) --[no]json              set a JSON file alert to be monitored by the alert daemon [${json}]
 # @(-) --[no]mqtt              send the alert on the MQTT bus [${mqtt}]
-# @(-) --[no]mail              send the alert by email [${mail}]
+# @(-) --[no]smtp              send the alert by SMTP [${smtp}]
 # @(-) --[no]sms               send the alert by SMS [${sms}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
@@ -42,48 +42,106 @@ my $opt_level = INFO;
 my $opt_message = $defaults->{message};
 my $opt_json = Mods::Toops::var([ 'alerts', 'withFile', 'enabled' ]);
 my $opt_mqtt = Mods::Toops::var([ 'alerts', 'withMqtt', 'enabled' ]);
-my $opt_mail = Mods::Toops::var([ 'alerts', 'withMail', 'enabled' ]);
+my $opt_smtp = Mods::Toops::var([ 'alerts', 'withSmtp', 'enabled' ]);
 my $opt_sms = Mods::Toops::var([ 'alerts', 'withSms', 'enabled' ]);
 
 $defaults->{json} = $opt_json ? 'yes' : 'no';
 $defaults->{mqtt} = $opt_mqtt ? 'yes' : 'no';
-$defaults->{mail} = $opt_mail ? 'yes' : 'no';
+$defaults->{smtp} = $opt_smtp ? 'yes' : 'no';
 $defaults->{sms} = $opt_sms ? 'yes' : 'no';
 
 # -------------------------------------------------------------------------------------------------
 # send the alert by file
-# as far as we are concerned here, this is just writing a json file in a special directory
+# as far as we are concerned here, this is just executing the configured command
+# managed macros:
+# - DATA: the JSON content
 sub doJsonAlert {
 	Mods::Message::msgOut( "creating a new '$opt_level' json alert..." );
-	my $dir = Mods::Toops::var([ 'alerts', 'withFile', 'dropDir' ]);
-	if( $dir ){
-		Mods::Path::makeDirExist( $dir );
-		my $path = File::Spec->catdir( $dir, Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
-		Mods::Toops::jsonWrite({
-			emitter => $opt_emitter,
-			level => $opt_level,
-			message => $opt_message,
-			host => uc hostname,
-			stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
-		}, $path );
-		Mods::Message::msgOut( "success" );
-
+	my $command = Mods::Toops::var([ 'alerts', 'withFile', 'command' ]);
+	if( $command ){
+		my $dir = Mods::Path::alertsDir();
+		if( $dir ){
+			Mods::Path::makeDirExist( $dir );
+			my $data = {
+				emitter => $opt_emitter,
+				level => $opt_level,
+				message => $opt_message,
+				host => uc hostname,
+				stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
+			};
+			my $json = JSON->new;
+			my $str = $json->encode( $data );
+			# protect the double quotes against the CMD.EXE command-line
+			$str =~ s/"/\\"/g;
+			$command =~ s/<DATA>/$str/;
+			my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
+			my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
+			my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+			print `$command $colored $dummy $verbose`;
+			#$? = 256
+			$res = $? == 0;
+			Mods::Message::msgOut( "success" );
+		} else {
+			Mods::Message::msgWarn( "unable to get a dropDir for 'withFile' alerts" );
+			Mods::Message::msgErr( "alert by file NOT OK" );
+		}
 	} else {
-		Mods::Message::msgWarn( "unable to get an alerts drop directory" );
+		Mods::Message::msgWarn( "unable to get a command for alerts by file" );
 		Mods::Message::msgErr( "alert by file NOT OK" );
 	}
 }
 
 # -------------------------------------------------------------------------------------------------
-# send the alert by email
-# send the mail through the configured mail gateway
-sub doMailAlert {
-	Mods::Message::msgOut( "publishing a '$opt_level' alert by email..." );
+# send the alert by mqtt
+# as far as we are concerned here, this is just executing the configured command
+# managed macros:
+# - TOPIC
+# - PAYLOAD
+# - OPTIONS
+sub doMqttAlert {
+	Mods::Message::msgOut( "publishing a '$opt_level' alert on MQTT bus..." );
+	my $command = Mods::Toops::var([ 'alerts', 'withMqtt', 'command' ]);
 	my $res = false;
-	my $subject = "[$opt_level] Alert";
-	my $mailto = Mods::Toops::var([ 'alerts', 'withMail', 'mailto' ]);
-	Mods::Message::msgErr( "alerts are configured with 'withMail=true', but 'mailto' is left undefined" ) if !$mailto || !scalar @{$mailto};
-	if( !Mods::Toops::errs()){
+	if( $command ){
+		my $topic = uc hostname."/alert";
+		my $data = {
+			emitter => $opt_emitter,
+			level => $opt_level,
+			message => $opt_message,
+			host => uc hostname,
+			stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
+		};
+		my $json = JSON->new;
+		my $str = $json->encode( $data );
+		# protect the double quotes against the CMD.EXE command-line
+		$str =~ s/"/\\"/g;
+		$command =~ s/<PAYLOAD>/$str/;
+		$command =~ s/<TOPIC>/$topic/;
+		my $options = "";
+		$command =~ s/<OPTIONS>/$options/;
+		my $colored = $opt_colored ? "-colored" : "-nocolored";
+		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
+		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
+		print `$command $colored $dummy $verbose`;
+		$res = ( $? == 0 );
+	} else {
+		Mods::Message::msgWarn( "unable to get a command for alerts by MQTT" );
+	}
+	if( $res ){
+		Mods::Message::msgOut( "success" );
+	} else {
+		Mods::Message::msgErr( "alert by MQTT NOT OK" );
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# send the alert by SMS
+# Expects have some sort of configuration in Toops json
+sub doSmsAlert {
+	Mods::Message::msgOut( "sending a '$opt_level' alert by SMS..." );
+	my $res = false;
+	my $command = Mods::Toops::var([ 'alerts', 'withSms', 'command' ]);
+	if( $command ){
 		my $text = "Hi,
 An alert has been raised:
 - level is $opt_level
@@ -95,64 +153,35 @@ Best regards.
 		my $textfname = Mods::Toops::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $text );
+		$command =~ s/<OPTIONS>/-textfname $textfname/;
 		my $colored = $opt_colored ? "-colored" : "-nocolored";
 		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-		my $command = "smtp.pl send -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
-		print `$command`;
-		$res = $? == 0;
+		print `$command $colored $dummy $verbose`;
+		$res = ( $? == 0 );
+	} else {
+		Mods::Toops::msgWarn( "unable to get a command for alerts by SMS" );
 	}
 	if( $res ){
 		Mods::Message::msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "alert by email NOT OK" );
+		Mods::Message::msgErr( "alert by SMS NOT OK" );
 	}
 }
 
 # -------------------------------------------------------------------------------------------------
-# send the alert by mqtt
-# as far as we are concerned here, this is just publishing a MQTT message with the special 'alert' topic
-sub doMqttAlert {
-	Mods::Message::msgOut( "publishing a '$opt_level' alert on MQTT bus..." );
-
-	my $topic = uc hostname;
-	$topic .= "/alert";
-
-	my $hash = {
-		emitter => $opt_emitter,
-		level => $opt_level,
-		message => $opt_message,
-		host => uc hostname,
-		stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
-	};
-	my $json = JSON->new;
-	my $payload = $json->encode( $hash );
-	my $colored = $opt_colored ? "-colored" : "-nocolored";
-	my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
-	my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-	print `mqtt.pl publish -topic $topic -payload $payload $colored $dummy $verbose`;
-	my $res = $?;
-
-	if( $res == 0 ){
-		Mods::Message::msgOut( "success" );
-	} else {
-		Mods::Message::msgErr( "alert by Mqtt NOT OK" );
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# send the alert by SMS
-# Expects have some sort of configuration in Toops json
-sub doSmsAlert {
-	Mods::Message::msgOut( "sending a '$opt_level' alert by SMS..." );
+# send the alert by SMTP
+# send the mail by executing the configured command
+# managed macros:
+# - SUBJECT
+# - OPTIONS
+sub doSmtpAlert {
+	Mods::Message::msgOut( "publishing a '$opt_level' alert by SMTP..." );
 	my $res = false;
-	my $gateway = Mods::Toops::var([ 'alerts', 'withSms', 'gateway' ]);
-	if( $gateway eq "mail2sms" ){
-		my $subject = Mods::Toops::var([ 'alerts', 'withSms', 'subject' ]);
-		my $mailto = Mods::Toops::var([ 'alerts', 'withSms', 'mailto' ]);
-		Mods::Message::msgErr( "alerts are configured with 'withSms=true' and 'gateway=mail2sms', but 'mailto' is left undefined" ) if !$mailto || !scalar @{$mailto};
-		if( !Mods::Toops::errs()){
-			my $text = "Hi,
+	my $command = Mods::Toops::var([ 'alerts', 'withSmtp', 'command' ]);
+	if( $command ){
+		my $subject = "[$opt_level] Alert";
+		my $text = "Hi,
 An alert has been raised:
 - level is $opt_level
 - timestamp is ".localtime->strftime( "%Y-%m-%d %H:%M:%S" )."
@@ -160,23 +189,23 @@ An alert has been raised:
 - message is '$opt_message'
 Best regards.
 ";
-			my $textfname = Mods::Toops::getTempFileName();
-			my $fh = path( $textfname );
-			$fh->spew( $text );
-			my $colored = $opt_colored ? "-colored" : "-nocolored";
-			my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
-			my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-			my $command = "smtp.pl send -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
-			print `$command`;
-			$res = $? == 0;
-		}
+		my $textfname = Mods::Toops::getTempFileName();
+		my $fh = path( $textfname );
+		$fh->spew( $text );
+		$command =~ s/<SUBJECT>/$subject/;
+		$command =~ s/<OPTIONS>/-textfname $textfname/;
+		my $colored = $opt_colored ? "-colored" : "-nocolored";
+		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
+		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
+		print `$command $colored $dummy $verbose`;
+		$res = ( $? == 0 );
 	} else {
-		Mods::Toops::msgWarn( "unknown SMS gateway: '$gateway'" );
+		Mods::Message::msgWarn( "unable to get a command for alerts by SMTP" );
 	}
 	if( $res ){
 		Mods::Message::msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "alert by SMS NOT OK" );
+		Mods::Message::msgErr( "alert by SMTP NOT OK" );
 	}
 }
 
@@ -194,7 +223,7 @@ if( !GetOptions(
 	"message=s"			=> \$opt_message,
 	"json!"				=> \$opt_json,
 	"mqtt!"				=> \$opt_mqtt,
-	"mail!"				=> \$opt_mail,
+	"smtp!"				=> \$opt_smtp,
 	"sms!"				=> \$opt_sms )){
 
 		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
@@ -214,7 +243,7 @@ Mods::Message::msgVerbose( "found level='$opt_level'" );
 Mods::Message::msgVerbose( "found message='$opt_message'" );
 Mods::Message::msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found mail='".( $opt_mail ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found smtp='".( $opt_smtp ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found sms='".( $opt_sms ? 'true':'false' )."'" );
 
 # all data are mandatory (and we provide a default value for all but the message)
@@ -225,15 +254,15 @@ Mods::Message::msgErr( "level is empty, but shouldn't" ) if !$opt_level;
 Mods::Message::msgErr( "level='$opt_level' is unknown" ) if $opt_level && !Mods::Message::isKnownLevel( $opt_level );
 
 # at least one of json or mqtt media must be specified
-if( !$opt_json && !$opt_mqtt && !$opt_mail && !$opt_sms ){
-	Mods::Message::msgErr( "at least one of '--json', '--mqtt', '--mail' or '--sms' options must be specified" ) if !$opt_emitter;
+if( !$opt_json && !$opt_mqtt && !$opt_smtp && !$opt_sms ){
+	Mods::Message::msgErr( "at least one of '--json', '--mqtt', '--smtp' or '--sms' options must be specified" ) if !$opt_emitter;
 }
 
 if( !Mods::Toops::errs()){
 	$opt_level = uc $opt_level;
 	doJsonAlert() if $opt_json;
 	doMqttAlert() if $opt_mqtt;
-	doMailAlert() if $opt_mail;
+	doSmtpAlert() if $opt_smtp;
 	doSmsAlert() if $opt_sms;
 }
 

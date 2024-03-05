@@ -131,6 +131,14 @@
 		"MQTTGateway": {
 			"username": "[eval:uc hostname]",
 			"password": "MDgNcGNNYQTTBgo6Visy"
+		},
+		"Environment": {
+			"type_comments": [],
+			"type": "D",
+			"physical": {
+				"ovh": "ns3153065.ip-51-91-25.eu",
+				"inlingua": "inlingua-rl9-1"
+			}
 		}
 	}
 }

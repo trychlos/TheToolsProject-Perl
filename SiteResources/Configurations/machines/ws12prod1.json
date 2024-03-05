@@ -111,6 +111,17 @@
 		"MQTTGateway": {
 			"username": "[eval:uc hostname]",
 			"password": "EnErVQsFRO0jFeTP1a3C"
+		},
+		"Environment": {
+			"type_comments": [
+				"X is production; this same indicator must be used both for production live and for production backup",
+				"D is for development"
+			],
+			"type": "X",
+			"physical": {
+				"ovh": "ns3153065.ip-51-91-25.eu",
+				"inlingua": "inlingua-rl9-1"
+			}
 		}
 	}
 }
