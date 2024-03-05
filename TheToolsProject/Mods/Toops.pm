@@ -305,160 +305,15 @@ sub _evaluatePrint {
 }
 
 # -------------------------------------------------------------------------------------------------
-# append a record to our daily executions reports
-# send a MQTT message if Toops is configured for
-# (I):
-# - the data provided to be recorded
-# - optional options hash with following keys:
-#   > topic: an array reference with a list of report keys to be appended to the topic, defaulting to none
-#   > retain: whether to retain the message, defaulting to false
-# This function automatically appends:
-# - hostname
-# - start timestamp
-# - end timestamp
-# - return code
-# - full run command
-sub execReportByCommand {
-	my ( $data, $opts ) = @_;
-	$opts //= {};
-	# add some auto elements
-	$data->{cmdline} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
-	$data->{command} = $TTPVars->{run}{command}{basename};
-	$data->{verb} = $TTPVars->{run}{verb}{name};
-	$data->{host} = uc hostname;
-	$data->{code} = $TTPVars->{run}{exitCode};
-	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
-	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
-	$data->{dummy} = $TTPVars->{run}{dummy};
-	execReportToFile( $data, $opts );
-	execReportToMqtt( $data, $opts );
-	execReportToPrometheus( $data, $opts );
-}
-
-# -------------------------------------------------------------------------------------------------
-# append a record to our daily executions reports dir if Toops is configured for
-# please note that having the json filenames ordered both by name and by date is a design decision - do not change
-# (I):
-# - the data to be written
-sub execReportToFile {
-	my ( $report, $opts ) = @_;
-	my $withFile = var([ 'executionReports', 'withFile', 'enabled' ]);
-	Mods::Message::msgVerbose( "execReportToFile() var({executionReports}{withFile}{enabled})='".( defined $withFile ? $withFile : 'undef' )."'");
-	if( $withFile ){
-		my $path = File::Spec->catdir( Mods::Path::execReportsDir(), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N.json' ));
-		jsonWrite( $report, $path );
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# send an execution report on the MQTT bus if Toops is configured for
-# (I):
-# - the data to be written
-sub execReportToMqtt {
-	my ( $report, $opts ) = @_;
-	my $withMqtt = var([ 'executionReports', 'withMqtt', 'enabled' ]);
-	Mods::Message::msgVerbose( "execReportToMqtt() var({executionReports}{withMqtt}{enabled})='".( defined $withMqtt ? $withMqtt : 'undef' )."'");
-	if( $withMqtt ){
-		my %reportHash = %$report;
-		my $reportCopy = \%reportHash;
-		my $topic = uc hostname;
-		delete $reportCopy->{host} if exists $reportCopy->{host};
-		$topic .= "/executionReport";
-		if( $reportCopy->{command} ){
-			$topic .= "/$reportCopy->{command}";
-			delete $reportCopy->{command};
-		}
-		if( $reportCopy->{verb} ){
-			$topic .= "/$reportCopy->{verb}";
-			delete $reportCopy->{verb};
-		}
-		if( $opts->{topic} && ref( $opts->{topic} ) eq 'ARRAY' ){
-			foreach my $it ( @{$opts->{topic}} ){
-				if( exists( $reportCopy->{$it} )){
-					$topic .= "/$reportCopy->{$it}";
-					delete $reportCopy->{$it};
-				}
-			}
-		}
-		my $json = JSON->new;
-		my $message = $json->encode( $reportCopy );
-		my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
-		my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
-		my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
-		my $retain = '';
-		$retain = '-retain' if $opts->{retain};
-		my $stdout = `mqtt.pl publish -topic $topic -payload "\"$message\"" $colored $dummy $verbose $retain`;
-		print $stdout;
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# send an execution report to the Prometheus push gateway if Toops is configured for
-# this must be formatted as /job/<job_name>/label/<label_value>...
-# (I):
-# - the data to be written
-sub execReportToPrometheus {
-	my ( $report, $opts ) = @_;
-	my $withPrometheus = var([ 'executionReports', 'withPrometheus', 'enabled' ]);
-	Mods::Message::msgVerbose( "execReportToPrometheus() var({executionReports}{withPrometheus}{enabled})='".( defined $withPrometheus ? $withPrometheus : 'undef' )."'");
-	if( $withPrometheus ){
-		my %reportHash = %$report;
-		my $reportCopy = \%reportHash;
-		my $path = "/job";
-		my $metricRoot = "executionReport";
-		if( $TTPVars->{run}{command}{name} ){
-			$metricRoot .= "_$TTPVars->{run}{command}{name}";
-			delete $reportCopy->{command} if $reportCopy->{command};
-			if( $reportCopy->{verb} ){
-				$metricRoot .= "_$reportCopy->{verb}";
-				delete $reportCopy->{verb};
-			}
-		}
-		$path .= "/$metricRoot";
-		my $labelsArray = [];
-		if( $opts->{topic} && ref( $opts->{topic} ) eq 'ARRAY' ){
-			foreach my $it ( @{$opts->{topic}} ){
-				if( exists( $reportCopy->{$it} )){
-					#push( @{$labelsArray}, "$it=\"\"" );
-					$path .= "/$it/$reportCopy->{$it}";
-					delete $reportCopy->{$it};
-				}
-			}
-		}
-		push( @{$labelsArray}, "host=\"$reportCopy->{host}\"" );
-		delete $reportCopy->{host};
-		my $labels = "{".join( ',', @{$labelsArray} )."}";
-		my $metric = $metricRoot."_code";
-		Mods::Telemetry::prometheusPush( $path, [
-			"# HELP $metric Job exit code (0=success)",
-			"# TYPE $metric gauge" ], {
-			"$metric$labels" => $reportCopy->{code}
-		});
-		$metric = $metricRoot."_started";
-		Mods::Telemetry::prometheusPush( $path, [
-			"# HELP $metric Job start timestamp",
-			"# TYPE $metric gauge" ], {
-			"$metric$labels" => ( $TTPVars->{run}{command}{started}->epoch * 1000 )+$TTPVars->{run}{command}{started}->millisecond
-		});
-		$metric = $metricRoot."_ended";
-		my $tm = Time::Moment->now;
-		Mods::Telemetry::prometheusPush( $path, [
-			"# HELP $metric Job end timestamp",
-			"# TYPE $metric gauge" ], {
-			"$metric$labels" => ( $tm->epoch * 1000 )+$tm->millisecond
-		});
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
 # report an execution
-# The exact data, the target to report to, the used medium is up to the caller.
-# We are able to manager here:
-# - execution report as a JSON file
-# - execution report as a MQTT message
-# - execution report as a telemetry message
-# - execution report as a mail message
-# These different medias are only evaluated if and only if:
+# The exact data, the target to report to and the used medium are up to the caller.
+# But at the moment we manage a) a JSON execution report file and b) a MQTT message.
+# This is a design decision to limit TTP to these medias because:
+# - we do not want have here some code for each and every possible medium a caller may want use a day or another
+# - as soon as we can have either a JSON file or a MQTT message, or even both of these medias, we can also have
+#   any redirection from these medias to another one (e.g. scan the execution report JSON files and do something
+#   when a new one is detected, or listen to the MQTT bus and suibscribe to interesting topics, and so on...).
+# Each medium is only evaluated if and only if:
 # - the corresponding 'enabled' option is 'true' for the considered host
 # - and the relevant options are provided by the caller. 
 # (I):
@@ -467,16 +322,8 @@ sub execReportToPrometheus {
 #     - data: a ref to a hash to be written as JSON execution report data
 #   > mqtt: a ref to a hash with following keys:
 #     - data: a ref to a hash to be written as MQTT payload (in JSON format)
-#     - topic
-#     - retain, optional, defaulting to false
-#   > telemetry: a ref to a hash with following keys:
-#     - macros: a hash of the macros to be replaced where:
-#       > key is the macro name, must be labeled in the toops.json as '<macro>' (i.e. between angle brackets)
-#       > value is the value to be replaced
-#   > mail: a ref to a hash with following keys:
-#     - macros: a hash of the macros to be replaced where:
-#       > key is the macro name, must be labeled in the toops.json as '<macro>' (i.e. between angle brackets)
-#       > value is the value to be replaced
+#     - topic as a mandatory string
+#     - options, as an optional string
 # This function automatically appends:
 # - hostname
 # - start timestamp
@@ -484,9 +331,23 @@ sub execReportToPrometheus {
 # - return code
 # - full run command
 sub executionReport {
-	my ( $data, $opts ) = @_;
-	$opts //= {};
-	# add some auto elements
+	my ( $args ) = @_;
+	# write JSON file if configuration enables that and relevant arguments are provided
+	my $enabled = var([ 'executionReports', 'withFile', 'enabled' ]);
+	if( $enabled && $args->{file} ){
+		_executionReportToFile( $args->{file} );
+	}
+	# publish MQTT message if configuration enables that and relevant arguments are provided
+	$enabled = var([ 'executionReports', 'withMqtt', 'enabled' ]);
+	if( $enabled && $args->{mqtt} ){
+		_executionReportToMqtt( $args->{mqtt} );
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# Complete the provided data with the data colected by TTP
+sub _executionReportCompleteData {
+	my ( $data ) = @_;
 	$data->{cmdline} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
 	$data->{command} = $TTPVars->{run}{command}{basename};
 	$data->{verb} = $TTPVars->{run}{verb}{name};
@@ -495,9 +356,86 @@ sub executionReport {
 	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	$data->{dummy} = $TTPVars->{run}{dummy};
-	execReportToFile( $data, $opts );
-	execReportToMqtt( $data, $opts );
-	execReportToPrometheus( $data, $opts );
+	return $data;
+}
+
+# -------------------------------------------------------------------------------------------------
+# write an execution report to a file
+# the needed command is expected to be configured
+# (I):
+# - a hash ref with following keys:
+#   > data, a hash ref
+# (O):
+# - returns true|false
+sub _executionReportToFile {
+	my ( $args ) = @_;
+	my $res = false;
+	my $data = undef;
+	$data = $args->{data} if exists $args->{data};
+	if( defined $data ){
+		$data = _executionReportCompleteData( $data );
+		my $command = var([ 'executionReports', 'withFile', 'command' ]);
+		if( $command ){
+			my $json = JSON->new;
+			my $str = $json->encode( $data );
+			# protect the double quotes against the CMD.EXE command-line
+			$str =~ s/"/\\"/g;
+			$command =~ s/<DATA>/$str/;
+			my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
+			my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
+			my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+			print `$command $colored $dummy $verbose`;
+			#$? = 256
+			$res = $? == 0;
+		} else {
+			Mods::Message::msgErr( "executionReportToFile() expected a 'command' argument, not found" );
+		}
+	} else {
+		Mods::Message::msgErr( "executionReportToFile() expected a 'data' argument, not found" );
+	}
+	return $res;
+}
+
+# -------------------------------------------------------------------------------------------------
+# send an execution report on the MQTT bus if Toops is configured for
+# (I):
+# - a hash ref with following keys:
+#   > data, a hash ref
+#   > topic, as a string
+#   > options, as a string
+sub _executionReportToMqtt {
+	my ( $args ) = @_;
+	my $res = false;
+	my $data = undef;
+	$data = $args->{data} if exists $args->{data};
+	if( defined $data ){
+		$data = _executionReportCompleteData( $data );
+		my $topic = undef;
+		$topic = $args->{topic} if exists $args->{topic};
+		if( $topic ){
+			my $command = var([ 'executionReports', 'withMqtt', 'command' ]);
+			if( $command ){
+				my $json = JSON->new;
+				my $str = $json->encode( $data );
+				$command =~ s/<TOPIC>/$topic/;
+				$command =~ s/<PAYLOAD>/$str/;
+				my $options = $args->{options} ? $args->{options} : "";
+				$command =~ s/<OPTIONS>/$options/;
+				my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
+				my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
+				my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+				print `$command $colored $dummy $verbose`;
+				$res = $? == 0;
+			} else {
+				Mods::Message::msgErr( "executionReportToMqtt() expected a 'command' argument, not found" );
+			}
+		} else {
+			Mods::Message::msgErr( "executionReportToMqtt() expected a 'topic' argument, not found" );
+		}
+	} else {
+		Mods::Message::msgErr( "executionReportToMqtt() expected a 'data' argument, not found" );
+	}
+	return $res;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -556,91 +494,6 @@ sub getJsonHosts {
 	my @hosts = glob( Mods::Path::hostsConfigurationsDir()."/*.json" );
 	return @hosts;
 }
-
-# -------------------------------------------------------------------------------------------------
-# Interpret the command-line options
-# Deal here with -help and -verbose
-# args is a ref to an array of hashes with following keys:
-# - key: the option name
-# - help: a short help message
-# - opt: the string to be appended to the option to be passed to GetOptions::Long
-# - var: the reference to the variable which will hold the value
-# - def: the displayed default value
-sub getOptions {
-	Mods::Message::msgErr( "Mods::Toops::getOptions() is just a placeholder for now. Please use standard GetOptions()." );
-}
-
-=pod
-# -------------------------------------------------------------------------------------------------
-# Interpret the command-line options
-# Deal here with -help and -verbose
-# args is a ref to an array of hashes with following keys:
-# - key: the option name
-# - help: a short help message
-# - opt: the string to be appended to the option to be passed to GetOptions::Long
-# - var: the reference to the variable which will hold the value
-# - def: the displayed default value
-sub getOptions {
-	my $parms = shift;
-	print "getOoptions()".EOL;
-	my $args = getOptionsPrepend( $parms );
-	my $optargs = getOptionsToOpts( $args );
-	#print Dumper( $optargs );
-	print "calling GetOptions()..".EOL;
-	if( !myGetOptions( @{$optargs} )){
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		#$TTPVars->{exitCode} += 1;
-		Mods::Toops::ttpExit();
-	}
-	print "return from GetOptions()".EOL;
-	if( !scalar @{$TTPVars->{verb_args}} ){
-		$TTPVars->{help} = true;
-	}
-	if( $TTPVars->{help} ){
-		Mods::Toops::helpVerb();
-		Mods::Toops::ttpExit();
-	}
-	Mods::Message::msgVerbose( "found verbose='true'" );
-}
-
-# -------------------------------------------------------------------------------------------------
-# Append our own options to the list of verb options
-sub getOptionsPrepend {
-	my $parms = shift;
-	my $args = [
-		{
-			key	 => 'help',
-			help => 'print this message, and exit',
-			opt	 => '!',
-			var  => \$TTPVars->{help},
-			def  => "no"
-		},
-		{
-			key	 => 'verbose',
-			help => 'run verbosely',
-			opt	 => '!',
-			var  => \$TTPVars->{verbose},
-			def  => "no"
-		}
-	];
-	$TTPVars->{help} = false;
-	$TTPVars->{verbose} = false;
-	return [ @{$args}, @{$parms} ];
-}
-
-# -------------------------------------------------------------------------------------------------
-# convert the Toops options array to the GetOptions one
-sub getOptionsToOpts {
-	my $parms = shift;
-	my $args = [];
-	foreach my $opt ( @{$parms} ){
-		print Dumper( $opt );
-		push( @{$args}, [ $opt->{key}.$opt->{opt},  $opt->{var} ]);
-	}
-	print Dumper( $args );
-	return $args;
-}
-=cut
 
 # -------------------------------------------------------------------------------------------------
 # returns a random identifier
@@ -871,34 +724,6 @@ sub init {
 }
 
 # -------------------------------------------------------------------------------------------------
-# get the machine services configuration as a hash indexed by hostname
-#  HostConf::init() is expected to return a hash with a single top key which is the hostname
-#  we check and force that here
-#  + set the host as a value to be more easily available
-sub initHostConfiguration {
-=pod
-	my $host = uc hostname;
-	my $config = getHostConfig( $host, { withEvaluate => false });
-	if( $config ){
-		# rationale: evaluate() may want take advantage of its own TTPVars config content, so must be set before evaluation
-		$TTPVars->{config}{$host} = $config;
-		$TTPVars->{config}{$host} = evaluate( $TTPVars->{config}{$host} );
-	}
-=cut
-}
-
-# -------------------------------------------------------------------------------------------------
-# Make sure we have a site configuration JSON file and loads and interprets it
-sub initSiteConfiguration {
-=pod
-	my $conf = Mods::Path::toopsConfigurationPath();
-	$TTPVars->{config}{site} = jsonRead( $conf );
-	# rationale: evaluate() may want take advantage of the TTPVars content, so must be set before evaluation
-	$TTPVars->{config}{site} = evaluate( $TTPVars->{config}{site} );
-=cut
-}
-
-# -------------------------------------------------------------------------------------------------
 # Append a JSON element to a file
 # (I):
 # - the hash to be written into
@@ -958,10 +783,10 @@ sub jsonWrite {
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
 	Mods::Path::makeDirExist( File::Spec->catdir( $vol, $dirs ));
 	# some daemons may monitor this file in order to be informed of various executions - make sure each record has an EOL
-	# '$res' is an array with the original (twice)
+	# '$res' is an array with the original path and an interpreted one
 	my $res = path( $path )->spew_utf8( $str.EOL );
 	Mods::Message::msgVerbose( "jsonWrite() returns ".Dumper( $res ));
-	return ref( $res ) eq 'ARRAY' && scalar( @{$res} );
+	return ( ref( $res ) eq 'Path::Tiny' && scalar( @{$res} ) > 0 ) ? true : false;
 }
 
 # -------------------------------------------------------------------------------------------------

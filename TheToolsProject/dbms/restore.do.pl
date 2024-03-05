@@ -59,16 +59,25 @@ sub doRestore {
 		verifyonly => $opt_verifyonly
 	});
 	if( !$opt_verifyonly ){
+		# if we have restore something (not just verified the backup files), then we create an execution report
+		#  with the same properties and options than dbms.pl backup
 		my $mode = $opt_diff ? 'diff' : 'full';
-		Mods::Toops::execReportByCommand({
+		my $data = {
 			instance => $opt_instance,
 			database => $opt_database,
 			full => $opt_full,
 			diff => $opt_diff || '',
 			mode => $mode
-		}, {
-			topic => [ 'instance', 'database', 'mode' ],
-			retain => true
+		};
+		Mods::Toops::executionReport({
+			file => {
+				data => $data
+			},
+			mqtt => {
+				data => $data,
+				topic => "$TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$db/$mode",
+				options => "-retain"
+			}
 		});
 	}
 	if( $res ){

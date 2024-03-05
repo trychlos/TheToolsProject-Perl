@@ -72,14 +72,21 @@ sub doBackup {
 			compress => $opt_compress
 		});
 		# retain last full and last diff
-		Mods::Toops::execReportByCommand({
+		my $data = {
 			instance => $opt_instance,
 			database => $db,
 			mode => $mode,
 			output => $res->{output}
-		}, {
-			topic => [ 'instance', 'database', 'mode' ],
-			retain => true
+		};
+		Mods::Toops::executionReport({
+			file => {
+				data => $data
+			},
+			mqtt => {
+				topic => "$TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$db/$mode",
+				data => $data,
+				options => "-retain"
+			}
 		});
 		$asked += 1;
 		$count += 1 if $res->{status};

@@ -118,6 +118,7 @@ sub dbmsBackupsRoot {
 # (I):
 # - an optional options hash with following keys:
 #   > config: host configuration (useful when searching for a remote host)
+#   > makeDirExist: whether to create the direction if it doesn't exist, defaulting to true
 # (O):
 # - the (maybe daily) execution reports directory
 sub execReportsDir {
@@ -125,7 +126,9 @@ sub execReportsDir {
 	$opts //= {};
 	my $dir = Mods::Toops::var([ 'executionReports', 'withFile', 'dropDir' ], $opts );
 	if( defined $dir ){
-		makeDirExist( $dir );
+		my $makeDirExist = true;
+		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
+		makeDirExist( $dir ) if $makeDirExist;
 	} else {
 		Mods::Message::msgWarn( "'executionReports/withFile/dropDir' is not defined in toops.json nor in host configuration" );
 	}
