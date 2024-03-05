@@ -18,8 +18,8 @@ use Data::Dumper;
 use Path::Tiny;
 
 use Mods::Constants qw( :all );
-use Mods::Mail;
 use Mods::Message;
+use Mods::SMTP;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -47,7 +47,7 @@ my $opt_debug = undef;
 
 # -------------------------------------------------------------------------------------------------
 # send the email
-sub doSendmail {
+sub doSend {
 	Mods::Message::msgOut( "sending an email to $opt_to..." );
 	my @to = split( /,/, $opt_to );
 	my $text = undef;
@@ -62,7 +62,7 @@ sub doSendmail {
 		my $fh = path( $opt_htmlfname );
 		$html = $fh->slurp_utf8;
 	}
-	my $res = Mods::Mail::send({
+	my $res = Mods::SMTP::send({
 		subject => $opt_subject,
 		text => $text,
 		html => $shtml,
@@ -123,7 +123,7 @@ Mods::Message::msgErr( "text body can only provided one way, but both '--text' a
 Mods::Message::msgErr( "HTML body can only provided one way, but both '--html' and '--htmlfname' are specified" ) if $opt_html && $opt_htmlfname;
 
 if( !Mods::Toops::errs()){
-	doSendmail();
+	doSend();
 }
 
 Mods::Toops::ttpExit();

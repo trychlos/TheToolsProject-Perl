@@ -21,9 +21,9 @@ use Sys::Hostname qw( hostname );
 use Time::Moment;
 
 use Mods::Constants qw( :all );
-use Mods::Mail;
 use Mods::Message;
 use Mods::Path;
+use Mods::SMTP;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -98,7 +98,7 @@ Best regards.
 		my $colored = $opt_colored ? "-colored" : "-nocolored";
 		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-		my $command = "ttp.pl sendmail -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
+		my $command = "smtp.pl send -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
 		print `$command`;
 		$res = $? == 0;
 	}
@@ -166,7 +166,7 @@ Best regards.
 			my $colored = $opt_colored ? "-colored" : "-nocolored";
 			my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 			my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-			my $command = "ttp.pl sendmail -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
+			my $command = "smtp.pl send -subject \"$subject\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
 			print `$command`;
 			$res = $? == 0;
 		}

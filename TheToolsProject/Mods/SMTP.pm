@@ -1,6 +1,6 @@
 # Copyright (@) 2023-2024 PWI Consulting
 #
-# Mail management.
+# SMTP gateway management.
 #
 # We expect find in configuration:
 # - an email host server to connect to, with an account and a password
@@ -9,7 +9,7 @@
 # We expect be provided
 # - subject, mailto, content
 
-package Mods::Mail;
+package Mods::SMTP;
 
 use strict;
 use warnings;
