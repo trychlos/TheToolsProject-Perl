@@ -33,51 +33,54 @@ my $opt_services = false;
 sub listServices {
 	Mods::Message::msgOut( "displaying subscribed services..." );
 	my $api = Mods::Ovh::connect();
+	if( $api ){
+		# full identity
+		#my $list = Mods::Ovh::get( $api, "/me" );
+		#print "me".EOL.Dumper( $list );
 
-	# full identity
-	#my $list = Mods::Ovh::get( $api, "/me" );
-	#print "me".EOL.Dumper( $list );
+		# three dedicated servers at that time
+		#my $list = Mods::Ovh::get( $api, "/dedicated/server" );
+		#print "dedicated/server".EOL.Dumper( $list );
 
-	# three dedicated servers at that time
-	#my $list = Mods::Ovh::get( $api, "/dedicated/server" );
-	#print "dedicated/server".EOL.Dumper( $list );
+		# all used ipv4+ipv6 addresses
+		#my $list = Mods::Ovh::get( $api, "/ip" );
+		#print "ip".EOL.Dumper( $list );
 
-	# all used ipv4+ipv6 addresses
-	#my $list = Mods::Ovh::get( $api, "/ip" );
-	#print "ip".EOL.Dumper( $list );
-
-	# a list of services ids
-	my $count = 0;
-	my @missingDisplayName = ();
-	my @routeUrl = ();
-	my $services = Mods::Ovh::getServices( $api );
-	foreach my $key ( keys %{$services} ){
-		my $first = true;
-		if( $services->{$key}{resource}{displayName} ){
-			if( $first ){
-				print "+ ";
-				$first = false;
+		# a list of services ids
+		my $count = 0;
+		my @missingDisplayName = ();
+		my @routeUrl = ();
+		my $services = Mods::Ovh::getServices( $api );
+		foreach my $key ( keys %{$services} ){
+			my $first = true;
+			if( $services->{$key}{resource}{displayName} ){
+				if( $first ){
+					print "+ ";
+					$first = false;
+				} else {
+					print "  ";
+				}
+				print "$key: resource.displayName: $services->{$key}{resource}{displayName}".EOL;
 			} else {
-				print "  ";
+				push( @missingDisplayName, $key );
 			}
-			print "$key: resource.displayName: $services->{$key}{resource}{displayName}".EOL;
-		} else {
-			push( @missingDisplayName, $key );
-		}
-		if( $services->{$key}{route}{url} ){
-			if( $first ){
-				print "+ ";
-				$first = false;
+			if( $services->{$key}{route}{url} ){
+				if( $first ){
+					print "+ ";
+					$first = false;
+				} else {
+					print "  ";
+				}
+				print "$key: route.url: $services->{$key}{route}{url}".EOL;
 			} else {
-				print "  ";
+				push( @missingRouteUrl, $key );
 			}
-			print "$key: route.url: $services->{$key}{route}{url}".EOL;
-		} else {
-			push( @missingRouteUrl, $key );
+			$count += 1;
 		}
-		$count += 1;
+		Mods::Message::msgOut( "$count found subscribed service(s) (".scalar @missingDisplayName." missing display name(s), ".scalar @missingRouteUrl." missing route URL(s))" );
+	} else {
+		Mods::Message::msgErr( "NOT OK" );
 	}
-	Mods::Message::msgOut( "$count found subscribed service(s) (".scalar @missingDisplayName." missing display name(s), ".scalar @missingRouteUrl." missing route URL(s))" );
 }
 
 # =================================================================================================

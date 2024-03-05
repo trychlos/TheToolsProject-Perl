@@ -44,13 +44,38 @@ sub connect {
 # (I):
 # - the api opaque handle as returned from connect()
 # - a path to request
+# - an optional options hash with following keys:
+#   > printAnswer, defaulting to false
 # (O):
-# - a ref to the answer content, or undef
-sub getByPath {
-	my ( $api, $path ) = @_;
-	my $res = undef;
+# - the request answer as a OvhAnswer instance
+sub getAnswerByPath {
+	my ( $api, $path, $opts ) = @_;
+	$opts //= {};
+	Mods::Message::msgVerbose( "Ovh::getAnswerByPath() path='$path'" );
 
 	my $answer = $api->get( path => $path );
+	my $printAnswer = false;
+	$printAnswer = $opts->{printAnswer} if exists $opts->{printAnswer};
+	print Dumper( $answer ) if $printAnswer;
+
+	Mods::Message::msgVerbose( "Ovh::getAnswerByPath() status=".$answer->status());
+	return $answer;
+}
+
+# ------------------------------------------------------------------------------------------------
+# (I):
+# - the api opaque handle as returned from connect()
+# - a path to request
+# - an optional options hash with following keys:
+#   > printAnswer, defaulting to false
+# (O):
+# - a ref to the answer content, or undef
+sub getContentByPath {
+	my ( $api, $path, $opts ) = @_;
+	$opts //= {};
+	my $res = undef;
+
+	my $answer = getAnswerByPath( $api, $path, $opts );
 	if( $answer ){
 		$res = $answer->content();
 	}
@@ -70,7 +95,7 @@ sub getServices {
 	my $res = undef;
 
 	my $url = '/service';
-	my $list = getByPath( $api, $url );
+	my $list = getContentByPath( $api, $url );
 	if( scalar @{$list} ){
 		$res = {};
 		foreach my $it ( @{$list} ){
@@ -79,6 +104,24 @@ sub getServices {
 	}
 
 	return $res;
+}
+
+# ------------------------------------------------------------------------------------------------
+# (I):
+# - the api opaque handle as returned from connect()
+# - a path to request
+# - the post parameters as a hash
+# (O):
+# - the request answer as a OvhAnswer instance
+sub postByPath {
+	my ( $api, $path, $params ) = @_;
+	Mods::Message::msgVerbose( "Ovh::postByPath() path='$path'" );
+
+	my $answer = $api->post( path => $path, body => $params );
+	print Dumper( $answer ) if $answer->status() != 200;
+
+	Mods::Message::msgVerbose( "Ovh::postByPath() status=".$answer->status());
+	return $answer;
 }
 
 1;

@@ -1016,7 +1016,7 @@ sub ttpEvaluate {
 }
 
 # -------------------------------------------------------------------------------------------------
-# given a command output, extracts the [command.pl verb] lines, returning the rest
+# given a command output, extracts the [command.pl verb] lines, returning the rest as an array
 sub ttpFilter {
 	my @lines = @_;
 	my @result = ();

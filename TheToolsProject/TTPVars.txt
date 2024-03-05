@@ -54,3 +54,11 @@ TTPVars
 		 +- add             Used to prefix the messages sent by the daemons
  |
  +- dbms					Toops.pm 1202 $TTPVars->{$command} = {};
+ |
+ +- <command>
+     |
+	 +- service
+        `|
+	     +- name
+	     +- data
+ 
