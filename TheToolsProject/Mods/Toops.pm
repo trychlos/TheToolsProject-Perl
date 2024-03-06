@@ -387,8 +387,8 @@ sub _executionReportToFile {
 			my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
 			my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
 			print `$command $colored $dummy $verbose`;
-			#$? = 256
-			$res = $? == 0;
+			Mods::Message::msgVerbose( "Toops::_executionReportToFile() got $?" );
+			$res = ( $? == 0 );
 		} else {
 			Mods::Message::msgErr( "executionReportToFile() expected a 'command' argument, not found" );
 		}
@@ -431,7 +431,8 @@ sub _executionReportToMqtt {
 				my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
 				my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
 				print `$command $colored $dummy $verbose`;
-				$res = $? == 0;
+				Mods::Message::msgVerbose( "Toops::_executionReportToMqtt() got $?" );
+				$res = ( $? == 0 );
 			} else {
 				Mods::Message::msgErr( "executionReportToMqtt() expected a 'command' argument, not found" );
 			}
@@ -789,10 +790,10 @@ sub jsonWrite {
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
 	Mods::Path::makeDirExist( File::Spec->catdir( $vol, $dirs ));
 	# some daemons may monitor this file in order to be informed of various executions - make sure each record has an EOL
-	# '$res' is an array with the original path and an interpreted one
+	# '$res' is an array with the original path and an interpreted one - may also return true
 	my $res = path( $path )->spew_utf8( $str.EOL );
 	Mods::Message::msgVerbose( "jsonWrite() returns ".Dumper( $res ));
-	return ( ref( $res ) eq 'Path::Tiny' && scalar( @{$res} ) > 0 ) ? true : false;
+	return ( $res == 1 || ( ref( $res ) eq 'Path::Tiny' && scalar( @{$res} ) > 0 )) ? true : false;
 }
 
 # -------------------------------------------------------------------------------------------------
