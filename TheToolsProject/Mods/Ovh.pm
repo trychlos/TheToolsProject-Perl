@@ -22,7 +22,7 @@ use Mods::Toops;
 # - an opaque handle on the OVH API connection
 sub connect {
 
-	my $credentials = File::Spec->catdir( Mods::Path::siteConfigurationsDir(), "ovh.ini" );
+	my $credentials = File::Spec->catdir( Mods::Path::siteConfigurationsDir(), "credentials/ovh.ini" );
 
 	my $api = Mods::OvhApi->new(
 		timeout => 10,
