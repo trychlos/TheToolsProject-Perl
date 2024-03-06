@@ -115,8 +115,8 @@ sub doMqttAlert {
 		my $str = $json->encode( $data );
 		# protect the double quotes against the CMD.EXE command-line
 		$str =~ s/"/\\"/g;
-		$command =~ s/<PAYLOAD>/$str/;
-		$command =~ s/<TOPIC>/$topic/;
+		$command =~ s/<DATA>/$str/;
+		$command =~ s/<SUBJECT>/$topic/;
 		my $options = "";
 		$command =~ s/<OPTIONS>/$options/;
 		my $colored = $opt_colored ? "-colored" : "-nocolored";

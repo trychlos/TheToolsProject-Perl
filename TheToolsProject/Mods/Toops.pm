@@ -401,8 +401,8 @@ sub _executionReportToFile {
 # -------------------------------------------------------------------------------------------------
 # send an execution report on the MQTT bus if Toops is configured for
 # managed macros:
-# - TOPIC
-# - PAYLOAD
+# - SUBJECT
+# - DATA
 # - OPTIONS
 # (I):
 # - a hash ref with following keys:
@@ -423,8 +423,8 @@ sub _executionReportToMqtt {
 			if( $command ){
 				my $json = JSON->new;
 				my $str = $json->encode( $data );
-				$command =~ s/<TOPIC>/$topic/;
-				$command =~ s/<PAYLOAD>/$str/;
+				$command =~ s/<SUBJECT>/$topic/;
+				$command =~ s/<DATA>/$str/;
 				my $options = $args->{options} ? $args->{options} : "";
 				$command =~ s/<OPTIONS>/$options/;
 				my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
