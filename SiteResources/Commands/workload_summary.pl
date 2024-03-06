@@ -131,10 +131,10 @@ sub printSummary {
 		my $colored = $opt_colored ? "-colored" : "";
 		my $dummy = $opt_dummy ? "-dummy" : "";
 		my $verbose = $opt_verbose ? "-verbose" : "";
-		my @out = `$command $colored $dummy $verbose`;
-		Mods::Message::msgVerbose( "printSummary() got $?" );
+		# this script is not interactive but written to be executed as part of a batch - there is so no reason to log stdout of the command because all msgXxxx() of the command are already logged
+		`$command $colored $dummy $verbose`;
+		Mods::Message::msgVerbose( "printSummary() got rc=$?" );
 		$res = ( $? == 0 );
-		Mods::Message::msgLog( @out );
 	}
 	# and to stdout (at last)
 	print $stdout;
