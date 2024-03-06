@@ -13,6 +13,7 @@ use Time::Piece;
 use Win32::SqlServer qw( :DEFAULT :consts );
 
 use Mods::Constants qw( :all );
+use Mods::Credentials;
 use Mods::Message;
 use Mods::Path;
 use Mods::Toops;
@@ -258,15 +259,15 @@ sub _databaseExists {
 # returns the first account defined for the named instance
 sub _getCredentials {
 	my ( $dbms ) = @_;
+	my $credentials = Mods::Credentials::get([ 'DBMS', $dbms->{instance}{name}, ]);
 	my $account = undef;
 	my $passwd = undef;
-	my $instance = $dbms->{instance}{name};
-	if( $instance ){
-		$account = ( keys %{$dbms->{instance}{data}{accounts}} )[0];
-		$passwd = $dbms->{instance}{data}{accounts}{$account};
+	if( $credentials ){
+		$account = ( keys %{$credentials} )[0];
+		$passwd = $credentials->{$account};
 		Mods::Message::msgVerbose( "SqlServer::_getCredentials() got account='".( $account || '(undef)' )."'" );
 	} else {
-		Mods::Message::msgErr( "SqlServer::_getCredentials() instance is mandatory, not specified" );
+		Mods::Message::msgErr( "SqlServer::_getCredentials() unable to get credentials with provided arguments" );
 	}
 	return ( $account, $passwd );
 }

@@ -64,6 +64,19 @@ sub alertsDir {
 
 # ------------------------------------------------------------------------------------------------
 # (O):
+# - the credentials directory
+sub credentialsDir {
+	my ( $opts ) = @_;
+	$opts //= {};
+	my $dir = Mods::Toops::var([ 'credentialsDir' ], $opts );
+	if( !defined $dir ){
+		Mods::Message::msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
+	}
+	return $dir;
+}
+
+# ------------------------------------------------------------------------------------------------
+# (O):
 # returns the directory which contains the daemons configurations
 # at the moment, a non-configurable subdirectory of TTP_CONFDIR
 sub daemonsConfigurationsDir {

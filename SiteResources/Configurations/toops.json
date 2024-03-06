@@ -27,6 +27,7 @@
 	"toops": {
 		"logsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDayLogs",
 		"logsDir": "[eval:Mods::Path::logsRootDir({ makeDirExist => false })]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
+		"credentialsDir": "[eval:$ENV{TTP_CONFDIR}]\\credentials",
 		"Message": {
 			"msgDummy": {
 				"withColor": true,

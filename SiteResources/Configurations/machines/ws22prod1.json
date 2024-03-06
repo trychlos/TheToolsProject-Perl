@@ -153,19 +153,12 @@
 		"DBMSInstances": {
 			"PROD": {
 				"package": "Mods::SqlServer",
-				"accounts": {
-					"sa": "E5WPtiQBjgi1ffJRwdRL"
-				},
 				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL16.PROD\\MSSQL\\DATA"
 			}
 		},
 		"dbms": {
 			"archivesRoot": "\\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\[eval:uc hostname]\\SQLBackups"
 		},
-		"remoteShare": "\\\\10.122.1.11\\C",
-		"MQTTGateway": {
-			"username": "[eval:uc hostname]",
-			"password": "Cf1FgRCUCu9kP60ArWwi"
-		}
+		"remoteShare": "\\\\10.122.1.11\\C"
 	}
 }

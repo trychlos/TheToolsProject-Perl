@@ -34,10 +34,6 @@
 				}
 			}
 		},
-		"remoteShare": "\\\\10.122.1.12\\C",
-		"MQTTGateway": {
-			"username": "[eval:uc hostname]",
-			"password": "q6G7YanFDf5zXsqvQ1og"
-		}
+		"remoteShare": "\\\\10.122.1.12\\C"
 	}
 }

@@ -126,9 +126,6 @@
 		"DBMSInstances": {
 			"MSSQLSERVER": {
 				"package": "Mods::SqlServer",
-				"accounts": {
-					"sa": "oyfdHV3l"
-				},
 				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL10_50.MSSQLSERVER\\MSSQL\\DATA"
 			}
 		},
@@ -144,10 +141,6 @@
 			}
 		},
 		"remoteShare": "\\\\ns230134.ovh.net\\C",
-		"MQTTGateway": {
-			"username": "[eval:uc hostname]",
-			"password": "bwhJLSN3F5Y9f2263nex"
-		},
 		"Environment": {
 			"type_comments": [
 				"X is production; this same indicator must be used both for production live and for production backup",

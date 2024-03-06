@@ -11,6 +11,7 @@ use Data::Dumper;
 use Net::MQTT::Simple;
 
 use Mods::Constants qw( :all );
+use Mods::Credentials;
 use Mods::Message;
 use Mods::Toops;
 
@@ -37,11 +38,11 @@ sub connect {
 	$broker = $args->{broker} if $args->{broker};
 	Mods::Message::msgErr( "MQTT::connect() broker is not configured nor provided as an argument" ) if !$broker;
 
-	my $username = Mods::Toops::var([ 'MQTTGateway', 'username' ]);
+	my $username = Mods::Credentials::get([ 'MQTTGateway', 'username' ]);
 	$username = $args->{username} if $args->{username};
 	Mods::Message::msgErr( "MQTT::connect() username is not configured nor provided as an argument" ) if !$username;
 
-	my $password = Mods::Toops::var([ 'MQTTGateway', 'password' ]);
+	my $password = Mods::Credentials::get([ 'MQTTGateway', 'password' ]);
 	$password = $args->{password} if $args->{password};
 	Mods::Message::msgErr( "MQTT::connect() password is not configured nor provided as an argument" ) if !$password;
 
