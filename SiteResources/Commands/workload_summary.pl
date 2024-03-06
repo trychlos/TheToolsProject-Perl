@@ -128,8 +128,9 @@ sub printSummary {
 		my $verbose = $opt_verbose ? "-verbose" : "";
 		my $command = "smtp.pl send -subject \"[$opt_workload@$host] workload summary\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
 		my $out = `$command`;
-		$res = $? == 0;
-		#print $out;
+		Mods::Message::msgVerbose( "printSummary() got $?" );
+		$res = ( $? == 0 );
+		Mods::Message::msgLog( $out );
 	}
 	# and to stdout (at last)
 	print $stdout;
