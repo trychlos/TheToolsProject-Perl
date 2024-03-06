@@ -124,7 +124,8 @@ sub printSummary {
 		my $textfname = Mods::Toops::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );
-		$command =~ s/<SUBJECT>/[$opt_workload@$host] workload summary/;
+		my $subject = sprintf( "[%s@%s] workload summary", $opt_workload, $host );
+		$command =~ s/<SUBJECT>/$subject/;
 		$command =~ s/<OPTIONS>/-textfname $textfname/;
 		my $colored = $opt_colored ? "-colored" : "";
 		my $dummy = $opt_dummy ? "-dummy" : "";

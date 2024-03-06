@@ -11,7 +11,7 @@
 			"manage macros: SUBJECT, OPTIONS"
 		],
 		"workloadSummary": {
-			"command": "smtp.pl send -subject <SUBJECT> -to inlingua-adm@trychlos.org <OPTIONS>"
+			"command": "smtp.pl send -subject \"<SUBJECT>\" -to inlingua-adm@trychlos.org <OPTIONS>"
 		}
 	},
 	"toops_comments": [
