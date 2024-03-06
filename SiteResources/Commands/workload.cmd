@@ -1,7 +1,7 @@
 @echo off
 	rem this .cmd is expected to be called with the workload name as unique argument, may have until 8 additional arguments to be passed to underlying commands
 	rem e.g. "C:\INLINGUA\Scripts\cmds\workload.cmd daily.morning -dummy"
-	rem Note 1: this workload.cmd adds itself the -nocolor option to every run command. Tou should take care that your run commands accept (if not honor) this command-line option.
+	rem Note 1: this workload.cmd adds itself the -nocolored option to every run command. You should take care that the run commands accept (if not honor) this command-line option.
 	set ME=[%~nx0 %1]
 	call :setLogFile %1
 	call :doExecute %* >>%LOGFILE% 2>&1
@@ -11,7 +11,7 @@
 	call :logLine executing %~f0 %*
 	set i=0
 	for /f "tokens=*" %%C in ('services.pl list -workload %1 -commands -hidden %2 %3 %4 %5 %6 %7 %8 %9 -nocolored ^| findstr /V "[services.pl list]"') do call :doCommand %%C %2 %3 %4 %5 %6 %7 %8 %9
-	services.pl workload_summary -workload %1 -commands res_command -start res_start -end res_end -rc res_rc -count %i% %2 %3 %4 %5 %6 %7 %8 %9 -nocolored
+	%~dp0\\workload_summary.pl -workload %1 -commands res_command -start res_start -end res_end -rc res_rc -count %i% %2 %3 %4 %5 %6 %7 %8 %9 -nocolored
     exit /b
 
 :doCommand

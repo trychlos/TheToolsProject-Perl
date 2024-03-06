@@ -5,12 +5,12 @@ TTPVars
  |	 +- defaults			Some hard-coded defaults which depend of the host OS
  |	 +- ReservedWords		Words which cannot be used for commands
  |	 +- ConfigKeys			Main configuration keys which determine the top keys under Toops.json and config
+ |
+ +- raw                     Store here raw json configuration files
  |   |
- |   +- json                Store here raw json configuration files
- |       |
- |       +- site
- |       +- toops
- |       +- host
+ |   +- site
+ |   +- toops
+ |   +- host
  |
  +- config                  Store here dynamically evaluated json configuration files
  |   |
@@ -18,6 +18,7 @@ TTPVars
  |   +- toops
  |   |   |
  |   |   +- logsRoot
+ |   |   +- ...
  |   |
  |   +- host
  |
@@ -55,7 +56,7 @@ TTPVars
  |
  +- dbms					Toops.pm 1202 $TTPVars->{$command} = {};
  |
- +- <command>
+ +- <command_name>			e.g. 'dbms'
      |
 	 +- service
         `|

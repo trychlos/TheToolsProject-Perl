@@ -67,10 +67,10 @@ our $TTPVars = {
 		commentPostUsage => '^# @\(@\) ',
 		commentUsage => '^# @\(-\) ',
 		verbSufix => '.do.pl',
-		verbSed => '\.do\.pl',
+		verbSed => '\.do\.pl'
 	},
 	# a key reserved for the storage of toops+site+host raw json configuration files
-	json => undef,
+	raw => undef,
 	# initialize some run variables
 	run => {
 		exitCode => 0,
@@ -514,7 +514,7 @@ sub getRandom {
 # -------------------------------------------------------------------------------------------------
 # returns a new unique temp filename
 sub getTempFileName {
-	my $fname = $TTPVars->{run}{command}{name}.'-'.$TTPVars->{run}{verb}{name};
+	my $fname = $TTPVars->{run}{command}{name}.'-'.( $TTPVars->{run}{verb}{name} || '' );
 	my $random = getRandom();
 	my $tempfname = File::Spec->catdir( Mods::Path::logsDailyDir(), "$fname-$random.tmp" );
 	Mods::Message::msgVerbose( "getTempFileName() tempfname='$tempfname'" );
@@ -587,7 +587,7 @@ sub helpCommand {
 	my @verbs = Mods::Toops::getVerbs();
 	my $verbsHelp = {};
 	foreach my $it ( @verbs ){
-		my @fullHelp = Mods::Toops::grepFileByRegex( $it, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
+		my @fullHelp = grepFileByRegex( $it, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
 		my ( $volume, $directories, $file ) = File::Spec->splitpath( $it );
 		my $verb = $file;
 		$verb =~ s/$TTPVars->{Toops}{verbSed}$//;
@@ -602,8 +602,8 @@ sub helpCommand {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Display the command one-liner help help
-# (E):
+# Display the command one-liner help
+# (I):
 # - the full path to the command
 # - an optional options hash with following keys:
 #   > prefix: the line prefix, defaulting to ''
@@ -613,8 +613,37 @@ sub helpCommandOneline {
 	my $prefix = '';
 	$prefix = $opts->{prefix} if exists( $opts->{prefix} );
 	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $command_path );
-	my @commandHelp = Mods::Toops::grepFileByRegex( $command_path, $TTPVars->{Toops}{commentPreUsage} );
+	my @commandHelp = grepFileByRegex( $command_path, $TTPVars->{Toops}{commentPreUsage} );
 	print "$prefix$bname: $commandHelp[0]".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Display an external command help
+# This is a one-shot help: all the help content is printed here
+# (I):
+# - a hash which contains default values
+sub helpExtern {
+	my ( $defaults ) = @_;
+	# pre-usage
+	my @help = grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
+	foreach my $it ( @help ){
+		print " $it".EOL;
+	}
+	# usage
+	@help = Mods::Toops::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
+	if( scalar @help ){
+		print "   Usage: $TTPVars->{run}{command}{basename} [options]".EOL;
+		print "   where available options are:".EOL;
+		foreach my $it ( @help ){
+			$it =~ s/\$\{?(\w+)}?/$defaults->{$1}/e;
+			print "     $it".EOL;
+		}
+	}
+	# post-usage
+	@help = Mods::Toops::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
+	foreach my $it ( @help ){
+		print " $it".EOL;
+	}
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -635,7 +664,7 @@ sub helpVerb {
 	# display the command one-line help
 	Mods::Toops::helpCommandOneline( $TTPVars->{run}{command}{path} );
 	# verb pre-usage
-	my @verbHelp = Mods::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
+	my @verbHelp = grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
 	my $verbInline = '';
 	if( scalar @verbHelp ){
 		$verbInline = shift @verbHelp;
@@ -712,12 +741,12 @@ sub hostConfigRead {
 # - reading the toops+site and host configuration files and interpreting them before first use
 # - initialize the logs internal variables
 sub init {
-	$TTPVars->{Toops}{json} = jsonRead( Mods::Path::toopsConfigurationPath());
+	$TTPVars->{raw} = jsonRead( Mods::Path::toopsConfigurationPath());
 	# make sure the toops+site configuration doesn't have any other key
 	# immediately aborting if this is the case
 	# accepting anyway 'toops' and 'site'-derived keys (like 'site_comments' for example)
 	my @others = ();
-	foreach my $key ( keys %{$TTPVars->{Toops}{json}} ){
+	foreach my $key ( keys %{$TTPVars->{raw}} ){
 		push( @others, "'$key'" ) unless index( $key, "toops" )==0 || index( $key, "site" )==0;
 	}
 	if( scalar @others ){
@@ -725,9 +754,28 @@ sub init {
 		print STDERR "Site own keys should be inside 'site' hierarchy\n";
 		exit( 1 );
 	}
-	$TTPVars->{Toops}{json}{host} = hostConfigRead( uc hostname );
+	$TTPVars->{raw}{host} = hostConfigRead( uc hostname );
 	ttpEvaluate();
 	Mods::Message::msgLog( "executing $0 ".join( ' ', @ARGV ));
+}
+
+# -------------------------------------------------------------------------------------------------
+# Initialize an external script (i.e. a script which is not part of TTP, but would like take advantage of it)
+# (I):
+# (O):
+# - TTPVars hash ref
+sub initExtern {
+	init();
+	my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
+	$TTPVars->{run}{command}{path} = $0;
+	$TTPVars->{run}{command}{started} = Time::Moment->now;
+	$TTPVars->{run}{command}{args} = \@ARGV;
+	$TTPVars->{run}{command}{basename} = $file;
+	#$TTPVars->{run}{command}{directory} = File::Spec->catdir( $vol, $dirs );
+	#$file =~ s/\.[^.]+$//;
+	#$TTPVars->{run}{command}{name} = $file;
+	$TTPVars->{run}{help} = scalar @ARGV ? false : true;
+	return $TTPVars;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -1011,7 +1059,7 @@ sub ttpExit {
 sub ttpEvaluate {
 	# first initialize the targets so that the evaluations have values to replace with
 	foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
-		$TTPVars->{config}{$key} = $TTPVars->{Toops}{json}{$key};
+		$TTPVars->{config}{$key} = $TTPVars->{raw}{$key};
 	}
 	# then evaluate
 	# sort the keys to try to get something which is predictable

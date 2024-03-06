@@ -1,4 +1,4 @@
-# @(#) Print a workload summary in order to get ride of CMD.EXE special chatracters interpretation
+# @(#) Print a workload summary in order to get ride of CMD.EXE special characters interpretation
 #
 # @(#) This verb display a summary of the executed commands found in 'command' environment variable,
 # @(#) along with their exit code in 'rc' environment variable.
@@ -15,8 +15,12 @@
 # @(-) --count=<count>         the count of commands to deal with [${count}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
+#
+# This script is mostly written like a TTP verb but is not. This is an example of how to take advantage of TTP
+# to write your own (rather pretty and efficient) scripts.
 
 use Data::Dumper;
+use Getopt::Long;
 use Path::Tiny;
 use Sys::Hostname qw( hostname );
 
@@ -24,7 +28,9 @@ use Mods::Constants qw( :all );
 use Mods::Message;
 use Mods::Services;
 
-my $TTPVars = Mods::Toops::TTPVars();
+# TTP initialization
+my $TTPVars = Mods::Toops::initExtern();
+print Dumper( $TTPVars->{run} );
 
 my $defaults = {
 	help => 'no',
@@ -145,12 +151,12 @@ if( !GetOptions(
 	"rc=s"				=> \$opt_rc,
 	"count=i"			=> \$opt_count	)){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+	Mods::Toops::helpExtern( $defaults );
 	Mods::Toops::ttpExit();
 }
 
