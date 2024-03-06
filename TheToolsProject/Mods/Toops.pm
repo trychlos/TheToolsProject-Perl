@@ -514,7 +514,8 @@ sub getRandom {
 # -------------------------------------------------------------------------------------------------
 # returns a new unique temp filename
 sub getTempFileName {
-	my $fname = $TTPVars->{run}{command}{name}.'-'.( $TTPVars->{run}{verb}{name} || '' );
+	my $fname = $TTPVars->{run}{command}{name};
+	$fname .= "-$TTPVars->{run}{verb}{name}" if $TTPVars->{run}{verb}{name};
 	my $random = getRandom();
 	my $tempfname = File::Spec->catdir( Mods::Path::logsDailyDir(), "$fname-$random.tmp" );
 	Mods::Message::msgVerbose( "getTempFileName() tempfname='$tempfname'" );
@@ -772,8 +773,8 @@ sub initExtern {
 	$TTPVars->{run}{command}{args} = \@ARGV;
 	$TTPVars->{run}{command}{basename} = $file;
 	#$TTPVars->{run}{command}{directory} = File::Spec->catdir( $vol, $dirs );
-	#$file =~ s/\.[^.]+$//;
-	#$TTPVars->{run}{command}{name} = $file;
+	$file =~ s/\.[^.]+$//;
+	$TTPVars->{run}{command}{name} = $file;
 	$TTPVars->{run}{help} = scalar @ARGV ? false : true;
 	return $TTPVars;
 }
