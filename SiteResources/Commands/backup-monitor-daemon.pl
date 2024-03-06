@@ -1,17 +1,21 @@
 #!perl
 #!/usr/bin/perl
+# @(#) Monitor the backups done in the (remote) live production.
 #
-# This runs as a daemon to monitor the backups done in the live production.
+# @(-) --[no]help              print this message, and exit [${help}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --json=<filename>       the name of the JSON configuration file of this daemon [${json}]
+# @(-) --remote=<host>         remote host to be monitored [${remote}]
 #
-# Rationale:
-# - the production "live" machine does its backup periodically, and doesn't care of anything else (it is not cooperative)
-# - it is to the production "backup" machine to monitor the backups, transfert the files througgh the network, and restore them on its dataserver;
-#   as it is expected to be just in waiting state, and so without anything else to do, it has this job.
-# Automatic restores, a full in the morning, and diff's every 2h during the day, let us be relatively sure that it will be easiy ready in case the live stops.
-#
-# Command-line arguments:
-# - the full path to the JSON configuration file
-# - the machine to be monitored for backups
+# @(@) Rationale:
+# @(@) - the production "live" machine does its backup periodically, and doesn't care of anything else (it is not cooperative)
+# @(@) - it is to the production "backup" machine to monitor the backups, transfert the files througgh the network, and restore them on its dataserver;
+# @(@)   as it is expected to be just in waiting state, and so without anything else to do, it has this job.
+# @(@) Automatic restores, a full in the morning, and diff's every 2h during the day, let us be relatively sure that it will be easiy ready in case the live stops.
+# @(@)
+# @(@) This script is expected to be run as a daemon, started via a 'daemon.pl start -json <filename.json>' command.
 #
 # Additionnally to the Daemon data structure for daemon object, we have:
 # daemon
@@ -32,7 +36,9 @@
 # So each daemon instance only monitors one host service.
 # -------------------------------------------------------
 #
-# Makes use of Toops, but is not part itself of Toops (though a not so bad example of application).
+# This script is mostly written like a TTP verb but is not. This is an example of how to take advantage of TTP
+# to write your own (rather pretty and efficient) daemon.
+# Just to be sure: this makes use of Toops, but is not part itself of Toops (though a not so bad example of application).
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -44,6 +50,7 @@ use File::Copy;
 use File::Find;
 use File::Spec;
 use File::stat;
+use Getopt::Long;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
@@ -51,15 +58,24 @@ use Mods::Daemon;
 use Mods::Path;
 use Mods::Toops;
 
-# auto-flush on socket
-$| = 1;
+my $defaults = {
+	help => 'no',
+	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
+	json => '',
+	remote => ''
+};
+
+my $opt_json = $defaults->{json};
+my $opt_remote = $defaults->{remote};
 
 my $commands = {
 	stats => \&answerStats,
 };
 
-my $daemon = Mods::Daemon::daemonInitToops( $0, \@ARGV );
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = Mods::Daemon::init();
+my $daemon = undef;
 
 # scanning for new elements
 my $lastScanTime = 0;
@@ -377,13 +393,42 @@ sub works {
 # MAIN
 # =================================================================================================
 
-# first check arguments
+if( !GetOptions(
+	"help!"				=> \$TTPVars->{run}{help},
+	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"json=s"			=> \$opt_json,
+	"remote=s"			=> \$opt_remote )){
+
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
+		Mods::Toops::ttpExit( 1 );
+}
+
+if( Mods::Toops::wantsHelp()){
+	Mods::Toops::helpExtern( $defaults );
+	Mods::Toops::ttpExit();
+}
+
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found json='$opt_json'" );
+Mods::Message::msgVerbose( "found remote='$opt_remote'" );
+
+Mods::Message::msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
+Mods::Message::msgErr( "'--remote' option is mandatory, not specified" ) if !$opt_remote;
+
+if( !Mods::Toops::errs()){
+	$daemon = Mods::Daemon::run( $opt_json );
+}
+
+# deeply check arguments
 # - monitored host must have a json configuration file
 # - the daemon configuration must have monitoredService and localDir keys
-if( scalar @ARGV != 2 ){
-	Mods::Message::msgErr( "not enough arguments, expected <json> <host>, found ".join( ' ', @ARGV )); 
-} else {
-	$daemon->{monitored}{host} = $ARGV[1];
+if( !Mods::Toops::errs()){
+	$opt_remote = uc $opt_remote;
+	$daemon->{monitored}{host} = $opt_remote;
 	$daemon->{monitored}{raw} = Mods::Toops::getHostConfig( $daemon->{monitored}{host}, { withEvaluate => false });
 	$daemon->{monitored}{config} = Mods::Toops::evaluate( $daemon->{monitored}{raw} );
 	# daemon: monitoredService

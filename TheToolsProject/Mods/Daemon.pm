@@ -49,6 +49,9 @@ use constant {
 	OFFLINE => "offline"
 };
 
+# auto-flush on socket
+$| = 1;
+
 # ------------------------------------------------------------------------------------------------
 sub _hostname {
 	return uc hostname;
@@ -68,7 +71,7 @@ sub _lastwill {
 # ------------------------------------------------------------------------------------------------
 sub _running {
 	my $TTPVars = Mods::Toops::TTPVars();
-	return "running since $TTPVars->{run}{daemon}{started}";
+	return "running since $TTPVars->{run}{command}{started}";
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -142,103 +145,6 @@ sub daemonCommand {
 		$answer = "unknowned command '$req->{command}'";
 	}
 	return $answer;
-}
-
-# ------------------------------------------------------------------------------------------------
-# initialize The Tools Project to be usable by a running daemon
-# we create a daemon.name branch in TTPVars so that all msgXxx functions will work and go to standard log
-# (E):
-# - the program path ($0)
-# - the command line arguments (\@ARGV)
-# - an optional options hash with following keys:
-#   > add: a complement to the log prefix (e.g. a service name)
-# returns the daemon object with:
-# - json: the json configuration file path
-# - config: its json evaluated configuration (and reevaluated at each listenInterval)
-# - socket: the created listening socket
-# - sleep: the sleep interval
-# - listenInterval: computed runtime value
-sub daemonInitToops {
-	my ( $program, $args, $opts ) = @_;
-	my $daemon = undef;
-	$opts //= {};
-
-	# init TTP
-	Mods::Toops::init();
-	# initialize TTPVars data to have a pretty log
-	my ( $volume, $directories, $file ) = File::Spec->splitpath( $program );
-	my $TTPVars = Mods::Toops::TTPVars();
-	$TTPVars->{run}{daemon}{name} = $file;
-	$TTPVars->{run}{daemon}{add} = $opts->{add} if $opts->{add};
-	$TTPVars->{run}{daemon}{started} = localtime->strftime( '%Y-%m-%d %H:%M:%S' );
-
-	# get and check the daemon configuration
-	my $json = @{$args}[0];
-	my ( $jvol, $jdirs, $jfile ) = File::Spec->splitpath( $json );
-	$jfile =~ s/\.[^.]+$//;
-	my $raw = getRawConfigByPath( $json );
-	my $config = $raw ? getEvaluatedConfig( $raw ) : undef;
-	# listening port
-	if( !$config->{listeningPort} ){
-		Mods::Message::msgErr( "daemon configuration must define a 'listeningPort' value, not found" );
-	}
-	# listen interval
-	my $listenInterval = DEFAULT_LISTEN_INTERVAL;
-	if( $config && exists( $config->{listenInterval} )){
-		if( $config->{listenInterval} < MIN_LISTEN_INTERVAL ){
-			Mods::Message::msgVerbose( "defined listenInterval=$config->{listenInterval} less than minimum accepted ".MIN_LISTEN_INTERVAL.", ignored" );
-		} else {
-			$listenInterval = $config->{listenInterval};
-		}
-	}
-	# advertize interval
-	my $advertizeInterval = DEFAULT_ADVERTIZE_INTERVAL;
-	if( exists( $config->{advertizeInterval} )){
-		if( $config->{advertizeInterval} < MIN_ADVERTIZE_INTERVAL ){
-			Mods::Message::msgVerbose( "defined advertizedInterval=$config->{advertizeInterval} less than minimum accepted ".MIN_ADVERTIZE_INTERVAL.", ignored" );
-		} else {
-			$advertizeInterval = $config->{advertizeInterval};
-		}
-	}
-	if( !Mods::Toops::errs()){
-		Mods::Message::msgVerbose( "listeningPort='$config->{listeningPort}' listenInterval='$listenInterval' advertizeInterval='$advertizeInterval'" );
-	}
-
-	# create a listening socket
-	my $socket = undef;
-	if( !Mods::Toops::errs()){
-		$socket = new IO::Socket::INET(
-			LocalHost => '0.0.0.0',
-			LocalPort => $config->{listeningPort},
-			Proto => 'tcp',
-			Listen => 5,
-			ReuseAddr => true,
-			Blocking => false,
-			Timeout => 0
-		) or Mods::Message::msgErr( "unable to create a listening socket: $!" );
-	}
-
-	# connect to MQTT communication bus if the host is configured for
-	my $mqtt = undef;
-	if( !Mods::Toops::errs()){
-		$mqtt = Mods::MQTT::connect({
-			will => _lastwill( $jfile )
-		});
-	}
-	if( !Mods::Toops::errs()){
-		$SIG{INT} = sub { $socket->close(); Mods::Toops::ttpExit(); };
-		$daemon = {
-			json => $json,
-			raw => $raw,
-			name => $jfile,
-			config => $config,
-			socket => $socket,
-			mqtt => $mqtt,
-			listenInterval => $listenInterval,
-			advertizeInterval => $advertizeInterval
-		};
-	}
-	return $daemon;
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -337,6 +243,123 @@ sub getSleepTime {
 		}
 	}
 	return $min;
+}
+
+# ------------------------------------------------------------------------------------------------
+# initialize The Tools Project to be usable by a running daemon
+# (I):
+# - an optional options hash ref with following keys:
+#   > name: a qualifiant name to be displayed on prefixed log lines, at the same place than the the verb name
+# (O):
+# returns the TTPVars variable
+
+sub init {
+	my ( $opts ) = @_;
+	$opts //= {};
+
+	# init TTP
+	Mods::Toops::init();
+	my $TTPVars = Mods::Toops::TTPVars();
+
+	# initialize TTPVars data to have a pretty log
+	my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
+	$TTPVars->{run}{command}{path} = $0;
+	$TTPVars->{run}{command}{started} = Time::Moment->now;
+	$TTPVars->{run}{command}{args} = \@ARGV;
+	$TTPVars->{run}{command}{basename} = $file;
+	$file =~ s/\.[^.]+$//;
+	$TTPVars->{run}{command}{name} = $file;
+	$TTPVars->{run}{help} = scalar @ARGV ? false : true;
+
+	# set the qualificant additional name
+	my $name = "";
+	$name = $opts->{name} if $opts->{name};
+	$TTPVars->{run}{verb}{name} = $name if $name;
+
+	return $TTPVars;
+}
+
+# ------------------------------------------------------------------------------------------------
+# initialize the TTP daemon
+# (I):
+# - the json configuration filename
+# (O):
+# returns the daemon object with:
+# - json: the json configuration file path
+# - config: its json evaluated configuration (and reevaluated at each listenInterval)
+# - socket: the created listening socket
+# - sleep: the sleep interval
+# - listenInterval: computed runtime value
+sub run {
+	my ( $json ) = @_;
+	my $daemon = undef;
+
+	# get and check the daemon configuration
+	my ( $jvol, $jdirs, $jfile ) = File::Spec->splitpath( $json );
+	$jfile =~ s/\.[^.]+$//;
+	my $raw = getRawConfigByPath( $json );
+	my $config = $raw ? getEvaluatedConfig( $raw ) : undef;
+	# listening port
+	if( !$config->{listeningPort} ){
+		Mods::Message::msgErr( "daemon configuration must define a 'listeningPort' value, not found" );
+	}
+	# listen interval
+	my $listenInterval = DEFAULT_LISTEN_INTERVAL;
+	if( $config && exists( $config->{listenInterval} )){
+		if( $config->{listenInterval} < MIN_LISTEN_INTERVAL ){
+			Mods::Message::msgVerbose( "defined listenInterval=$config->{listenInterval} less than minimum accepted ".MIN_LISTEN_INTERVAL.", ignored" );
+		} else {
+			$listenInterval = $config->{listenInterval};
+		}
+	}
+	# advertize interval
+	my $advertizeInterval = DEFAULT_ADVERTIZE_INTERVAL;
+	if( exists( $config->{advertizeInterval} )){
+		if( $config->{advertizeInterval} < MIN_ADVERTIZE_INTERVAL ){
+			Mods::Message::msgVerbose( "defined advertizedInterval=$config->{advertizeInterval} less than minimum accepted ".MIN_ADVERTIZE_INTERVAL.", ignored" );
+		} else {
+			$advertizeInterval = $config->{advertizeInterval};
+		}
+	}
+	if( !Mods::Toops::errs()){
+		Mods::Message::msgVerbose( "listeningPort='$config->{listeningPort}' listenInterval='$listenInterval' advertizeInterval='$advertizeInterval'" );
+	}
+
+	# create a listening socket
+	my $socket = undef;
+	if( !Mods::Toops::errs()){
+		$socket = new IO::Socket::INET(
+			LocalHost => '0.0.0.0',
+			LocalPort => $config->{listeningPort},
+			Proto => 'tcp',
+			Listen => 5,
+			ReuseAddr => true,
+			Blocking => false,
+			Timeout => 0
+		) or Mods::Message::msgErr( "unable to create a listening socket: $!" );
+	}
+
+	# connect to MQTT communication bus if the host is configured for
+	my $mqtt = undef;
+	if( !Mods::Toops::errs()){
+		$mqtt = Mods::MQTT::connect({
+			will => _lastwill( $jfile )
+		});
+	}
+	if( !Mods::Toops::errs()){
+		$SIG{INT} = sub { $socket->close(); Mods::Toops::ttpExit(); };
+		$daemon = {
+			json => $json,
+			raw => $raw,
+			name => $jfile,
+			config => $config,
+			socket => $socket,
+			mqtt => $mqtt,
+			listenInterval => $listenInterval,
+			advertizeInterval => $advertizeInterval
+		};
+	}
+	return $daemon;
 }
 
 # ------------------------------------------------------------------------------------------------

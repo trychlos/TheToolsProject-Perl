@@ -179,8 +179,11 @@ sub msgErr {
 # (I):
 # - the message(s) to be written in Toops/main.log
 #   may be a scalar (a string) or an array ref of scalars
+# - an optional options hash with following keys:
+#   > logFile: the path to the log file to be appended
 sub msgLog {
-	my $msg = shift;
+	my ( $msg, $opts ) = @_;
+	$opts //= {};
 	my $ref = ref( $msg );
 	if( $ref eq 'ARRAY' ){
 		foreach my $line ( split( /[\r\n]/, @{$msg} )){
@@ -188,7 +191,7 @@ sub msgLog {
 			msgLog( $line );
 		}
 	} elsif( !$ref ){
-		_msgLogAppend( _msgPrefix().$msg );
+		_msgLogAppend( _msgPrefix().$msg, $opts );
 	} else {
 		msgWarn( "Message::msgLog() unmanaged type '$ref' for '$msg'" );
 		Mods::Toops::stackTrace();
@@ -199,15 +202,23 @@ sub msgLog {
 # log an already prefixed message
 # do not try to write in logs while they are not initialized
 # the host config is silently reevaluated on each call to be sure we are writing in the logs of the day
+# (I):
+# - the message(s) to be written in Toops/main.log
+#   may be a scalar (a string) or an array ref of scalars
+# - an optional options hash with following keys:
+#   > logFile: the path to the log file to be appended
 
 sub _msgLogAppend {
-	my ( $msg ) = @_;
+	my ( $msg, $opts ) = @_;
+	$opts //= {};
 	my $TTPVars = Mods::Toops::TTPVars();
-	if( $TTPVars->{run}{logsMain} ){
+	my $logFile = $TTPVars->{run}{logsMain};
+	$logFile = $opts->{logFile} if $opts->{logFile};
+	if( $logFile ){
 		my $host = uc hostname;
 		my $username = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME} || 'unknown'; #getpwuid( $< );
 		my $line = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%5N' )." $host $username $msg";
-		path( $TTPVars->{run}{logsMain} )->append_utf8( $line.EOL );
+		path( $logFile )->append_utf8( $line.EOL );
 	}
 }
 

@@ -1,12 +1,18 @@
 #!perl
 #!/usr/bin/perl
+# @(#) Monitor the json alert files dropped in the alerts directory.
 #
-# This runs as a daemon to monitor the json alert files dropped in the alerts dir
+# @(-) --[no]help              print this message, and exit [${help}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --json=<filename>       the name of the JSON configuration file of this daemon [${json}]
 #
-# Command-line arguments:
-# - the full path to the JSON configuration file
+# @(@) This script is expected to be run as a daemon, started via a 'daemon.pl start -json <filename.json>' command.
 #
-# Makes use of Toops, but is not part itself of Toops (though a not so bad example of application).
+# This script is mostly written like a TTP verb but is not. This is an example of how to take advantage of TTP
+# to write your own (rather pretty and efficient) daemon.
+# Just to be sure: this makes use of Toops, but is not part itself of Toops (though a not so bad example of application).
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -15,6 +21,7 @@ use warnings;
 
 use Data::Dumper;
 use File::Find;
+use Getopt::Long;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
@@ -22,15 +29,22 @@ use Mods::Daemon;
 use Mods::Path;
 use Mods::Toops;
 
-# auto-flush on socket
-$| = 1;
+my $defaults = {
+	help => 'no',
+	verbose => 'no',
+	colored => 'no',
+	dummy => 'no',
+	json => ''
+};
+
+my $opt_json = $defaults->{json};
 
 my $commands = {
 	#help => \&help,
 };
 
-my $daemon = Mods::Daemon::daemonInitToops( $0, \@ARGV );
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = Mods::Daemon::init();
+my $daemon = undef;
 
 # scanning for new elements
 my $lastScanTime = 0;
@@ -91,11 +105,35 @@ sub works {
 # MAIN
 # =================================================================================================
 
-# first check arguments
+if( !GetOptions(
+	"help!"				=> \$TTPVars->{run}{help},
+	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"json=s"			=> \$opt_json )){
+
+		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
+		Mods::Toops::ttpExit( 1 );
+}
+
+if( Mods::Toops::wantsHelp()){
+	Mods::Toops::helpExtern( $defaults );
+	Mods::Toops::ttpExit();
+}
+
+Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found json='$opt_json'" );
+
+Mods::Message::msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
+
+if( !Mods::Toops::errs()){
+	$daemon = Mods::Daemon::run( $opt_json );
+}
+# more deeply check arguments
 # - the daemon configuration must have monitoredDir key
-if( scalar @ARGV != 1 ){
-	Mods::Message::msgErr( "not enough arguments, expected <json>, found ".join( ' ', @ARGV )); 
-} else {
+if( !Mods::Toops::errs()){
 	if( exists( $daemon->{config}{monitoredDir} )){
 		Mods::Message::msgVerbose( "monitored dir '$daemon->{config}{monitoredDir}' successfully found in daemon configuration file" );
 	} else {

@@ -772,7 +772,6 @@ sub initExtern {
 	$TTPVars->{run}{command}{started} = Time::Moment->now;
 	$TTPVars->{run}{command}{args} = \@ARGV;
 	$TTPVars->{run}{command}{basename} = $file;
-	#$TTPVars->{run}{command}{directory} = File::Spec->catdir( $vol, $dirs );
 	$file =~ s/\.[^.]+$//;
 	$TTPVars->{run}{command}{name} = $file;
 	$TTPVars->{run}{help} = scalar @ARGV ? false : true;

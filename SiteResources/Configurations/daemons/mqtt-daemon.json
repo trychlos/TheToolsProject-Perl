@@ -11,10 +11,10 @@
 	"topics_comments": [
 		"The MQTT daemon always suscribes to the '#' and '$SYS/#' wildcards.",
 		"The below configuration only says what to do with some topics we want monitor",
-		"Each received topic is matched against the (key) regular expression. Whent matched, configuration applies as follow:",
-		"- logTopic: whether to log the topic, defaulting to true",
-		"- logMessage: whether to log the message, defaulting to true",
-		"- command: when set, then the daemon will keep the last received messages, and answered to that command with their last value",
+		"Each received topic is matched against each (key) regular expression. When matched, configuration applies as follow:",
+		"- toLog: whether to log the topic and its payload, defaulting to false",
+		"- toStdout: whether to print the topic and its payload, defaulting to false",
+		"- command: when set, then the daemon will answer that command with the corresponding topics and their last known payload",
 		"Note that regular expressions provided as keys of 'topics' hash may overlap each other: they will all be examined on each receive MQTT message.",
 		"...",
 		"...",
@@ -22,17 +22,14 @@
 	],
 	"topics": {
 		"^(?!\\$SYS)": {
-			"comment": "match all which is not $SYS and let logs"
+			"comment": "match all which is not $SYS and let logs",
+			"toLog": true
 		},
 		"^[^/]+/executionReport/dbms\\.pl/backup": {
-			"comment": "match 'dbms.pl backup' execution reports, no need to log them again",
-			"logTopic": false,
-			"logMessage": false
+			"comment": "match 'dbms.pl backup' execution reports, no need to log them again"
 		},
 		"^\\$SYS/": {
 			"comment": "match $SYS broker internal messages - do not log them (they are too numerous), but let a client request them",
-			"logTopic": false,
-			"logMessage": false,
 			"command": "SYS"
 		}
 	}

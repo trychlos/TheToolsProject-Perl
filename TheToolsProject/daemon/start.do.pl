@@ -43,8 +43,8 @@ sub doStart {
 	Mods::Message::msgOut( "starting the daemon from '$opt_json'..." );
 	Mods::Message::msgErr( "$program_path: not found or not readable" ) if ! -r $program_path;
 	if( !Mods::Toops::errs()){
-		print Dumper( @ARGV );
-		my $proc = Proc::Background->new( "perl $program_path $json_path ".join( ' ', @ARGV )) or Mods::Message::msgErr( "unable to start '$program_path'" );
+		#print Dumper( @ARGV );
+		my $proc = Proc::Background->new( "perl $program_path -json $json_path ".join( ' ', @ARGV )) or Mods::Message::msgErr( "unable to start '$program_path'" );
 		Mods::Message::msgOut( "success" ) if $proc;
 	}
 }

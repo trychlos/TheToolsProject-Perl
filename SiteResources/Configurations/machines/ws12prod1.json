@@ -35,7 +35,7 @@
 							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
 								"daemon.pl stop -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\canal33-backup-monitor-daemon.json -ignore -wait 2",
-								"daemon.pl start -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\canal33-backup-monitor-daemon.json NS230134"
+								"daemon.pl start -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\canal33-backup-monitor-daemon.json -remote NS230134"
 							]
 						}
 					]

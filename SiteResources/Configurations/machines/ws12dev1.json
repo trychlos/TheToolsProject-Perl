@@ -98,7 +98,7 @@
 								"ttp.pl list -nocolored -services"
 							],
 							"commands": [
-								"daemon.pl start -nocolored -json [eval:$ENV{TTP_CONFDIR}\\daemons\\tom59-backup-monitor-daemon.json NS3232346 Tom59"
+								"daemon.pl start -nocolored -json [eval:$ENV{TTP_CONFDIR}\\daemons\\tom59-backup-monitor-daemon.json -remote NS3232346"
 							]
 						}
 					]

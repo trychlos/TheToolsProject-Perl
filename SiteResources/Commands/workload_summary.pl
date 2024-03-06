@@ -30,7 +30,6 @@ use Mods::Services;
 
 # TTP initialization
 my $TTPVars = Mods::Toops::initExtern();
-print Dumper( $TTPVars->{run} );
 
 my $defaults = {
 	help => 'no',
