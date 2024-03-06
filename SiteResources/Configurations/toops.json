@@ -6,7 +6,13 @@
 	"site": {
 		"rootDir": "C:\\INLINGUA",
 		"commandsDir": "[eval:$TTPVars->{config}{site}{rootDir}]\\SiteResources\\Commands",
-		"daemonsDir": "[eval:$ENV{TTP_CONFDIR}]\\daemons"
+		"daemonsDir": "[eval:$ENV{TTP_CONFDIR}]\\daemons",
+		"workloadSummary_comments": [
+			"manage macros: SUBJECT, OPTIONS"
+		],
+		"workloadSummary": {
+			"command": "smtp.pl send -subject <SUBJECT> -to inlingua-adm@trychlos.org <OPTIONS>"
+		}
 	},
 	"toops_comments": [
 		"The global Toops configuration for your site",
@@ -58,11 +64,6 @@
 			"withMqtt": {
 				"enabled": true,
 				"command": "mqtt.pl publish -topic <SUBJECT> -payload <DATA> <OPTIONS>"
-			},
-			"workloadSummary": {
-				"mailto": [
-					"inlingua-adm@trychlos.org"
-				]
 			}
 		},
 		"copyDir_comments": [

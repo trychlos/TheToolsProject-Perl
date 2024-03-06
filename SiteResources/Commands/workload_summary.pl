@@ -116,18 +116,20 @@ sub printSummary {
 		#print _pad( "|", $totLength-1, ' ' )."|".EOL;
 	}
 	$stdout .= "+"._pad( "", $totLength-2, '=' )."+".EOL;
-	# both send the summary to the log (here to stdout) and by email
-	my $mailto = Mods::Toops::var([ 'executionReports', 'workloadSummary', 'mailto' ]);
-	if( scalar @{$mailto} ){
+	# both send the summary to the log (here to stdout) and execute the provided command
+	# must manage SUBJECT and OPTIONS macros
+	my $command = $TTPVars->{config}{site}{workloadSummary}{command};
+	if( $command ){
 		my $host = uc hostname;
 		my $textfname = Mods::Toops::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );
+		$command =~ s/<SUBJECT>/[$opt_workload@$host] workload summary/;
+		$command =~ s/<OPTIONS>/-textfname $textfname/;
 		my $colored = $opt_colored ? "-colored" : "";
 		my $dummy = $opt_dummy ? "-dummy" : "";
 		my $verbose = $opt_verbose ? "-verbose" : "";
-		my $command = "smtp.pl send -subject \"[$opt_workload@$host] workload summary\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
-		my $out = `$command`;
+		my $out = `$command $colored $dummy $verbose`;
 		Mods::Message::msgVerbose( "printSummary() got $?" );
 		$res = ( $? == 0 );
 		Mods::Message::msgLog( $out );
