@@ -124,7 +124,7 @@ sub printSummary {
 		my $textfname = Mods::Toops::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );
-		my $subject = sprintf( "[%s\\@%s] workload summary", $opt_workload, $host );
+		my $subject = sprintf( "[%s\@%s] workload summary", $opt_workload, $host );
 		print "subject='$subject'".EOL;
 		$command =~ s/<SUBJECT>/$subject/;
 		$command =~ s/<OPTIONS>/-textfname $textfname/;
