@@ -138,13 +138,6 @@
 			"password": "X-aUnGv+pV8t!O8m",
 			"mailfrom": "No Reply <no-reply@blingua.fr>"
 		},
-
-		"dbms": {
-			"backupsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDaySQLBackups",
-			"backupsDir": "[eval:$TTPVars->{config}{toops}{dbms}{backupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:uc hostname]",
-			"archivesRoot": "",
-			"archivesDir": "[eval:Mods::Path::dbmsArchivesRoot()]\\[eval:localtime->strftime( '%y%m%d' )]"
-		},
 		"deployments": {
 			"sourceDirs": [
 				"[eval:$TTPVars->{config}{site}{rootDir}]\\SiteResources",
@@ -164,15 +157,28 @@
 				}
 			}
 		},
-		"telemetry": {
-			"withMqtt": true,
-			"withPrometheus": true
-		},
-		"prometheus": {
-			"url": "http://localhost:9091/metrics"
+		"Telemetry": {
+			"withMqtt": {
+				"enabled": true,
+				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
+			},
+			"withHttp_comments": [
+				"Actually a Prometheus gateway which should be locally installed on each machine"
+			],
+			"withHttp": {
+				"enabled": true,
+				"url": "http://localhost:9091/metrics/job/telemetry/host/[eval:uc hostname]"
+			}
 		},
 		"MQTTGateway": {
 			"broker": "10.122.1.15"
+		},
+
+		"dbms": {
+			"backupsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDaySQLBackups",
+			"backupsDir": "[eval:$TTPVars->{config}{toops}{dbms}{backupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:uc hostname]",
+			"archivesRoot": "",
+			"archivesDir": "[eval:Mods::Path::dbmsArchivesRoot()]\\[eval:localtime->strftime( '%y%m%d' )]"
 		}
 	}
 }

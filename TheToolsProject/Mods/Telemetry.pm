@@ -22,87 +22,91 @@ sub _hostname {
 }
 
 # -------------------------------------------------------------------------------------------------
-# get the lines of a result set got from 'dbms.pl sql -tabular' output, returns the interpreted hash
-# first line gives column names and column width
-# second line and others give data
-# may happen that column names include space; so only rely on columns width to split
-sub interpretResultSet {
-	my @set = @_;
-	my @result = ();
-	# compute the columns width
-	my @w = split( /\s+/, $set[1] );
-	my @width = ();
-	foreach my $it ( @w ){
-		push( @width, length( $it ));
-	}
-	# get the columns names (replacing spaces with _ if needed)
-	my @columns = ();
-	my $start = 0;
-	for( my $col=0 ; $col<scalar @width ; ++$col ){
-		my $str = substr( $set[0], $start, $width[$col] );
-		$str =~ s/^\s+//;
-		$str =~ s/\s+$//;
-		$str =~ s/\s/_/g;
-		push( @columns, $str );
-		$start += 1 + $width[$col];
-	}
-	# and get the data
-	for( my $ir=2 ; $ir<scalar @set ; ++$ir ){
-		my $row = $set[$ir];
-		next if !length( $row );
-		my $res = {};
-		$start = 0;
-		for( my $col=0 ; $col<scalar @width ; ++$col ){
-			my $data = substr( $row, $start, $width[$col] );
-			$data =~ s/^\s*//;
-			$data =~ s/\s*$//;
-			$res->{$columns[$col]} = $data;
-			$start += 1 + $width[$col];
-		}
-		push( @result, $res );
-	}
-	return \@result;
-}
-
-# -------------------------------------------------------------------------------------------------
-# publish the provided results sets to MQTT bus
+# publish the provided results sets to HTTP gateway
+# the URL path is automatically built with /host/<HOST>/labelname1/labelvalue1/.../metric
 # (I):
-# - topic string
-# - result set as a hash ref
+# - metric name
+# - metric value
+# - array ref of 'name=value' labels
 # - an optional options hash with following keys:
-#   > maxCount: the maximum count of messages to be published (ignored if less than zero)
+#   > httpPrefix: a prefix to be set on the metric
 # (O):
-# returns the count of published messages
-sub mqttPublish {
-	my ( $root, $set, $opts ) = @_;
+# returns the count of published messages (should be one)
+sub httpPublish {
+	my ( $metric, $value, $labels, $opts ) = @_;
 	$opts //= {};
-	my $TTPVars = Mods::Toops::TTPVars();
-	if( exists( $TTPVars->{config}{toops}{telemetry}{withMqtt} )){
-		Mods::Message::msgVerbose( "Telemetry::mqttPublish() TTPVars->{config}{toops}{telemetry}{withMqtt}=$TTPVars->{config}{toops}{telemetry}{withMqtt}" );
-	} else {
-		Mods::Message::msgVerbose( "Telemetry::mqttPublish() TTPVars->{config}{toops}{telemetry}{withMqtt} is undef" );
-	}
 	my $count = 0;
-	if( $TTPVars->{config}{toops}{telemetry}{withMqtt} ){
-		my $host = uc hostname;
-		my $max = -1;
-		$max = $opts->{maxCount} if exists( $opts->{maxCount} ) && $opts->{maxCount} >= 0;
-		my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
-		my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
-		my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
-		foreach my $key ( keys %{$set} ){
-			last if $count >= $max && $max >= 0;
-			my $command = "mqtt.pl publish -topic $host/telemetry/$root/$key -payload \"$set->{$key}\" $colored $dummy $verbose";
-			Mods::Message::msgVerbose( $command );
-			print `$command`;
-			$count += 1 if $? == 0;
+	my $url = Mods::Toops::var([ 'Telemetry', 'withHttp', 'url' ]);
+	if( $url ){
+		foreach my $it ( @{$labels} ){
+			my @words = split( /=/, $it );
+			$url .= "/$words[0]/$words[1]";
 		}
+		my $prefix = "";
+		$prefix = $opts->{httpPrefix} if $opts->{httpPrefix};
+		my $ua = LWP::UserAgent->new();
+		my $req = HTTP::Request->new( POST => $url );
+		my $name = "$prefix$metric";
+		$name =~ s/\./_/g;
+		my $str = "# TYPE $name gauge\n";
+		$str .= "$name $value\n";
+		Mods::Message::msgVerbose( "Telemetry::httpPublish() to url='$url'" );
+		$req->content( $str );
+		my $response = $ua->request( $req );
+		Mods::Message::msgVerbose( Dumper( $response ));
+		$count += 1 if $response->is_success;
+		Mods::Message::msgWarn( "Telemetry::httpPublish() Code: ".$response->code." MSG: ".$response->decoded_content ) if !$response->is_success;
+	} else {
+		Mods::Message::msgWarn( "Telemetry::httpPublish() no HTTP URL available" );
 	}
 	return $count;
 }
 
 # -------------------------------------------------------------------------------------------------
-# publish the provided results sets to Prometheus pushgateway
+# publish the provided results sets to MQTT bus
+# the topic is automatically built with <HOST>/telemetry/labelname1/labelvalue1/.../metric
+# (I):
+# - metric name
+# - metric value
+# - array ref of 'name=value' labels
+# - an optional options hash with following keys:
+#   > mqttPrefix: a prefix to be set on the metric (which happens to be the last part of the MQTT topic)
+# (O):
+# returns the count of published messages (should be one)
+sub mqttPublish {
+	my ( $metric, $value, $labels, $opts ) = @_;
+	$opts //= {};
+	my $count = 0;
+	my $command = Mods::Toops::var([ 'Telemetry', 'withMqtt', 'command' ]);
+	if( $command ){
+		my $topic = uc hostname;
+		$topic .= "/telemetry";
+		foreach my $it ( @{$labels} ){
+			my @words = split( /=/, $it );
+			$topic .= "/$words[0]/$words[1]";
+		}
+		my $prefix = "";
+		$prefix = $opts->{mqttPrefix} if $opts->{mqttPrefix};
+		$topic .= "/$prefix$metric";
+		$command =~ s/<SUBJECT>/$topic/;
+		$command =~ s/<DATA>/$value/;
+		$command =~ s/<OPTIONS>//;
+		my $TTPVars = Mods::Toops::TTPVars();
+		my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
+		my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
+		my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+		print `$command $colored $dummy $verbose`;
+		my $rc = $?;
+		Mods::Message::msgVerbose( "Telemetry::mqttPublish() got rc=$rc" );
+		$count += 1 if !$rc;
+	} else {
+		Mods::Message::msgWarn( "Telemetry::mqttPublish() no MQTT command available" );
+	}
+	return $count;
+}
+
+# -------------------------------------------------------------------------------------------------
+# publish the provided results sets to Prometheus push gateway
 # (I):
 # - topic string
 # - result set as a hash ref

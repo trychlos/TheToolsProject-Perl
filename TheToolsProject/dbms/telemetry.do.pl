@@ -97,7 +97,7 @@ sub _interpretDbResultSet {
 sub doDbSize {
 	Mods::Message::msgOut( "publishing databases size on '$hostConfig->{name}\\$opt_instance'..." );
 	my $mqttCount = 0;
-	my $prometheusCount = 0;
+	my $httpCount = 0;
 	my $list = [];
 	my $colored = $opt_colored ? "-colored" : "-nocolored";
 	my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
@@ -114,12 +114,16 @@ sub doDbSize {
 		Mods::Message::msgOut( "  database '$db'" );
 		# sp_spaceused provides two results sets, where each one only contains one data row
 		my $resultSets = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple $colored $dummy $verbose` ));
-		#print Dumper( $resultSets );
 		my $set = _interpretDbResultSet( $resultSets );
-		$mqttCount += Mods::Telemetry::mqttPublish( "dbms/$opt_instance/database/$db/dbsize", $set, { maxCount => $opt_limit-$mqttCount });
-		$prometheusCount += Mods::Telemetry::prometheusPublish( "instance/$opt_instance/database/$db", $set, { prefix => 'telemetry_dbms_dbsize_' });
+		foreach my $key ( keys %{$set} ){
+			`telemetry.pl publish -metric $key -value $set->{$key} -label instance=$opt_instance -label database=$db -httpPrefix telemetry_dbms_dbsize_ -mqttPrefix dbsize/`;
+			my $rc = $?;
+			Mods::Message::msgVerbose( "doDbSize() got rc=$rc" );
+			$mqttCount += 1 if !$rc;
+			$httpCount += 1 if !$rc;
+		}
 	}
-	Mods::Message::msgOut( "$mqttCount message(s) published on MQTT bus, $prometheusCount metric(s) published to Prometheus" );
+	Mods::Message::msgOut( "$mqttCount message(s) published on MQTT bus, $httpCount metric(s) published to HTTP gateway" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -128,7 +132,7 @@ sub doDbSize {
 #  if we have asked for a service, we may have several databases
 sub doTablesCount {
 	my $mqttCount = 0;
-	my $prometheusCount = 0;
+	my $httpCount = 0;
 	if( !scalar @databases ){
 		Mods::Message::msgErr( "no database specified, unable to count rows in tables.." );
 	} else {
@@ -145,12 +149,17 @@ sub doTablesCount {
 				my $resultSet = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular $colored $dummy $verbose` ));
 				my $set = $resultSet->[0];
 				$set->{rows_count} = 0 if !defined $set->{rows_count};
-				$mqttCount += Mods::Telemetry::mqttPublish( "dbms/$opt_instance/database/$db/table/$tab", $set );
-				$prometheusCount += Mods::Telemetry::prometheusPublish( "instance/$opt_instance/database/$db/table/$tab", $set, { prefix => 'telemetry_dbms_' });
+				foreach my $key ( keys %{$set} ){
+					`telemetry.pl publish -metric $key -value $set->{$key} -label instance=$opt_instance -label database=$db -label table=$tab -httpPrefix telemetry_dbms_`;
+					my $rc = $?;
+					Mods::Message::msgVerbose( "doTablesCount() got rc=$rc" );
+					$mqttCount += 1 if !$rc;
+					$httpCount += 1 if !$rc;
+				}
 			}
 		}
 	}
-	Mods::Message::msgOut( "$mqttCount message(s) published on MQTT bus, $prometheusCount metric(s) published to Prometheus" );
+	Mods::Message::msgOut( "$mqttCount message(s) published on MQTT bus, $httpCount metric(s) published to HTTP gateway" );
 }
 
 # =================================================================================================

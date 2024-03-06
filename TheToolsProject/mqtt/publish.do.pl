@@ -1,4 +1,4 @@
-# @(#) publish a message on a topic
+# @(#) publish a message on a MQTT topic
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
@@ -34,8 +34,7 @@ my $opt_topic = $defaults->{topic};
 my $opt_payload = $defaults->{payload};
 
 # -------------------------------------------------------------------------------------------------
-# send the alert
-# as far as we are concerned here, this is just writing a json file in a special directory
+# publish the message
 sub doPublish {
 	Mods::Message::msgOut( "publishing '$opt_topic [$opt_payload]'..." );
 

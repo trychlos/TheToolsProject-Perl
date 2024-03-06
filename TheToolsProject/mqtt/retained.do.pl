@@ -1,4 +1,4 @@
-# @(#) get the retained available messages
+# @(#) get the MQTT retained available messages
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
