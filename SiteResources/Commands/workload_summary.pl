@@ -131,10 +131,10 @@ sub printSummary {
 		my $colored = $opt_colored ? "-colored" : "";
 		my $dummy = $opt_dummy ? "-dummy" : "";
 		my $verbose = $opt_verbose ? "-verbose" : "";
-		my $out = `$command $colored $dummy $verbose`;
+		my @out = `$command $colored $dummy $verbose`;
 		Mods::Message::msgVerbose( "printSummary() got $?" );
 		$res = ( $? == 0 );
-		Mods::Message::msgLog( $out );
+		Mods::Message::msgLog( @out );
 	}
 	# and to stdout (at last)
 	print $stdout;
