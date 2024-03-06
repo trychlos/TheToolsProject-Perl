@@ -18,6 +18,7 @@
 
 use Data::Dumper;
 use Path::Tiny;
+use Sys::Hostname qw( hostname );
 
 use Mods::Constants qw( :all );
 use Mods::Message;
@@ -112,13 +113,14 @@ sub printSummary {
 	# both send the summary to the log (here to stdout) and by email
 	my $mailto = Mods::Toops::var([ 'executionReports', 'workloadSummary', 'mailto' ]);
 	if( scalar @{$mailto} ){
+		my $host = uc hostname;
 		my $textfname = Mods::Toops::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );
 		my $colored = $opt_colored ? "-colored" : "";
 		my $dummy = $opt_dummy ? "-dummy" : "";
 		my $verbose = $opt_verbose ? "-verbose" : "";
-		my $command = "ttp.pl sendmail -subject \"[$opt_workload] workload summary\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
+		my $command = "smtp.pl send -subject \"[$opt_workload@$host] workload summary\" -to ".join( ',', @{$mailto} )." -textfname $textfname $colored $dummy $verbose";
 		my $out = `$command`;
 		$res = $? == 0;
 		#print $out;
