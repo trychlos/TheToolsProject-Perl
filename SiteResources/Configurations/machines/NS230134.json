@@ -46,6 +46,7 @@
 				},
 				"status": {
 					"commands": [
+						"dbms.pl status -service <SERVICE> -state"
 					]
 				},
 				"ovh": {

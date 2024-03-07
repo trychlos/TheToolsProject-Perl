@@ -57,9 +57,6 @@
 					]
 				},
 				"status": {
-					"commands_x": [
-						"[eval:$TTPVars->{config}{site}{commandsDir}]\\dbms_status.pl -service <SERVICE>"
-					],
 					"commands": [
 						"dbms.pl status -service <SERVICE> -state"
 					]

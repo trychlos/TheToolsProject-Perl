@@ -40,6 +40,11 @@
 						}
 					]
 				},
+				"status": {
+					"commands": [
+						"dbms.pl status -service <SERVICE> -state"
+					]
+				},
 				"ovh": {
 					"ip": "ip-87.98.189.58"
 				}

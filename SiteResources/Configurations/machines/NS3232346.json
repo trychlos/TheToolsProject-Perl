@@ -40,6 +40,11 @@
 							]
 						}
 					]
+				},
+				"status": {
+					"commands": [
+						"dbms.pl status -service <SERVICE> -state"
+					]
 				}
 			},
 			"Tom21": {
@@ -77,6 +82,11 @@
 							]
 						}
 					]
+				},
+				"status": {
+					"commands": [
+						"dbms.pl status -service <SERVICE> -state"
+					]
 				}
 			},
 			"Tom59": {
@@ -113,6 +123,11 @@
 								"daemon.pl start -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json -- -remote WS22PROD1"
 							]
 						}
+					]
+				},
+				"status": {
+					"commands": [
+						"dbms.pl status -service <SERVICE> -state"
 					]
 				}
 			},
