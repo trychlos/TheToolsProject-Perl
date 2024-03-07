@@ -11,7 +11,6 @@
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
-use Sys::Hostname qw( hostname );
 
 use Mods::Constants qw( :all );
 use Mods::Message;

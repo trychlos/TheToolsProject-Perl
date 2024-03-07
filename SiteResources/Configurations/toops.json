@@ -168,7 +168,7 @@
 			],
 			"withHttp": {
 				"enabled": true,
-				"url": "http://localhost:9091/metrics/job/telemetry/host/[eval:uc hostname]"
+				"url": "http://localhost:9091/metrics/job/telemetry/host/[eval:Mods::Toops::_hostname()]"
 			}
 		},
 		"MQTTGateway": {
@@ -177,7 +177,7 @@
 
 		"dbms": {
 			"backupsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDaySQLBackups",
-			"backupsDir": "[eval:$TTPVars->{config}{toops}{dbms}{backupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:uc hostname]",
+			"backupsDir": "[eval:$TTPVars->{config}{toops}{dbms}{backupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:Mods::Toops::_hostname()]",
 			"archivesRoot": "",
 			"archivesDir": "[eval:Mods::Path::dbmsArchivesRoot()]\\[eval:localtime->strftime( '%y%m%d' )]"
 		}

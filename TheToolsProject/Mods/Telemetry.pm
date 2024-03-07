@@ -10,16 +10,10 @@ use warnings;
 use Data::Dumper;
 use HTTP::Request::Common;
 use LWP::UserAgent;
-use Sys::Hostname qw( hostname );
 
 use Mods::Constants qw( :all );
 use Mods::Message;
 use Mods::Toops;
-
-# -------------------------------------------------------------------------------------------------
-sub _hostname {
-	return uc hostname;
-}
 
 # -------------------------------------------------------------------------------------------------
 # publish the provided results sets to HTTP gateway
@@ -79,7 +73,7 @@ sub mqttPublish {
 	my $count = 0;
 	my $command = Mods::Toops::var([ 'Telemetry', 'withMqtt', 'command' ]);
 	if( $command ){
-		my $topic = uc hostname;
+		my $topic = Mods::Toops::_hostname();
 		$topic .= "/telemetry";
 		foreach my $it ( @{$labels} ){
 			my @words = split( /=/, $it );

@@ -22,11 +22,11 @@
 use Data::Dumper;
 use Getopt::Long;
 use Path::Tiny;
-use Sys::Hostname qw( hostname );
 
 use Mods::Constants qw( :all );
 use Mods::Message;
 use Mods::Services;
+use Mods::Toops;
 
 # TTP initialization
 my $TTPVars = Mods::Toops::initExtern();
@@ -119,7 +119,7 @@ sub printSummary {
 	# must manage SUBJECT and OPTIONS macros
 	my $command = $TTPVars->{config}{site}{workloadSummary}{command};
 	if( $command ){
-		my $host = uc hostname;
+		my $host = Mods::Toops::_hostname();
 		my $textfname = Mods::Toops::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );

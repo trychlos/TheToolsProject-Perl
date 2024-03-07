@@ -17,13 +17,13 @@
 use Data::Dumper;
 use JSON;
 use Path::Tiny;
-use Sys::Hostname qw( hostname );
 use Time::Moment;
 
 use Mods::Constants qw( :all );
 use Mods::Message;
 use Mods::Path;
 use Mods::SMTP;
+use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -32,7 +32,7 @@ my $defaults = {
 	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
-	emitter => uc hostname,
+	emitter => Mods::Toops::_hostname(),
 	level => 'INFO',
 	message => ''
 };
@@ -66,7 +66,7 @@ sub doJsonAlert {
 				emitter => $opt_emitter,
 				level => $opt_level,
 				message => $opt_message,
-				host => uc hostname,
+				host => Mods::Toops::_hostname(),
 				stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
 			};
 			my $json = JSON->new;
@@ -103,12 +103,12 @@ sub doMqttAlert {
 	my $command = Mods::Toops::var([ 'alerts', 'withMqtt', 'command' ]);
 	my $res = false;
 	if( $command ){
-		my $topic = uc hostname."/alert";
+		my $topic = Mods::Toops::_hostname()."/alert";
 		my $data = {
 			emitter => $opt_emitter,
 			level => $opt_level,
 			message => $opt_message,
-			host => uc hostname,
+			host => Mods::Toops::_hostname(),
 			stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
 		};
 		my $json = JSON->new;

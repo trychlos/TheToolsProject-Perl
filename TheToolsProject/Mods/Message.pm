@@ -24,7 +24,6 @@ use Config;
 use Data::Dumper;
 use Path::Tiny qw( path );
 use Sub::Exporter;
-use Sys::Hostname qw( hostname );
 use Term::ANSIColor;
 use if $Config{osname} eq "MSWin32", "Win32::Console::ANSI";
 
@@ -215,7 +214,7 @@ sub _msgLogAppend {
 	my $logFile = $TTPVars->{run}{logsMain};
 	$logFile = $opts->{logFile} if $opts->{logFile};
 	if( $logFile ){
-		my $host = uc hostname;
+		my $host = Mods::Toops::_hostname();
 		my $username = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME} || 'unknown'; #getpwuid( $< );
 		my $line = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%5N' )." $host $username $msg";
 		path( $logFile )->append_utf8( $line.EOL );

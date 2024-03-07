@@ -130,7 +130,7 @@
 			}
 		},
 		"dbms": {
-			"archivesRoot": "\\\\ftpback-rbx4-48.ovh.net\\ns230134.ovh.net\\[eval:uc hostname]\\SQLBackups"
+			"archivesRoot": "\\\\ftpback-rbx4-48.ovh.net\\ns230134.ovh.net\\[eval:Mods::Toops::_hostname()]\\SQLBackups"
 		},
 		"Telemetry": {
 			"withHttp_comments": [

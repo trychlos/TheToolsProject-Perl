@@ -34,7 +34,6 @@ use Config;
 use Data::Dumper;
 use File::Path qw( make_path );
 use File::Spec;
-use Sys::Hostname qw( hostname );
 use Time::Piece;
 
 use Mods::Constants qw( :all );
@@ -215,7 +214,7 @@ sub fromCommand {
 # returns the full path of the host configuration file
 sub hostConfigurationPath {
 	my ( $host ) = @_;
-	$host = hostname if !$host;
+	$host = Mods::Toops::_hostname() if !$host;
 	return File::Spec->catdir( hostsConfigurationsDir(), "$host.json" );
 }
 

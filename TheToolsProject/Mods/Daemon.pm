@@ -32,7 +32,6 @@ use warnings;
 use Data::Dumper;
 use File::Spec;
 use IO::Socket::INET;
-use Sys::Hostname qw( hostname );
 use Time::Piece;
 
 use Mods::Constants qw( :all );
@@ -51,11 +50,6 @@ use constant {
 
 # auto-flush on socket
 $| = 1;
-
-# ------------------------------------------------------------------------------------------------
-sub _hostname {
-	return uc hostname;
-}
 
 # ------------------------------------------------------------------------------------------------
 # build and returns the last will MQTT message for the daemon
@@ -90,7 +84,7 @@ sub _status {
 # ------------------------------------------------------------------------------------------------
 sub _topic {
 	my ( $name ) = @_;
-	my $topic = _hostname();
+	my $topic = Mods::Toops::_hostname();
 	$topic .= "/daemon";
 	$topic .= "/$name";
 	$topic .= "/status";

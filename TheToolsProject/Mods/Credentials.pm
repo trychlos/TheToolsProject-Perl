@@ -9,7 +9,6 @@ use warnings;
 
 use Data::Dumper;
 use File::Spec;
-use Sys::Hostname qw( hostname );
 
 use Mods::Constants qw( :all );
 use Mods::Message;
@@ -31,7 +30,7 @@ sub get {
 	} else {
 		$res = Mods::Toops::var( $keys );
 		if( !defined( $res )){
-			my $host = uc hostname;
+			my $host = Mods::Toops::_hostname();
 			my $fname = File::Spec->catdir( Mods::Path::credentialsDir(), "$host.json" );
 			my $data = Mods::Toops::evaluate( Mods::Toops::jsonRead( $fname ));
 			$res = $data;

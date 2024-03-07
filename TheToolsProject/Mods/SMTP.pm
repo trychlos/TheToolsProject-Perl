@@ -17,7 +17,6 @@ use warnings;
 use Data::Dumper;
 use Email::Stuffer;
 use Email::Sender::Transport::SMTP;
-use Sys::Hostname qw( hostname );
 use Try::Tiny;
 
 use Mods::Constants qw( :all );
@@ -74,7 +73,7 @@ sub send {
 		#$opts->{sasl_authenticator} = $sasl;
 		$opts->{sasl_username} = $gateway->{username} if $gateway->{username};
 		$opts->{sasl_password} = $gateway->{password} if $gateway->{username};
-		$opts->{helo} = $gateway->{helo} || uc hostname;
+		$opts->{helo} = $gateway->{helo} || Mods::Toops::_hostname();
 		$opts->{ssl} = $gateway->{security} if $gateway->{security};
 		if( $gateway->{port} && !$gateway->{security} ){
 			$opts->{ssl} = 'ssl' if $gateway->{port} == 465;
