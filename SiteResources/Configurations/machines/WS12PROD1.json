@@ -1,7 +1,7 @@
 {
 	"WS12PROD1": {
 		"Services": {
-			"Canal33.db": {
+			"Canal33": {
 				"instance": "PROD",
 				"databases": [
 					"Canal33"
@@ -11,10 +11,10 @@
 						{
 							"label": "(Production Live) Sauvegarde quotidienne de la base Canall33",
 							"commands": [
-								"dbms.pl backup -nocolored -service Canal33.db -full",
+								"dbms.pl backup -nocolored -service Canal33 -full",
 								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -nocolored -backupsDir\" -targetcmd \"dbms.pl vars -nocolored -archivesDir\" -dirs",
-								"dbms.pl telemetry -nocolored -service Canal33.db -dbsize",
-								"dbms.pl telemetry -nocolored -service Canal33.db -tabcount"
+								"dbms.pl telemetry -nocolored -service Canal33 -dbsize",
+								"dbms.pl telemetry -nocolored -service Canal33 -tabcount"
 							]
 						}
 					],
@@ -23,7 +23,7 @@
 							"label": "(Production Live) Sauvegarde différentielle en journée",
 							"commands_x": [
 								"-> désactivée sur ns230134 faute d'espace disque suffisant",
-								"dbms.pl backup -nocolored -service Canal33.db -diff",
+								"dbms.pl backup -nocolored -service Canal33 -diff",
 								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -nocolored -backupsDir\" -targetcmd \"dbms.pl vars -nocolored -archivesDir\" -dirs"
 							]
 						}
@@ -39,16 +39,10 @@
 							]
 						}
 					]
-				}
-			},
-			"Canal33.www": {
+				},
 				"ovh": {
 					"ip": "ip-87.98.189.58"
 				}
-			},
-			"Canal33.ftp": {
-			},
-			"Canal33.http": {
 			},
 			"Technical.Services": {
 				"hidden": true,

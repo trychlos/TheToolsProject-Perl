@@ -29,22 +29,16 @@
 			""
 		],
 		"Services": {
-			"Canal33.db": {
+			"Canal33": {
 				"instance": "DEV",
 				"databases": [
-					"canal33"
+					"Canal33"
 				],
 				"workloads": {
-				}
-			},
-			"Canal33.www": {
+				},
 				"ovh": {
 					"ip": "ip-87.98.189.58"
 				}
-			},
-			"Canal33.ftp": {
-			},
-			"Canal33.http": {
 			},
 			"Dom.2008": {
 				"instance": "DEV",
