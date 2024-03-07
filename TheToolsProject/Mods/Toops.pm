@@ -468,6 +468,25 @@ sub getDefaultTempDir {
 }
 
 # -------------------------------------------------------------------------------------------------
+# returns the list of defined hosts, reading the hosts configuration directory
+sub getDefinedHosts {
+	my @hosts = ();
+	my $dir = Mods::Path::hostsConfigurationsDir();
+	opendir my $dh, $dir or Mods::Message::msgErr( "cannot open '$dir' directory: $!" );
+	if( !errs()){
+		my @entries = readdir $dh;
+		closedir $dh;
+		foreach my $entry ( @entries ){
+			if( $entry ne '.' && $entry ne '..' ){
+				$entry =~ s/\.[^.]+$//;
+				push( @hosts, $entry );
+			}
+		}
+	}
+	return @hosts;
+}
+
+# -------------------------------------------------------------------------------------------------
 # read and evaluate the host configuration
 # if host is not specified, then return the configuration of the current host from TTPVars
 # send an error message if the top key of the read json is not the requested host name
@@ -493,13 +512,6 @@ sub getHostConfig {
 		}
 	}
 	return $hash;
-}
-
-# -------------------------------------------------------------------------------------------------
-# returns the list of JSON configuration full pathnames for defined hosts (including this one)
-sub getJsonHosts {
-	my @hosts = glob( Mods::Path::hostsConfigurationsDir()."/*.json" );
-	return @hosts;
 }
 
 # -------------------------------------------------------------------------------------------------
