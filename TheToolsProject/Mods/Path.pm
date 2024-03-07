@@ -52,7 +52,7 @@ sub alertsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
 	my $dir = Mods::Toops::var([ 'alerts', 'withFile', 'dropDir' ], $opts );
-	if( defined $dir ){
+	if( defined $dir && length $dir ){
 		my $makeDirExist = true;
 		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
 		makeDirExist( $dir ) if $makeDirExist;
@@ -69,7 +69,7 @@ sub credentialsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
 	my $dir = Mods::Toops::var([ 'credentialsDir' ], $opts );
-	if( !defined $dir ){
+	if( !defined $dir || !length $dir ){
 		Mods::Message::msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
@@ -89,7 +89,7 @@ sub daemonsConfigurationsDir {
 # the dir can be defined in toops.json, or overriden in host configuration
 sub dbmsArchivesDir {
 	my $dir = Mods::Toops::var([ 'dbms', 'archivesDir' ]);
-	if( defined $dir ){
+	if( defined $dir && length $dir ){
 		# happens that \\ftpback-xx OVH backup storage spaces are sometimes unavailable during the day
 		# at least do not try to test them each time we need this address
 		#makeDirExist( $dir );
@@ -105,7 +105,7 @@ sub dbmsArchivesDir {
 # the dir can be defined in toops.json, or overriden in host configuration
 sub dbmsArchivesRoot {
 	my $dir = Mods::Toops::var([ 'dbms', 'archivesRoot' ]);
-	if( defined $dir ){
+	if( defined $dir && length $dir ){
 		# happens that \\ftpback-xx OVH backup storage spaces are sometimes unavailable during the day
 		# at least do not try to test them each time we need this address
 		#makeDirExist( $dir );
@@ -126,7 +126,7 @@ sub dbmsBackupsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
 	my $dir = Mods::Toops::var( [ 'dbms', 'backupsDir' ], $opts );
-	if( defined $dir ){
+	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {
 		Mods::Message::msgWarn( "'backupsDir' is not defined in toops.json nor in host configuration" );
@@ -140,7 +140,7 @@ sub dbmsBackupsDir {
 # the root can be defined in toops.json, or overriden in host configuration
 sub dbmsBackupsRoot {
 	my $dir = Mods::Toops::var([ 'dbms', 'backupsRoot' ]);
-	if( defined $dir ){
+	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {
 		Mods::Message::msgWarn( "'backupsRoot' is not defined in toops.json nor in host configuration" );
@@ -159,7 +159,7 @@ sub execReportsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
 	my $dir = Mods::Toops::var([ 'executionReports', 'withFile', 'dropDir' ], $opts );
-	if( defined $dir ){
+	if( defined $dir && length $dir ){
 		my $makeDirExist = true;
 		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
 		makeDirExist( $dir ) if $makeDirExist;
@@ -171,10 +171,12 @@ sub execReportsDir {
 
 # -------------------------------------------------------------------------------------------------
 # returns the path requested by the given command
-# (E):
+# (I):
 # - the command to be executed
 # - an optional options hash with following keys:
 #   > mustExists, defaulting to false
+# ((O):
+# - returns a path of undef if an error has occured
 sub fromCommand {
 	my( $cmd, $opts ) = @_;
 	$opts //= {};
@@ -186,14 +188,22 @@ sub fromCommand {
 	}
 	if( !Mods::Toops::errs()){
 		my @words = split( /\s+/, $path );
-		$path = $words[scalar @words - 1];
+		if( scalar @words < 2 ){
+			Mods::Message::msgErr( "Path::fromCommand() expect at least two words" );
+		} else {
+			$path = $words[scalar @words - 1];
+			Mods::Message::msgErr( "Path::fromCommand() found an empty path" ) if !$path;
+		}
 	}
-	my $mustExists = false;
-	$mustExists = $opts->{mustExists} if exists $opts->{mustExists};
-	if( $mustExists && !-r $path ){
-		Mods::Message::msgErr( "Path::fromCommand() path='$path' doesn't exist or is not readable" );
-		$path = undef;
+	if( !Mods::Toops::errs()){
+		my $mustExists = false;
+		$mustExists = $opts->{mustExists} if exists $opts->{mustExists};
+		if( $mustExists && !-r $path ){
+			Mods::Message::msgErr( "Path::fromCommand() path='$path' doesn't exist or is not readable" );
+			$path = undef;
+		}
 	}
+	$path = undef if Mods::Toops::errs();
 	return $path;
 }
 
