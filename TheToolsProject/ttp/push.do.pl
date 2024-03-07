@@ -5,6 +5,7 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]check             whether to check for cleanity [${check}]
+# @(-) --[no]tag               tag the git repository [${tag}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -12,6 +13,7 @@ use Config;
 use Data::Dumper;
 use File::Copy::Recursive qw( dircopy pathrmdir );
 use File::Spec;
+use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Message;
@@ -25,10 +27,12 @@ my $defaults = {
 	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
-	check => 'yes'
+	check => 'yes',
+	tag => 'yes'
 };
 
 my $opt_check = true;
+my $opt_tag = true;
 
 # -------------------------------------------------------------------------------------------------
 # publish  the reference tree to the pull target
@@ -56,6 +60,12 @@ sub doPublish {
 		$done += 1;
 	}
 	my $str = "$done/$asked subdirs copied";
+	if( $opt_tag ){
+		Mods::Message::msgVerbose( "tagging the git repository" );
+		my $now = localtime->strftime( '%Y%m%d_%H%M%S' );
+		my $message = "$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name}";
+		print `git tag -am "$message" $now`;
+	}
 	if( $done == $asked && !Mods::Toops::errs()){
 		Mods::Message::msgOut( "success ($str)" );
 	} else {
@@ -72,7 +82,8 @@ if( !GetOptions(
 	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
-	"check!"			=> \$opt_check )){
+	"check!"			=> \$opt_check,
+	"tag!"				=> \$opt_tag )){
 
 		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -87,6 +98,7 @@ Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true'
 Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found check='".( $opt_check ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found tag='".( $opt_tag ? 'true':'false' )."'" );
 
 if( $opt_check ){
 	# must publish a clean development environment from master branch
@@ -133,7 +145,7 @@ if( $opt_check ){
 		Mods::Message::msgVerbose( "found clean working tree: fine" );
 	}
 } else {
-	Mods::Message::msgWarn( "no check is made as --check option is true" );
+	Mods::Message::msgWarn( "no check is made as '--check' option has been set to false" );
 }
 
 if( !Mods::Toops::errs()){
