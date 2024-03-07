@@ -59,13 +59,13 @@ sub doPublish {
 		}
 		$done += 1;
 	}
-	my $str = "$done/$asked subdirs copied";
 	if( $opt_tag ){
-		Mods::Message::msgVerbose( "tagging the git repository" );
+		Mods::Message::msgOut( "tagging the git repository" );
 		my $now = localtime->strftime( '%Y%m%d_%H%M%S' );
 		my $message = "$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name}";
 		print `git tag -am "$message" $now`;
 	}
+	my $str = "$done/$asked subdirs copied";
 	if( $done == $asked && !Mods::Toops::errs()){
 		Mods::Message::msgOut( "success ($str)" );
 	} else {
