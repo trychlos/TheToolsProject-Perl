@@ -7,7 +7,8 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --json=<filename>       the name of the JSON configuration file of this daemon [${json}]
-# @(-) --[no]stdout            whether to print the found topics on stdout [${stdout}]
+# @(-) --[no]stdout            whether to print the found non-SYS topics on stdout [${stdout}]
+# @(-) --[no]sys               whether to print the found SYS topics on stdout [${sys}]
 #
 # @(@) This script is expected to be run as a daemon, started via a 'daemon.pl start -json <filename.json>' command.
 #
@@ -38,11 +39,13 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	json => '',
-	stdout => 'no'
+	stdout => 'no',
+	sys => 'no'
 };
 
 my $opt_json = $defaults->{json};
 my $opt_stdout = undef;
+my $opt_sys = undef;
 
 my $commands = {
 	#help => \&help,
@@ -83,7 +86,7 @@ sub doCommand {
 sub doMatched {
 	my ( $topic, $payload, $config ) = @_;
 	# is a $SYS message ?
-	my $sysReceived = ( $topic =~ /^\$SYS/ );
+	my $isSYS = ( $topic =~ /^\$SYS/ );
 	# whether to log the message
 	my $toLog = false;
 	$toLog = $config->{toLog} if exists $config->{toLog};
@@ -91,7 +94,8 @@ sub doMatched {
 	# whether to print to stdout
 	my $toStdout = false;
 	$toStdout = $config->{toStdout} if exists $config->{toStdout};
-	$toStdout = $opt_stdout if defined $opt_stdout;
+	$toStdout = $opt_stdout if defined $opt_stdout && !$isSYS;
+	$toStdout = $opt_sys if defined $opt_sys && $isSYS;
 	print localtime->strftime( "%Y-%m-%d %H:%M:%S:" )." $topic $payload".EOL if $toStdout;
 	# do we want keep and answer with the received data ?
 	my $command = undef;
@@ -99,12 +103,6 @@ sub doMatched {
 	if( $command ){
 		$kept->{$command}{$topic} = $payload;
 	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# whether to print received messages to stdout
-sub haveStdout {
-	return scalar @ARGV > 1 && $ARGV[1] eq "stdout";
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -141,7 +139,8 @@ if( !GetOptions(
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"json=s"			=> \$opt_json,
-	"stdout!"			=> \$opt_stdout )){
+	"stdout!"			=> \$opt_stdout,
+	"sys!"				=> \$opt_sys )){
 
 		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -157,6 +156,7 @@ Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true'
 Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found json='$opt_json'" );
 Mods::Message::msgVerbose( "found stdout='".( defined $opt_stdout ? ( $opt_stdout ? 'true':'false' ) : '(undef)' )."'" );
+Mods::Message::msgVerbose( "found sys='".( defined $opt_sys ? ( $opt_sys ? 'true':'false' ) : '(undef)' )."'" );
 
 Mods::Message::msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 
