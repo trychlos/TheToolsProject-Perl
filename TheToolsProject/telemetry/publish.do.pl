@@ -9,8 +9,8 @@
 # @(-) --value=<value>         the metric's value [${value}]
 # @(-) --[no]mqtt              publish to MQTT bus [${mqtt}]
 # @(-) --[no]http              publish to HTTP gateway [${http}]
-# @(-) --httpPrefix=<prefix>   a prefix to be set to HTTP metrics [${httpPrefix}]
-# @(-) --mqttPrefix=<prefix>   a prefix to be set to MQTT metrics [${mqttPrefix}]
+# @(-) --httpPrefix=<prefix>   a prefix to be set on HTTP metrics name [${httpPrefix}]
+# @(-) --mqttPrefix=<prefix>   a prefix to be set on MQTT metrics name [${mqttPrefix}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
