@@ -15,7 +15,7 @@
 # @(-) --[no]instance          display the relevant DBMS instance for this service [${instance}]
 # @(-) --[no]environment       display the environment to which this machine is attached [${environment}]
 # @(-) --type=<name>           request a specified environment [${type}]
-# @(-) --[no]machines          display the machines which provide this service for the environment [${machines}]
+# @(-) --[no]machines          display the machines which provide this service, maybe for a given environment [${machines}]
 #
 # @(@) Displayed lists are sorted in ASCII order, i.e. in [0-9A-Za-z] order.
 #
@@ -93,17 +93,21 @@ sub listEnvironment {
 }
 
 # -------------------------------------------------------------------------------------------------
-# display the machines which provides the service in an environment type
+# display the machines which provides the service, maybe in a specified environment type
 sub listMachines {
-	Mods::Message::msgOut( "displaying machines which provide '$opt_service' service in '$opt_type' environment..." );
+	if( $opt_type ){
+		Mods::Message::msgOut( "displaying machines which provide '$opt_service' service in '$opt_type' environment..." );
+	} else {
+		Mods::Message::msgOut( "displaying machines which provide '$opt_service' service..." );
+	}
 	my $count = 0;
 	my @hosts = Mods::Toops::getDefinedHosts();
 	Mods::Message::msgVerbose( "found ".scalar @hosts." host(s)" );
 	foreach my $host ( @hosts ){
 		Mods::Message::msgVerbose( "examining '$host'" );
 		my $hostConfig = Mods::Toops::getHostConfig( $host );
-		if( $hostConfig->{Environment}{type} eq $opt_type && exists( $hostConfig->{Services}{$opt_service} )){
-			print "  $host".EOL;
+		if(( !$opt_type || $hostConfig->{Environment}{type} eq $opt_type ) && exists( $hostConfig->{Services}{$opt_service} )){
+			print "  $hostConfig->{Environment}{type}: $host".EOL;
 			$count += 1;
 		}
 	}
@@ -308,9 +312,6 @@ Mods::Message::msgVerbose( "found machines='".( $opt_machines ? 'true':'false' )
 if( $opt_service && !$opt_databases && !$opt_instance && !$opt_machines ){
 	Mods::Message::msgErr( "a service is specified, but without any requested information" );
 }
-if( $opt_machines && !$opt_type ){
-	Mods::Message::msgErr( "request a machines list without having specified an environment type" );
-}
 if( $opt_machines && !$opt_service ){
 	Mods::Message::msgErr( "request a machines list without having specified a service" );
 }
@@ -318,7 +319,7 @@ if( $opt_machines && !$opt_service ){
 if( !Mods::Toops::errs()){
 	listDbms() if $opt_dbms;
 	listEnvironment() if $opt_environment;
-	listMachines() if $opt_machines && $opt_service && $opt_type;
+	listMachines() if $opt_machines && $opt_service;
 	listServiceDatabases() if $opt_service && $opt_databases;
 	listServiceInstance() if $opt_service && $opt_instance;
 	listServices() if $opt_services;
