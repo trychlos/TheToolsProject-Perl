@@ -11,7 +11,8 @@
 # @(-) --workload=<name>       display the detailed tasks for the named workload [${workload}]
 # @(-) --[no]commands          display only the commands for the named workload [${commands}]
 # @(-) --service=<name>        display informations about the named service [${service}]
-# @(-) --[no]databases         display the liste of databases defined in the service [${databases}]
+# @(-) --[no]databases         display the list of databases defined in the service [${databases}]
+# @(-) --[no]instance          display the relevant DBMS instance for this service [${instance}]
 #
 # @(@) Displayed lists are sorted in ASCII order, i.e. in [0-9A-Za-z] order.
 #
@@ -39,7 +40,8 @@ my $defaults = {
 	workload => '',
 	commands => 'no',
 	service => '',
-	databases => 'no'
+	databases => 'no',
+	instance => 'no'
 };
 
 my $opt_dbms = false;
@@ -50,6 +52,7 @@ my $opt_workload = $defaults->{workload};
 my $opt_commands = false;
 my $opt_service = $defaults->{service};
 my $opt_databases = false;
+my $opt_instance = false;
 
 # the host configuration
 my $hostConfig = Mods::Toops::getHostConfig();
@@ -83,6 +86,21 @@ sub listServiceDatabases {
 		}
 	}
 	Mods::Message::msgOut("$count found defined databases(s)" );
+}
+
+# -------------------------------------------------------------------------------------------------
+# display the DBMS instance for a service
+sub listServiceInstance {
+	Mods::Message::msgOut( "displaying instance registered on '$hostConfig->{name}\\$opt_service' service..." );
+	my $instance = $hostConfig->{Services}{$opt_service}{instance};
+	my $count = 0;
+	if( !$instance ){
+		Mods::Message::msgOut( "no instance registered with this service (databases may be present, but are ignored)" );
+	} else {
+		print "+ instance: $instance".EOL; 
+		$count += 1;
+	}
+	Mods::Message::msgOut("$count found defined instance" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -214,7 +232,8 @@ if( !GetOptions(
 	"workload=s"		=> \$opt_workload,
 	"commands!"			=> \$opt_commands, 
 	"service=s"			=> \$opt_service,
-	"databases!"		=> \$opt_databases )){
+	"databases!"		=> \$opt_databases,
+	"instance!"			=> \$opt_instance )){
 
 		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -236,8 +255,9 @@ Mods::Message::msgVerbose( "found workload='$opt_workload'" );
 Mods::Message::msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found service='$opt_service'" );
 Mods::Message::msgVerbose( "found databases='".( $opt_databases ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found instance='".( $opt_instance ? 'true':'false' )."'" );
 
-if( $opt_service && !$opt_databases ){
+if( $opt_service && !$opt_databases && !$opt_instance ){
 	Mods::Message::msgWarn( "a service is specified, but without any requested information" );
 }
 
@@ -248,6 +268,7 @@ if( !Mods::Toops::errs()){
 	listWorkloadDetails() if $opt_workload && !$opt_commands;
 	listWorkloadCommands() if $opt_workload && $opt_commands;
 	listServiceDatabases() if $opt_service && $opt_databases;
+	listServiceInstance() if $opt_service && $opt_instance;
 }
 
 Mods::Toops::ttpExit();
