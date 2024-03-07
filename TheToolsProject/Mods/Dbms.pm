@@ -224,7 +224,7 @@ sub displayTabularSql {
 	foreach my $it ( @{$result} ){
 		foreach my $key ( keys %{$it} ){
 			if( $lengths->{$key} ){
-				if( $it->{$key} && length $it->{$key} > $lengths->{$key} ){
+				if( defined $it->{$key} && length $it->{$key} > $lengths->{$key} ){
 					$lengths->{$key} = length $it->{$key};
 				}
 			} elsif( !$haveWarned ){
@@ -249,7 +249,7 @@ sub displayTabularSql {
 	print "+".EOL;
 	foreach my $it ( @{$result} ){
 		foreach my $key ( @fields ){
-			print pad( "| ".( $it->{$key} || "" ), $lengths->{$key}+3, ' ' );
+			print pad( "| ".( defined $it->{$key} ? $it->{$key} : "" ), $lengths->{$key}+3, ' ' );
 		}
 		print "|".EOL;
 	}
