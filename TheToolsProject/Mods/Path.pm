@@ -343,6 +343,7 @@ sub removeTrailingSeparator {
 
 # ------------------------------------------------------------------------------------------------
 sub siteConfigurationsDir {
+	Mods::Message::msgErr( "TTP_CONFDIR is not found in your environment, but is required" ) if !$ENV{TTP_CONFDIR};
 	return $ENV{TTP_CONFDIR};
 }
 

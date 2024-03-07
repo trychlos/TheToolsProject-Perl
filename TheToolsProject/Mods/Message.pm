@@ -270,6 +270,7 @@ sub msgVerbose {
 # (E):
 # - the single warning message
 sub msgWarn {
+	#Mods::Toops::stackTrace();
 	_printMsg({
 		msg => shift,
 		level => WARN
