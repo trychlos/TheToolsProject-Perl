@@ -86,10 +86,9 @@ sub mqttPublish {
 		$command =~ s/<DATA>/$value/;
 		$command =~ s/<OPTIONS>//;
 		my $TTPVars = Mods::Toops::TTPVars();
-		my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
 		my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
 		my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
-		print `$command $colored $dummy $verbose`;
+		print `$command -nocolored $dummy $verbose`;
 		my $rc = $?;
 		Mods::Message::msgVerbose( "Telemetry::mqttPublish() got rc=$rc" );
 		$count += 1 if !$rc;

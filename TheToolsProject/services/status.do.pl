@@ -1,22 +1,20 @@
-# @(#) publish a message on a MQTT topic
+# @(#) execute the 'status' commands for a service
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
-# @(-) --topic=<name>          the topic to publish in [${topic}]
-# @(-) --payload=<name>        the message to be published [${payload}]
-# @(-) --[no]retain            with the 'retain' flag (ignored here) [${retain}]
-#
-# @(@) The topic should be formatted as HOST/subject/subject/content
+# @(-) --service=<name>        display informations about the named service [${service}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
+#
 
 use Data::Dumper;
 
 use Mods::Constants qw( :all );
 use Mods::Message;
-use Mods::MQTT;
+use Mods::Services;
+use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -25,36 +23,42 @@ my $defaults = {
 	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
-	topic => '',
-	payload => '',
-	retain => 'no'
+	service => ''
 };
 
-my $opt_topic = $defaults->{topic};
-my $opt_payload = undef;
+my $opt_service = $defaults->{service};
 
 # -------------------------------------------------------------------------------------------------
-# publish the message
-sub doPublish {
-	Mods::Message::msgOut( "publishing '$opt_topic [$opt_payload]'..." );
-
-	my $mqtt = Mods::MQTT::connect();
-	if( $mqtt ){
-		if( $opt_retain ){
-			$mqtt->retain( $opt_topic, $opt_payload );
+# execute the commands registered for the service
+# manage macros:
+# - HOST
+# - SERVICE
+sub executeStatus {
+	Mods::Message::msgOut( "checking '$opt_service' service..." );
+	my $cmdCount = 0;
+	my $host = Mods::Toops::_hostname();
+	my $config = Mods::Toops::getHostConfig();
+	my $status = $config->{Services}{$opt_service}{status};
+	if( $status && ref( $status ) eq 'HASH' ){
+		my $commands = $status->{commands};
+		if( $commands && ref( $commands ) eq 'ARRAY' && scalar @{$commands} > 0 ){
+			foreach my $cmd ( @{$commands} ){
+				$cmdCount += 1;
+				$cmd =~ s/<HOST>/$host/g;
+				$cmd =~ s/<SERVICE>/$opt_service/g;
+				Mods::Message::msgVerbose( "executing '$cmd'..." );
+				my $stdout = `$cmd`;
+				my $rc = $?;
+				Mods::Message::msgLog( "stdout='$stdout'" );
+				Mods::Message::msgLog( "got rc=$rc" );
+			}
 		} else {
-			$mqtt->publish( $opt_topic, $opt_payload );
+			Mods::Message::msgWarn( "hostConfig->{Services}{$opt_service}{status}{commands} is not defined, or not an array, or is empty" );
 		}
-		Mods::MQTT::disconnect( $mqtt );
-	}
-
-	my $result = true;
-
-	if( $result ){
-		Mods::Message::msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		Mods::Message::msgWarn( "hostConfig->{Services}{$opt_service}{status} is not defined (or not a hash)" );
 	}
+	Mods::Message::msgOut( "$cmdCount executed commands" );
 }
 
 # =================================================================================================
@@ -66,9 +70,7 @@ if( !GetOptions(
 	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
-	"topic=s"			=> \$opt_topic,
-	"payload=s"			=> \$opt_payload,
-	"retain!"			=> \$opt_retain	)){
+	"service=s"			=> \$opt_service )){
 
 		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -82,16 +84,12 @@ if( Mods::Toops::wantsHelp()){
 Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found topic='$opt_topic'" );
-Mods::Message::msgVerbose( "found payload='$opt_payload'" );
-Mods::Message::msgVerbose( "found retain='".( $opt_retain ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found service='$opt_service'" );
 
-# topic is mandatory
-Mods::Message::msgErr( "topic is required, but is not specified" ) if !$opt_topic;
-Mods::Message::msgWarn( "payload is empty, but shouldn't" ) if !defined $opt_payload;
+Mods::Message::msgErr( "a service is required, but not found" ) if !$opt_service;
 
 if( !Mods::Toops::errs()){
-	doPublish();
+	executeStatus() if $opt_service;
 }
 
 Mods::Toops::ttpExit();
