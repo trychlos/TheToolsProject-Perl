@@ -11,7 +11,7 @@
 # @(-) --[no]tabcount          get tables rows count for the specified database [${tabcount}]
 # @(-) --limit=<limit>         limit the MQTT published messages [${limit}]
 #
-# @(@) When limiting the published messages, be conscious that the '--dbsize' option provides 7 messages per database.
+# @(@) When limiting the published messages, be conscious that the '--dbsize' option provides 6 messages per database.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -115,7 +115,7 @@ sub doDbSize {
 		my $resultSets = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple -nocolored $dummy $verbose` ));
 		my $set = _interpretDbResultSet( $resultSets );
 		foreach my $key ( keys %{$set} ){
-			`telemetry.pl publish -metric $key -value $set->{$key} -label instance=$opt_instance -label database=$db -httpPrefix telemetry_dbms_dbsize_ -mqttPrefix dbsize/ -nocolored $dummy $verbose`;
+			`telemetry.pl publish -metric $key -value $set->{$key} -label instance=$opt_instance -label database=$db -httpPrefix ttp_dbms_database_size_ -mqttPrefix dbsize/ -nocolored $dummy $verbose`;
 			my $rc = $?;
 			Mods::Message::msgVerbose( "doDbSize() got rc=$rc" );
 			$mqttCount += 1 if !$rc;
@@ -148,7 +148,7 @@ sub doTablesCount {
 				my $set = $resultSet->[0];
 				$set->{rows_count} = 0 if !defined $set->{rows_count};
 				foreach my $key ( keys %{$set} ){
-					`telemetry.pl publish -metric $key -value $set->{$key} -label instance=$opt_instance -label database=$db -label table=$tab -httpPrefix telemetry_dbms_ -nocolored $dummy $verbose`;
+					`telemetry.pl publish -metric $key -value $set->{$key} -label instance=$opt_instance -label database=$db -label table=$tab -httpPrefix ttp_dbms_database_table_ -nocolored $dummy $verbose`;
 					my $rc = $?;
 					Mods::Message::msgVerbose( "doTablesCount() got rc=$rc" );
 					$mqttCount += 1 if !$rc;

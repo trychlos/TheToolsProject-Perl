@@ -58,14 +58,24 @@ sub doComputeSize {
 	find ( \&compute, $opt_dirpath );
 	Mods::Message::msgOut( "  $dirCount directory(ies), $fileCount file(s)" );
 	Mods::Message::msgOut( "  total size: $totalSize byte(s)" );
+	my $code = 0;
 	if( $opt_telemetry ){
 		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-		print `telemetry.pl publish -metric dirs_count -value $dirCount -label path=$opt_dirpath -httpPrefix telemetry_filesystem_ -nocolored $dummy $verbose $http`;
-		print `telemetry.pl publish -metric files_count -value $fileCount -label path=$opt_dirpath -httpPrefix telemetry_filesystem_ -nocolored $dummy $verbose $http`;
-		print `telemetry.pl publish -metric content_size -value $totalSize -label path=$opt_dirpath -httpPrefix telemetry_filesystem_ -nocolored $dummy $verbose $http`;
+		my $path = $opt_dirpath;
+		$path =~ s/[:\/\\]+/_/g;
+		print `telemetry.pl publish -metric dirs_count -value $dirCount -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose`;
+		$code += $?;
+		print `telemetry.pl publish -metric files_count -value $fileCount -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose`;
+		$code += $?;
+		print `telemetry.pl publish -metric content_size -value $totalSize -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose`;
+		$code += $?;
 	}
-	Mods::Message::msgOut( "success" );
+	if( $code ){
+		Mods::Message::msgErr( "NOT OK" );
+	} else {
+		Mods::Message::msgOut( "success" );
+	}
 }
 
 # =================================================================================================

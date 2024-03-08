@@ -76,21 +76,19 @@ sub doState {
 				'7' => 'copying',
 				'10' => 'offline_secondary'
 			};
-			my $first = true;
+		# contrarily to what is said in the doc, seems that push gateway requires the TYPE line
 			foreach my $key ( keys( %{$states} )){
 				my $value = 0;
 				$value = 1 if "$key" eq "$row->{state}";
-				my $type = $first ? "" : "-httpOption type=no";
 				# this option will be passed as a metric qualifier instead of being part of the url
 				#my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
 				#print `telemetry.pl publish -metric telemetry_dbms_state -value $value -label instance=$instance -label database=$db $label nocolored $dummy $verbose -nomqtt $type`;
 				# this works the same, but using labels in the path instead of metric qualifier
 				my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
-				print `telemetry.pl publish -metric telemetry_dbms_database_state -value $value -label instance=$instance -label database=$db -label state=$states->{$key} -nocolored $dummy $verbose -nomqtt $type`;
+				print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$instance -label database=$db -label state=$states->{$key} -nocolored $dummy $verbose -nomqtt`;
 				my $rc = $?;
 				Mods::Message::msgVerbose( "doState() HTTP key='$key' got rc=$rc" );
 				$code += $rc;
-				#$first = false;
 			}
 		}
 		if( $code ){

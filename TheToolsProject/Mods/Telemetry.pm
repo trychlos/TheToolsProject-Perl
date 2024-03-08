@@ -56,13 +56,14 @@ sub httpPublish {
 		my $name = "$prefix$metric";
 		$name =~ s/\./_/g;
 		# content
+		# contrarily to what is said in the doc, seems that push gateway requires the TYPE line
 		my $withType = true;
 		$withType = ( $options->{type} eq 'yes' ) if exists $options->{type} && ( $options->{type} eq 'yes' || $options->{type} eq 'no' );
 		my $str = $withType ? "# TYPE $name gauge\n" : "";
 		my $qualifier = "";
 		$qualifier = uri_unescape( $options->{label} ) if exists $options->{label};
 		$str .= "$name$qualifier $value\n";
-		Mods::Message::msgVerbose( "Telemetry::httpPublish() url='$url' content='$str'" );
+		Mods::Message::msgVerbose( "Telemetry::Publish() url='$url' content='$str'" );
 		$req->content( $str );
 		my $response = $ua->request( $req );
 		Mods::Message::msgVerbose( Dumper( $response ));
