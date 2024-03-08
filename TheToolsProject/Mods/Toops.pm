@@ -16,6 +16,7 @@ use File::Spec;
 use Getopt::Long;
 use JSON;
 use Path::Tiny qw( path );
+use Scalar::Util qw( looks_like_number );
 use Sys::Hostname qw( hostname );
 use Test::Deep;
 use Time::Moment;
@@ -865,7 +866,7 @@ sub jsonWrite {
 	# '$res' is an array with the original path and an interpreted one - may also return true
 	my $res = path( $path )->spew_utf8( $str.EOL );
 	Mods::Message::msgVerbose( "jsonWrite() returns ".Dumper( $res ));
-	return ( $res == 1 || ( ref( $res ) eq 'Path::Tiny' && scalar( @{$res} ) > 0 )) ? true : false;
+	return (( looks_like_number( $res ) && $res == 1 ) || ( ref( $res ) eq 'Path::Tiny' && scalar( @{$res} ) > 0 )) ? true : false;
 }
 
 # -------------------------------------------------------------------------------------------------
