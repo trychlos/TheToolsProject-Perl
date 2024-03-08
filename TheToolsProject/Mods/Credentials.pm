@@ -28,7 +28,23 @@ sub get {
 	if( ref( $keys ) ne 'ARRAY' ){
 		Mods::Message::msgErr( "Credentials::get() expects an array, found '".ref( $keys )."'" );
 	} else {
+		# first look in the Toops/host configurations
 		$res = Mods::Toops::var( $keys );
+		# if not found, looks at credentials/toops.json
+		if( !defined( $res )){
+			my $fname = File::Spec->catdir( Mods::Path::credentialsDir(), "toops.json" );
+			my $data = Mods::Toops::evaluate( Mods::Toops::jsonRead( $fname ));
+			$res = $data;
+			foreach my $k ( @{$keys} ){
+				if( exists( $res->{$k} )){
+					$res = $res->{$k};
+				} else {
+					$res = undef;
+					last;
+				}
+			}
+		}
+		# if not found, looks at credentials/<host>.json
 		if( !defined( $res )){
 			my $host = Mods::Toops::_hostname();
 			my $fname = File::Spec->catdir( Mods::Path::credentialsDir(), "$host.json" );

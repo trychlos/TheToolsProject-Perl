@@ -20,6 +20,7 @@ use Email::Sender::Transport::SMTP;
 use Try::Tiny;
 
 use Mods::Constants qw( :all );
+use Mods::Credentials;
 use Mods::Message;
 use Mods::Toops;
 
@@ -71,8 +72,13 @@ sub send {
 		$opts->{host} = $gateway->{host} || 'localhost';
 		$opts->{port} = $gateway->{port} if $gateway->{port};
 		#$opts->{sasl_authenticator} = $sasl;
-		$opts->{sasl_username} = $gateway->{username} if $gateway->{username};
-		$opts->{sasl_password} = $gateway->{password} if $gateway->{username};
+		
+		# use Credentials package to manage username and password (if any)
+		my $username = Mods::Credentials::get([ 'SMTPGateway', 'username' ]);
+		my $password = Mods::Credentials::get([ 'SMTPGateway', 'password' ]);
+		$opts->{sasl_username} = $username if $username;
+		$opts->{sasl_password} = $password if $username;
+
 		$opts->{helo} = $gateway->{helo} || Mods::Toops::_hostname();
 		$opts->{ssl} = $gateway->{security} if $gateway->{security};
 		if( $gateway->{port} && !$gateway->{security} ){
