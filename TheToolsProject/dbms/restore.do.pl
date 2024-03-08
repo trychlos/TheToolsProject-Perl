@@ -75,7 +75,7 @@ sub doRestore {
 			},
 			mqtt => {
 				data => $data,
-				topic => "$TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$db/$mode",
+				topic => "$TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$opt_database/$mode",
 				options => "-retain"
 			}
 		});
