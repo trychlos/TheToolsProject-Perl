@@ -58,7 +58,7 @@ sub getAnswerByPath {
 	$printAnswer = $opts->{printAnswer} if exists $opts->{printAnswer};
 	print Dumper( $answer ) if $printAnswer;
 
-	Mods::Message::msgVerbose( "Ovh::getAnswerByPath() status=".$answer->status());
+	Mods::Message::msgVerbose( "Ovh::getAnswerByPath() status=".$answer->status()." isSuccess='".( $answer->isSuccess() ? 'true' : 'false' )."'");
 	return $answer;
 }
 
@@ -76,7 +76,7 @@ sub getContentByPath {
 	my $res = undef;
 
 	my $answer = getAnswerByPath( $api, $path, $opts );
-	if( $answer ){
+	if( $answer->isSuccess()){
 		$res = $answer->content();
 	}
 
@@ -118,9 +118,9 @@ sub postByPath {
 	Mods::Message::msgVerbose( "Ovh::postByPath() path='$path'" );
 
 	my $answer = $api->post( path => $path, body => $params );
-	print Dumper( $answer ) if $answer->status() != 200;
+	print Dumper( $answer ) if $answer->isFailure();
 
-	Mods::Message::msgVerbose( "Ovh::postByPath() status=".$answer->status());
+	Mods::Message::msgVerbose( "Ovh::postByPath() status=".$answer->status()." isSuccess='".( $answer->isSuccess() ? 'true' : 'false' )."'");
 	return $answer;
 }
 
