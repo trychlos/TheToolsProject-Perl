@@ -1,16 +1,18 @@
 # @(#) publish a metric
 #
-# @(-) --[no]help              print this message, and exit [${help}]
-# @(-) --[no]verbose           run verbosely [${verbose}]
-# @(-) --[no]colored           color the output depending of the message level [${colored}]
-# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
-# @(-) --metric=<name>         the metric to be published [${metric}]
-# @(-) --label=<name=value>    a name=value label, may be specified several times or with a comma-separated list [${label}]
-# @(-) --value=<value>         the metric's value [${value}]
-# @(-) --[no]mqtt              publish to MQTT bus [${mqtt}]
-# @(-) --[no]http              publish to HTTP gateway [${http}]
-# @(-) --httpPrefix=<prefix>   a prefix to be set on HTTP metrics name [${httpPrefix}]
-# @(-) --mqttPrefix=<prefix>   a prefix to be set on MQTT metrics name [${mqttPrefix}]
+# @(-) --[no]help                  print this message, and exit [${help}]
+# @(-) --[no]verbose               run verbosely [${verbose}]
+# @(-) --[no]colored               color the output depending of the message level [${colored}]
+# @(-) --[no]dummy                 dummy run (ignored here) [${dummy}]
+# @(-) --metric=<name>             the metric to be published [${metric}]
+# @(-) --label <name=value>        a name=value label, may be specified several times or with a comma-separated list [${label}]
+# @(-) --value=<value>             the metric's value [${value}]
+# @(-) --[no]http                  publish to HTTP gateway [${http}]
+# @(-) --httpPrefix=<prefix>       a prefix to be set on HTTP metrics name [${httpPrefix}]
+# @(-) --httpOption <name=value>   an option to be passed to HTTP publication, may be specified several times or with a comma-separated list [${httpOption}]
+# @(-) --[no]mqtt                  publish to MQTT bus [${mqtt}]
+# @(-) --mqttPrefix=<prefix>       a prefix to be set on MQTT metrics name [${mqttPrefix}]
+# @(-) --mqttOption <name=value>   an option to be passed to MQTT publication, may be specified several times or with a comma-separated list [${httpOption}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -31,7 +33,9 @@ my $defaults = {
 	label => '',
 	value => '',
 	httpPrefix => '',
-	mqttPrefix => ''
+	httpOption => '',
+	mqttPrefix => '',
+	mqttOption => ''
 };
 
 my $opt_metric = $defaults->{metric};
@@ -40,20 +44,24 @@ my $opt_value = undef;
 my $opt_mqtt = Mods::Toops::var([ 'Telemetry', 'withMqtt', 'enabled' ]);
 my $opt_http = Mods::Toops::var([ 'Telemetry', 'withHttp', 'enabled' ]);
 my $opt_httpPrefix = $defaults->{httpPrefix};
+my $opt_httpOption = $defaults->{httpOption};
 my $opt_mqttPrefix = $defaults->{mqttPrefix};
+my $opt_mqttOption = $defaults->{mqttOption};
 
 $defaults->{mqtt} = $opt_mqtt ? 'yes' : 'no';
 $defaults->{http} = $opt_http ? 'yes' : 'no';
 
-# a list of name=value pairs
+# lists of name=value pairs
 my @labels = ();
+my @httpOptions = ();
+my @mqttOptions = ();
 
 # -------------------------------------------------------------------------------------------------
 # send the metric
 # this requires a telemetry gateway, which is handle by the Telemetry package
 sub doHttpPublish {
 	Mods::Message::msgOut( "publishing '$opt_metric' metric to HTTP gateway..." );
-	my $res = Mods::Telemetry::httpPublish( $opt_metric, $opt_value, \@labels, { httpPrefix => $opt_httpPrefix });
+	my $res = Mods::Telemetry::httpPublish( $opt_metric, $opt_value, \@labels, { httpPrefix => $opt_httpPrefix, httpOptions => \@httpOptions });
 	if( $res ){
 		Mods::Message::msgOut( "success" );
 	} else {
@@ -65,7 +73,7 @@ sub doHttpPublish {
 # send the metric
 sub doMqttPublish {
 	Mods::Message::msgOut( "publishing '$opt_metric' metric to MQTT bus..." );
-	my $res = Mods::Telemetry::mqttPublish( $opt_metric, $opt_value, \@labels, { mqttPrefix => $opt_mqttPrefix });
+	my $res = Mods::Telemetry::mqttPublish( $opt_metric, $opt_value, \@labels, { mqttPrefix => $opt_mqttPrefix, mqttOptions => \@mqttOptions });
 	if( $res ){
 		Mods::Message::msgOut( "success" );
 	} else {
@@ -88,7 +96,9 @@ if( !GetOptions(
 	"mqtt!"				=> \$opt_mqtt,
 	"http!"				=> \$opt_http,
 	"httpPrefix=s"		=> \$opt_httpPrefix,
-	"mqttPrefix=s"		=> \$opt_mqttPrefix )){
+	"httpOption=s@"		=> \$opt_httpOption,
+	"mqttPrefix=s"		=> \$opt_mqttPrefix,
+	"mqttOption=s@"		=> \$opt_mqttOption	)){
 
 		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -104,12 +114,16 @@ Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true'
 Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found metric='$opt_metric'" );
 @labels = split( /,/, join( ',', @{$opt_label} ));
-Mods::Message::msgVerbose( "found label='".join( ',', @labels )."'" );
+Mods::Message::msgVerbose( "found labels='".join( ',', @labels )."'" );
 Mods::Message::msgVerbose( "found value='".( defined $opt_value ? $opt_value : '(undef)' )."'" );
-Mods::Message::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found httpPrefix='$opt_httpPrefix'" );
+@httpOptions = split( /,/, join( ',', @{$opt_httpOption} ));
+Mods::Message::msgVerbose( "found httpOptions='".join( ',', @httpOptions )."'" );
+Mods::Message::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found mqttPrefix='$opt_mqttPrefix'" );
+@mqttOptions = split( /,/, join( ',', @{$opt_mqttOption} ));
+Mods::Message::msgVerbose( "found mqttOptions='".join( ',', @mqttOptions )."'" );
 
 # metric and values are mandatory
 Mods::Message::msgErr( "metric is required, but is not specified" ) if !$opt_metric;

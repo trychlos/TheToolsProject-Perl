@@ -10,6 +10,7 @@ use warnings;
 use Data::Dumper;
 use HTTP::Request::Common;
 use LWP::UserAgent;
+use URI::Escape;
 
 use Mods::Constants qw( :all );
 use Mods::Message;
@@ -24,6 +25,8 @@ use Mods::Toops;
 # - array ref of 'name=value' labels
 # - an optional options hash with following keys:
 #   > httpPrefix: a prefix to be set on the metric
+#   > httpOptions: an array ref which may contain pairs of 'name=value' to be interpreted here
+#     - type=yes|no: whether to publish a type comment line before the value, defaulting to true
 # (O):
 # returns the count of published messages (should be one)
 sub httpPublish {
@@ -36,15 +39,30 @@ sub httpPublish {
 			my @words = split( /=/, $it );
 			$url .= "/$words[0]/$words[1]";
 		}
+		# get metric prefix
 		my $prefix = "";
 		$prefix = $opts->{httpPrefix} if $opts->{httpPrefix};
+		# interpret passed-in http options
+		my $optionstr = [];
+		$optionstr = $opts->{httpOptions} if exists $opts->{httpOptions};
+		my $options = {};
+		foreach my $it ( @{$optionstr} ){
+			my @words = split( /=/, $it, 2 );
+			$options->{$words[0]} = $words[1];
+		}
+		# build the request
 		my $ua = LWP::UserAgent->new();
 		my $req = HTTP::Request->new( POST => $url );
 		my $name = "$prefix$metric";
 		$name =~ s/\./_/g;
-		my $str = "# TYPE $name gauge\n";
-		$str .= "$name $value\n";
-		Mods::Message::msgVerbose( "Telemetry::httpPublish() to url='$url'" );
+		# content
+		my $withType = true;
+		$withType = ( $options->{type} eq 'yes' ) if exists $options->{type} && ( $options->{type} eq 'yes' || $options->{type} eq 'no' );
+		my $str = $withType ? "# TYPE $name gauge\n" : "";
+		my $qualifier = "";
+		$qualifier = uri_unescape( $options->{label} ) if exists $options->{label};
+		$str .= "$name$qualifier $value\n";
+		Mods::Message::msgVerbose( "Telemetry::httpPublish() url='$url' content='$str'" );
 		$req->content( $str );
 		my $response = $ua->request( $req );
 		Mods::Message::msgVerbose( Dumper( $response ));
@@ -65,6 +83,7 @@ sub httpPublish {
 # - array ref of 'name=value' labels
 # - an optional options hash with following keys:
 #   > mqttPrefix: a prefix to be set on the metric (which happens to be the last part of the MQTT topic)
+#   > mqttOptions: an array ref which may contain pairs of 'name=value' to be interpreted here
 # (O):
 # returns the count of published messages (should be one)
 sub mqttPublish {

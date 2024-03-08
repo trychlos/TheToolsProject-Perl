@@ -11,6 +11,7 @@
 
 use Data::Dumper;
 use Scalar::Util qw( looks_like_number );
+use URI::Escape;
 
 use Mods::Constants qw( :all );
 use Mods::Dbms;
@@ -34,6 +35,11 @@ my $opt_state = false;
 
 # -------------------------------------------------------------------------------------------------
 # get the state of all databases of the specified service
+# Also publish as a labelled telemetry the list of possible values
+# (same behavior than for example Prometheus windows_explorer which display the status of services)
+# We so publish:
+# - on MQTT, two payloads as .../state and .../state_desc
+# - to HTTP, 10 numerical payloads, only one having a one value
 sub doState {
 	Mods::Message::msgOut( "get database(s) state for '$opt_service'..." );
 	my $hostConfig = Mods::Toops::getHostConfig();
@@ -43,20 +49,55 @@ sub doState {
 	Mods::Message::msgVerbose( "found databases='".join( ', ', @databases )."'" );
 	if( $instance && scalar @databases ){
 		my $list = [];
+		my $code = 0;
 		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
 		foreach my $db ( @databases ){
 			Mods::Message::msgOut( "  database '$db'" );
 			my $result = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose` ));
 			my $row = @{$result}[0];
+			# due to the differences between the two publications contents, publish separately
+			# -> MQTT
 			foreach my $key ( keys %{$row} ){
-				my $http = looks_like_number( $row->{$key} ) ? "" : "-nohttp";
-				print `telemetry.pl publish -metric $key -value $row->{$key} -label instance=$instance -label database=$db -httpPrefix telemetry_dbms_ -mqttPrefix state/ -nocolored $dummy $verbose $http`;
+				print `telemetry.pl publish -metric $key -value $row->{$key} -label instance=$instance -label database=$db -nocolored $dummy $verbose -nohttp`;
 				my $rc = $?;
-				Mods::Message::msgVerbose( "doState() key='$key' got rc=$rc" );
+				Mods::Message::msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
+			}
+			# -> HTTP
+			# Source: https://learn.microsoft.com/fr-fr/sql/relational-databases/system-catalog-views/sys-databases-transact-sql?view=sql-server-ver16
+			my $states = {
+				'0' => 'online',
+				'1' => 'restoring',
+				'2' => 'recovering',
+				'3' => 'recovery_pending',
+				'4' => 'suspect',
+				'5' => 'emergency',
+				'6' => 'offline',
+				'7' => 'copying',
+				'10' => 'offline_secondary'
+			};
+			my $first = true;
+			foreach my $key ( keys( %{$states} )){
+				my $value = 0;
+				$value = 1 if "$key" eq "$row->{state}";
+				my $type = $first ? "" : "-httpOption type=no";
+				# this option will be passed as a metric qualifier instead of being part of the url
+				#my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
+				#print `telemetry.pl publish -metric telemetry_dbms_state -value $value -label instance=$instance -label database=$db $label nocolored $dummy $verbose -nomqtt $type`;
+				# this works the same, but using labels in the path instead of metric qualifier
+				my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
+				print `telemetry.pl publish -metric telemetry_dbms_database_state -value $value -label instance=$instance -label database=$db -label state=$states->{$key} -nocolored $dummy $verbose -nomqtt $type`;
+				my $rc = $?;
+				Mods::Message::msgVerbose( "doState() HTTP key='$key' got rc=$rc" );
+				$code += $rc;
+				#$first = false;
 			}
 		}
-		Mods::Message::msgOut( "done" );
+		if( $code ){
+			Mods::Message::msgErr( "NOT OK" );
+		} else {
+			Mods::Message::msgOut( "done" );
+		}
 	} else {
 		Mods::Message::msgWarn( "instance not found or no registered database" );
 	}
