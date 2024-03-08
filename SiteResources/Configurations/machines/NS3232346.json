@@ -176,6 +176,12 @@
 		"dbms": {
 			"archivesRoot": "\\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\[eval:Mods::Toops::_hostname()]\\SQLBackups"
 		},
-		"remoteShare": "\\\\ns3232346.ovh.net\\C"
+		"remoteShare": "\\\\ns3232346.ovh.net\\C",
+		"Environment": {
+			"type": "X",
+			"physical": {
+				"ovh": "ns3232346.ovh.net"
+			}
+		}
 	}
 }
