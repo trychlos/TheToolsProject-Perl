@@ -131,14 +131,6 @@
 		"dbms": {
 			"archivesRoot": "\\\\ftpback-rbx4-48.ovh.net\\ns230134.ovh.net\\[eval:Mods::Toops::_hostname()]\\SQLBackups"
 		},
-		"Telemetry": {
-			"withHttp_comments": [
-				"the Prometheus push gateway binary doesn't run on Win2008R2, but crashdump instead"
-			],
-			"withHttp": {
-				"enabled": false
-			}
-		},
 		"remoteShare": "\\\\ns230134.ovh.net\\C",
 		"Environment": {
 			"type_comments": [

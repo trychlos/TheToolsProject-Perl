@@ -166,7 +166,7 @@
 			],
 			"withHttp": {
 				"enabled": true,
-				"url": "http://localhost:9091/metrics/job/telemetry/host/[eval:Mods::Toops::_hostname()]"
+				"url": "http://10.122.1.15:9091/metrics/job/telemetry/host/[eval:Mods::Toops::_hostname()]"
 			}
 		},
 		"MQTTGateway": {
