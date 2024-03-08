@@ -51,7 +51,7 @@ sub doState {
 			my $row = @{$result}[0];
 			foreach my $key ( keys %{$row} ){
 				my $http = looks_like_number( $row->{$key} ) ? "" : "-nohttp";
-				print `telemetry.pl publish -metric $key -value $row->{$key} -label instance=$instance -label database=$db -httpPrefix telemetry_dbms_state_ -mqttPrefix state/ -nocolored $dummy $verbose $http`;
+				print `telemetry.pl publish -metric $key -value $row->{$key} -label instance=$instance -label database=$db -httpPrefix telemetry_dbms_ -mqttPrefix state/ -nocolored $dummy $verbose $http`;
 				my $rc = $?;
 				Mods::Message::msgVerbose( "doState() key='$key' got rc=$rc" );
 			}
