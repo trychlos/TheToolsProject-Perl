@@ -7,6 +7,7 @@
 # @(-) --ip=<name>             the IP OVH service name [${ip}]
 # @(-) --to=<server>           the target server OVH service name [${to}]
 # @(-) --[no]wait              wait until the IP is said routed [${wait}]
+# @(-) --url=<url>             the URL to be tested for X-Sent-By header [${url}]
 # @(-) --timeout=<seconds>     wait timeout [${timeout}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
@@ -32,12 +33,14 @@ my $defaults = {
 	ip => '',
 	to => '',
 	wait => 'no',
+	url => '',
 	timeout => 300
 };
 
 my $opt_ip = $defaults->{ip};
 my $opt_to = $defaults->{to};
 my $opt_wait = false;
+my $opt_url = $defaults->{url};
 my $opt_timeout = $defaults->{timeout};
 
 # -------------------------------------------------------------------------------------------------
@@ -46,10 +49,11 @@ my $opt_timeout = $defaults->{timeout};
 sub doSwitchIP {
 	Mods::Message::msgOut( "switching '$opt_ip' service to '$opt_to' server..." );
 	my $res = false;
+	my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
 	my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
 
 	# check that the requested desired server is not already the routed one
-	my $out = Mods::Toops::ttpFilter( `ovh.pl ipget -ip $opt_ip -routed -nocolored $verbose -nodummy` );
+	my $out = Mods::Toops::ttpFilter( `ovh.pl ipget -ip $opt_ip -routed -nocolored $verbose $dummy` );
 	my @words = split( /\s+/, $out->[0] );
 	my $current = $words[1];
 	if( $current eq $opt_to ){
@@ -60,7 +64,7 @@ sub doSwitchIP {
 		my $api = Mods::Ovh::connect();
 		if( $api ){
 			# we need the IP block
-			$out = Mods::Toops::ttpFilter( `ovh.pl ipget -ip $opt_ip -address -nocolored $verbose -nodummy` );
+			$out = Mods::Toops::ttpFilter( `ovh.pl ipget -ip $opt_ip -address -nocolored $verbose $dummy` );
 			@words = split( /\s+/, $out->[0] );
 			my $ip = $words[1];
 			Mods::Message::msgVerbose( "IP address is '$ip'" );
@@ -80,7 +84,7 @@ sub doSwitchIP {
 						do {
 							print ".";
 							sleep 2;
-							$out = Mods::Toops::ttpFilter( `ovh.pl ipget -ip $opt_ip -routed -nocolored $verbose -nodummy` );
+							$out = Mods::Toops::ttpFilter( `ovh.pl ipget -ip $opt_ip -routed -nocolored $verbose $dummy` );
 							@words = split( /\s+/, $out->[0] );
 							$current = $words[1];
 							if( $current eq $opt_to ){
@@ -91,7 +95,29 @@ sub doSwitchIP {
 						} while( !$end && !$timeout );
 						print EOL;
 						if( $end ){
-							Mods::Message::msgOut( "actual switch recorded after ".( localtime->epoch - $start )." sec." );
+							Mods::Message::msgOut( "OVH API says that IP is switched after ".( localtime->epoch - $start )." sec." );
+							if( $opt_url ){
+								print "waiting for target machine answer";
+								$end = false;
+								do {
+									print ".";
+									sleep 2;
+									$out = `http.pl get -url $opt_url -header X-Sent-By -ignore -nocolored $dummy $verbose`;
+									my @grepped = grep( / got /, split( /[\r\n]/, $out ));
+									my $line = $grepped[0];
+									$line =~ s/^[^=]+='([^']+)'$/$1/;
+									Mods::Message::msgVerbose( "got '$line'" );
+									if( $line eq $opt_to ){
+										$end = true;
+									} elsif( localtime->epoch - $start > $opt_timeout ){
+										$timeout = true;
+									}
+								} while( !$end && !$timeout );
+								print EOL;
+								if( $end ){
+									Mods::Message::msgOut( "URL is actually switched after ".( localtime->epoch - $start )." sec." );
+								}
+							}
 							$res = true;
 						}
 						if( $timeout ){
@@ -129,6 +155,7 @@ if( !GetOptions(
 	"ip=s"				=> \$opt_ip,
 	"to=s"				=> \$opt_to,
 	"wait!"				=> \$opt_wait,
+	"url=s"				=> \$opt_url,
 	"timeout=i"			=> \$opt_timeout )){
 
 		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
@@ -146,6 +173,7 @@ Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'fa
 Mods::Message::msgVerbose( "found ip='$opt_ip'" );
 Mods::Message::msgVerbose( "found to='$opt_to'" );
 Mods::Message::msgVerbose( "found wait='".( $opt_wait ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found url='$opt_url'" );
 Mods::Message::msgVerbose( "found timeout='$opt_timeout'" );
 
 Mods::Message::msgErr( "ip service is mandatory, not specified" ) if !$opt_ip;

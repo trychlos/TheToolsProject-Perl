@@ -99,7 +99,7 @@ sub getServices {
 	if( scalar @{$list} ){
 		$res = {};
 		foreach my $it ( @{$list} ){
-			$res->{$it} = getByPath( $api, "$url/$it" );
+			$res->{$it} = getContentByPath( $api, "$url/$it" );
 		}
 	}
 
