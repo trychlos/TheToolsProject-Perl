@@ -38,10 +38,9 @@ my $opt_port = -1;
 # get a daemon status
 sub doStatus {
 	Mods::Message::msgOut( "requesting the daemon for its status..." );
-	my $colored = $opt_colored ? "-colored" : "-nocolored";
 	my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 	my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-	my $cmd = "daemon.pl command $colored $dummy $verbose -command status";
+	my $cmd = "daemon.pl command -nocolored $dummy $verbose -command status";
 	$cmd .= " -verbose" if $TTPVars->{run}{verbose};
 	if( $opt_json ){
 		my $json_path = File::Spec->rel2abs( $opt_json );

@@ -74,10 +74,9 @@ sub doJsonAlert {
 			# protect the double quotes against the CMD.EXE command-line
 			$str =~ s/"/\\"/g;
 			$command =~ s/<DATA>/$str/;
-			my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
 			my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
 			my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
-			print `$command $colored $dummy $verbose`;
+			print `$command -nocolored $dummy $verbose`;
 			#$? = 256
 			$res = $? == 0;
 			Mods::Message::msgOut( "success" );
@@ -119,10 +118,9 @@ sub doMqttAlert {
 		$command =~ s/<SUBJECT>/$topic/;
 		my $options = "";
 		$command =~ s/<OPTIONS>/$options/;
-		my $colored = $opt_colored ? "-colored" : "-nocolored";
 		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-		print `$command $colored $dummy $verbose`;
+		print `$command -nocolored $dummy $verbose`;
 		$res = ( $? == 0 );
 	} else {
 		Mods::Message::msgWarn( "unable to get a command for alerts by MQTT" );
@@ -154,10 +152,9 @@ Best regards.
 		my $fh = path( $textfname );
 		$fh->spew( $text );
 		$command =~ s/<OPTIONS>/-textfname $textfname/;
-		my $colored = $opt_colored ? "-colored" : "-nocolored";
 		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-		print `$command $colored $dummy $verbose`;
+		print `$command -nocolored $dummy $verbose`;
 		$res = ( $? == 0 );
 	} else {
 		Mods::Toops::msgWarn( "unable to get a command for alerts by SMS" );
@@ -194,10 +191,9 @@ Best regards.
 		$fh->spew( $text );
 		$command =~ s/<SUBJECT>/$subject/;
 		$command =~ s/<OPTIONS>/-textfname $textfname/;
-		my $colored = $opt_colored ? "-colored" : "-nocolored";
 		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-		print `$command $colored $dummy $verbose`;
+		print `$command -nocolored $dummy $verbose`;
 		$res = ( $? == 0 );
 	} else {
 		Mods::Message::msgWarn( "unable to get a command for alerts by SMTP" );

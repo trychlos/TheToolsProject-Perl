@@ -384,10 +384,9 @@ sub _executionReportToFile {
 			# protect the double quotes against the CMD.EXE command-line
 			$str =~ s/"/\\"/g;
 			$command =~ s/<DATA>/$str/;
-			my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
 			my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
 			my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
-			print `$command $colored $dummy $verbose`;
+			print `$command -nocolored $dummy $verbose`;
 			Mods::Message::msgVerbose( "Toops::_executionReportToFile() got $?" );
 			$res = ( $? == 0 );
 		} else {
@@ -428,10 +427,9 @@ sub _executionReportToMqtt {
 				$command =~ s/<DATA>/$str/;
 				my $options = $args->{options} ? $args->{options} : "";
 				$command =~ s/<OPTIONS>/$options/;
-				my $colored = $TTPVars->{run}{colored} ? "-colored" : "-nocolored";
 				my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
 				my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
-				print `$command $colored $dummy $verbose`;
+				print `$command -nocolored $dummy $verbose`;
 				Mods::Message::msgVerbose( "Toops::_executionReportToMqtt() got $?" );
 				$res = ( $? == 0 );
 			} else {
