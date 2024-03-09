@@ -66,9 +66,9 @@ sub doRestore {
 			instance => $opt_instance,
 			database => $opt_database,
 			full => $opt_full,
-			diff => $opt_diff || '',
 			mode => $mode
 		};
+		$data->{diff} = $opt_diff if $opt_diff;
 		Mods::Toops::executionReport({
 			file => {
 				data => $data
@@ -76,7 +76,16 @@ sub doRestore {
 			mqtt => {
 				data => $data,
 				topic => "$TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$opt_database/$mode",
-				options => "-retain"
+				options => "-retain",
+				excludes => [
+					'instance',
+					'database',
+					'mode',
+					'cmdline',
+					'command',
+					'verb',
+					'host'
+				]
 			}
 		});
 	}

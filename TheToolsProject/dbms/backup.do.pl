@@ -76,7 +76,8 @@ sub doBackup {
 			instance => $opt_instance,
 			database => $db,
 			mode => $mode,
-			output => $res->{output}
+			output => $res->{output},
+			compress => $opt_compress
 		};
 		Mods::Toops::executionReport({
 			file => {
@@ -85,7 +86,16 @@ sub doBackup {
 			mqtt => {
 				topic => "$TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$db/$mode",
 				data => $data,
-				options => "-retain"
+				options => "-retain",
+				excludes => [
+					'instance',
+					'database',
+					'mode',
+					'cmdline',
+					'command',
+					'verb',
+					'host'
+				]
 			}
 		});
 		$asked += 1;

@@ -64,7 +64,7 @@
 			],
 			"withMqtt": {
 				"enabled": true,
-				"command": "mqtt.pl publish -topic <SUBJECT> -payload <DATA> <OPTIONS>"
+				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
 			}
 		},
 		"copyDir_comments": [

@@ -409,6 +409,7 @@ sub _executionReportToFile {
 #   > data, a hash ref
 #   > topic, as a string
 #   > options, as a string
+#   > excludes, the list of data keys to be excluded
 sub _executionReportToMqtt {
 	my ( $args ) = @_;
 	my $res = false;
@@ -418,20 +419,30 @@ sub _executionReportToMqtt {
 		$data = _executionReportCompleteData( $data );
 		my $topic = undef;
 		$topic = $args->{topic} if exists $args->{topic};
+		my $excludes = [];
+		$excludes = $args->{excludes} if exists $args->{excludes} && ref $args->{excludes} eq 'ARRAY' && scalar $args->{excludes} > 0;
 		if( $topic ){
+			my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
+			my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
 			my $command = var([ 'executionReports', 'withMqtt', 'command' ]);
 			if( $command ){
-				my $json = JSON->new;
-				my $str = $json->encode( $data );
-				$command =~ s/<SUBJECT>/$topic/;
-				$command =~ s/<DATA>/$str/;
-				my $options = $args->{options} ? $args->{options} : "";
-				$command =~ s/<OPTIONS>/$options/;
-				my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
-				my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
-				print `$command -nocolored $dummy $verbose`;
-				Mods::Message::msgVerbose( "Toops::_executionReportToMqtt() got $?" );
-				$res = ( $? == 0 );
+				foreach my $key ( keys %{$data} ){
+					if( !grep( /$key/, @{$excludes} )){
+						#my $json = JSON->new;
+						#my $str = $json->encode( $data );
+						my $cmd = $command;
+						$cmd =~ s/<SUBJECT>/$topic\/$key/;
+						$cmd =~ s/<DATA>/$data->{$key}/;
+						my $options = $args->{options} ? $args->{options} : "";
+						$cmd =~ s/<OPTIONS>/$options/;
+						print `$cmd -nocolored $dummy $verbose`;
+						my $rc = $?;
+						Mods::Message::msgVerbose( "Toops::_executionReportToMqtt() got rc=$rc" );
+						$res = ( $rc == 0 );
+					} else {
+						Mods::Message::msgVerbose( "do not publish excluded '$key' key" );
+					}
+				}
 			} else {
 				Mods::Message::msgErr( "executionReportToMqtt() expected a 'command' argument, not found" );
 			}
