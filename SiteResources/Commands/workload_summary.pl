@@ -124,7 +124,7 @@ sub printSummary {
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );
 		my $subject = sprintf( "[%s\@%s] workload summary", $opt_workload, $host );
-		print "subject='$subject'".EOL;
+		Mods::Message::msgOut( "subject='$subject'" );
 		$command =~ s/<SUBJECT>/$subject/;
 		$command =~ s/<OPTIONS>/-textfname $textfname/;
 		my $dummy = $opt_dummy ? "-dummy" : "";
