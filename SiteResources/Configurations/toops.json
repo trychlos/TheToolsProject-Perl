@@ -5,8 +5,8 @@
 	],
 	"site": {
 		"rootDir": "C:\\INLINGUA",
-		"commandsDir": "[eval:$TTPVars->{config}{site}{rootDir}]\\SiteResources\\Commands",
-		"daemonsDir": "[eval:$ENV{TTP_CONFDIR}]\\daemons",
+		"commandsDir": "[eval:File::Spec->catdir( $TTPVars->{config}{site}{rootDir}, 'SiteResources', 'Commands' )]",
+		"daemonsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'daemons' )]",
 		"workloadSummary_comments": [
 			"manage macros: SUBJECT, OPTIONS"
 		],
@@ -118,7 +118,7 @@
 			}
 		},
 		"logsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDayLogs",
-		"logsDir": "[eval:Mods::Path::logsRootDir({ makeDirExist => false })]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
+		"logsDir": "[eval:File::Spec->catdir( Mods::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Toops' )]",
 		"Message": {
 			"msgDummy": {
 				"withColor": true,
