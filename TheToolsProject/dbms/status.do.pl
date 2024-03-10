@@ -6,6 +6,8 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --service=<name>        service name [${service}]
 # @(-) --[no]state             get state [${state}]
+# @(-) --[no]mqtt              send status as a MQTT payload [${mqtt}]
+# @(-) --[no]http              send status as a HTTP telemetry [${http}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -27,11 +29,15 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	service => '',
-	state => 'no'
+	state => 'no',
+	mqtt => 'no',
+	http => 'no'
 };
 
 my $opt_service = $defaults->{service};
 my $opt_state = false;
+my $opt_mqtt = false;
+my $opt_http = false;
 
 # -------------------------------------------------------------------------------------------------
 # get the state of all databases of the specified service
@@ -57,38 +63,46 @@ sub doState {
 			my $result = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose` ));
 			my $row = @{$result}[0];
 			# due to the differences between the two publications contents, publish separately
-			# -> MQTT
-			foreach my $key ( keys %{$row} ){
-				print `telemetry.pl publish -metric $key -value $row->{$key} -label instance=$instance -label database=$db -nocolored $dummy $verbose -nohttp`;
-				my $rc = $?;
-				Mods::Message::msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
+			# -> stdout
+			foreach my $key ( sort keys %{$row} ){
+				print "  $key: $row->{$key}".EOL;
 			}
-			# -> HTTP
-			# Source: https://learn.microsoft.com/fr-fr/sql/relational-databases/system-catalog-views/sys-databases-transact-sql?view=sql-server-ver16
-			my $states = {
-				'0' => 'online',
-				'1' => 'restoring',
-				'2' => 'recovering',
-				'3' => 'recovery_pending',
-				'4' => 'suspect',
-				'5' => 'emergency',
-				'6' => 'offline',
-				'7' => 'copying',
-				'10' => 'offline_secondary'
-			};
-		# contrarily to what is said in the doc, seems that push gateway requires the TYPE line
-			foreach my $key ( keys( %{$states} )){
-				my $value = 0;
-				$value = 1 if "$key" eq "$row->{state}";
-				# this option will be passed as a metric qualifier instead of being part of the url
-				#my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
-				#print `telemetry.pl publish -metric telemetry_dbms_state -value $value -label instance=$instance -label database=$db $label nocolored $dummy $verbose -nomqtt $type`;
-				# this works the same, but using labels in the path instead of metric qualifier
-				my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
-				print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$instance -label database=$db -label state=$states->{$key} -nocolored $dummy $verbose -nomqtt`;
-				my $rc = $?;
-				Mods::Message::msgVerbose( "doState() HTTP key='$key' got rc=$rc" );
-				$code += $rc;
+			if( $opt_mqtt ){
+				# -> MQTT
+				foreach my $key ( keys %{$row} ){
+					print `telemetry.pl publish -metric $key -value $row->{$key} -label instance=$instance -label database=$db -nocolored $dummy $verbose -nohttp`;
+					my $rc = $?;
+					Mods::Message::msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
+				}
+			}
+			if( $opt_http ){
+				# -> HTTP
+				# Source: https://learn.microsoft.com/fr-fr/sql/relational-databases/system-catalog-views/sys-databases-transact-sql?view=sql-server-ver16
+				my $states = {
+					'0' => 'online',
+					'1' => 'restoring',
+					'2' => 'recovering',
+					'3' => 'recovery_pending',
+					'4' => 'suspect',
+					'5' => 'emergency',
+					'6' => 'offline',
+					'7' => 'copying',
+					'10' => 'offline_secondary'
+				};
+			# contrarily to what is said in the doc, seems that push gateway requires the TYPE line
+				foreach my $key ( keys( %{$states} )){
+					my $value = 0;
+					$value = 1 if "$key" eq "$row->{state}";
+					# this option will be passed as a metric qualifier instead of being part of the url
+					#my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
+					#print `telemetry.pl publish -metric telemetry_dbms_state -value $value -label instance=$instance -label database=$db $label nocolored $dummy $verbose -nomqtt $type`;
+					# this works the same, but using labels in the path instead of metric qualifier
+					my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
+					print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$instance -label database=$db -label state=$states->{$key} -nocolored $dummy $verbose -nomqtt`;
+					my $rc = $?;
+					Mods::Message::msgVerbose( "doState() HTTP key='$key' got rc=$rc" );
+					$code += $rc;
+				}
 			}
 		}
 		if( $code ){
@@ -111,7 +125,9 @@ if( !GetOptions(
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"service=s"			=> \$opt_service,
-	"state!"			=> \$opt_state )){
+	"state!"			=> \$opt_state,
+	"mqtt!"				=> \$opt_mqtt,
+	"http!"				=> \$opt_http )){
 
 		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -127,6 +143,8 @@ Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true'
 Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found service='$opt_service'" );
 Mods::Message::msgVerbose( "found state='".( $opt_state ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 
 # must have a service
 Mods::Message::msgErr( "a service is required, not specified" ) if !$opt_service;
