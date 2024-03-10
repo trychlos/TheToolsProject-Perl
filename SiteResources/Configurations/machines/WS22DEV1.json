@@ -27,7 +27,7 @@
 						{
 							"label": "Advertize at startup",
 							"commands": [
-								"call C:\\INLINGUA\\SiteResources\\Commands\\startup.cmd"
+								"call [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'startup.cmd' )]"
 							]
 						}
 					]

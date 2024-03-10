@@ -33,8 +33,8 @@
 						{
 							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl stop -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom17-backup-monitor-daemon.json -ignore -wait 2",
-								"daemon.pl start -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom17-backup-monitor-daemon.json -- -remote NS3232346"
+								"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -ignore -wait 2",
+								"daemon.pl start -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -- -remote NS3232346"
 							]
 						}
 					]
@@ -75,8 +75,8 @@
 						{
 							"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl stop -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom21-backup-monitor-daemon.json -ignore -wait 2",
-								"daemon.pl start -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom21-backup-monitor-daemon.json -- -remote NS3232346"
+								"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -ignore -wait 2",
+								"daemon.pl start -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -- -remote NS3232346"
 							]
 						}
 					]
@@ -117,8 +117,8 @@
 						{
 							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl stop -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json -ignore -wait 2",
-								"daemon.pl start -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\tom59-backup-monitor-daemon.json -- -remote NS3232346"
+								"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -ignore -wait 2",
+								"daemon.pl start -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -- -remote NS3232346"
 							]
 						}
 					]
@@ -156,7 +156,7 @@
 						{
 							"label": "Advertize at startup",
 							"commands": [
-								"call C:\\INLINGUA\\SiteResources\\Commands\\startup.cmd"
+								"call [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'startup.cmd' )]"
 							]
 						}
 					]
