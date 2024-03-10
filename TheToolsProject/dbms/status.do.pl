@@ -59,7 +59,7 @@ sub doState {
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
 		foreach my $db ( @databases ){
 			msgOut( "  database '$db'" );
-			my $result = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose` ));
+			my $result = Mods::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose` ));
 			my $row = @{$result}[0];
 			# due to the differences between the two publications contents, publish separately
 			# -> stdout

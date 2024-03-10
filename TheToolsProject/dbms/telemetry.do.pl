@@ -103,7 +103,7 @@ sub doDbSize {
 	if( $opt_service ){
 		$list = \@databases;
 	} elsif( !$opt_database ){
-		$list = Mods::Toops::ttpFilter( `dbms.pl list -instance $opt_instance -listdb -nocolored $dummy $verbose` );
+		$list = ttpFilter( `dbms.pl list -instance $opt_instance -listdb -nocolored $dummy $verbose` );
 	} else {
 		push( @{$list}, $opt_database );
 	}
@@ -111,7 +111,7 @@ sub doDbSize {
 		last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 		msgOut( "  database '$db'" );
 		# sp_spaceused provides two results sets, where each one only contains one data row
-		my $resultSets = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple -nocolored $dummy $verbose` ));
+		my $resultSets = Mods::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple -nocolored $dummy $verbose` ));
 		my $set = _interpretDbResultSet( $resultSets );
 		foreach my $key ( keys %{$set} ){
 			`telemetry.pl publish -metric $key -value $set->{$key} -label instance=$opt_instance -label database=$db -httpPrefix ttp_dbms_database_size_ -mqttPrefix dbsize/ -nocolored $dummy $verbose`;
@@ -139,11 +139,11 @@ sub doTablesCount {
 		foreach my $db ( @databases ){
 			msgOut( "publishing tables rows count on '$hostConfig->{name}\\$opt_instance\\$db'..." );
 			last if $mqttCount >= $opt_limit && $opt_limit >= 0;
-			my $tables = Mods::Toops::ttpFilter( `dbms.pl list -instance $opt_instance -database $db -listtables -nocolored $dummy $verbose` );
+			my $tables = ttpFilter( `dbms.pl list -instance $opt_instance -database $db -listtables -nocolored $dummy $verbose` );
 			foreach my $tab ( @{$tables} ){
 				last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 				msgOut( "  table '$tab'" );
-				my $resultSet = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular -nocolored $dummy $verbose` ));
+				my $resultSet = Mods::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular -nocolored $dummy $verbose` ));
 				my $set = $resultSet->[0];
 				$set->{rows_count} = 0 if !defined $set->{rows_count};
 				foreach my $key ( keys %{$set} ){

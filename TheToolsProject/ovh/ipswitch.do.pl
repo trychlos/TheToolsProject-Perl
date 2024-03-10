@@ -52,7 +52,7 @@ sub doSwitchIP {
 	my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
 
 	# check that the requested desired server is not already the routed one
-	my $out = Mods::Toops::ttpFilter( `ovh.pl ipget -ip $opt_ip -routed -nocolored $verbose $dummy` );
+	my $out = ttpFilter( `ovh.pl ipget -ip $opt_ip -routed -nocolored $verbose $dummy` );
 	my @words = split( /\s+/, $out->[0] );
 	my $current = $words[1];
 	if( $current eq $opt_to ){
@@ -63,7 +63,7 @@ sub doSwitchIP {
 		my $api = Mods::Ovh::connect();
 		if( $api ){
 			# we need the IP block
-			$out = Mods::Toops::ttpFilter( `ovh.pl ipget -ip $opt_ip -address -nocolored $verbose $dummy` );
+			$out = ttpFilter( `ovh.pl ipget -ip $opt_ip -address -nocolored $verbose $dummy` );
 			@words = split( /\s+/, $out->[0] );
 			my $ip = $words[1];
 			msgVerbose( "IP address is '$ip'" );
@@ -83,7 +83,7 @@ sub doSwitchIP {
 						do {
 							print ".";
 							sleep 2;
-							$out = Mods::Toops::ttpFilter( `ovh.pl ipget -ip $opt_ip -routed -nocolored $verbose $dummy` );
+							$out = ttpFilter( `ovh.pl ipget -ip $opt_ip -routed -nocolored $verbose $dummy` );
 							@words = split( /\s+/, $out->[0] );
 							$current = $words[1];
 							if( $current eq $opt_to ){
