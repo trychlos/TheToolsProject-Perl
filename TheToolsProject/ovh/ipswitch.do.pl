@@ -8,6 +8,7 @@
 # @(-) --to=<server>           the target server OVH service name [${to}]
 # @(-) --[no]wait              wait until the IP is said routed [${wait}]
 # @(-) --url=<url>             the URL to be tested for X-Sent-By header [${url}]
+# @(-) --sender=<sender>       the expected sender searched in X-Sent-By header [${sender}]
 # @(-) --timeout=<seconds>     wait timeout [${timeout}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
@@ -33,6 +34,7 @@ my $defaults = {
 	to => '',
 	wait => 'no',
 	url => '',
+	sender => '',
 	timeout => 300
 };
 
@@ -40,6 +42,7 @@ my $opt_ip = $defaults->{ip};
 my $opt_to = $defaults->{to};
 my $opt_wait = false;
 my $opt_url = $defaults->{url};
+my $opt_sender = $defaults->{sender};
 my $opt_timeout = $defaults->{timeout};
 
 # -------------------------------------------------------------------------------------------------
@@ -106,7 +109,7 @@ sub doSwitchIP {
 									my $line = $grepped[0];
 									$line =~ s/^[^=]+='([^']+)'$/$1/;
 									msgVerbose( "got '$line'" );
-									if( $line eq $opt_to ){
+									if( $line eq $opt_sender ){
 										$end = true;
 									} elsif( localtime->epoch - $start > $opt_timeout ){
 										$timeout = true;
@@ -155,6 +158,7 @@ if( !GetOptions(
 	"to=s"				=> \$opt_to,
 	"wait!"				=> \$opt_wait,
 	"url=s"				=> \$opt_url,
+	"sender=s"			=> \$opt_sender,
 	"timeout=i"			=> \$opt_timeout )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
@@ -173,10 +177,14 @@ msgVerbose( "found ip='$opt_ip'" );
 msgVerbose( "found to='$opt_to'" );
 msgVerbose( "found wait='".( $opt_wait ? 'true':'false' )."'" );
 msgVerbose( "found url='$opt_url'" );
+msgVerbose( "found sender='$opt_sender'" );
 msgVerbose( "found timeout='$opt_timeout'" );
 
 msgErr( "ip service is mandatory, not specified" ) if !$opt_ip;
 msgErr( "target server service is mandatory, not specified" ) if !$opt_to;
+msgErr( "waiting for an URL doesn't have sense without an expected sender" ) if $opt_wait && $opt_url && !$opt_sender;
+msgErr( "specifying an expected sender doesn't have sense if we do not wait for and URL" ) if $opt_wait && $opt_sender && !$opt_url;
+msgErr( "specifying an expected sender or an URL doesn't have sense without waiting for them" ) if ( $opt_sender || $opt_url ) && !$opt_wait;
 
 if( !ttpErrs()){
 	doSwitchIP();
