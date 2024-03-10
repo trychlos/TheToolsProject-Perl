@@ -36,7 +36,7 @@ sub backupDatabase {
 	msgErr( "Dbms::backupDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
 	msgErr( "Dbms::backupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
 	msgErr( "Dbms::backupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		if( !$parms->{output} ){
 			$parms->{output} = Mods::Dbms::computeDefaultBackupFilename( $dbms, $parms );
 		}
@@ -80,7 +80,7 @@ sub checkDatabaseExists {
 	msgVerbose( "Dbms::checkDatabaseExists() entering with instance='".( $instance || '(undef)' )."', database='".( $database || '(undef)' )."'" );
 	msgErr( "Dbms::checkDatabaseExists() instance is mandatory, but is not specified" ) if !$instance;
 	msgErr( "Dbms::checkDatabaseExists() database is mandatory, but is not specified" ) if !$database;
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		my $dbms = Mods::Dbms::_buildDbms();
 		my $list = Mods::Dbms::getLiveDatabases( $dbms );
 		$exists = true if grep( /$database/i, @{$list} );
@@ -390,7 +390,7 @@ sub restoreDatabase {
 	msgErr( "Dbms::restoreDatabase() database is mandatory, but is not specified" ) if !$parms->{database} && !$parms->{verifyonly};
 	msgErr( "Dbms::restoreDatabase() full backup is mandatory, but is not specified" ) if !$parms->{full};
 	msgErr( "Dbms::restoreDatabase() $parms->{diff}: file not found or not readable" ) if $parms->{diff} && ! -f $parms->{diff};
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		$result = Mods::Dbms::toPackage( 'apiRestoreDatabase', $dbms, $parms );
 	}
 	if( $result && $result->{ok} ){
@@ -434,7 +434,7 @@ sub toPackage {
 	my ( $fname, $dbms, $parms ) = @_;
 	my $result = undef;
 	msgErr( "Dbms::toPackage() function name must be specified" ) if !$fname;
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		msgVerbose( "Dbms::toPackage() entering with fname='".( $fname || '(undef)' )."'" );
 		$dbms = Mods::Dbms::_buildDbms() if !$dbms;
 		my $package = $dbms->{config}{DBMSInstances}{$dbms->{instance}{name}}{package};

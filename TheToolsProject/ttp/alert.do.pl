@@ -23,7 +23,6 @@ use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
 use Mods::Path;
 use Mods::SMTP;
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -223,12 +222,12 @@ if( !GetOptions(
 	"sms!"				=> \$opt_sms )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -254,7 +253,7 @@ if( !$opt_json && !$opt_mqtt && !$opt_smtp && !$opt_sms ){
 	msgErr( "at least one of '--json', '--mqtt', '--smtp' or '--sms' options must be specified" ) if !$opt_emitter;
 }
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	$opt_level = uc $opt_level;
 	doJsonAlert() if $opt_json;
 	doMqttAlert() if $opt_mqtt;
@@ -262,4 +261,4 @@ if( !Mods::Toops::errs()){
 	doSmsAlert() if $opt_sms;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

@@ -129,19 +129,19 @@ msgVerbose( "found json='$opt_json'" );
 
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 
-if( !Mods::Toops::errs()){
+if( !Mods::Toops::ttpErrs()){
 	$daemon = Mods::Daemon::run( $opt_json );
 }
 # more deeply check arguments
 # - the daemon configuration must have monitoredDir key
-if( !Mods::Toops::errs()){
+if( !Mods::Toops::ttpErrs()){
 	if( exists( $daemon->{config}{monitoredDir} )){
 		msgVerbose( "monitored dir '$daemon->{config}{monitoredDir}' successfully found in daemon configuration file" );
 	} else {
 		msgErr( "'monitoredDir' must be specified in daemon configuration, not found" );
 	}
 }
-if( Mods::Toops::errs()){
+if( Mods::Toops::ttpErrs()){
 	Mods::Toops::ttpExit();
 }
 

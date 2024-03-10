@@ -420,21 +420,21 @@ msgVerbose( "found remote='$opt_remote'" );
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 msgErr( "'--remote' option is mandatory, not specified" ) if !$opt_remote;
 
-if( !Mods::Toops::errs()){
+if( !Mods::Toops::ttpErrs()){
 	$daemon = Mods::Daemon::run( $opt_json );
 }
 
 # deeply check arguments
 # - monitored host must have a json configuration file
 # - the daemon configuration must have monitoredService and localDir keys
-if( !Mods::Toops::errs()){
+if( !Mods::Toops::ttpErrs()){
 	$opt_remote = uc $opt_remote;
 	$daemon->{monitored}{host} = $opt_remote;
 	$daemon->{monitored}{raw} = Mods::Toops::getHostConfig( $daemon->{monitored}{host}, { withEvaluate => false });
 	$daemon->{monitored}{config} = Mods::Toops::evaluate( $daemon->{monitored}{raw} );
 }
 # stop here if we do not have any configuration for the remote host 
-if( !Mods::Toops::errs()){
+if( !Mods::Toops::ttpErrs()){
 	if( $daemon->{monitored}{config} && ref( $daemon->{monitored}{config} ) eq 'HASH' ){
 		# daemon: monitoredService
 		# set TTPVars->{run}{verb}{name} to improve logs
@@ -462,7 +462,7 @@ if( !Mods::Toops::errs()){
 		msgErr( "remote share must be specified in remote host '$daemon->{monitored}{host}' configuration, not found" );
 	}
 }
-if( Mods::Toops::errs()){
+if( Mods::Toops::ttpErrs()){
 	Mods::Toops::ttpExit();
 }
 

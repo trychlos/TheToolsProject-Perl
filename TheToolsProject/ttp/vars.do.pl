@@ -83,12 +83,12 @@ if( !GetOptions(
 	"alertsDir!"		=> \$opt_alertsDir )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -99,11 +99,11 @@ msgVerbose( "found logsRoot='".( $opt_logsRoot ? 'true':'false' )."'" );
 msgVerbose( "found logsDir='".( $opt_logsDir ? 'true':'false' )."'" );
 msgVerbose( "found alertsDir='".( $opt_alertsDir ? 'true':'false' )."'" );
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	listSiteroot() if $opt_siteRoot;
 	listLogsroot() if $opt_logsRoot;
 	listLogsdir() if $opt_logsDir;
 	listAlertsdir() if $opt_alertsDir;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

@@ -99,12 +99,12 @@ if( !GetOptions(
 	"http!"				=> \$opt_http )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -124,8 +124,8 @@ msgErr( "one of '--dirpath' and '--dircmd' options must be specified" ) if $coun
 # if we have a source cmd, get the path and check it exists
 $opt_dirpath = Mods::Path::fromCommand( $opt_dircmd, { mustExists => true }) if $opt_dircmd;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doComputeSize();
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

@@ -22,7 +22,6 @@ $| = 1;
 use Mods::Constants qw( :all );
 use Mods::Daemon;
 use Mods::Message qw( :all );
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -93,12 +92,12 @@ if( !GetOptions(
 	"ignore!"			=> \$opt_ignore )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -127,8 +126,8 @@ if( $opt_json ){
 # and a command too
 msgErr( "'--command' option is mandatory, but is not specified" ) if !$opt_command;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doSend();
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

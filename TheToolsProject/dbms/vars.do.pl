@@ -88,12 +88,12 @@ if( !GetOptions(
 	"archivesDir!"		=> \$opt_archivesDir )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -104,11 +104,11 @@ msgVerbose( "found backupsDir='".( $opt_backupsDir ? 'true':'false' )."'" );
 msgVerbose( "found archivesRoot='".( $opt_archivesRoot ? 'true':'false' )."'" );
 msgVerbose( "found archivesDir='".( $opt_archivesDir ? 'true':'false' )."'" );
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	listArchivesroot() if $opt_archivesRoot;
 	listArchivesdir() if $opt_archivesDir;
 	listBackupsroot() if $opt_backupsRoot;
 	listBackupsdir() if $opt_backupsDir;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

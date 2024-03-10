@@ -173,7 +173,7 @@ msgVerbose( "found end='$opt_end'" );
 msgVerbose( "found rc='$opt_rc'" );
 msgVerbose( "found count='$opt_count'" );
 
-if( !Mods::Toops::errs()){
+if( !Mods::Toops::ttpErrs()){
 	printSummary();
 }
 

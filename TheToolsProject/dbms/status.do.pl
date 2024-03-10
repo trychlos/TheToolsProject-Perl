@@ -19,7 +19,6 @@ use Mods::Constants qw( :all );
 use Mods::Dbms;
 use Mods::Message qw( :all );
 use Mods::Telemetry;
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -130,12 +129,12 @@ if( !GetOptions(
 	"http!"				=> \$opt_http )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -152,8 +151,8 @@ msgErr( "a service is required, not specified" ) if !$opt_service;
 # if no option is given, have a warning message
 msgWarn( "no status has been requested, exiting gracefully" ) if !$opt_state;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doState() if $opt_state;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

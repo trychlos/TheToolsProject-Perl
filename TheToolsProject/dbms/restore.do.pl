@@ -112,12 +112,12 @@ if( !GetOptions(
 	"verifyonly!"		=> \$opt_verifyonly )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -135,8 +135,8 @@ msgErr( "'--database' option is mandatory, but is not specified" ) if !$opt_data
 msgErr( "'--full' option is mandatory, but is not specified" ) if !$opt_full;
 msgErr( "$opt_diff: file not found or not readable" ) if $opt_diff && ! -f $opt_diff;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doRestore();
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

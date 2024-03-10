@@ -79,12 +79,12 @@ if( !GetOptions(
 	"ignore!"			=> \$opt_ignore	)){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -97,8 +97,8 @@ msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
 # url is mandatory
 msgErr( "url is required, but is not specified" ) if !$opt_url;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doGet() if $opt_url;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

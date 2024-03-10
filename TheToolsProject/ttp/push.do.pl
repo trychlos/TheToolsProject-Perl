@@ -18,7 +18,6 @@ use Time::Piece;
 use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
 use Mods::Path;
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -66,7 +65,7 @@ sub doPublish {
 		print `git tag -am "$message" $now`;
 	}
 	my $str = "$done/$asked subdirs copied";
-	if( $done == $asked && !Mods::Toops::errs()){
+	if( $done == $asked && !ttpErrs()){
 		msgOut( "success ($str)" );
 	} else {
 		msgErr( "NOT OK ($str)" );
@@ -86,12 +85,12 @@ if( !GetOptions(
 	"tag!"				=> \$opt_tag )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -148,8 +147,8 @@ if( $opt_check ){
 	msgWarn( "no check is made as '--check' option has been set to false" );
 }
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doPublish();
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

@@ -18,7 +18,6 @@ use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
 use Mods::Ovh;
 use Mods::Services;
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -89,12 +88,12 @@ if( !GetOptions(
 	"address!"			=> \$opt_address )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -122,8 +121,8 @@ $count += 1 if $opt_routed;
 $count += 1 if $opt_address;
 msgErr( "either '--routed' or '--address' option must be specified" ) if !$count;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doGetIP();
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

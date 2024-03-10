@@ -181,11 +181,11 @@ sub fromCommand {
 	$opts //= {};
 	msgErr( "Path::fromCommand() command is not specified" ) if !$cmd;
 	my $path = undef;
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		$path = `$cmd`;
 		msgErr( "Path::fromCommand() command doesn't output anything" ) if !$path;
 	}
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		my @words = split( /\s+/, $path );
 		if( scalar @words < 2 ){
 			msgErr( "Path::fromCommand() expect at least two words" );
@@ -194,7 +194,7 @@ sub fromCommand {
 			msgErr( "Path::fromCommand() found an empty path" ) if !$path;
 		}
 	}
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		my $mustExists = false;
 		$mustExists = $opts->{mustExists} if exists $opts->{mustExists};
 		if( $mustExists && !-r $path ){
@@ -202,7 +202,7 @@ sub fromCommand {
 			$path = undef;
 		}
 	}
-	$path = undef if Mods::Toops::errs();
+	$path = undef if Mods::Toops::ttpErrs();
 	return $path;
 }
 

@@ -101,12 +101,12 @@ if( !GetOptions(
 	"mqttOption=s@"		=> \$opt_mqttOption	)){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -138,9 +138,9 @@ foreach my $label ( @labels ){
 }
 msgOut( "do not publish anything as neither '--mqtt' nor '--http' are set" ) if !$opt_mqtt && !$opt_http;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doMqttPublish() if $opt_mqtt;
 	doHttpPublish() if $opt_http;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

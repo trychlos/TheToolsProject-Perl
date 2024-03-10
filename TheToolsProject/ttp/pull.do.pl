@@ -20,7 +20,6 @@ use File::Spec;
 use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
 use Mods::Path;
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -69,7 +68,7 @@ sub doPull {
 				$done += 1 if $cmdres->{result};
 			} else {
 				opendir( FD, "$srcPath" ) or msgErr( "unable to open directory $srcPath: $!" );
-				if( !Mods::Toops::errs()){
+				if( !ttpErrs()){
 					$result = true;
 					while( my $it = readdir( FD )){
 						next if $it eq "." or $it eq "..";
@@ -103,7 +102,7 @@ sub doPull {
 		msgErr( "remoteShare is not specified in '$opt_fromhost' host configuration" );
 	}
 	my $str = "$done/$asked subdirs copied";
-	if( $done == $asked && !Mods::Toops::errs()){
+	if( $done == $asked && !ttpErrs()){
 		msgOut( "success ($str)" );
 	} else {
 		msgErr( "NOT OK ($str)" );
@@ -122,12 +121,12 @@ if( !GetOptions(
 	"fromhost=s"		=> \$opt_fromhost )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -139,8 +138,8 @@ msgVerbose( "found fromhost='$opt_fromhost'" );
 msgErr( "'--fromhost' value is required, but not specified" ) if !$opt_fromhost;
 my $config = Mods::Toops::getHostConfig( $opt_fromhost );
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doPull( $config );
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

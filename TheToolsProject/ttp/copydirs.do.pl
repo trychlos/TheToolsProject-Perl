@@ -79,12 +79,12 @@ if( !GetOptions(
 	"dirs!"				=> \$opt_dirs )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -117,8 +117,8 @@ $opt_targetpath = Mods::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
 # --dirs option must be specified at the moment
 msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doCopyDirs();
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

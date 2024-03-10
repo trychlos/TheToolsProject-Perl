@@ -42,7 +42,7 @@ sub doPurgeDirs {
 	msgOut( "purging from '$opt_dirpath', keeping '$opt_keep' item(s)" );
 	my $count = 0;
 	opendir( FD, "$opt_dirpath" ) || msgErr( "unable to open directory $opt_dirpath: $!" );
-	if( !Mods::Toops::errs()){
+	if( !ttpErrs()){
 		my @list = ();
 		while ( my $it = readdir( FD )){
 			my $path = File::Spec->catdir( $opt_dirpath, $it );
@@ -106,12 +106,12 @@ if( !GetOptions(
 	"keep=s"			=> \$opt_keep )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -130,8 +130,8 @@ msgErr( "one of '--dirpath' and '--dircmd' options must be specified" ) if $coun
 # if we have a source cmd, get the path and check it exists
 $opt_dirpath = Mods::Path::fromCommand( $opt_dircmd, { mustExists => true }) if $opt_dircmd;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doPurgeDirs();
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

@@ -19,7 +19,6 @@ use Proc::Background;
 use Mods::Constants qw( :all );
 use Mods::Daemon;
 use Mods::Message qw( :all );
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -42,7 +41,7 @@ sub doStart {
 	my $json_path = File::Spec->rel2abs( $opt_json );
 	msgOut( "starting the daemon from '$opt_json'..." );
 	msgErr( "$program_path: not found or not readable" ) if ! -r $program_path;
-	if( !Mods::Toops::errs()){
+	if( !ttpErrs()){
 		#print Dumper( @ARGV );
 		my $proc = Proc::Background->new( "perl $program_path -json $json_path ".join( ' ', @ARGV )) or msgErr( "unable to start '$program_path'" );
 		msgOut( "success" ) if $proc;
@@ -61,12 +60,12 @@ if( !GetOptions(
 	"json=s"			=> \$opt_json )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -83,8 +82,8 @@ msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) 
 # must have something to run
 msgErr( "daemon configuration must define an 'execPath' value, not found" ) if !$daemonConfig->{execPath};
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doStart();
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

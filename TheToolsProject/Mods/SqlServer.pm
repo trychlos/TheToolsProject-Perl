@@ -50,7 +50,7 @@ sub apiBackupDatabase {
 	msgErr( "SqlServer::apiBackupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
 	msgErr( "SqlServer::apiBackupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
 	msgErr( "SqlServer::apiBackupDatabase() output is mandatory, but is not specified" ) if !$parms->{output};
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		msgVerbose( "SqlServer::apiBackupDatabase() entering with instance='$dbms->{instance}{name}' database='$parms->{database}' mode='$parms->{mode}'..." );
 		my $tstring = localtime->strftime( '%Y-%m-%d %H:%M:%S' );
 		# if full
@@ -89,7 +89,7 @@ sub apiExecSqlCommand {
 	my $result = { ok => false };
 	msgErr( "SqlServer::apiExecSqlCommand() instance is mandatory, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
 	msgErr( "SqlServer::apiExecSqlCommand() command is mandatory, but not specified" ) if !$parms || !$parms->{command};
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		msgVerbose( "SqlServer::apiExecSqlCommand() entering with instance='$dbms->{instance}{name}' sql='$parms->{command}'" );
 		my $resultStyle = Win32::SqlServer::SINGLESET;
 		$resultStyle = Win32::SqlServer::MULTISET if $parms->{opts} && $parms->{opts}{multiple};
@@ -113,7 +113,7 @@ sub apiGetDatabaseTables {
 	my $result = { ok => false, output => [] };
 	msgErr( "SqlServer::apiGetDatabaseTables() instance is mandatory, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
 	msgErr( "SqlServer::apiGetDatabaseTables() database is mandatory, but not specified" ) if !$database;
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		msgVerbose( "SqlServer::apiGetDatabaseTables() entering with instance='$dbms->{instance}{name}', database='$database'" );
 		$result = _sqlExec( $dbms,  "SELECT TABLE_SCHEMA,TABLE_NAME FROM $database.INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_SCHEMA,TABLE_NAME" );
 		if( $result->{ok} ){
@@ -145,7 +145,7 @@ sub apiGetInstanceDatabases {
 	my ( $me, $dbms ) = @_;
 	my $result = { ok => false, output => [] };
 	msgErr( "SqlServer::apiGetInstanceDatabases() instance is mandatory, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		msgVerbose( "SqlServer::apiGetInstanceDatabases() entering with instance='$dbms->{instance}{name}'" );
 		$result = _sqlExec( $dbms, "select name from master.sys.databases order by name" );
 		if( $result->{ok} ){
@@ -179,7 +179,7 @@ sub apiRestoreDatabase {
 	msgErr( "SqlServer::apiRestoreDatabase() instance is mandatory, but not specified" ) if !$dbms || !$dbms->{instance} || !$dbms->{instance}{name};
 	msgErr( "SqlServer::apiRestoreDatabase() database is mandatory, not specified" ) if !$parms->{database} && !$verifyonly;
 	msgErr( "SqlServer::apiRestoreDatabase() full is mandatory, not specified" ) if !$parms->{full};
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		msgVerbose( "SqlServer::apiRestoreDatabase() entering with instance='$dbms->{instance}{name}' verifyonly='$verifyonly'..." );
 		my $diff = $parms->{diff} || '';
 		if( $verifyonly || _restoreDatabaseSetOffline( $dbms, $parms )){
@@ -368,10 +368,10 @@ sub _sqlExec {
 	msgErr( "SqlServer::_sqlExec() sql is mandatory, but is not specified" ) if !$sql;
 	my $result = { ok => false, stdout => [] };
 	my $sqlsrv = undef;
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		$sqlsrv = Mods::SqlServer::_connect( $dbms );
 	}
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		msgVerbose( "SqlServer::_sqlExec() executing '$sql'" );
 		$result->{ok} = msgDummy( $sql );
 		if( !Mods::Toops::wantsDummy()){

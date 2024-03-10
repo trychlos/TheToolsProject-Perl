@@ -14,7 +14,6 @@ use Data::Dumper;
 use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
 use Mods::Services;
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -73,12 +72,12 @@ if( !GetOptions(
 	"service=s"			=> \$opt_service )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -88,8 +87,8 @@ msgVerbose( "found service='$opt_service'" );
 
 msgErr( "a service is required, but not found" ) if !$opt_service;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	executeStatus() if $opt_service;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

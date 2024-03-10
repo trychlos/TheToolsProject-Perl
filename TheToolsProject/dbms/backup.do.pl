@@ -127,12 +127,12 @@ if( !GetOptions(
 	"output=s"			=> \$opt_output )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -189,8 +189,8 @@ if( !$opt_output ){
 	msgErr( "cowardly refuse to backup several databases in a single output file" );
 }
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doBackup();
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

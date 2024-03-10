@@ -21,7 +21,6 @@ use Mods::Constants qw( :all );
 use Mods::Dbms;
 use Mods::Message qw( :all );
 use Mods::Telemetry;
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -177,12 +176,12 @@ if( !GetOptions(
 	"limit=i"			=> \$opt_limit )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -225,16 +224,16 @@ if( scalar @databases ){
 	}
 } else {
 	msgWarn( "no database found nor specified, exiting gracefully" );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 # if no option is given, have a warning message
 if( !$opt_dbsize && !$opt_tabcount ){
 	msgWarn( "no measure has been requested, exiting gracefully" );
 
-} elsif( !Mods::Toops::errs()){
+} elsif( !ttpErrs()){
 	doDbSize() if $opt_dbsize;
 	doTablesCount() if $opt_tabcount;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

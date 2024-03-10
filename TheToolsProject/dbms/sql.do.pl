@@ -118,12 +118,12 @@ if( !GetOptions(
 	"multiple!"			=> \$opt_multiple )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -151,10 +151,10 @@ if( $count != 1 ){
 	}
 }
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	execSqlStdin() if $opt_stdin;
 	execSqlScript() if $opt_script;
 	execSqlCommand() if $opt_command;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

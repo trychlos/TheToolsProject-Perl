@@ -15,7 +15,6 @@ use Proc::Background;
 use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
 use Mods::Path;
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -35,7 +34,7 @@ sub doListJSON {
 	msgOut( "displaying available JSON configuration files..." );
 	my $json_path = Mods::Path::daemonsConfigurationsDir();
 	opendir( my $dh, $json_path ) or msgErr( "opendir $json_path: $!" );
-	if( !Mods::Toops::errs()){
+	if( !ttpErrs()){
 		my $count = 0;
 		my $sufixed_path = Mods::Path::withTrailingSeparator( $json_path );
 		while( readdir( $dh )){
@@ -62,12 +61,12 @@ if( !GetOptions(
 	"json!"				=> \$opt_json )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -77,8 +76,8 @@ msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
 
 msgWarn( "no action as '--json' option is not set" ) if !$opt_json;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doListJSON() if $opt_json;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

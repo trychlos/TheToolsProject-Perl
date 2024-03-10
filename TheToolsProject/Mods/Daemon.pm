@@ -314,13 +314,13 @@ sub run {
 			$advertizeInterval = $config->{advertizeInterval};
 		}
 	}
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		msgVerbose( "listeningPort='$config->{listeningPort}' listenInterval='$listenInterval' advertizeInterval='$advertizeInterval'" );
 	}
 
 	# create a listening socket
 	my $socket = undef;
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		$socket = new IO::Socket::INET(
 			LocalHost => '0.0.0.0',
 			LocalPort => $config->{listeningPort},
@@ -334,12 +334,12 @@ sub run {
 
 	# connect to MQTT communication bus if the host is configured for
 	my $mqtt = undef;
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		$mqtt = Mods::MQTT::connect({
 			will => _lastwill( $jfile )
 		});
 	}
-	if( !Mods::Toops::errs()){
+	if( !Mods::Toops::ttpErrs()){
 		$SIG{INT} = sub { $socket->close(); Mods::Toops::ttpExit(); };
 		$daemon = {
 			json => $json,

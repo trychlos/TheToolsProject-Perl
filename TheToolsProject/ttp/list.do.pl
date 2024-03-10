@@ -69,12 +69,12 @@ if( !GetOptions(
 	"services!"			=> \$opt_services )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -83,9 +83,9 @@ msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
 msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	listCommands() if $opt_commands;
 	listServices() if $opt_services;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

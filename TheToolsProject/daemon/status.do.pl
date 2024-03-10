@@ -18,7 +18,6 @@ use File::Spec;
 use Mods::Constants qw( :all );
 use Mods::Daemon;
 use Mods::Message qw( :all );
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -70,12 +69,12 @@ if( !GetOptions(
 	"port=i"			=> \$opt_port )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -100,8 +99,8 @@ if( $opt_json ){
 	msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
 }
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doStatus();
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

@@ -21,7 +21,6 @@ use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
 use Mods::Ovh;
 use Mods::Services;
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -159,12 +158,12 @@ if( !GetOptions(
 	"timeout=i"			=> \$opt_timeout )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -179,8 +178,8 @@ msgVerbose( "found timeout='$opt_timeout'" );
 msgErr( "ip service is mandatory, not specified" ) if !$opt_ip;
 msgErr( "target server service is mandatory, not specified" ) if !$opt_to;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	doSwitchIP();
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

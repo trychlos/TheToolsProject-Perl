@@ -218,13 +218,6 @@ sub copyFile {
 }
 
 # -------------------------------------------------------------------------------------------------
-# is there any error ?
-#  exit code may be seen as an error counter as it is incremented by Message::msgErr()
-sub errs {
-	return $TTPVars->{run}{exitCode};
-}
-
-# -------------------------------------------------------------------------------------------------
 # recursively interpret the provided data for variables and computings
 #  and restart until all references have been replaced
 sub evaluate {
@@ -485,7 +478,7 @@ sub getDefinedHosts {
 	my @hosts = ();
 	my $dir = Mods::Path::hostsConfigurationsDir();
 	opendir my $dh, $dir or msgErr( "cannot open '$dir' directory: $!" );
-	if( !errs()){
+	if( !ttpErrs()){
 		my @entries = readdir $dh;
 		closedir $dh;
 		foreach my $entry ( @entries ){
@@ -1070,16 +1063,10 @@ sub stackTrace {
 }
 
 # -------------------------------------------------------------------------------------------------
-# exit the command
-# Return code is optional, defaulting to TTPVars->{run}{exitCode}
-sub ttpExit {
-	my $rc = shift || $TTPVars->{run}{exitCode};
-	if( $rc ){
-		msgErr( "exiting with code $rc" );
-	} else {
-		msgVerbose( "exiting with code $rc" );
-	}
-	exit $rc;
+# is there any error ?
+#  exit code may be seen as an error counter as it is incremented by Message::msgErr()
+sub ttpErrs {
+	return $TTPVars->{run}{exitCode};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -1104,6 +1091,19 @@ sub ttpEvaluate {
 	}
 	# and reevaluates the logs too
 	$TTPVars->{run}{logsMain} = File::Spec->catdir( Mods::Path::logsDailyDir(), 'main.log' );
+}
+
+# -------------------------------------------------------------------------------------------------
+# exit the command
+# Return code is optional, defaulting to TTPVars->{run}{exitCode}
+sub ttpExit {
+	my $rc = shift || $TTPVars->{run}{exitCode};
+	if( $rc ){
+		msgErr( "exiting with code $rc" );
+	} else {
+		msgVerbose( "exiting with code $rc" );
+	}
+	exit $rc;
 }
 
 # -------------------------------------------------------------------------------------------------

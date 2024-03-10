@@ -75,12 +75,12 @@ if( !GetOptions(
 	"listtables!"		=> \$opt_listtables )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -97,9 +97,9 @@ Mods::Dbms::checkInstanceOpt( $opt_instance );
 # check that the database exists if it is specified
 Mods::Dbms::checkDatabaseExists( $opt_instance, $opt_database ) if $opt_instance && $opt_database;
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	listDatabases() if $opt_listdb;
 	listTables() if $opt_database && $opt_listtables;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();

@@ -27,7 +27,6 @@ use Data::Dumper;
 use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
 use Mods::Services;
-use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -285,12 +284,12 @@ if( !GetOptions(
 	"machines!"			=> \$opt_machines )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		ttpExit( 1 );
 }
 
 if( Mods::Toops::wantsHelp()){
 	Mods::Toops::helpVerb( $defaults );
-	Mods::Toops::ttpExit();
+	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -316,7 +315,7 @@ if( $opt_machines && !$opt_service ){
 	msgErr( "request a machines list without having specified a service" );
 }
 
-if( !Mods::Toops::errs()){
+if( !ttpErrs()){
 	listDbms() if $opt_dbms;
 	listEnvironment() if $opt_environment;
 	listMachines() if $opt_machines && $opt_service;
@@ -328,4 +327,4 @@ if( !Mods::Toops::errs()){
 	listWorkloadCommands() if $opt_workload && $opt_commands;
 }
 
-Mods::Toops::ttpExit();
+ttpExit();
