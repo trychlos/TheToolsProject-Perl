@@ -59,12 +59,6 @@
 				"command": "smtp.pl send -to forwarder@trychlos.org -subject \"SMSTO: +33607797792\" <OPTIONS>"
 			}
 		},
-		"DBMS": {
-			"backupsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'byDaySQLBackups' )]",
-			"backupsDir": "[eval:File::Spec->catdir( Mods::Toops::var([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), Mods::Toops::_hostname() )]",
-			"archivesRoot": "",
-			"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]"
-		},
 		"copyDir_comments": [
 			"manage macros: SOURCE, TARGET"
 		],
@@ -85,7 +79,13 @@
 				}
 			}
 		},
-		"credentialsDir": "[eval:$ENV{TTP_CONFDIR}]\\credentials",
+		"credentialsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}], 'credentials' )]",
+		"DBMS": {
+			"backupsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'byDaySQLBackups' )]",
+			"backupsDir": "[eval:File::Spec->catdir( Mods::Toops::var([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), Mods::Toops::_hostname() )]",
+			"archivesRoot": "",
+			"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]"
+		},
 		"deployments": {
 			"sourceDirs": [
 				"[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'SiteResources' )]",
