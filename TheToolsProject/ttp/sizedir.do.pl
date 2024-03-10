@@ -6,7 +6,8 @@
 # @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --dirpath=s             the source path [${dirpath}]
 # @(-) --dircmd=s              the command which will give the source path [${dircmd}]
-# @(-) --[no]telemetry         whether to publish the result as a telemetry [${telemetry}]
+# @(-) --[no]mqtt              publish the result as a MQTT payload [${mqtt}]
+# @(-) --[no]http              publish the result as a HTTP telemetry [${http}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -27,12 +28,14 @@ my $defaults = {
 	dummy => 'no',
 	dirpath => '',
 	dircmd => '',
-	telemetry => 'no'
+	mqtt => 'no',
+	http => 'no'
 };
 
 my $opt_dirpath = $defaults->{dirpath};
 my $opt_dircmd = $defaults->{dircmd};
-my $opt_telemetry = false;
+my $opt_mqtt = false;
+my $opt_http = false;
 
 # global variables here
 my $dirCount = 0;
@@ -56,19 +59,22 @@ sub compute {
 sub doComputeSize {
 	Mods::Message::msgOut( "computing the '$opt_dirpath' content size" );
 	find ( \&compute, $opt_dirpath );
-	Mods::Message::msgOut( "  $dirCount directory(ies), $fileCount file(s)" );
-	Mods::Message::msgOut( "  total size: $totalSize byte(s)" );
+	Mods::Message::msgOut( "  directories: $dirCount" );
+	Mods::Message::msgOut( "  files: $fileCount" );
+	Mods::Message::msgOut( "  size: $totalSize" );
 	my $code = 0;
-	if( $opt_telemetry ){
+	if( $opt_mqtt || $opt_http ){
 		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
 		my $path = $opt_dirpath;
 		$path =~ s/[:\/\\]+/_/g;
-		print `telemetry.pl publish -metric dirs_count -value $dirCount -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose`;
+		my $withMqtt = $opt_mqtt ? "-mqtt" : "-nomqtt";
+		my $withHttp = $opt_http ? "-http" : "-nohttp";
+		print `telemetry.pl publish -metric dirs_count -value $dirCount -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose $withMqtt $withHttp`;
 		$code += $?;
-		print `telemetry.pl publish -metric files_count -value $fileCount -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose`;
+		print `telemetry.pl publish -metric files_count -value $fileCount -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose $withMqtt $withHttp`;
 		$code += $?;
-		print `telemetry.pl publish -metric content_size -value $totalSize -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose`;
+		print `telemetry.pl publish -metric content_size -value $totalSize -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose $withMqtt $withHttp`;
 		$code += $?;
 	}
 	if( $code ){
@@ -89,7 +95,8 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"dirpath=s"			=> \$opt_dirpath,
 	"dircmd=s"			=> \$opt_dircmd,
-	"telemetry!"		=> \$opt_telemetry )){
+	"mqtt!"				=> \$opt_mqtt,
+	"http!"				=> \$opt_http )){
 
 		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -105,7 +112,8 @@ Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true'
 Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 Mods::Message::msgVerbose( "found dirpath='$opt_dirpath'" );
 Mods::Message::msgVerbose( "found dircmd='$opt_dircmd'" );
-Mods::Message::msgVerbose( "found telemetry='".( $opt_telemetry ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+Mods::Message::msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 
 # dircmd and dirpath options are not compatible
 my $count = 0;
