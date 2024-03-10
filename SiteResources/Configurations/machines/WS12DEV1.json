@@ -120,10 +120,9 @@
 				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL11.DEV\\MSSQL\\DATA"
 			}
 		},
-		"dbms": {
-			"archivesRoot": "\\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\[eval:Mods::Toops::_hostname()]\\SQLBackups"
+		"DBMS": {
+			"archivesRoot": "[_eval:File::Spec->catpath( '\\\\\\ftpback-rbx7-618.ovh.net\\\\', File::Spec->catdir( 'ns3153065.ip-51-91-25.eu', Mods::Toops::_hostname(), 'SQLBackups' ))]"
 		},
-		"remoteShare": "\\\\10.122.1.14\\C",
 		"Environment": {
 			"type_comments": [],
 			"type": "D",
@@ -131,6 +130,7 @@
 				"ovh": "ns3153065.ip-51-91-25.eu",
 				"inlingua": "inlingua-rl9-1"
 			}
-		}
+		},
+		"remoteShare": "\\\\10.122.1.14\\C"
 	}
 }

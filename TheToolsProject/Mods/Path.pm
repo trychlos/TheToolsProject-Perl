@@ -87,7 +87,7 @@ sub daemonsConfigurationsDir {
 # the current DBMS archives directory, making sure the dir exists
 # the dir can be defined in toops.json, or overriden in host configuration
 sub dbmsArchivesDir {
-	my $dir = Mods::Toops::var([ 'dbms', 'archivesDir' ]);
+	my $dir = Mods::Toops::var([ 'DBMS', 'archivesDir' ]);
 	if( defined $dir && length $dir ){
 		# happens that \\ftpback-xx OVH backup storage spaces are sometimes unavailable during the day
 		# at least do not try to test them each time we need this address
@@ -103,7 +103,7 @@ sub dbmsArchivesDir {
 # the current DBMS archives root tree, making sure the dir exists
 # the dir can be defined in toops.json, or overriden in host configuration
 sub dbmsArchivesRoot {
-	my $dir = Mods::Toops::var([ 'dbms', 'archivesRoot' ]);
+	my $dir = Mods::Toops::var([ 'DBMS', 'archivesRoot' ]);
 	if( defined $dir && length $dir ){
 		# happens that \\ftpback-xx OVH backup storage spaces are sometimes unavailable during the day
 		# at least do not try to test them each time we need this address
@@ -124,7 +124,7 @@ sub dbmsArchivesRoot {
 sub dbmsBackupsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = Mods::Toops::var( [ 'dbms', 'backupsDir' ], $opts );
+	my $dir = Mods::Toops::var( [ 'DBMS', 'backupsDir' ], $opts );
 	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {
@@ -138,7 +138,7 @@ sub dbmsBackupsDir {
 # the root the the DBMS backups directories, making sure the dir exists
 # the root can be defined in toops.json, or overriden in host configuration
 sub dbmsBackupsRoot {
-	my $dir = Mods::Toops::var([ 'dbms', 'backupsRoot' ]);
+	my $dir = Mods::Toops::var([ 'DBMS', 'backupsRoot' ]);
 	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {

@@ -129,10 +129,9 @@
 				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL10_50.MSSQLSERVER\\MSSQL\\DATA"
 			}
 		},
-		"dbms": {
-			"archivesRoot": "\\\\ftpback-rbx4-48.ovh.net\\ns230134.ovh.net\\[eval:Mods::Toops::_hostname()]\\SQLBackups"
+		"DBMS": {
+			"archivesRoot": "[_eval:File::Spec->catpath( '\\\\\\ftpback-rbx7-618.ovh.net\\\\', File::Spec->catdir( 'ns3153065.ip-51-91-25.eu', Mods::Toops::_hostname(), 'SQLBackups' ))]"
 		},
-		"remoteShare": "\\\\ns230134.ovh.net\\C",
 		"Environment": {
 			"type_comments": [
 				"X is production; this same indicator must be used both for production live and for production backup",
@@ -142,6 +141,7 @@
 			"physical": {
 				"ovh": "ns230134.ovh.net"
 			}
-		}
+		},
+		"remoteShare": "\\\\ns230134.ovh.net\\C"
 	}
 }
