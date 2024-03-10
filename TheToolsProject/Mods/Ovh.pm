@@ -23,6 +23,7 @@ use Mods::Toops;
 sub connect {
 
 	my $credentials = File::Spec->catdir( Mods::Path::credentialsDir(), "ovh.ini" );
+	msgVerbose( "Ovh::connect() credentials='$credentials'" );
 
 	my $api = Mods::OvhApi->new(
 		timeout => 10,
