@@ -27,11 +27,22 @@
 						{
 							"label": "Advertize at startup",
 							"commands": [
-								"call C:\\INLINGUA\\SiteResources\\Commands\\startup.cmd"
+								"call [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'startup.cmd' )]"
 							]
 						}
 					]
 				}
+			}
+		},
+		"Environment": {
+			"type_comments": [
+				"X is production; this same indicator must be used both for production live and for production backup",
+				"D is for development"
+			],
+			"type": "D",
+			"physical": {
+				"ovh": "ns3153065.ip-51-91-25.eu",
+				"inlingua": "inlingua-rl9-1"
 			}
 		},
 		"remoteShare": "\\\\10.122.1.12\\C"

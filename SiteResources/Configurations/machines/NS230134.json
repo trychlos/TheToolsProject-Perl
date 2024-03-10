@@ -39,15 +39,15 @@
 						{
 							"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 							"commands": [
-								"daemon.pl stop -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\canal33-backup-monitor-daemon.json -ignore -wait 2",
-								"daemon.pl start -nocolored -json [eval:$TTPVars->{config}{site}{daemonsDir}]\\canal33-backup-monitor-daemon.json -- -remote WS12PROD1"
+								"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'canal33-backup-monitor-daemon.json' )] -ignore -wait 2",
+								"daemon.pl start -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'canal33-backup-monitor-daemon.json' )] -- -remote WS12PROD1"
 							]
 						}
 					]
 				},
 				"status": {
 					"commands": [
-						"dbms.pl status -service <SERVICE> -state"
+						"dbms.pl status -service <SERVICE> -state -mqtt -http"
 					]
 				},
 				"ovh": {
@@ -114,7 +114,7 @@
 						{
 							"label": "Advertize at startup",
 							"commands": [
-								"call C:\\INLINGUA\\SiteResources\\Commands\\startup.cmd"
+								"call [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'startup.cmd' )]"
 							]
 						}
 					]
@@ -129,10 +129,9 @@
 				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL10_50.MSSQLSERVER\\MSSQL\\DATA"
 			}
 		},
-		"dbms": {
-			"archivesRoot": "\\\\ftpback-rbx4-48.ovh.net\\ns230134.ovh.net\\[eval:Mods::Toops::_hostname()]\\SQLBackups"
+		"DBMS": {
+			"archivesRoot": "[_eval:File::Spec->catpath( '\\\\\\ftpback-rbx7-618.ovh.net\\\\', File::Spec->catdir( 'ns3153065.ip-51-91-25.eu', Mods::Toops::_hostname(), 'SQLBackups' ))]"
 		},
-		"remoteShare": "\\\\ns230134.ovh.net\\C",
 		"Environment": {
 			"type_comments": [
 				"X is production; this same indicator must be used both for production live and for production backup",
@@ -142,6 +141,7 @@
 			"physical": {
 				"ovh": "ns230134.ovh.net"
 			}
-		}
+		},
+		"remoteShare": "\\\\ns230134.ovh.net\\C"
 	}
 }

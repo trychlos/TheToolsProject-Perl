@@ -5,8 +5,8 @@
 	],
 	"site": {
 		"rootDir": "C:\\INLINGUA",
-		"commandsDir": "[eval:$TTPVars->{config}{site}{rootDir}]\\SiteResources\\Commands",
-		"daemonsDir": "[eval:$ENV{TTP_CONFDIR}]\\daemons",
+		"commandsDir": "[eval:File::Spec->catdir( $TTPVars->{config}{site}{rootDir}, 'SiteResources', 'Commands' )]",
+		"daemonsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'daemons' )]",
 		"workloadSummary_comments": [
 			"manage macros: SUBJECT, OPTIONS"
 		],
@@ -36,7 +36,7 @@
 			"withFile": {
 				"enabled": true,
 				"dropDir": "[eval:Mods::Path::logsRootDir({ makeDirExist => false })]\\[eval:localtime->strftime( '%y%m%d' )]\\Alerts",
-				"command": "ttp.pl writejson -file [eval:Mods::Path::alertsDir({ makeDirExist => false })]\\[eval:Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' )].json -data \"<DATA>\""
+				"command": "ttp.pl writejson -file [eval:File::Spec->catdir( Mods::Path::alertsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'.json' )] -data \"<DATA>\""
 			},
 			"withMqtt_comments": [
 				"manage macros: SUBJECT, DATA, OPTIONS"
@@ -59,6 +59,12 @@
 				"enabled": true,
 				"command": "smtp.pl send -to forwarder@trychlos.org -subject \"SMSTO: +33607797792\" <OPTIONS>"
 			}
+		},
+		"DBMS": {
+			"backupsRoot": "[eval:File::Spec->catdir( $TTPVars->{config}{site}{rootDir}, 'byDaySQLBackups' )]",
+			"backupsDir": "[eval:File::Spec->catdir( Mods::Toops::var([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), Mods::Toops::_hostname() )]",
+			"archivesRoot": "",
+			"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]"
 		},
 		"copyDir_comments": [
 			"manage macros: SOURCE, TARGET"
@@ -83,8 +89,8 @@
 		"credentialsDir": "[eval:$ENV{TTP_CONFDIR}]\\credentials",
 		"deployments": {
 			"sourceDirs": [
-				"[eval:$TTPVars->{config}{site}{rootDir}]\\SiteResources",
-				"[eval:$TTPVars->{config}{site}{rootDir}]\\TheToolsProject"
+				"[eval:File::Spec->catdir( $TTPVars->{config}{site}{rootDir}, 'SiteResources' )]",
+				"[eval:File::Spec->catdir( $TTPVars->{config}{site}{rootDir}, 'TheToolsProject' )]"
 			],
 			"excludes": [
 			],
@@ -106,8 +112,8 @@
 			],
 			"withFile": {
 				"enabled": true,
-				"dropDir": "[eval:Mods::Path::logsRootDir({ makeDirExist => false })]\\[eval:localtime->strftime( '%y%m%d' )]\\execReports",
-				"command": "ttp.pl writejson -file [eval:Mods::Path::execReportsDir({ makeDirExist => false })]\\[eval:Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' )].json -data \"<DATA>\""
+				"dropDir": "[eval:File::Spec->catdir( Mods::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'execReports' )]",
+				"command": "ttp.pl writejson -file [eval:File::Spec->catdir( Mods::Path::execReportsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'.json' )] -data \"<DATA>\""
 			},
 			"withMqtt_comments": [
 				"manage macros: SUBJECT, DATA, OPTIONS"
@@ -117,8 +123,8 @@
 				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
 			}
 		},
-		"logsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDayLogs",
-		"logsDir": "[eval:Mods::Path::logsRootDir({ makeDirExist => false })]\\[eval:localtime->strftime( '%y%m%d' )]\\Toops",
+		"logsRoot": "[eval:File::Spec->catdir( $TTPVars->{config}{site}{rootDir}, 'byDayLogs' )]",
+		"logsDir": "[eval:File::Spec->catdir( Mods::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Toops' )]",
 		"Message": {
 			"msgDummy": {
 				"withColor": true,
@@ -171,13 +177,6 @@
 				"enabled": true,
 				"url": "http://10.122.1.15:9091/metrics/job/telemetry/host/[eval:Mods::Toops::_hostname()]"
 			}
-		},
-
-		"dbms": {
-			"backupsRoot": "[eval:$TTPVars->{config}{site}{rootDir}]\\byDaySQLBackups",
-			"backupsDir": "[eval:$TTPVars->{config}{toops}{dbms}{backupsRoot}]\\[eval:localtime->strftime( '%y%m%d' )]\\[eval:Mods::Toops::_hostname()]",
-			"archivesRoot": "",
-			"archivesDir": "[eval:Mods::Path::dbmsArchivesRoot()]\\[eval:localtime->strftime( '%y%m%d' )]"
 		}
 	}
 }

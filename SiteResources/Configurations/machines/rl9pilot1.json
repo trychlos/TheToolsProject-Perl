@@ -45,18 +45,6 @@
 				}
 			}
 		},
-		"DBMSInstancesComments": [
-			"These are informations needed to automatize some DBMS-related workloads.",
-			"Be conscious that these informations are NOT thought to represent the *running* DBMS, but only those with which we may have something to do...",
-			"Each defined instance is associated with an object whose top key is the instance name. Object values may have the following keys:",
-			"- package: the Perl package to be dynamically loaded when addressing this instance",
-			"- accounts: a hash of accounts where account name is the key, and password the value",
-			"- dataPath: the full directory pathname of the database files",
-			"- ...",
-			""
-		],
-		"DBMSInstances": {
-		},
 		"Environment": {
 			"type_comments": [],
 			"type": "X",

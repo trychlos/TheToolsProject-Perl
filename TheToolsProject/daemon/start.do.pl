@@ -76,6 +76,8 @@ Mods::Message::msgVerbose( "found json='$opt_json'" );
 
 # the json is mandatory
 $daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
+Mods::Message::msgLog([ "got daemonConfig:", Dumper( $daemonConfig )]);
+
 # must have a listening port
 Mods::Message::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
 # must have something to run

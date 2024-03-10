@@ -231,9 +231,11 @@ sub evaluate {
 	my ( $value ) = @_;
 	my %prev = ();
 	my $result = _evaluateRec( $value );
-	while( !eq_deeply( $result, \%prev )){
-		%prev = %{$result};
-		$result = _evaluateRec( $result );
+	if( $result ){
+		while( !eq_deeply( $result, \%prev )){
+			%prev = %{$result};
+			$result = _evaluateRec( $result );
+		}
 	}
 	return $result;
 }

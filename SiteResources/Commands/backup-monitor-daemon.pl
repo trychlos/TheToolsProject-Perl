@@ -431,17 +431,22 @@ if( !Mods::Toops::errs()){
 	$daemon->{monitored}{host} = $opt_remote;
 	$daemon->{monitored}{raw} = Mods::Toops::getHostConfig( $daemon->{monitored}{host}, { withEvaluate => false });
 	$daemon->{monitored}{config} = Mods::Toops::evaluate( $daemon->{monitored}{raw} );
-	# daemon: monitoredService
-	# set TTPVars->{run}{verb}{name} to improve logs
-	if( exists( $daemon->{config}{monitoredService} )){
-		if( exists( $daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}} )){
-			Mods::Message::msgVerbose( "monitored service '$daemon->{config}{monitoredService}' successfully found in remote host '$daemon->{monitored}{host}' configuration file" );
-			$TTPVars->{run}{verb}{name} = $daemon->{config}{monitoredService};
+}
+# stop here if we do not have any configuration for the remote host 
+if( !Mods::Toops::errs()){
+	if( $daemon->{monitored}{config} && ref( $daemon->{monitored}{config} ) eq 'HASH' ){
+		# daemon: monitoredService
+		# set TTPVars->{run}{verb}{name} to improve logs
+		if( exists( $daemon->{config}{monitoredService} )){
+			if( exists( $daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}} )){
+				Mods::Message::msgVerbose( "monitored service '$daemon->{config}{monitoredService}' successfully found in remote host '$daemon->{monitored}{host}' configuration file" );
+				$TTPVars->{run}{verb}{name} = $daemon->{config}{monitoredService};
+			} else {
+				Mods::Message::msgErr( "monitored service '$daemon->{config}{monitoredService}' doesn't exist in remote host '$daemon->{monitored}{host}' configuration file" );
+			}
 		} else {
-			Mods::Message::msgErr( "monitored service '$daemon->{config}{monitoredService}' doesn't exist in remote host '$daemon->{monitored}{host}' configuration file" );
+			Mods::Message::msgErr( "'monitoredService' must be specified in daemon configuration, not found" );
 		}
-	} else {
-		Mods::Message::msgErr( "'monitoredService' must be specified in daemon configuration, not found" );
 	}
 	# daemon: localDir
 	if( exists( $daemon->{config}{localDir} )){

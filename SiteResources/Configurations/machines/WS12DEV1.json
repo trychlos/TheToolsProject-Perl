@@ -80,7 +80,7 @@
 						{
 							"label": "Advertize at startup",
 							"commands": [
-								"call C:\\INLINGUA\\SiteResources\\Commands\\startup.cmd"
+								"call [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'startup.cmd' )]"
 							]
 						}
 					],
@@ -89,15 +89,10 @@
 							"label": "test workload",
 							"commands_x": [
 								"dbms.pl backup -nocolored -instance DEV -database Dom1 -diff",
-								"ttp.pl list -nocolored -services",
-								"mkdir \\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\TEST",
-								"robocopy \"C:\\INLINGUA - Copy\" \\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\TEST /E",
-								"robocopy \"C:\\INLINGUA - Copy\" \\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\TEST2 /E /V /TS /FP /NP",
-								"ttp.pl list -nocolored -commands",
 								"ttp.pl list -nocolored -services"
 							],
 							"commands": [
-								"daemon.pl start -nocolored -json [eval:$ENV{TTP_CONFDIR}\\daemons\\tom59-backup-monitor-daemon.json -- -remote NS3232346"
+								"daemon.pl start -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -- -remote NS3232346"
 							]
 						}
 					]
@@ -120,10 +115,9 @@
 				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL11.DEV\\MSSQL\\DATA"
 			}
 		},
-		"dbms": {
-			"archivesRoot": "\\\\ftpback-rbx7-618.ovh.net\\ns3153065.ip-51-91-25.eu\\[eval:Mods::Toops::_hostname()]\\SQLBackups"
+		"DBMS": {
+			"archivesRoot": "[_eval:File::Spec->catpath( '\\\\\\ftpback-rbx7-618.ovh.net\\\\', File::Spec->catdir( 'ns3153065.ip-51-91-25.eu', Mods::Toops::_hostname(), 'SQLBackups' ))]"
 		},
-		"remoteShare": "\\\\10.122.1.14\\C",
 		"Environment": {
 			"type_comments": [],
 			"type": "D",
@@ -131,6 +125,7 @@
 				"ovh": "ns3153065.ip-51-91-25.eu",
 				"inlingua": "inlingua-rl9-1"
 			}
-		}
+		},
+		"remoteShare": "\\\\10.122.1.14\\C"
 	}
 }
