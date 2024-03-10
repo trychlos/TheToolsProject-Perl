@@ -431,6 +431,9 @@ if( !Mods::Toops::errs()){
 	$daemon->{monitored}{host} = $opt_remote;
 	$daemon->{monitored}{raw} = Mods::Toops::getHostConfig( $daemon->{monitored}{host}, { withEvaluate => false });
 	$daemon->{monitored}{config} = Mods::Toops::evaluate( $daemon->{monitored}{raw} );
+}
+# stop here if we do not have any configuration for the remote host 
+if( !Mods::Toops::errs()){
 	if( $daemon->{monitored}{config} && ref( $daemon->{monitored}{config} ) eq 'HASH' ){
 		# daemon: monitoredService
 		# set TTPVars->{run}{verb}{name} to improve logs
