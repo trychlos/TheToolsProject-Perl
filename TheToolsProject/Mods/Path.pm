@@ -348,6 +348,11 @@ sub siteConfigurationsDir {
 }
 
 # ------------------------------------------------------------------------------------------------
+sub siteRoot {
+	return Mods::Toops::var( 'siteRoot' );
+}
+
+# ------------------------------------------------------------------------------------------------
 sub toopsConfigurationPath {
 	return File::Spec->catdir( siteConfigurationsDir(), "toops.json" );
 }

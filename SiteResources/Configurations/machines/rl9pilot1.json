@@ -52,6 +52,7 @@
 				"ovh": "ns3153065.ip-51-91-25.eu",
 				"inlingua": "inlingua-rl9-1"
 			}
-		}
+		},
+		"logsRoot": "[eval:File::Spec->catdir( 'tmp', 'Inlingua', 'byDayLogs' )]"
 	}
 }

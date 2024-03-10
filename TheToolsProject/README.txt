@@ -39,11 +39,10 @@ TTPVars:
 			site
 			host
 	config						dynamically re-evaluated toops.json content
-		toops					
+		toops
+			siteRoot
 			logsDir
 			...
-		site
-			rootDir
 		host					dynamically re-evaluated host configuration
 			name
 			Services

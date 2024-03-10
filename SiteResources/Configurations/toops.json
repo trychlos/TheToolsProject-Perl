@@ -4,8 +4,7 @@
 		"These variables are free to the site integrator and NOT considered by TheToolsProject, though they can be used in below Toops JSON dynamic evaluations."
 	],
 	"site": {
-		"rootDir": "C:\\INLINGUA",
-		"commandsDir": "[eval:File::Spec->catdir( $TTPVars->{config}{site}{rootDir}, 'SiteResources', 'Commands' )]",
+		"commandsDir": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'SiteResources', 'Commands' )]",
 		"daemonsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'daemons' )]",
 		"workloadSummary_comments": [
 			"manage macros: SUBJECT, OPTIONS"
@@ -61,7 +60,7 @@
 			}
 		},
 		"DBMS": {
-			"backupsRoot": "[eval:File::Spec->catdir( $TTPVars->{config}{site}{rootDir}, 'byDaySQLBackups' )]",
+			"backupsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'byDaySQLBackups' )]",
 			"backupsDir": "[eval:File::Spec->catdir( Mods::Toops::var([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), Mods::Toops::_hostname() )]",
 			"archivesRoot": "",
 			"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]"
@@ -89,8 +88,8 @@
 		"credentialsDir": "[eval:$ENV{TTP_CONFDIR}]\\credentials",
 		"deployments": {
 			"sourceDirs": [
-				"[eval:File::Spec->catdir( $TTPVars->{config}{site}{rootDir}, 'SiteResources' )]",
-				"[eval:File::Spec->catdir( $TTPVars->{config}{site}{rootDir}, 'TheToolsProject' )]"
+				"[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'SiteResources' )]",
+				"[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'TheToolsProject' )]"
 			],
 			"excludes": [
 			],
@@ -123,7 +122,7 @@
 				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
 			}
 		},
-		"logsRoot": "[eval:File::Spec->catdir( $TTPVars->{config}{site}{rootDir}, 'byDayLogs' )]",
+		"logsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'byDayLogs' )]",
 		"logsDir": "[eval:File::Spec->catdir( Mods::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Toops' )]",
 		"Message": {
 			"msgDummy": {
@@ -160,6 +159,7 @@
 		"MQTTGateway": {
 			"broker": "10.122.1.15"
 		},
+		"siteRoot": "C:\\INLINGUA",
 		"SMTPGateway": {
 			"host": "mail.trychlos.org",
 			"port": 465,

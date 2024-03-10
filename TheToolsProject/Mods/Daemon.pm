@@ -9,7 +9,6 @@
 #
 # JSON configuration:
 #
-# - workDir: the daemon working directory, defaulting to site.rootDir
 # - execPath: the full path to the program to be executed as the main code of the daemon
 #
 # Also the daemon writer mmust be conscious of the dynamic character of TheToolsProject.

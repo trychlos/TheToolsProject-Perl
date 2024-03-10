@@ -52,7 +52,7 @@ sub listLogsroot {
 # -------------------------------------------------------------------------------------------------
 # list siteRoot value - e.g. 'C:\INLINGUA'
 sub listSiteroot {
-	my $str = "siteRoot: $TTPVars->{config}{site}{rootDir}";
+	my $str = "siteRoot: ".Mods::Path::siteRoot();
 	Mods::Message::msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
