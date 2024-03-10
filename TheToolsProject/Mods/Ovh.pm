@@ -79,6 +79,8 @@ sub getContentByPath {
 	my $answer = getAnswerByPath( $api, $path, $opts );
 	if( $answer->isSuccess()){
 		$res = $answer->content();
+	} else {
+		msgLog( Dumper( $answer ));
 	}
 
 	return $res;
