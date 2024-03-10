@@ -49,7 +49,7 @@ my $opt_timeout = $defaults->{timeout};
 # display the server the service IP is attached to
 # the service must be configured with a 'ovh' entry with 'ip' and 'server' OVH service names
 sub doSwitchIP {
-	msgOut( "switching '$opt_ip' service to '$opt_to' server..." );
+	msgOut( "switching '$opt_ip' service to '$opt_to' host..." );
 	my $res = false;
 	my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
 	my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
