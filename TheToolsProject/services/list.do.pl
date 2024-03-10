@@ -17,6 +17,15 @@
 # @(-) --type=<name>           request a specified environment [${type}]
 # @(-) --[no]machines          display the machines which provide this service, maybe for a given environment [${machines}]
 #
+# @(@) Usage:
+# @(@)   services.pl list -dbms                                     list DBMS instances defined on the current machine
+# @(@)   services.pl list -services [-hidden]                       list services defined on the current machine, plus maybe the hidden ones
+# @(@)   services.pl list -service <name> -instance [-databases]    list the DBMS instance(s) defined for the named service, plus maybe the defined databases
+# @(@)   services.pl list -service <name> -machines [-type <env>]   list the machines where the named service is defined, maybe for the typed environment
+# @(@)   services.pl list -workloads [-hidden]                      list workloads defined on the current machine, plus maybe the hidden ones
+# @(@)   services.pl list -workload <name> -commands [-hidden]      list the commands attached to the named workload, plus maybe the hidden ones
+# @(@)   services.pl list -environment                              list the environnement of the current machine
+#
 # @(@) Displayed lists are sorted in ASCII order, i.e. in [0-9A-Za-z] order.
 #
 # Copyright (@) 2023-2024 PWI Consulting
