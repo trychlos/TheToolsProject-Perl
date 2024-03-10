@@ -15,7 +15,7 @@
 								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -nocolored -backupsDir\" -targetcmd \"dbms.pl vars -nocolored -archivesDir\" -dirs",
 								"dbms.pl telemetry -nocolored -service Canal33 -dbsize",
 								"dbms.pl telemetry -nocolored -service Canal33 -tabcount",
-								"ttp.pl sizedir -nocolored -dirpath C:\\Users\\Public\\CANAL33_LOGS -telemetry"
+								"ttp.pl sizedir -nocolored -dirpath C:\\Users\\Public\\CANAL33_LOGS -mqtt -http"
 							]
 						}
 					],
