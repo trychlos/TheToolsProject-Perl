@@ -17,7 +17,7 @@ use Data::Dumper;
 use File::Spec;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Path;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -47,39 +47,39 @@ my $opt_keep = $defaults->{keep};
 # - ignore dot files and dot dirs
 # - ignore files, only considering dirs
 sub doMoveDirs {
-	Mods::Message::msgOut( "moving from '$opt_sourcepath' to '$opt_targetpath', keeping '$opt_keep' item(s)" );
+	msgOut( "moving from '$opt_sourcepath' to '$opt_targetpath', keeping '$opt_keep' item(s)" );
 	my $count = 0;
-	opendir( FD, "$opt_sourcepath" ) || Mods::Message::msgErr( "unable to open directory $opt_sourcepath: $!" );
+	opendir( FD, "$opt_sourcepath" ) || msgErr( "unable to open directory $opt_sourcepath: $!" );
 	if( !Mods::Toops::errs()){
 		my @list = ();
 		while ( my $it = readdir( FD )){
 			my $path = _sourcePath( $it );
 			if( $it =~ /^\./ ){
-				Mods::Message::msgVerbose( "ignoring '$path'" );
+				msgVerbose( "ignoring '$path'" );
 				next;
 			}
 			if( $opt_dirs && -d "$path" ){
 				push( @list, "$it" );
 				next;
 			}
-			Mods::Message::msgVerbose( "ignoring '$path'" );
+			msgVerbose( "ignoring '$path'" );
 		}
 		closedir( FD );
 		# sort in inverse order: most recent first
 		@list = sort { $b cmp $a } @list;
-		Mods::Message::msgVerbose( "got ".scalar @list." item(s) in $opt_sourcepath" );
+		msgVerbose( "got ".scalar @list." item(s) in $opt_sourcepath" );
 		# build the lists to be kept and moved
 		my @keep = ();
 		if( $opt_keep >= scalar @list ){
-			Mods::Message::msgOut( "found ".scalar @list." item(s) in '$opt_sourcepath' while wanting keep $opt_keep: nothing to do" );
+			msgOut( "found ".scalar @list." item(s) in '$opt_sourcepath' while wanting keep $opt_keep: nothing to do" );
 			@keep = @list;
 			@list = ();
 		} elsif( !$opt_keep ){
-				Mods::Message::msgVerbose( "keep='$opt_keep': doesn't keep anything in the source" );
+				msgVerbose( "keep='$opt_keep': doesn't keep anything in the source" );
 		} else {
 			for( my $i=0 ; $i<$opt_keep ; ++$i ){
 				my $it = shift( @list );
-				Mods::Message::msgVerbose( "keeping "._sourcePath( $it ));
+				msgVerbose( "keeping "._sourcePath( $it ));
 				push( @keep, $it );
 			}
 		}
@@ -88,16 +88,16 @@ sub doMoveDirs {
 		foreach my $it ( @list ){
 			my $source = _sourcePath( $it );
 			my $target = _targetPath( $it );
-			Mods::Message::msgOut( " moving '$source' to '$target'" );
+			msgOut( " moving '$source' to '$target'" );
 			my $res = Mods::Toops::moveDir( $source, $target );
 			if( $res ){
 				$count += 1;
 			} else {
-				Mods::Message::msgErr( "error detected" );
+				msgErr( "error detected" );
 			}
 		}
 	}
-	Mods::Message::msgOut( "$count moved directory(ies)" );
+	msgOut( "$count moved directory(ies)" );
 }
 
 sub _sourcePath {
@@ -126,7 +126,7 @@ if( !GetOptions(
 	"dirs!"				=> \$opt_dirs,
 	"keep=s"			=> \$opt_keep )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -135,27 +135,27 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found sourcepath='$opt_sourcepath'" );
-Mods::Message::msgVerbose( "found sourcecmd='$opt_sourcecmd'" );
-Mods::Message::msgVerbose( "found targetpath='$opt_targetpath'" );
-Mods::Message::msgVerbose( "found targetcmd='$opt_targetcmd'" );
-Mods::Message::msgVerbose( "found dirs='".( $opt_dirs ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found keep='$opt_keep'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found sourcepath='$opt_sourcepath'" );
+msgVerbose( "found sourcecmd='$opt_sourcecmd'" );
+msgVerbose( "found targetpath='$opt_targetpath'" );
+msgVerbose( "found targetcmd='$opt_targetcmd'" );
+msgVerbose( "found dirs='".( $opt_dirs ? 'true':'false' )."'" );
+msgVerbose( "found keep='$opt_keep'" );
 
 # sourcecmd and sourcepath options are not compatible
 my $count = 0;
 $count += 1 if $opt_sourcepath;
 $count += 1 if $opt_sourcecmd;
-Mods::Message::msgErr( "one of '--sourcepath' and '--sourcecmd' options must be specified" ) if $count != 1;
+msgErr( "one of '--sourcepath' and '--sourcecmd' options must be specified" ) if $count != 1;
 
 # targetcmd and targetpath options are not compatible
 $count = 0;
 $count += 1 if $opt_targetpath;
 $count += 1 if $opt_targetcmd;
-Mods::Message::msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if $count != 1;
+msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if $count != 1;
 
 # if we have a source cmd, get the path and check it exists
 $opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd, { mustExists => true }) if $opt_sourcecmd;
@@ -164,7 +164,7 @@ $opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd, { mustExists => true 
 $opt_targetpath = Mods::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
 
 # --dirs option must be specified at the moment
-Mods::Message::msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;
+msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;
 
 if( !Mods::Toops::errs()){
 	doMoveDirs();

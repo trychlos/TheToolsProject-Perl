@@ -13,7 +13,7 @@ use Data::Dumper;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::MQTT;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -39,7 +39,7 @@ my $count = 0;
 # -------------------------------------------------------------------------------------------------
 # get and output the retained messages
 sub doGetRetained {
-	Mods::Message::msgOut( "getting the retained messages..." );
+	msgOut( "getting the retained messages..." );
 
 	$mqtt = Mods::MQTT::connect();
 	if( $mqtt ){
@@ -57,9 +57,9 @@ sub doGetRetained {
 	Mods::MQTT::disconnect( $mqtt );
 	my $result = true;
 	if( $result ){
-		Mods::Message::msgOut( "success: $count got messages" );
+		msgOut( "success: $count got messages" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	}
 }
 
@@ -70,7 +70,7 @@ sub doWork {
 	my ( $topic, $payload, $retain ) = @_;
 	if( $retain ){
 		print "$topic $payload".EOL;
-		Mods::Message::msgLog( "$topic $payload" );
+		msgLog( "$topic $payload" );
 		$last = localtime->epoch;
 		$count += 1;
 	}
@@ -88,7 +88,7 @@ if( !GetOptions(
 	"get!"				=> \$opt_get,
 	"wait=i"			=> \$opt_wait )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -97,11 +97,11 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found get='".( $opt_get ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found wait='$opt_wait'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found get='".( $opt_get ? 'true':'false' )."'" );
+msgVerbose( "found wait='$opt_wait'" );
 
 if( !Mods::Toops::errs()){
 	doGetRetained() if $opt_get;

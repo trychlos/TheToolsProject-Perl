@@ -55,6 +55,7 @@ use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Daemon;
+use Mods::Message qw( :all );
 use Mods::Path;
 use Mods::Toops;
 
@@ -145,7 +146,7 @@ sub computeMacrosRec {
 		$result =~ s/<REMOTEHOST>/$daemon->{monitored}{host}/g;
 		$result =~ s/<REMOTESHARE>/$daemon->{monitored}{config}{remoteShare}/g;
 	}
-	#Mods::Message::msgVerbose( "var='$var' ref='$ref' result='$result'" );
+	#msgVerbose( "var='$var' ref='$ref' result='$result'" );
 	return $result;
 }
 
@@ -188,21 +189,21 @@ sub locallySyncedBackups {
 		# -> first thing: do we remember the last full ?
 		if( exists( $full->{$report->{instance}}{$report->{database}} )){
 			$result->{full} = $full->{$report->{instance}}{$report->{database}};
-			Mods::Message::msgVerbose( "found last full as remembered '$full->{$report->{instance}}{$report->{database}}'" );
+			msgVerbose( "found last full as remembered '$full->{$report->{instance}}{$report->{database}}'" );
 		} else {
 			# -> second: try to search in the localDir, hoping that the file has the old-classic name
 			my $lastfull = locallySearchLastFull( $report );
 			if( $lastfull ){
 				$full->{$report->{instance}}{$report->{database}} = $lastfull;
 				$result->{full} = $lastfull;
-				Mods::Message::msgVerbose( "found last full as local '$lastfull'" );
+				msgVerbose( "found last full as local '$lastfull'" );
 			} else {
 				# -> last chance it to scan remote execution reports
 				$lastfull = remoteSearchLastFull( $report );
 				if( $lastfull ){
 					$full->{$report->{instance}}{$report->{database}} = $lastfull;
 					$result->{full} = $lastfull;
-					Mods::Message::msgVerbose( "found remote last full, transferred to '$lastfull'" );
+					msgVerbose( "found remote last full, transferred to '$lastfull'" );
 				}
 			}
 		}
@@ -223,7 +224,7 @@ sub locallySearchLastFull {
 	# hardcoding the expected format file name as host-instance-database ... -mode.backup
 	# this should be enough in most situations
 	my $dir = $daemon->{config}{localDir};
-	Mods::Message::msgVerbose( "searching for full backup in '$dir'" );
+	msgVerbose( "searching for full backup in '$dir'" );
 	$_localdata = {};
 	$_localdata->{host} = $report->{host};
 	$_localdata->{instance} = $report->{instance};
@@ -274,22 +275,22 @@ sub remoteSearchLastFull_wanted {
 # - returns the local path, or undef in case of an error
 sub syncedPath {
 	my ( $localSource ) = @_;
-	Mods::Message::msgVerbose( "localSource='$localSource'" );
+	msgVerbose( "localSource='$localSource'" );
 	# the output file is specified as a local filename in the remote host
 	# we need to get a the remote filename (source of the copy) and the local filename (target of the copy)
 	my( $rl_vol, $rl_dirs, $rl_file ) = File::Spec->splitpath( $localSource );
 	my $remoteSource = File::Spec->catpath( $daemon->{monitored}{config}{remoteShare}, $rl_dirs, $rl_file );
-	Mods::Message::msgVerbose( "remoteSource='$remoteSource'" );
+	msgVerbose( "remoteSource='$remoteSource'" );
 	# local target
 	my $localTarget = Mods::Path::withTrailingSeparator( $daemon->{config}{localDir} );
-	Mods::Message::msgVerbose( "localTarget='$localTarget'" );
+	msgVerbose( "localTarget='$localTarget'" );
 	Mods::Path::makeDirExist( $daemon->{config}{localDir} );
 	my $res = Mods::Toops::copyFile( $remoteSource, $localTarget );
 	if( $res ){
-		Mods::Message::msgVerbose( "successfully copied '$remoteSource' to '$localTarget'" );
+		msgVerbose( "successfully copied '$remoteSource' to '$localTarget'" );
 		$localTarget = File::Spec->catpath( $localTarget, $rl_file );
 	} else {
-		Mods::Message::msgErr( "unable to copy '$remoteSource' to '$localTarget': $!" );
+		msgErr( "unable to copy '$remoteSource' to '$localTarget': $!" );
 		$localTarget = undef;
 	}
 	return $localTarget;
@@ -304,20 +305,20 @@ sub doWithNew {
 	#print "newFiles".EOL.Dumper( @runningScan );
 	foreach my $report ( @newFiles ){
 		$stats->{count} += 1;
-		Mods::Message::msgVerbose( "new report '$report'" );
+		msgVerbose( "new report '$report'" );
 		my $data = Mods::Toops::jsonRead( $report );
 		if( exists( $data->{command} ) && $data->{command} eq "dbms.pl" && exists( $data->{verb} ) && $data->{verb} eq "backup" && ( !exists( $data->{dummy} ) || !$data->{dummy} )){
 
 			my $instance = $data->{instance};
 			if( $instance ne $daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}}{instance} ){
-				Mods::Message::msgVerbose( "instance='$instance' ignored" );
+				msgVerbose( "instance='$instance' ignored" );
 				$stats->{ignored} += 1;
 				next;
 			}
 
 			my $database = $data->{database};
 			if( !grep ( /$database/, @{$daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}}{databases}} )){
-				Mods::Message::msgVerbose( "database='$database' ignored" );
+				msgVerbose( "database='$database' ignored" );
 				$stats->{ignored} += 1;
 				next;
 			}
@@ -335,12 +336,12 @@ sub doWithNew {
 				my $command = "dbms.pl restore -nocolored -instance $restoreInstance -database $database ";
 				$command .= " -full $result->{full}";
 				$command .= " -diff $result->{diff}" if $result->{diff};
-				Mods::Message::msgVerbose( "executing $command" );
+				msgVerbose( "executing $command" );
 				my $out = `$command`;
 				print $out;
-				Mods::Message::msgLog( $out );
+				msgLog( $out );
 			} else {
-				Mods::Message::msgWarn( "result is undefined, unable to restore" );
+				msgWarn( "result is undefined, unable to restore" );
 			}
 		}
 	}
@@ -350,7 +351,7 @@ sub doWithNew {
 # we find less files in this iteration than in the previous - maybe some files have been purged, deleted
 # moved, or we have a new directory, or another reason - just reset and restart over
 sub varReset {
-	Mods::Message::msgVerbose( "varReset()" );
+	msgVerbose( "varReset()" );
 	@previousScan = ();
 }
 
@@ -401,7 +402,7 @@ if( !GetOptions(
 	"json=s"			=> \$opt_json,
 	"remote=s"			=> \$opt_remote )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -410,14 +411,14 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found json='$opt_json'" );
-Mods::Message::msgVerbose( "found remote='$opt_remote'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found json='$opt_json'" );
+msgVerbose( "found remote='$opt_remote'" );
 
-Mods::Message::msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
-Mods::Message::msgErr( "'--remote' option is mandatory, not specified" ) if !$opt_remote;
+msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
+msgErr( "'--remote' option is mandatory, not specified" ) if !$opt_remote;
 
 if( !Mods::Toops::errs()){
 	$daemon = Mods::Daemon::run( $opt_json );
@@ -439,26 +440,26 @@ if( !Mods::Toops::errs()){
 		# set TTPVars->{run}{verb}{name} to improve logs
 		if( exists( $daemon->{config}{monitoredService} )){
 			if( exists( $daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}} )){
-				Mods::Message::msgVerbose( "monitored service '$daemon->{config}{monitoredService}' successfully found in remote host '$daemon->{monitored}{host}' configuration file" );
+				msgVerbose( "monitored service '$daemon->{config}{monitoredService}' successfully found in remote host '$daemon->{monitored}{host}' configuration file" );
 				$TTPVars->{run}{verb}{name} = $daemon->{config}{monitoredService};
 			} else {
-				Mods::Message::msgErr( "monitored service '$daemon->{config}{monitoredService}' doesn't exist in remote host '$daemon->{monitored}{host}' configuration file" );
+				msgErr( "monitored service '$daemon->{config}{monitoredService}' doesn't exist in remote host '$daemon->{monitored}{host}' configuration file" );
 			}
 		} else {
-			Mods::Message::msgErr( "'monitoredService' must be specified in daemon configuration, not found" );
+			msgErr( "'monitoredService' must be specified in daemon configuration, not found" );
 		}
 	}
 	# daemon: localDir
 	if( exists( $daemon->{config}{localDir} )){
-		Mods::Message::msgVerbose( "local dir '$daemon->{config}{localDir}' successfully found in daemon configuration file" );
+		msgVerbose( "local dir '$daemon->{config}{localDir}' successfully found in daemon configuration file" );
 	} else {
-		Mods::Message::msgErr( "'localDir' must be specified in daemon configuration, not found" );
+		msgErr( "'localDir' must be specified in daemon configuration, not found" );
 	}
 	# host: remoteShare
 	if( exists( $daemon->{monitored}{config}{remoteShare} )){
-		Mods::Message::msgVerbose( "found remoteShare='$daemon->{monitored}{config}{remoteShare}'" );
+		msgVerbose( "found remoteShare='$daemon->{monitored}{config}{remoteShare}'" );
 	} else {
-		Mods::Message::msgErr( "remote share must be specified in remote host '$daemon->{monitored}{host}' configuration, not found" );
+		msgErr( "remote share must be specified in remote host '$daemon->{monitored}{host}' configuration, not found" );
 	}
 }
 if( Mods::Toops::errs()){
@@ -473,8 +474,8 @@ my $sleepTime = Mods::Daemon::getSleepTime(
 	$scanInterval
 );
 
-Mods::Message::msgVerbose( "sleepTime='$sleepTime'" );
-Mods::Message::msgVerbose( "scanInterval='$scanInterval'" );
+msgVerbose( "sleepTime='$sleepTime'" );
+msgVerbose( "scanInterval='$scanInterval'" );
 
 while( !$daemon->{terminating} ){
 	my $res = Mods::Daemon::daemonListen( $daemon, $commands );

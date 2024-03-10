@@ -18,7 +18,7 @@ use URI::Escape;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Ovh;
 use Mods::Services;
 use Mods::Toops;
@@ -47,7 +47,7 @@ my $opt_timeout = $defaults->{timeout};
 # display the server the service IP is attached to
 # the service must be configured with a 'ovh' entry with 'ip' and 'server' OVH service names
 sub doSwitchIP {
-	Mods::Message::msgOut( "switching '$opt_ip' service to '$opt_to' server..." );
+	msgOut( "switching '$opt_ip' service to '$opt_to' server..." );
 	my $res = false;
 	my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
 	my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
@@ -57,17 +57,17 @@ sub doSwitchIP {
 	my @words = split( /\s+/, $out->[0] );
 	my $current = $words[1];
 	if( $current eq $opt_to ){
-		Mods::Message::msgWarn( "the specified '$opt_ip' is already routed to '$opt_to'" );
+		msgWarn( "the specified '$opt_ip' is already routed to '$opt_to'" );
 		$res = true;
 	} else {
-		Mods::Message::msgVerbose( "current routed server is '$current'" );
+		msgVerbose( "current routed server is '$current'" );
 		my $api = Mods::Ovh::connect();
 		if( $api ){
 			# we need the IP block
 			$out = Mods::Toops::ttpFilter( `ovh.pl ipget -ip $opt_ip -address -nocolored $verbose $dummy` );
 			@words = split( /\s+/, $out->[0] );
 			my $ip = $words[1];
-			Mods::Message::msgVerbose( "IP address is '$ip'" );
+			msgVerbose( "IP address is '$ip'" );
 			# check that the requested target server is willing to accept this IP - answer is empty if ok
 			my $url = "/dedicated/server/$opt_to/ipCanBeMovedTo?ip=".uri_escape( $ip );
 			my $answer = Mods::Ovh::getAnswerByPath( $api, $url );
@@ -95,7 +95,7 @@ sub doSwitchIP {
 						} while( !$end && !$timeout );
 						print EOL;
 						if( $end ){
-							Mods::Message::msgOut( "OVH API says that IP is switched after ".( localtime->epoch - $start )." sec." );
+							msgOut( "OVH API says that IP is switched after ".( localtime->epoch - $start )." sec." );
 							if( $opt_url ){
 								print "waiting for target machine answer";
 								$end = false;
@@ -106,7 +106,7 @@ sub doSwitchIP {
 									my @grepped = grep( / got /, split( /[\r\n]/, $out ));
 									my $line = $grepped[0];
 									$line =~ s/^[^=]+='([^']+)'$/$1/;
-									Mods::Message::msgVerbose( "got '$line'" );
+									msgVerbose( "got '$line'" );
 									if( $line eq $opt_to ){
 										$end = true;
 									} elsif( localtime->epoch - $start > $opt_timeout ){
@@ -115,17 +115,17 @@ sub doSwitchIP {
 								} while( !$end && !$timeout );
 								print EOL;
 								if( $end ){
-									Mods::Message::msgOut( "URL is actually switched after ".( localtime->epoch - $start )." sec." );
+									msgOut( "URL is actually switched after ".( localtime->epoch - $start )." sec." );
 								}
 							}
 							$res = true;
 						}
 						if( $timeout ){
-							Mods::Message::msgWarn( "timeout ($opt_timeout sec.) while waiting for actual move, still setting result='true'" );
+							msgWarn( "timeout ($opt_timeout sec.) while waiting for actual move, still setting result='true'" );
 							$res = true;
 						}
 					} else {
-						Mods::Message::msgVerbose( "do not wait for actual move" );
+						msgVerbose( "do not wait for actual move" );
 						$res = true;
 					}
 				} else {
@@ -137,9 +137,9 @@ sub doSwitchIP {
 		}
 	}
 	if( $res ){
-		Mods::Message::msgOut( "successfully switched to $opt_to" );
+		msgOut( "successfully switched to $opt_to" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	}
 }
 
@@ -158,7 +158,7 @@ if( !GetOptions(
 	"url=s"				=> \$opt_url,
 	"timeout=i"			=> \$opt_timeout )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -167,17 +167,17 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found ip='$opt_ip'" );
-Mods::Message::msgVerbose( "found to='$opt_to'" );
-Mods::Message::msgVerbose( "found wait='".( $opt_wait ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found url='$opt_url'" );
-Mods::Message::msgVerbose( "found timeout='$opt_timeout'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found ip='$opt_ip'" );
+msgVerbose( "found to='$opt_to'" );
+msgVerbose( "found wait='".( $opt_wait ? 'true':'false' )."'" );
+msgVerbose( "found url='$opt_url'" );
+msgVerbose( "found timeout='$opt_timeout'" );
 
-Mods::Message::msgErr( "ip service is mandatory, not specified" ) if !$opt_ip;
-Mods::Message::msgErr( "target server service is mandatory, not specified" ) if !$opt_to;
+msgErr( "ip service is mandatory, not specified" ) if !$opt_ip;
+msgErr( "target server service is mandatory, not specified" ) if !$opt_to;
 
 if( !Mods::Toops::errs()){
 	doSwitchIP();

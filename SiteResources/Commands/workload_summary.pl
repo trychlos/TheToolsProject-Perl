@@ -24,7 +24,7 @@ use Getopt::Long;
 use Path::Tiny;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Services;
 use Mods::Toops;
 
@@ -80,7 +80,7 @@ sub printSummary {
 	my $maxLength = 0;
 	for( my $i=1 ; $i<=$opt_count ; ++$i ){
 		my $command = $ENV{$opt_commands.'['.$i.']'};
-		Mods::Message::msgVerbose( "pushing i=$i command='$command'" );
+		msgVerbose( "pushing i=$i command='$command'" );
 		push( @results, {
 			command => $command,
 			start => $ENV{$opt_start.'['.$i.']'},
@@ -106,7 +106,7 @@ sub printSummary {
 		my $i = 0;
 		foreach my $it ( @results ){
 			$i += 1;
-			Mods::Message::msgVerbose( "printing i=$i execution report" );
+			msgVerbose( "printing i=$i execution report" );
 			$stdout .= _pad( "| $it->{command}", $maxLength+6, ' ' )._pad( "| $it->{start}", 25, ' ' )._pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
 		}
 	} else {
@@ -124,14 +124,14 @@ sub printSummary {
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );
 		my $subject = sprintf( "[%s\@%s] workload summary", $opt_workload, $host );
-		Mods::Message::msgOut( "subject='$subject'" );
+		msgOut( "subject='$subject'" );
 		$command =~ s/<SUBJECT>/$subject/;
 		$command =~ s/<OPTIONS>/-textfname $textfname/;
 		my $dummy = $opt_dummy ? "-dummy" : "";
 		my $verbose = $opt_verbose ? "-verbose" : "";
 		# this script is not interactive but written to be executed as part of a batch - there is so no reason to log stdout of the command because all msgXxxx() of the command are already logged
 		`$command -nocolored $dummy $verbose`;
-		Mods::Message::msgVerbose( "printSummary() got rc=$?" );
+		msgVerbose( "printSummary() got rc=$?" );
 		$res = ( $? == 0 );
 	}
 	# and to stdout (at last)
@@ -154,7 +154,7 @@ if( !GetOptions(
 	"rc=s"				=> \$opt_rc,
 	"count=i"			=> \$opt_count	)){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -163,15 +163,15 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found workload='$opt_workload'" );
-Mods::Message::msgVerbose( "found commands='$opt_commands'" );
-Mods::Message::msgVerbose( "found start='$opt_start'" );
-Mods::Message::msgVerbose( "found end='$opt_end'" );
-Mods::Message::msgVerbose( "found rc='$opt_rc'" );
-Mods::Message::msgVerbose( "found count='$opt_count'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found workload='$opt_workload'" );
+msgVerbose( "found commands='$opt_commands'" );
+msgVerbose( "found start='$opt_start'" );
+msgVerbose( "found end='$opt_end'" );
+msgVerbose( "found rc='$opt_rc'" );
+msgVerbose( "found count='$opt_count'" );
 
 if( !Mods::Toops::errs()){
 	printSummary();

@@ -37,7 +37,7 @@ use File::Spec;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Toops;
 
 # ------------------------------------------------------------------------------------------------
@@ -56,7 +56,7 @@ sub alertsDir {
 		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
 		makeDirExist( $dir ) if $makeDirExist;
 	} else {
-		Mods::Message::msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
+		msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -69,7 +69,7 @@ sub credentialsDir {
 	$opts //= {};
 	my $dir = Mods::Toops::var([ 'credentialsDir' ], $opts );
 	if( !defined $dir || !length $dir ){
-		Mods::Message::msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
+		msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -93,7 +93,7 @@ sub dbmsArchivesDir {
 		# at least do not try to test them each time we need this address
 		#makeDirExist( $dir );
 	} else {
-		Mods::Message::msgWarn( "'archivesDir' is not defined in toops.json nor in host configuration" );
+		msgWarn( "'archivesDir' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -109,7 +109,7 @@ sub dbmsArchivesRoot {
 		# at least do not try to test them each time we need this address
 		#makeDirExist( $dir );
 	} else {
-		Mods::Message::msgWarn( "'archivesRoot' is not defined in toops.json nor in host configuration" );
+		msgWarn( "'archivesRoot' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -128,7 +128,7 @@ sub dbmsBackupsDir {
 	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {
-		Mods::Message::msgWarn( "'backupsDir' is not defined in toops.json nor in host configuration" );
+		msgWarn( "'backupsDir' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -142,7 +142,7 @@ sub dbmsBackupsRoot {
 	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {
-		Mods::Message::msgWarn( "'backupsRoot' is not defined in toops.json nor in host configuration" );
+		msgWarn( "'backupsRoot' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -163,7 +163,7 @@ sub execReportsDir {
 		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
 		makeDirExist( $dir ) if $makeDirExist;
 	} else {
-		Mods::Message::msgWarn( "'executionReports/withFile/dropDir' is not defined in toops.json nor in host configuration" );
+		msgWarn( "'executionReports/withFile/dropDir' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
@@ -179,26 +179,26 @@ sub execReportsDir {
 sub fromCommand {
 	my( $cmd, $opts ) = @_;
 	$opts //= {};
-	Mods::Message::msgErr( "Path::fromCommand() command is not specified" ) if !$cmd;
+	msgErr( "Path::fromCommand() command is not specified" ) if !$cmd;
 	my $path = undef;
 	if( !Mods::Toops::errs()){
 		$path = `$cmd`;
-		Mods::Message::msgErr( "Path::fromCommand() command doesn't output anything" ) if !$path;
+		msgErr( "Path::fromCommand() command doesn't output anything" ) if !$path;
 	}
 	if( !Mods::Toops::errs()){
 		my @words = split( /\s+/, $path );
 		if( scalar @words < 2 ){
-			Mods::Message::msgErr( "Path::fromCommand() expect at least two words" );
+			msgErr( "Path::fromCommand() expect at least two words" );
 		} else {
 			$path = $words[scalar @words - 1];
-			Mods::Message::msgErr( "Path::fromCommand() found an empty path" ) if !$path;
+			msgErr( "Path::fromCommand() found an empty path" ) if !$path;
 		}
 	}
 	if( !Mods::Toops::errs()){
 		my $mustExists = false;
 		$mustExists = $opts->{mustExists} if exists $opts->{mustExists};
 		if( $mustExists && !-r $path ){
-			Mods::Message::msgErr( "Path::fromCommand() path='$path' doesn't exist or is not readable" );
+			msgErr( "Path::fromCommand() path='$path' doesn't exist or is not readable" );
 			$path = undef;
 		}
 	}
@@ -295,10 +295,10 @@ sub makeDirExist {
 	my ( $dir ) = @_;
 	my $result = false;
 	if( -d $dir ){
-		#Mods::Message::msgVerbose( "Path::makeDirExist() dir='$dir' exists" );
+		#msgVerbose( "Path::makeDirExist() dir='$dir' exists" );
 		$result = true;
 	} else {
-		Mods::Message::msgVerbose( "Path::makeDirExist() make_path() dir='$dir'" );
+		msgVerbose( "Path::makeDirExist() make_path() dir='$dir'" );
 		my $error;
 		$result = true;
 		make_path( $dir, {
@@ -310,14 +310,14 @@ sub makeDirExist {
 			for my $diag ( @$error ){
 				my ( $file, $message ) = %$diag;
 				if( $file eq '' ){
-					Mods::Message::msgErr( $message );
+					msgErr( $message );
 				} else {
-					Mods::Message::msgErr( "$file: $message" );
+					msgErr( "$file: $message" );
 				}
 			}
 			$result = false;
 		}
-		Mods::Message::msgVerbose( "Path::makeDirExist() dir='$dir' result=$result" );
+		msgVerbose( "Path::makeDirExist() dir='$dir' result=$result" );
 	}
 	return $result;
 }
@@ -343,7 +343,7 @@ sub removeTrailingSeparator {
 
 # ------------------------------------------------------------------------------------------------
 sub siteConfigurationsDir {
-	Mods::Message::msgErr( "TTP_CONFDIR is not found in your environment, but is required" ) if !$ENV{TTP_CONFDIR};
+	msgErr( "TTP_CONFDIR is not found in your environment, but is required" ) if !$ENV{TTP_CONFDIR};
 	return $ENV{TTP_CONFDIR};
 }
 

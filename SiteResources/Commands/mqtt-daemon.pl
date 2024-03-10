@@ -28,7 +28,7 @@ use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Daemon;
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::MQTT;
 use Mods::Path;
 use Mods::Toops;
@@ -68,7 +68,7 @@ my $logFile = File::Spec->catdir( Mods::Path::logsDailyDir(), 'mqtt-daemon.log' 
 # - args
 sub doCommand {
 	my ( $req ) = @_;
-	Mods::Message::msgLog( "command='$req->{command}'" );
+	msgLog( "command='$req->{command}'" );
 	my @answer = ();
 	my $count = 0;
 	foreach my $it ( keys %{$kept->{$req->{command}}} ){
@@ -90,7 +90,7 @@ sub doMatched {
 	# whether to log the message
 	my $toLog = false;
 	$toLog = $config->{toLog} if exists $config->{toLog};
-	Mods::Message::msgLog( "$topic [$payload]", { logFile => $logFile }) if $toLog;
+	msgLog( "$topic [$payload]", { logFile => $logFile }) if $toLog;
 	# whether to print to stdout
 	my $toStdout = false;
 	$toStdout = $config->{toStdout} if exists $config->{toStdout};
@@ -142,7 +142,7 @@ if( !GetOptions(
 	"stdout!"			=> \$opt_stdout,
 	"sys!"				=> \$opt_sys )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -151,14 +151,14 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found json='$opt_json'" );
-Mods::Message::msgVerbose( "found stdout='".( defined $opt_stdout ? ( $opt_stdout ? 'true':'false' ) : '(undef)' )."'" );
-Mods::Message::msgVerbose( "found sys='".( defined $opt_sys ? ( $opt_sys ? 'true':'false' ) : '(undef)' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found json='$opt_json'" );
+msgVerbose( "found stdout='".( defined $opt_stdout ? ( $opt_stdout ? 'true':'false' ) : '(undef)' )."'" );
+msgVerbose( "found sys='".( defined $opt_sys ? ( $opt_sys ? 'true':'false' ) : '(undef)' )."'" );
 
-Mods::Message::msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
+msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 
 if( !Mods::Toops::errs()){
 	$daemon = Mods::Daemon::run( $opt_json );

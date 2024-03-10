@@ -34,7 +34,7 @@ use IO::Socket::INET;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::MQTT;
 use Mods::Toops;
 
@@ -98,7 +98,7 @@ sub daemonAdvertize {
 	if( !$daemon->{lastAdvertized} || $now-$daemon->{lastAdvertized} >= $daemon->{advertizeInterval} ){
 		my $topic = _topic( $daemon->{name} );
 		my $payload = _running();
-		Mods::Message::msgLog( "$topic [$payload]" );
+		msgLog( "$topic [$payload]" );
 		if( $daemon->{mqtt} ){
 			$daemon->{mqtt}->retain( $topic, $payload );
 		}
@@ -110,7 +110,7 @@ sub daemonAdvertize {
 # the daemon answers to the client
 sub daemonAnswer {
 	my ( $daemon, $req, $answer ) = @_;
-	Mods::Message::msgLog( "answering '$answer'" );
+	msgLog( "answering '$answer'" );
 	$req->{socket}->send( "$answer\n" );
 	$req->{socket}->shutdown( true );
 }
@@ -169,7 +169,7 @@ sub daemonListen {
 		$client->recv( $data, BUFSIZE );
 	}
 	if( $result ){
-		Mods::Message::msgLog( "received '$data' from '$result->{peerhost}':'$result->{peeraddr}':'$result->{peerport}'" );
+		msgLog( "received '$data' from '$result->{peerhost}':'$result->{peeraddr}':'$result->{peerport}'" );
 		my @words = split( /\s+/, $data );
 		$result->{command} = shift( @words );
 		$result->{args} = \@words;
@@ -215,11 +215,11 @@ sub getEvaluatedConfig {
 # - the raw result hash
 sub getRawConfigByPath {
 	my ( $json ) = @_;
-	Mods::Message::msgVerbose( "Daemon::getRawConfigByPath() json='$json'" );
+	msgVerbose( "Daemon::getRawConfigByPath() json='$json'" );
 	my $result = Mods::Toops::jsonRead( $json );
 	my $ref = ref( $result );
 	if( $ref ne 'HASH' ){
-		Mods::Message::msgErr( "Daemon::getRawConfigByPath() expected a hash, found a ".( $ref || 'scalar' ));
+		msgErr( "Daemon::getRawConfigByPath() expected a hash, found a ".( $ref || 'scalar' ));
 		$result = undef;
 	}
 	return $result;
@@ -294,13 +294,13 @@ sub run {
 	my $config = $raw ? getEvaluatedConfig( $raw ) : undef;
 	# listening port
 	if( !$config->{listeningPort} ){
-		Mods::Message::msgErr( "daemon configuration must define a 'listeningPort' value, not found" );
+		msgErr( "daemon configuration must define a 'listeningPort' value, not found" );
 	}
 	# listen interval
 	my $listenInterval = DEFAULT_LISTEN_INTERVAL;
 	if( $config && exists( $config->{listenInterval} )){
 		if( $config->{listenInterval} < MIN_LISTEN_INTERVAL ){
-			Mods::Message::msgVerbose( "defined listenInterval=$config->{listenInterval} less than minimum accepted ".MIN_LISTEN_INTERVAL.", ignored" );
+			msgVerbose( "defined listenInterval=$config->{listenInterval} less than minimum accepted ".MIN_LISTEN_INTERVAL.", ignored" );
 		} else {
 			$listenInterval = $config->{listenInterval};
 		}
@@ -309,13 +309,13 @@ sub run {
 	my $advertizeInterval = DEFAULT_ADVERTIZE_INTERVAL;
 	if( exists( $config->{advertizeInterval} )){
 		if( $config->{advertizeInterval} < MIN_ADVERTIZE_INTERVAL ){
-			Mods::Message::msgVerbose( "defined advertizedInterval=$config->{advertizeInterval} less than minimum accepted ".MIN_ADVERTIZE_INTERVAL.", ignored" );
+			msgVerbose( "defined advertizedInterval=$config->{advertizeInterval} less than minimum accepted ".MIN_ADVERTIZE_INTERVAL.", ignored" );
 		} else {
 			$advertizeInterval = $config->{advertizeInterval};
 		}
 	}
 	if( !Mods::Toops::errs()){
-		Mods::Message::msgVerbose( "listeningPort='$config->{listeningPort}' listenInterval='$listenInterval' advertizeInterval='$advertizeInterval'" );
+		msgVerbose( "listeningPort='$config->{listeningPort}' listenInterval='$listenInterval' advertizeInterval='$advertizeInterval'" );
 	}
 
 	# create a listening socket
@@ -329,7 +329,7 @@ sub run {
 			ReuseAddr => true,
 			Blocking => false,
 			Timeout => 0
-		) or Mods::Message::msgErr( "unable to create a listening socket: $!" );
+		) or msgErr( "unable to create a listening socket: $!" );
 	}
 
 	# connect to MQTT communication bus if the host is configured for
@@ -367,7 +367,7 @@ sub terminate {
 	$daemon->{socket}->close();
 
 	# have a log line
-	Mods::Message::msgLog( "terminating" );
+	msgLog( "terminating" );
 
 	# and quit the program
 	Mods::Toops::ttpExit();

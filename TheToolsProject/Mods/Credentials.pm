@@ -11,7 +11,7 @@ use Data::Dumper;
 use File::Spec;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Path;
 use Mods::Toops;
 
@@ -26,7 +26,7 @@ sub get {
 	my ( $keys ) = @_;
 	my $res = undef;
 	if( ref( $keys ) ne 'ARRAY' ){
-		Mods::Message::msgErr( "Credentials::get() expects an array, found '".ref( $keys )."'" );
+		msgErr( "Credentials::get() expects an array, found '".ref( $keys )."'" );
 	} else {
 		# first look in the Toops/host configurations
 		$res = Mods::Toops::var( $keys );

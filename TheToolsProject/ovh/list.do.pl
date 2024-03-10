@@ -12,7 +12,7 @@
 use Data::Dumper;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Ovh;
 use Mods::Toops;
 
@@ -31,7 +31,7 @@ my $opt_services = false;
 # -------------------------------------------------------------------------------------------------
 # list all the subscribed services
 sub listServices {
-	Mods::Message::msgOut( "displaying subscribed services..." );
+	msgOut( "displaying subscribed services..." );
 	my $api = Mods::Ovh::connect();
 	if( $api ){
 		# full identity
@@ -77,9 +77,9 @@ sub listServices {
 			}
 			$count += 1;
 		}
-		Mods::Message::msgOut( "$count found subscribed service(s) (".scalar @missingDisplayName." missing display name(s), ".scalar @missingRouteUrl." missing route URL(s))" );
+		msgOut( "$count found subscribed service(s) (".scalar @missingDisplayName." missing display name(s), ".scalar @missingRouteUrl." missing route URL(s))" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	}
 }
 
@@ -94,7 +94,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"services!"			=> \$opt_services )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -103,10 +103,10 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
 	listServices() if $opt_services;

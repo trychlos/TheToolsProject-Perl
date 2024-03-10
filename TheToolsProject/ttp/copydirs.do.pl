@@ -16,7 +16,7 @@ use Data::Dumper;
 use File::Spec;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Path;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -42,14 +42,14 @@ my $opt_dirs = false;
 # -------------------------------------------------------------------------------------------------
 # Copy directories from source to target
 sub doCopyDirs {
-	Mods::Message::msgOut( "copying from '$opt_sourcepath' to '$opt_targetpath'..." );
+	msgOut( "copying from '$opt_sourcepath' to '$opt_targetpath'..." );
 	my $count = 0;
 	my $res = Mods::Toops::copyDir( $opt_sourcepath, $opt_targetpath );
 	if( $res ){
 		$count += 1;
-		Mods::Message::msgOut( "$count copied directory(ies)" );
+		msgOut( "$count copied directory(ies)" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	}
 }
 
@@ -78,7 +78,7 @@ if( !GetOptions(
 	"targetcmd=s"		=> \$opt_targetcmd,
 	"dirs!"				=> \$opt_dirs )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -87,26 +87,26 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found sourcepath='$opt_sourcepath'" );
-Mods::Message::msgVerbose( "found sourcecmd='$opt_sourcecmd'" );
-Mods::Message::msgVerbose( "found targetpath='$opt_targetpath'" );
-Mods::Message::msgVerbose( "found targetcmd='$opt_targetcmd'" );
-Mods::Message::msgVerbose( "found dirs='".( $opt_dirs ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found sourcepath='$opt_sourcepath'" );
+msgVerbose( "found sourcecmd='$opt_sourcecmd'" );
+msgVerbose( "found targetpath='$opt_targetpath'" );
+msgVerbose( "found targetcmd='$opt_targetcmd'" );
+msgVerbose( "found dirs='".( $opt_dirs ? 'true':'false' )."'" );
 
 # sourcecmd and sourcepath options are not compatible
 my $count = 0;
 $count += 1 if $opt_sourcepath;
 $count += 1 if $opt_sourcecmd;
-Mods::Message::msgErr( "one of '--sourcepath' and '--sourcecmd' options must be specified" ) if $count != 1;
+msgErr( "one of '--sourcepath' and '--sourcecmd' options must be specified" ) if $count != 1;
 
 # targetcmd and targetpath options are not compatible
 $count = 0;
 $count += 1 if $opt_targetpath;
 $count += 1 if $opt_targetcmd;
-Mods::Message::msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if $count != 1;
+msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if $count != 1;
 
 # if we have a source cmd, get the path and check it exists
 $opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd, { mustExists => true }) if $opt_sourcecmd;
@@ -115,7 +115,7 @@ $opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd, { mustExists => true 
 $opt_targetpath = Mods::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
 
 # --dirs option must be specified at the moment
-Mods::Message::msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;
+msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;
 
 if( !Mods::Toops::errs()){
 	doCopyDirs();

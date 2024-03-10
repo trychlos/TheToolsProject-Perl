@@ -15,7 +15,7 @@ use Data::Dumper;
 
 use Mods::Constants qw( :all );
 use Mods::Dbms;
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -40,24 +40,24 @@ my $opt_listtables = false;
 # list the databases
 sub listDatabases {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Message::msgOut( "displaying databases in '$hostConfig->{name}\\$opt_instance'..." );
+	msgOut( "displaying databases in '$hostConfig->{name}\\$opt_instance'..." );
 	my $list = Mods::Dbms::getLiveDatabases();
 	foreach my $db ( @{$list} ){
 		print " $db".EOL;
 	}
-	Mods::Message::msgOut( scalar @{$list}." found live database(s)" );
+	msgOut( scalar @{$list}." found live database(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
 # list the tables
 sub listTables {
 	my $hostConfig = Mods::Toops::getHostConfig();
-	Mods::Message::msgOut( "displaying tables in '$hostConfig->{name}\\$opt_instance\\$opt_database'..." );
+	msgOut( "displaying tables in '$hostConfig->{name}\\$opt_instance\\$opt_database'..." );
 	my $list = Mods::Dbms::getDatabaseTables( $opt_database );
 	foreach my $it ( @{$list} ){
 		print " $it".EOL;
 	}
-	Mods::Message::msgOut( scalar @{$list}." found table(s)" );
+	msgOut( scalar @{$list}." found table(s)" );
 }
 
 # =================================================================================================
@@ -74,7 +74,7 @@ if( !GetOptions(
 	"database=s"		=> \$opt_database,
 	"listtables!"		=> \$opt_listtables )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -83,13 +83,13 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found instance='$opt_instance'" );
-Mods::Message::msgVerbose( "found listdb='".( $opt_listdb ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found database='$opt_database'" );
-Mods::Message::msgVerbose( "found listtables='".( $opt_listtables ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found instance='$opt_instance'" );
+msgVerbose( "found listdb='".( $opt_listdb ? 'true':'false' )."'" );
+msgVerbose( "found database='$opt_database'" );
+msgVerbose( "found listtables='".( $opt_listtables ? 'true':'false' )."'" );
 
 # instance is mandatory
 Mods::Dbms::checkInstanceOpt( $opt_instance );

@@ -13,7 +13,7 @@ use LWP::UserAgent;
 use URI::Escape;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Toops;
 
 # -------------------------------------------------------------------------------------------------
@@ -63,14 +63,14 @@ sub httpPublish {
 		my $qualifier = "";
 		$qualifier = uri_unescape( $options->{label} ) if exists $options->{label};
 		$str .= "$name$qualifier $value\n";
-		Mods::Message::msgVerbose( "Telemetry::Publish() url='$url' content='$str'" );
+		msgVerbose( "Telemetry::Publish() url='$url' content='$str'" );
 		$req->content( $str );
 		my $response = $ua->request( $req );
-		Mods::Message::msgVerbose( Dumper( $response ));
+		msgVerbose( Dumper( $response ));
 		$count += 1 if $response->is_success;
-		Mods::Message::msgWarn( "Telemetry::httpPublish() Code: ".$response->code." MSG: ".$response->decoded_content ) if !$response->is_success;
+		msgWarn( "Telemetry::httpPublish() Code: ".$response->code." MSG: ".$response->decoded_content ) if !$response->is_success;
 	} else {
-		Mods::Message::msgWarn( "Telemetry::httpPublish() no HTTP URL available" );
+		msgWarn( "Telemetry::httpPublish() no HTTP URL available" );
 	}
 	return $count;
 }
@@ -110,10 +110,10 @@ sub mqttPublish {
 		my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
 		print `$command -nocolored $dummy $verbose`;
 		my $rc = $?;
-		Mods::Message::msgVerbose( "Telemetry::mqttPublish() got rc=$rc" );
+		msgVerbose( "Telemetry::mqttPublish() got rc=$rc" );
 		$count += 1 if !$rc;
 	} else {
-		Mods::Message::msgWarn( "Telemetry::mqttPublish() no MQTT command available" );
+		msgWarn( "Telemetry::mqttPublish() no MQTT command available" );
 	}
 	return $count;
 }

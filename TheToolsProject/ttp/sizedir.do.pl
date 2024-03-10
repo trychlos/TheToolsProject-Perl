@@ -16,7 +16,7 @@ use File::Path qw( remove_tree );
 use File::Find;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Path;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -57,11 +57,11 @@ sub compute {
 # -------------------------------------------------------------------------------------------------
 # Compute the size of a directory content
 sub doComputeSize {
-	Mods::Message::msgOut( "computing the '$opt_dirpath' content size" );
+	msgOut( "computing the '$opt_dirpath' content size" );
 	find ( \&compute, $opt_dirpath );
-	Mods::Message::msgOut( "  directories: $dirCount" );
-	Mods::Message::msgOut( "  files: $fileCount" );
-	Mods::Message::msgOut( "  size: $totalSize" );
+	msgOut( "  directories: $dirCount" );
+	msgOut( "  files: $fileCount" );
+	msgOut( "  size: $totalSize" );
 	my $code = 0;
 	if( $opt_mqtt || $opt_http ){
 		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
@@ -78,9 +78,9 @@ sub doComputeSize {
 		$code += $?;
 	}
 	if( $code ){
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	} else {
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	}
 }
 
@@ -98,7 +98,7 @@ if( !GetOptions(
 	"mqtt!"				=> \$opt_mqtt,
 	"http!"				=> \$opt_http )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -107,19 +107,19 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dirpath='$opt_dirpath'" );
-Mods::Message::msgVerbose( "found dircmd='$opt_dircmd'" );
-Mods::Message::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found dirpath='$opt_dirpath'" );
+msgVerbose( "found dircmd='$opt_dircmd'" );
+msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 
 # dircmd and dirpath options are not compatible
 my $count = 0;
 $count += 1 if $opt_dirpath;
 $count += 1 if $opt_dircmd;
-Mods::Message::msgErr( "one of '--dirpath' and '--dircmd' options must be specified" ) if $count != 1;
+msgErr( "one of '--dirpath' and '--dircmd' options must be specified" ) if $count != 1;
 
 # if we have a source cmd, get the path and check it exists
 $opt_dirpath = Mods::Path::fromCommand( $opt_dircmd, { mustExists => true }) if $opt_dircmd;

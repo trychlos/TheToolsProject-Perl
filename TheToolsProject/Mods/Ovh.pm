@@ -11,7 +11,7 @@ use Data::Dumper;
 use File::Spec;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::OvhApi;
 use Mods::Path;
 use Mods::Toops;
@@ -51,14 +51,14 @@ sub connect {
 sub getAnswerByPath {
 	my ( $api, $path, $opts ) = @_;
 	$opts //= {};
-	Mods::Message::msgVerbose( "Ovh::getAnswerByPath() path='$path'" );
+	msgVerbose( "Ovh::getAnswerByPath() path='$path'" );
 
 	my $answer = $api->get( path => $path );
 	my $printAnswer = false;
 	$printAnswer = $opts->{printAnswer} if exists $opts->{printAnswer};
 	print Dumper( $answer ) if $printAnswer;
 
-	Mods::Message::msgVerbose( "Ovh::getAnswerByPath() status=".$answer->status()." isSuccess='".( $answer->isSuccess() ? 'true' : 'false' )."'");
+	msgVerbose( "Ovh::getAnswerByPath() status=".$answer->status()." isSuccess='".( $answer->isSuccess() ? 'true' : 'false' )."'");
 	return $answer;
 }
 
@@ -115,12 +115,12 @@ sub getServices {
 # - the request answer as a OvhAnswer instance
 sub postByPath {
 	my ( $api, $path, $params ) = @_;
-	Mods::Message::msgVerbose( "Ovh::postByPath() path='$path'" );
+	msgVerbose( "Ovh::postByPath() path='$path'" );
 
 	my $answer = $api->post( path => $path, body => $params );
 	print Dumper( $answer ) if $answer->isFailure();
 
-	Mods::Message::msgVerbose( "Ovh::postByPath() status=".$answer->status()." isSuccess='".( $answer->isSuccess() ? 'true' : 'false' )."'");
+	msgVerbose( "Ovh::postByPath() status=".$answer->status()." isSuccess='".( $answer->isSuccess() ? 'true' : 'false' )."'");
 	return $answer;
 }
 

@@ -12,7 +12,7 @@ use Net::MQTT::Simple;
 
 use Mods::Constants qw( :all );
 use Mods::Credentials;
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Toops;
 
 $ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;
@@ -36,15 +36,15 @@ sub connect {
 
 	my $broker = Mods::Toops::var([ 'MQTTGateway', 'broker' ]);
 	$broker = $args->{broker} if $args->{broker};
-	Mods::Message::msgErr( "MQTT::connect() broker is not configured nor provided as an argument" ) if !$broker;
+	msgErr( "MQTT::connect() broker is not configured nor provided as an argument" ) if !$broker;
 
 	my $username = Mods::Credentials::get([ 'MQTTGateway', 'username' ]);
 	$username = $args->{username} if $args->{username};
-	Mods::Message::msgErr( "MQTT::connect() username is not configured nor provided as an argument" ) if !$username;
+	msgErr( "MQTT::connect() username is not configured nor provided as an argument" ) if !$username;
 
 	my $password = Mods::Credentials::get([ 'MQTTGateway', 'password' ]);
 	$password = $args->{password} if $args->{password};
-	Mods::Message::msgErr( "MQTT::connect() password is not configured nor provided as an argument" ) if !$password;
+	msgErr( "MQTT::connect() password is not configured nor provided as an argument" ) if !$password;
 
 	$mqtt = Net::MQTT::Simple->new( $broker );
 	if( $mqtt ){
@@ -63,9 +63,9 @@ sub connect {
 		}
 		# login
 		my $logged = $mqtt->login( $username, $password );
-		Mods::Message::msgVerbose( "MQTT::connect() logged-in with '$logged' account" );
+		msgVerbose( "MQTT::connect() logged-in with '$logged' account" );
 	} else {
-		Mods::Message::msgErr( "MQTT::connect() unable to instanciate a new connection against '$broker' broker" );
+		msgErr( "MQTT::connect() unable to instanciate a new connection against '$broker' broker" );
 	}
 	
 	return $mqtt;
@@ -85,10 +85,10 @@ sub disconnect {
 				$handle->publish( $handle->{ttpLastWill}{topic}, $handle->{ttpLastWill}{payload} );
 			}
 		}
-		Mods::Message::msgVerbose( "MQTT::disconnect()" );
+		msgVerbose( "MQTT::disconnect()" );
 		$handle->disconnect();
 	} else {
-		Mods::Message::msgErr( "MQTT::disconnect() undefined connection handle" );
+		msgErr( "MQTT::disconnect() undefined connection handle" );
 		Mods::Toops::stackTrace();
 	}
 }

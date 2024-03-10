@@ -14,7 +14,7 @@ use Data::Dumper;
 use JSON;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -35,7 +35,7 @@ my $opt_append = false;
 # -------------------------------------------------------------------------------------------------
 # write the data into the file
 sub doWriteJson {
-	Mods::Message::msgOut( "writing JSON data into $opt_file..." );
+	msgOut( "writing JSON data into $opt_file..." );
 	my @to = split( /,/, $opt_to );
 	my $res = false;
 	my $json = JSON->new;
@@ -46,9 +46,9 @@ sub doWriteJson {
 		$res = Mods::Toops::jsonWrite( $data, $opt_file );
 	}
 	if( $res ){
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	}
 }
 
@@ -65,7 +65,7 @@ if( !GetOptions(
 	"data=s"			=> \$opt_data,
 	"append!"			=> \$opt_append )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -74,16 +74,16 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found file='$opt_file'" );
-Mods::Message::msgVerbose( "found data='$opt_data'" );
-Mods::Message::msgVerbose( "found append='".( defined $opt_append ? ( $opt_append ? 'true':'false' ) : '(undef)' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found file='$opt_file'" );
+msgVerbose( "found data='$opt_data'" );
+msgVerbose( "found append='".( defined $opt_append ? ( $opt_append ? 'true':'false' ) : '(undef)' )."'" );
 
 # all data are mandatory, and we must provide some content, either text or html
-Mods::Message::msgErr( "file is mandatory, not specified" ) if !$opt_file;
-Mods::Message::msgErr( "data is mandatory, not specified" ) if !$opt_data;
+msgErr( "file is mandatory, not specified" ) if !$opt_file;
+msgErr( "data is mandatory, not specified" ) if !$opt_data;
 
 if( !Mods::Toops::errs()){
 	doWriteJson();

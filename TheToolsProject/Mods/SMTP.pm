@@ -21,7 +21,7 @@ use Try::Tiny;
 
 use Mods::Constants qw( :all );
 use Mods::Credentials;
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Toops;
 
 # ------------------------------------------------------------------------------------------------
@@ -39,15 +39,15 @@ use Mods::Toops;
 sub send {
 	my ( $msg ) = @_;
 	my $res = false;
-	Mods::Message::msgErr( "Mail::send() expect parms as a hashref, not found" ) if !$msg || ref( $msg ) ne 'HASH';
-	Mods::Message::msgErr( "Mail::send() expect subject, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{subject};
-	Mods::Message::msgErr( "Mail::send() expect a content, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{text} && !$msg->{html};
-	Mods::Message::msgErr( "Mail::send() expect at least one target email address, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{to};
+	msgErr( "Mail::send() expect parms as a hashref, not found" ) if !$msg || ref( $msg ) ne 'HASH';
+	msgErr( "Mail::send() expect subject, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{subject};
+	msgErr( "Mail::send() expect a content, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{text} && !$msg->{html};
+	msgErr( "Mail::send() expect at least one target email address, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{to};
 	my $gateway = undef;
 	if( !Mods::Toops::errs()){
 		$gateway = Mods::Toops::var([ 'SMTPGateway' ]);
-		Mods::Message::msgErr( "Mail::send() expect smtp gateway, not found" ) if !$gateway;
-		Mods::Message::msgErr( "Mail::send() password is mandatory if a username is specified" ) if $gateway && $gateway->{username} && !$gateway->{password};
+		msgErr( "Mail::send() expect smtp gateway, not found" ) if !$gateway;
+		msgErr( "Mail::send() password is mandatory if a username is specified" ) if $gateway && $gateway->{username} && !$gateway->{password};
 	}
 	if( !Mods::Toops::errs()){
 		my $sender = 'me@localhost';
@@ -94,7 +94,7 @@ sub send {
 		try {
 			$res = $email->send();
 		} catch {
-			Mods::Message::msgWarn( "Mail::send() $!" );
+			msgWarn( "Mail::send() $!" );
 			print Dumper( $res );
 		};
 	}

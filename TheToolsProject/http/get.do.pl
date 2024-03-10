@@ -20,7 +20,7 @@ use Data::Dumper;
 use LWP::UserAgent;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -41,27 +41,27 @@ my $opt_ignore = false;
 # -------------------------------------------------------------------------------------------------
 # request the url
 sub doGet {
-	Mods::Message::msgOut( "requesting '$opt_url'..." );
+	msgOut( "requesting '$opt_url'..." );
 	my $ua = LWP::UserAgent->new();
 	my $response = $ua->get( $opt_url );
 	my $res = false;
 	if( $opt_ignore ){
-		Mods::Message::msgVerbose( "receiving HTTP status=$response->code, ignored as opt_ignore='true'" );
+		msgVerbose( "receiving HTTP status=$response->code, ignored as opt_ignore='true'" );
 		$res = true;
 	} else {
 		$res = $response->is_success;
-		Mods::Message::msgLog( $response );
+		msgLog( $response );
 	}
 	if( $opt_header ){
 		my $header = $response->header( $opt_header );
-		Mods::Message::msgOut( "got $opt_header='$header'" );
+		msgOut( "got $opt_header='$header'" );
 	} else {
 		print Dumper( $response );
 	}
 	if( $res ){
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	}
 }
 
@@ -78,7 +78,7 @@ if( !GetOptions(
 	"header=s"			=> \$opt_header,
 	"ignore!"			=> \$opt_ignore	)){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -87,15 +87,15 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found url='$opt_url'" );
-Mods::Message::msgVerbose( "found header='$opt_header'" );
-Mods::Message::msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found url='$opt_url'" );
+msgVerbose( "found header='$opt_header'" );
+msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
 
 # url is mandatory
-Mods::Message::msgErr( "url is required, but is not specified" ) if !$opt_url;
+msgErr( "url is required, but is not specified" ) if !$opt_url;
 
 if( !Mods::Toops::errs()){
 	doGet() if $opt_url;

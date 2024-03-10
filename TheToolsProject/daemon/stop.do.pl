@@ -19,7 +19,7 @@ use File::Spec;
 
 use Mods::Constants qw( :all );
 use Mods::Daemon;
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Toops;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -43,7 +43,7 @@ my $opt_wait = $defaults->{wait};
 # -------------------------------------------------------------------------------------------------
 # stop the daemon
 sub doStop {
-	Mods::Message::msgOut( "requesting the daemon for termination..." );
+	msgOut( "requesting the daemon for termination..." );
 	my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 	my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
 	my $cmd = "daemon.pl command -nocolored $dummy $verbose -command terminate";
@@ -58,13 +58,13 @@ sub doStop {
 	if( $res && length $res && !$? ){
 		print "$res";
 		if( $opt_wait > 0 ){
-			Mods::Message::msgVerbose( "sleeping $opt_wait sec." );
+			msgVerbose( "sleeping $opt_wait sec." );
 			sleep $opt_wait;
 		}
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	} else {
-		Mods::Message::msgWarn( "no answer from the daemon" );
-		Mods::Message::msgErr( "NOT OK" );
+		msgWarn( "no answer from the daemon" );
+		msgErr( "NOT OK" );
 	}
 }
 
@@ -82,7 +82,7 @@ if( !GetOptions(
 	"ignore!"			=> \$opt_ignore,
 	"wait=i"			=> \$opt_wait )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -91,28 +91,28 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found json='$opt_json'" );
-Mods::Message::msgVerbose( "found port='$opt_port'" );
-Mods::Message::msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found wait='$opt_wait'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found json='$opt_json'" );
+msgVerbose( "found port='$opt_port'" );
+msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
+msgVerbose( "found wait='$opt_wait'" );
 
 # either the json or the port must be specified (and not both)
 my $count = 0;
 $count += 1 if $opt_json;
 $count += 1 if $opt_port != -1;
 if( $count == 0 ){
-	Mods::Message::msgErr( "one of '--json' or '--port' options must be specified, none found" );
+	msgErr( "one of '--json' or '--port' options must be specified, none found" );
 } elsif( $count > 1 ){
-	Mods::Message::msgErr( "one of '--json' or '--port' options must be specified, both were found" );
+	msgErr( "one of '--json' or '--port' options must be specified, both were found" );
 }
 #if a json is specified, must have a listeningPort
 if( $opt_json ){
 	my $daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
 	# must have a listening port
-	Mods::Message::msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+	msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
 }
 
 if( !Mods::Toops::errs()){

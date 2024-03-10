@@ -13,7 +13,7 @@ use File::Spec;
 use Proc::Background;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Path;
 use Mods::Toops;
 
@@ -32,9 +32,9 @@ my $opt_json = false;
 # -------------------------------------------------------------------------------------------------
 # display available JSON configuration files
 sub doListJSON {
-	Mods::Message::msgOut( "displaying available JSON configuration files..." );
+	msgOut( "displaying available JSON configuration files..." );
 	my $json_path = Mods::Path::daemonsConfigurationsDir();
-	opendir( my $dh, $json_path ) or Mods::Message::msgErr( "opendir $json_path: $!" );
+	opendir( my $dh, $json_path ) or msgErr( "opendir $json_path: $!" );
 	if( !Mods::Toops::errs()){
 		my $count = 0;
 		my $sufixed_path = Mods::Path::withTrailingSeparator( $json_path );
@@ -46,7 +46,7 @@ sub doListJSON {
 			}
 		}
 		closedir( $dh );
-		Mods::Message::msgOut( "found $count JSON configuration files" );
+		msgOut( "found $count JSON configuration files" );
 	}
 }
 
@@ -61,7 +61,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"json!"				=> \$opt_json )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -70,12 +70,12 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
 
-Mods::Message::msgWarn( "no action as '--json' option is not set" ) if !$opt_json;
+msgWarn( "no action as '--json' option is not set" ) if !$opt_json;
 
 if( !Mods::Toops::errs()){
 	doListJSON() if $opt_json;

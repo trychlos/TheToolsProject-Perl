@@ -15,7 +15,7 @@
 use Data::Dumper;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::MQTT;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -36,7 +36,7 @@ my $opt_payload = undef;
 # -------------------------------------------------------------------------------------------------
 # publish the message
 sub doPublish {
-	Mods::Message::msgOut( "publishing '$opt_topic [$opt_payload]'..." );
+	msgOut( "publishing '$opt_topic [$opt_payload]'..." );
 
 	my $mqtt = Mods::MQTT::connect();
 	if( $mqtt ){
@@ -51,9 +51,9 @@ sub doPublish {
 	my $result = true;
 
 	if( $result ){
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	}
 }
 
@@ -70,7 +70,7 @@ if( !GetOptions(
 	"payload=s"			=> \$opt_payload,
 	"retain!"			=> \$opt_retain	)){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -79,16 +79,16 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found topic='$opt_topic'" );
-Mods::Message::msgVerbose( "found payload='$opt_payload'" );
-Mods::Message::msgVerbose( "found retain='".( $opt_retain ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found topic='$opt_topic'" );
+msgVerbose( "found payload='$opt_payload'" );
+msgVerbose( "found retain='".( $opt_retain ? 'true':'false' )."'" );
 
 # topic is mandatory
-Mods::Message::msgErr( "topic is required, but is not specified" ) if !$opt_topic;
-Mods::Message::msgWarn( "payload is empty, but shouldn't" ) if !defined $opt_payload;
+msgErr( "topic is required, but is not specified" ) if !$opt_topic;
+msgWarn( "payload is empty, but shouldn't" ) if !defined $opt_payload;
 
 if( !Mods::Toops::errs()){
 	doPublish();

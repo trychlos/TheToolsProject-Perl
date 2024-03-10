@@ -18,7 +18,7 @@ use Data::Dumper;
 use Path::Tiny;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::SMTP;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -48,7 +48,7 @@ my $opt_debug = undef;
 # -------------------------------------------------------------------------------------------------
 # send the email
 sub doSend {
-	Mods::Message::msgOut( "sending an email to $opt_to..." );
+	msgOut( "sending an email to $opt_to..." );
 	my @to = split( /,/, $opt_to );
 	my $text = undef;
 	$text = $opt_text if $opt_text;
@@ -70,9 +70,9 @@ sub doSend {
 		debug => $opt_debug
 	});
 	if( $res ){
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	}
 }
 
@@ -93,7 +93,7 @@ if( !GetOptions(
 	"to=s"				=> \$opt_to,
 	"debug!"			=> \$opt_debug )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -102,25 +102,25 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found subject='$opt_subject'" );
-Mods::Message::msgVerbose( "found text='$opt_text'" );
-Mods::Message::msgVerbose( "found textfname='$opt_textfname'" );
-Mods::Message::msgVerbose( "found html='$opt_html'" );
-Mods::Message::msgVerbose( "found htmlfname='$opt_htmlfname'" );
-Mods::Message::msgVerbose( "found to='$opt_to'" );
-Mods::Message::msgVerbose( "found debug='".( defined $opt_debug ? ( $opt_debug ? 'true':'false' ) : '(undef)' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found subject='$opt_subject'" );
+msgVerbose( "found text='$opt_text'" );
+msgVerbose( "found textfname='$opt_textfname'" );
+msgVerbose( "found html='$opt_html'" );
+msgVerbose( "found htmlfname='$opt_htmlfname'" );
+msgVerbose( "found to='$opt_to'" );
+msgVerbose( "found debug='".( defined $opt_debug ? ( $opt_debug ? 'true':'false' ) : '(undef)' )."'" );
 
 # all data are mandatory, and we must provide some content, either text or html
-Mods::Message::msgErr( "subject is empty, but shouldn't" ) if !$opt_subject;
-Mods::Message::msgErr( "content is empty, but shouldn't" ) if !$opt_text && !$opt_textfname && !$opt_html && !$opt_htmlfname;
-Mods::Message::msgErr( "target is empty, but shouldn't" ) if !$opt_to;
+msgErr( "subject is empty, but shouldn't" ) if !$opt_subject;
+msgErr( "content is empty, but shouldn't" ) if !$opt_text && !$opt_textfname && !$opt_html && !$opt_htmlfname;
+msgErr( "target is empty, but shouldn't" ) if !$opt_to;
 
 # text and textfname are mutually exclusive, so are html and htmlfname
-Mods::Message::msgErr( "text body can only provided one way, but both '--text' and '--textfname' are specified" ) if $opt_text && $opt_textfname;
-Mods::Message::msgErr( "HTML body can only provided one way, but both '--html' and '--htmlfname' are specified" ) if $opt_html && $opt_htmlfname;
+msgErr( "text body can only provided one way, but both '--text' and '--textfname' are specified" ) if $opt_text && $opt_textfname;
+msgErr( "HTML body can only provided one way, but both '--html' and '--htmlfname' are specified" ) if $opt_html && $opt_htmlfname;
 
 if( !Mods::Toops::errs()){
 	doSend();

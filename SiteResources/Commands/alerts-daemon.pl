@@ -26,6 +26,7 @@ use Time::Piece;
 
 use Mods::Constants qw( :all );
 use Mods::Daemon;
+use Mods::Message qw( :all );
 use Mods::Path;
 use Mods::Toops;
 
@@ -58,7 +59,7 @@ my @runningScan = ();
 sub doWithNew {
 	my ( @newFiles ) = @_;
 	foreach my $file ( @newFiles ){
-		Mods::Message::msgVerbose( "new alert '$file'" );
+		msgVerbose( "new alert '$file'" );
 		my $data = Mods::Toops::jsonRead( $file );
 	}
 }
@@ -67,7 +68,7 @@ sub doWithNew {
 # we find less files in this iteration than in the previous - maybe some files have been purged, deleted
 # moved, or we have a new directory, or another reason - just reset and restart over
 sub varReset {
-	Mods::Message::msgVerbose( "varReset()" );
+	msgVerbose( "varReset()" );
 	@previousScan = ();
 }
 
@@ -112,7 +113,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"json=s"			=> \$opt_json )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -121,12 +122,12 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found json='$opt_json'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found json='$opt_json'" );
 
-Mods::Message::msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
+msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 
 if( !Mods::Toops::errs()){
 	$daemon = Mods::Daemon::run( $opt_json );
@@ -135,9 +136,9 @@ if( !Mods::Toops::errs()){
 # - the daemon configuration must have monitoredDir key
 if( !Mods::Toops::errs()){
 	if( exists( $daemon->{config}{monitoredDir} )){
-		Mods::Message::msgVerbose( "monitored dir '$daemon->{config}{monitoredDir}' successfully found in daemon configuration file" );
+		msgVerbose( "monitored dir '$daemon->{config}{monitoredDir}' successfully found in daemon configuration file" );
 	} else {
-		Mods::Message::msgErr( "'monitoredDir' must be specified in daemon configuration, not found" );
+		msgErr( "'monitoredDir' must be specified in daemon configuration, not found" );
 	}
 }
 if( Mods::Toops::errs()){
@@ -152,8 +153,8 @@ my $sleepTime = Mods::Daemon::getSleepTime(
 	$scanInterval
 );
 
-Mods::Message::msgVerbose( "sleepTime='$sleepTime'" );
-Mods::Message::msgVerbose( "scanInterval='$scanInterval'" );
+msgVerbose( "sleepTime='$sleepTime'" );
+msgVerbose( "scanInterval='$scanInterval'" );
 
 while( !$daemon->{terminating} ){
 	my $res = Mods::Daemon::daemonListen( $daemon, $commands );

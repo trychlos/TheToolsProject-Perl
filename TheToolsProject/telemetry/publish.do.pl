@@ -19,7 +19,7 @@
 use Data::Dumper;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Telemetry;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -60,24 +60,24 @@ my @mqttOptions = ();
 # send the metric
 # this requires a telemetry gateway, which is handle by the Telemetry package
 sub doHttpPublish {
-	Mods::Message::msgOut( "publishing '$opt_metric' metric to HTTP gateway..." );
+	msgOut( "publishing '$opt_metric' metric to HTTP gateway..." );
 	my $res = Mods::Telemetry::httpPublish( $opt_metric, $opt_value, \@labels, { httpPrefix => $opt_httpPrefix, httpOptions => \@httpOptions });
 	if( $res ){
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	}
 }
 
 # -------------------------------------------------------------------------------------------------
 # send the metric
 sub doMqttPublish {
-	Mods::Message::msgOut( "publishing '$opt_metric' metric to MQTT bus..." );
+	msgOut( "publishing '$opt_metric' metric to MQTT bus..." );
 	my $res = Mods::Telemetry::mqttPublish( $opt_metric, $opt_value, \@labels, { mqttPrefix => $opt_mqttPrefix, mqttOptions => \@mqttOptions });
 	if( $res ){
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	}
 }
 
@@ -100,7 +100,7 @@ if( !GetOptions(
 	"mqttPrefix=s"		=> \$opt_mqttPrefix,
 	"mqttOption=s@"		=> \$opt_mqttOption	)){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -109,34 +109,34 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found metric='$opt_metric'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found metric='$opt_metric'" );
 @labels = split( /,/, join( ',', @{$opt_label} ));
-Mods::Message::msgVerbose( "found labels='".join( ',', @labels )."'" );
-Mods::Message::msgVerbose( "found value='".( defined $opt_value ? $opt_value : '(undef)' )."'" );
-Mods::Message::msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found httpPrefix='$opt_httpPrefix'" );
+msgVerbose( "found labels='".join( ',', @labels )."'" );
+msgVerbose( "found value='".( defined $opt_value ? $opt_value : '(undef)' )."'" );
+msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
+msgVerbose( "found httpPrefix='$opt_httpPrefix'" );
 @httpOptions = split( /,/, join( ',', @{$opt_httpOption} ));
-Mods::Message::msgVerbose( "found httpOptions='".join( ',', @httpOptions )."'" );
-Mods::Message::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found mqttPrefix='$opt_mqttPrefix'" );
+msgVerbose( "found httpOptions='".join( ',', @httpOptions )."'" );
+msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+msgVerbose( "found mqttPrefix='$opt_mqttPrefix'" );
 @mqttOptions = split( /,/, join( ',', @{$opt_mqttOption} ));
-Mods::Message::msgVerbose( "found mqttOptions='".join( ',', @mqttOptions )."'" );
+msgVerbose( "found mqttOptions='".join( ',', @mqttOptions )."'" );
 
 # metric and values are mandatory
-Mods::Message::msgErr( "metric is required, but is not specified" ) if !$opt_metric;
-Mods::Message::msgErr( "value is required, but is not specified" ) if !defined $opt_value;
+msgErr( "metric is required, but is not specified" ) if !$opt_metric;
+msgErr( "value is required, but is not specified" ) if !defined $opt_value;
 
 # if labels are specified, check that each one is of the 'name=value' form
 foreach my $label ( @labels ){
 	my @words = split( /=/, $label );
 	if( scalar @words != 2 || !$words[0] || !$words[1] ){
-		Mods::Message::msgErr( "label '$label' doesn't appear of the 'name=value' form" );
+		msgErr( "label '$label' doesn't appear of the 'name=value' form" );
 	}
 }
-Mods::Message::msgOut( "do not publish anything as neither '--mqtt' nor '--http' are set" ) if !$opt_mqtt && !$opt_http;
+msgOut( "do not publish anything as neither '--mqtt' nor '--http' are set" ) if !$opt_mqtt && !$opt_http;
 
 if( !Mods::Toops::errs()){
 	doMqttPublish() if $opt_mqtt;

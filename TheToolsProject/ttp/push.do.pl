@@ -16,7 +16,7 @@ use File::Spec;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Path;
 use Mods::Toops;
 
@@ -40,36 +40,36 @@ sub doPublish {
 	#my ( $pullConfig ) = @_;
 	my $result = false;
 	my $tohost = $TTPVars->{config}{toops}{deployments}{pullReference};
-	Mods::Message::msgOut( "publishing to '$tohost'..." );
+	msgOut( "publishing to '$tohost'..." );
 	my $asked = 0;
 	my $done = 0;
 	foreach my $dir ( @{$TTPVars->{config}{toops}{deployments}{sourceDirs}} ){
 		$asked += 1;
 		my @dirs = File::Spec->splitdir( $dir );
 		my $srcdir = File::Spec->rel2abs( File::Spec->catdir( File::Spec->curdir(), $dirs[scalar @dirs - 1] ));
-		Mods::Message::msgOut( "  to $dir" );
-		Mods::Message::msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
+		msgOut( "  to $dir" );
+		msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
 		if( !Mods::Toops::wantsDummy()){
 			my $res = pathrmdir( $dir );
-			Mods::Message::msgVerbose( "doPublish.pathrmdir() got rc=$res" );
+			msgVerbose( "doPublish.pathrmdir() got rc=$res" );
 			my( $num_of_files_and_dirs, $num_of_dirs, $depth_traversed ) = dircopy( $srcdir, $dir );
-			Mods::Message::msgVerbose( "num_of_files_and_dirs='$num_of_files_and_dirs'" );
-			Mods::Message::msgVerbose( "num_of_dirs='$num_of_dirs'" );
-			Mods::Message::msgVerbose( "depth_traversed='$depth_traversed'" );
+			msgVerbose( "num_of_files_and_dirs='$num_of_files_and_dirs'" );
+			msgVerbose( "num_of_dirs='$num_of_dirs'" );
+			msgVerbose( "depth_traversed='$depth_traversed'" );
 		}
 		$done += 1;
 	}
 	if( $opt_tag ){
-		Mods::Message::msgOut( "tagging the git repository" );
+		msgOut( "tagging the git repository" );
 		my $now = localtime->strftime( '%Y%m%d_%H%M%S' );
 		my $message = "$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name}";
 		print `git tag -am "$message" $now`;
 	}
 	my $str = "$done/$asked subdirs copied";
 	if( $done == $asked && !Mods::Toops::errs()){
-		Mods::Message::msgOut( "success ($str)" );
+		msgOut( "success ($str)" );
 	} else {
-		Mods::Message::msgErr( "NOT OK ($str)" );
+		msgErr( "NOT OK ($str)" );
 	}
 }
 
@@ -85,7 +85,7 @@ if( !GetOptions(
 	"check!"			=> \$opt_check,
 	"tag!"				=> \$opt_tag )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -94,11 +94,11 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found check='".( $opt_check ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found tag='".( $opt_tag ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found check='".( $opt_check ? 'true':'false' )."'" );
+msgVerbose( "found tag='".( $opt_tag ? 'true':'false' )."'" );
 
 if( $opt_check ){
 	# must publish a clean development environment from master branch
@@ -125,27 +125,27 @@ if( $opt_check ){
 		}
 	}
 	if( $branch ne 'master' ){
-		Mods::Message::msgErr( "must publish from 'master' branch, found '$branch'" );
+		msgErr( "must publish from 'master' branch, found '$branch'" );
 	} else {
-		Mods::Message::msgVerbose( "publishing from '$branch' branch: fine" );
+		msgVerbose( "publishing from '$branch' branch: fine" );
 	}
 	if( $changes ){
-		Mods::Message::msgErr( "have found uncommitted changes, but shouldn't" );
+		msgErr( "have found uncommitted changes, but shouldn't" );
 	} else {
-		Mods::Message::msgVerbose( "no uncommitted change found: fine" );
+		msgVerbose( "no uncommitted change found: fine" );
 	}
 	if( $untracked ){
-		Mods::Message::msgErr( "have found untracked files, but shouldn't (maybe move them to uncommitted/)" );
+		msgErr( "have found untracked files, but shouldn't (maybe move them to uncommitted/)" );
 	} else {
-		Mods::Message::msgVerbose( "no untracked file found: fine" );
+		msgVerbose( "no untracked file found: fine" );
 	}
 	if( !$clean ){
-		Mods::Message::msgErr( "must publish from a clean working tree, but this one is not" );
+		msgErr( "must publish from a clean working tree, but this one is not" );
 	} else {
-		Mods::Message::msgVerbose( "found clean working tree: fine" );
+		msgVerbose( "found clean working tree: fine" );
 	}
 } else {
-	Mods::Message::msgWarn( "no check is made as '--check' option has been set to false" );
+	msgWarn( "no check is made as '--check' option has been set to false" );
 }
 
 if( !Mods::Toops::errs()){

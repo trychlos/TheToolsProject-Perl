@@ -17,7 +17,7 @@ use URI::Escape;
 
 use Mods::Constants qw( :all );
 use Mods::Dbms;
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Telemetry;
 use Mods::Toops;
 
@@ -47,19 +47,19 @@ my $opt_http = false;
 # - on MQTT, two payloads as .../state and .../state_desc
 # - to HTTP, 10 numerical payloads, only one having a one value
 sub doState {
-	Mods::Message::msgOut( "get database(s) state for '$opt_service'..." );
+	msgOut( "get database(s) state for '$opt_service'..." );
 	my $hostConfig = Mods::Toops::getHostConfig();
 	my $instance = $hostConfig->{Services}{$opt_service}{instance} if exists $hostConfig->{Services}{$opt_service}{instance};
-	Mods::Message::msgVerbose( "found instance='$instance'" );
+	msgVerbose( "found instance='$instance'" );
 	my @databases = @{$hostConfig->{Services}{$opt_service}{databases}} if exists $hostConfig->{Services}{$opt_service}{databases};
-	Mods::Message::msgVerbose( "found databases='".join( ', ', @databases )."'" );
+	msgVerbose( "found databases='".join( ', ', @databases )."'" );
 	if( $instance && scalar @databases ){
 		my $list = [];
 		my $code = 0;
 		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
 		foreach my $db ( @databases ){
-			Mods::Message::msgOut( "  database '$db'" );
+			msgOut( "  database '$db'" );
 			my $result = Mods::Dbms::hashFromTabular( Mods::Toops::ttpFilter( `dbms.pl sql -instance $instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose` ));
 			my $row = @{$result}[0];
 			# due to the differences between the two publications contents, publish separately
@@ -72,7 +72,7 @@ sub doState {
 				foreach my $key ( keys %{$row} ){
 					print `telemetry.pl publish -metric $key -value $row->{$key} -label instance=$instance -label database=$db -nocolored $dummy $verbose -nohttp`;
 					my $rc = $?;
-					Mods::Message::msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
+					msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
 				}
 			}
 			if( $opt_http ){
@@ -100,18 +100,18 @@ sub doState {
 					my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
 					print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$instance -label database=$db -label state=$states->{$key} -nocolored $dummy $verbose -nomqtt`;
 					my $rc = $?;
-					Mods::Message::msgVerbose( "doState() HTTP key='$key' got rc=$rc" );
+					msgVerbose( "doState() HTTP key='$key' got rc=$rc" );
 					$code += $rc;
 				}
 			}
 		}
 		if( $code ){
-			Mods::Message::msgErr( "NOT OK" );
+			msgErr( "NOT OK" );
 		} else {
-			Mods::Message::msgOut( "done" );
+			msgOut( "done" );
 		}
 	} else {
-		Mods::Message::msgWarn( "instance not found or no registered database" );
+		msgWarn( "instance not found or no registered database" );
 	}
 }
 
@@ -129,7 +129,7 @@ if( !GetOptions(
 	"mqtt!"				=> \$opt_mqtt,
 	"http!"				=> \$opt_http )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -138,19 +138,19 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found service='$opt_service'" );
-Mods::Message::msgVerbose( "found state='".( $opt_state ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found service='$opt_service'" );
+msgVerbose( "found state='".( $opt_state ? 'true':'false' )."'" );
+msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 
 # must have a service
-Mods::Message::msgErr( "a service is required, not specified" ) if !$opt_service;
+msgErr( "a service is required, not specified" ) if !$opt_service;
 
 # if no option is given, have a warning message
-Mods::Message::msgWarn( "no status has been requested, exiting gracefully" ) if !$opt_state;
+msgWarn( "no status has been requested, exiting gracefully" ) if !$opt_state;
 
 if( !Mods::Toops::errs()){
 	doState() if $opt_state;

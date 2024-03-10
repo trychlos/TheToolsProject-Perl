@@ -16,7 +16,7 @@ use File::Spec;
 
 use Mods::Constants qw( :all );
 use Mods::Path;
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -42,7 +42,7 @@ my $opt_archivesDir = false;
 sub listArchivesdir {
 	my $dir = Mods::Path::dbmsArchivesDir();
 	my $str = "archivesDir: $dir";
-	Mods::Message::msgVerbose( "returning '$str'" );
+	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
 
@@ -51,7 +51,7 @@ sub listArchivesdir {
 sub listArchivesroot {
 	my $dir = Mods::Path::dbmsArchivesRoot();
 	my $str = "archivesRoot: $dir";
-	Mods::Message::msgVerbose( "returning '$str'" );
+	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
 
@@ -60,7 +60,7 @@ sub listArchivesroot {
 sub listBackupsdir {
 	my $dir = Mods::Path::dbmsBackupsDir();
 	my $str = "backupsDir: $dir";
-	Mods::Message::msgVerbose( "returning '$str'" );
+	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
 
@@ -69,7 +69,7 @@ sub listBackupsdir {
 sub listBackupsroot {
 	my $dir = Mods::Path::dbmsBackupsRoot();
 	my $str = "backupsRoot: $dir";
-	Mods::Message::msgVerbose( "returning '$str'" );
+	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
 
@@ -87,7 +87,7 @@ if( !GetOptions(
 	"archivesRoot!"		=> \$opt_archivesRoot,
 	"archivesDir!"		=> \$opt_archivesDir )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -96,13 +96,13 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found backupsRoot='".( $opt_backupsRoot ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found backupsDir='".( $opt_backupsDir ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found archivesRoot='".( $opt_archivesRoot ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found archivesDir='".( $opt_archivesDir ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found backupsRoot='".( $opt_backupsRoot ? 'true':'false' )."'" );
+msgVerbose( "found backupsDir='".( $opt_backupsDir ? 'true':'false' )."'" );
+msgVerbose( "found archivesRoot='".( $opt_archivesRoot ? 'true':'false' )."'" );
+msgVerbose( "found archivesDir='".( $opt_archivesDir ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
 	listArchivesroot() if $opt_archivesRoot;

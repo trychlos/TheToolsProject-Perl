@@ -42,6 +42,13 @@ Sub::Exporter::setup_exporter({
 		DEBUG
 		DUMMY
 		VERBOSE
+		
+		msgDummy
+		msgErr
+		msgLog
+		msgOut
+		msgVerbose
+		msgWarn
 	)]
 });
 

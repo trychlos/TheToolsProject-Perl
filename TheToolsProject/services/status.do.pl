@@ -12,7 +12,7 @@
 use Data::Dumper;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Services;
 use Mods::Toops;
 
@@ -34,7 +34,7 @@ my $opt_service = $defaults->{service};
 # - HOST
 # - SERVICE
 sub executeStatus {
-	Mods::Message::msgOut( "checking '$opt_service' service..." );
+	msgOut( "checking '$opt_service' service..." );
 	my $cmdCount = 0;
 	my $host = Mods::Toops::_hostname();
 	my $config = Mods::Toops::getHostConfig();
@@ -46,19 +46,19 @@ sub executeStatus {
 				$cmdCount += 1;
 				$cmd =~ s/<HOST>/$host/g;
 				$cmd =~ s/<SERVICE>/$opt_service/g;
-				Mods::Message::msgVerbose( "executing '$cmd'..." );
+				msgVerbose( "executing '$cmd'..." );
 				my $stdout = `$cmd`;
 				my $rc = $?;
-				Mods::Message::msgLog( "stdout='$stdout'" );
-				Mods::Message::msgLog( "got rc=$rc" );
+				msgLog( "stdout='$stdout'" );
+				msgLog( "got rc=$rc" );
 			}
 		} else {
-			Mods::Message::msgWarn( "hostConfig->{Services}{$opt_service}{status}{commands} is not defined, or not an array, or is empty" );
+			msgWarn( "hostConfig->{Services}{$opt_service}{status}{commands} is not defined, or not an array, or is empty" );
 		}
 	} else {
-		Mods::Message::msgWarn( "hostConfig->{Services}{$opt_service}{status} is not defined (or not a hash)" );
+		msgWarn( "hostConfig->{Services}{$opt_service}{status} is not defined (or not a hash)" );
 	}
-	Mods::Message::msgOut( "$cmdCount executed commands" );
+	msgOut( "$cmdCount executed commands" );
 }
 
 # =================================================================================================
@@ -72,7 +72,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"service=s"			=> \$opt_service )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -81,12 +81,12 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found service='$opt_service'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found service='$opt_service'" );
 
-Mods::Message::msgErr( "a service is required, but not found" ) if !$opt_service;
+msgErr( "a service is required, but not found" ) if !$opt_service;
 
 if( !Mods::Toops::errs()){
 	executeStatus() if $opt_service;

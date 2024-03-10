@@ -11,7 +11,7 @@
 use Data::Dumper;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Path;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -29,7 +29,7 @@ my $opt_confdir = false;
 # list confdir value - e.g. 'C:\INLINGUA\configurations\daemons'
 sub listConfdir {
 	my $str = "confDir: ".Mods::Path::daemonsConfigurationsDir();
-	Mods::Message::msgVerbose( "returning '$str'" );
+	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
 
@@ -44,7 +44,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"confdir!"			=> \$opt_confdir )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -53,10 +53,10 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found confdir='".( $opt_confdir ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found confdir='".( $opt_confdir ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
 	listConfdir() if $opt_confdir;

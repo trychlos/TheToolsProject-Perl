@@ -14,7 +14,7 @@ use Module::Load;
 use Time::Piece;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Path;
 use Mods::Toops;
 #use Mods::SqlServer;
@@ -33,22 +33,22 @@ sub backupDatabase {
 	my ( $parms ) = @_;
 	my $result = { status => false };
 	my $dbms = Mods::Dbms::_buildDbms();
-	Mods::Message::msgErr( "Dbms::backupDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
-	Mods::Message::msgErr( "Dbms::backupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
-	Mods::Message::msgErr( "Dbms::backupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
+	msgErr( "Dbms::backupDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
+	msgErr( "Dbms::backupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
+	msgErr( "Dbms::backupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
 	if( !Mods::Toops::errs()){
 		if( !$parms->{output} ){
 			$parms->{output} = Mods::Dbms::computeDefaultBackupFilename( $dbms, $parms );
 		}
-		Mods::Message::msgOut( "backuping to '$parms->{output}'" );
+		msgOut( "backuping to '$parms->{output}'" );
 		my $res = Mods::Dbms::toPackage( 'apiBackupDatabase', $dbms, $parms );
 		$result->{status} = $res->{ok};
 	}
 	$result->{output} = $parms->{output};
 	if( !$result->{status} ){
-		Mods::Message::msgErr( "Dbms::backupDatabase() $parms->{instance}\\$parms->{database} NOT OK" );
+		msgErr( "Dbms::backupDatabase() $parms->{instance}\\$parms->{database} NOT OK" );
 	} else {
-		Mods::Message::msgVerbose( "Dbms::backupDatabase() returning status='true' output='$result->{output}'" );
+		msgVerbose( "Dbms::backupDatabase() returning status='true' output='$result->{output}'" );
 	}
 	return $result;
 }
@@ -77,15 +77,15 @@ sub _buildDbms {
 sub checkDatabaseExists {
 	my ( $instance, $database ) = @_;
 	my $exists = false;
-	Mods::Message::msgVerbose( "Dbms::checkDatabaseExists() entering with instance='".( $instance || '(undef)' )."', database='".( $database || '(undef)' )."'" );
-	Mods::Message::msgErr( "Dbms::checkDatabaseExists() instance is mandatory, but is not specified" ) if !$instance;
-	Mods::Message::msgErr( "Dbms::checkDatabaseExists() database is mandatory, but is not specified" ) if !$database;
+	msgVerbose( "Dbms::checkDatabaseExists() entering with instance='".( $instance || '(undef)' )."', database='".( $database || '(undef)' )."'" );
+	msgErr( "Dbms::checkDatabaseExists() instance is mandatory, but is not specified" ) if !$instance;
+	msgErr( "Dbms::checkDatabaseExists() database is mandatory, but is not specified" ) if !$database;
 	if( !Mods::Toops::errs()){
 		my $dbms = Mods::Dbms::_buildDbms();
 		my $list = Mods::Dbms::getLiveDatabases( $dbms );
 		$exists = true if grep( /$database/i, @{$list} );
 	}
-	Mods::Message::msgVerbose( "checkDatabaseExists() returning ".( $exists ? 'true' : 'false' ));
+	msgVerbose( "checkDatabaseExists() returning ".( $exists ? 'true' : 'false' ));
 	return $exists;
 }
 
@@ -103,16 +103,16 @@ sub checkDatabaseExists {
 sub checkInstanceOpt {
 	my ( $name, $opts ) = @_;
 	$opts //= {};
-	Mods::Message::msgVerbose( "Dbms::checkInstanceOpt() entering with name='".( $name || '(undef)' )."'" );
+	msgVerbose( "Dbms::checkInstanceOpt() entering with name='".( $name || '(undef)' )."'" );
 	my $config = Mods::Toops::getHostConfig();
 	my $instance = undef;
 	if( $config->{DBMSInstances} ){
 		if( $name ){
 			if( exists( $config->{DBMSInstances}{$name} )){
-				Mods::Message::msgVerbose( "found instance='$name'" );
+				msgVerbose( "found instance='$name'" );
 				$instance = $name;
 			} else {
-				Mods::Message::msgErr( "Dbms::checkInstanceOpt() instance '$name' not defined in host configuration" );
+				msgErr( "Dbms::checkInstanceOpt() instance '$name' not defined in host configuration" );
 			}
 		} else {
 			my $single = true;
@@ -121,23 +121,23 @@ sub checkInstanceOpt {
 				my $count = scalar keys( %{$config->{DBMSInstances}} );
 				if( $count == 1 ){
 					$instance = ( keys %{$config->{DBMSInstances}} )[0];
-					Mods::Message::msgVerbose( "Dbms::checkInstanceOpt() '--instance' option not specified, executing on lonely defined '$instance'" );
-					Mods::Message::msgWarn( "you are relying on a single instance definition; be warned that this facility may change in the future" );
+					msgVerbose( "Dbms::checkInstanceOpt() '--instance' option not specified, executing on lonely defined '$instance'" );
+					msgWarn( "you are relying on a single instance definition; be warned that this facility may change in the future" );
 				} else {
 					my $mandatory = true;
 					$mandatory = $opts->{mandatory} if exists $opts->{mandatory};
 					if( $mandatory ){
-						Mods::Message::msgErr( "'--instance' option is mandatory, none found (and there is none or too many DBMS instances)" );
+						msgErr( "'--instance' option is mandatory, none found (and there is none or too many DBMS instances)" );
 					} else {
-						Mods::Message::msgVerbose( "'--instance' option is optional, has not been specified" );
+						msgVerbose( "'--instance' option is optional, has not been specified" );
 					}
 				}
 			} else {
-				Mods::Message::msgVerbose( "'--instance' option is not specified, and 'single' is false, returning none" );
+				msgVerbose( "'--instance' option is not specified, and 'single' is false, returning none" );
 			}
 		}
 	} else {
-		Mods::Message::msgErr( "no 'DBMSInstances' key defined in host configuration" );
+		msgErr( "no 'DBMSInstances' key defined in host configuration" );
 	}
 	if( $instance ){
 		my $TTPVars = Mods::Toops::TTPVars();
@@ -146,7 +146,7 @@ sub checkInstanceOpt {
 			data => $config->{DBMSInstances}{$instance}
 		};
 	}
-	Mods::Message::msgVerbose( "Dbms::checkInstanceOpt() returning with instance='".( $instance || '(undef)' )."'" );
+	msgVerbose( "Dbms::checkInstanceOpt() returning with instance='".( $instance || '(undef)' )."'" );
 	return $instance;
 }
 
@@ -161,25 +161,25 @@ sub checkInstanceOpt {
 # - mode: defaulting to 'full'
 sub computeDefaultBackupFilename {
 	my ( $dbms, $parms ) = @_;
-	Mods::Message::msgVerbose( "Dbms::computeDefaultBackupFilename() entering" );
+	msgVerbose( "Dbms::computeDefaultBackupFilename() entering" );
 	my $output = undef;
 	my $config = Mods::Toops::getHostConfig();
-	Mods::Message::msgErr( "Dbms::computeDefaultBackupFilename() instance is mandatory, but is not specified" ) if !$parms->{instance};
-	Mods::Message::msgErr( "Dbms::computeDefaultBackupFilename() instance is specified, but is not defined in host configuration" ) if !exists $config->{DBMSInstances}{$parms->{instance}};
-	Mods::Message::msgErr( "Dbms::computeDefaultBackupFilename() database is mandatory, but is not specified" ) if !$parms->{database};
+	msgErr( "Dbms::computeDefaultBackupFilename() instance is mandatory, but is not specified" ) if !$parms->{instance};
+	msgErr( "Dbms::computeDefaultBackupFilename() instance is specified, but is not defined in host configuration" ) if !exists $config->{DBMSInstances}{$parms->{instance}};
+	msgErr( "Dbms::computeDefaultBackupFilename() database is mandatory, but is not specified" ) if !$parms->{database};
 	my $mode = 'full';
 	$mode = $parms->{mode} if exists $parms->{mode};
-	Mods::Message::msgErr( "Dbms::computeDefaultBackupFilename() mode must be 'full' or 'diff', found '$mode'" ) if $mode ne 'full' and $mode ne 'diff';
+	msgErr( "Dbms::computeDefaultBackupFilename() mode must be 'full' or 'diff', found '$mode'" ) if $mode ne 'full' and $mode ne 'diff';
 	# compute the dir and make sure it exists
 	my $backupDir = Mods::Path::dbmsBackupsDir();
 	if( !$backupDir ){
-		Mods::Message::msgWarn( "Dbms::computeDefaultBackupFilename() instance='$parms->{instance}' backupDir is not specified, set to default temp directory" );
+		msgWarn( "Dbms::computeDefaultBackupFilename() instance='$parms->{instance}' backupDir is not specified, set to default temp directory" );
 		$backupDir = Mods::Toops::getDefaultTempDir();
 	}
 	# compute the filename
 	my $fname = $dbms->{config}{name}.'-'.$parms->{instance}.'-'.$parms->{database}.'-'.localtime->strftime( '%y%m%d' ).'-'.localtime->strftime( '%H%M%S' ).'-'.$mode.'.backup';
 	$output = File::Spec->catdir( $backupDir, $fname );
-	Mods::Message::msgVerbose( "Dbms::computeDefaultBackupFilename() computing output default as '$output'" );
+	msgVerbose( "Dbms::computeDefaultBackupFilename() computing output default as '$output'" );
 	return $output;
 }
 
@@ -192,11 +192,11 @@ sub displayTabularSql {
 	my $ref = ref( $result );
 	# expects an array, else just give up
 	if( $ref ne 'ARRAY' ){
-		Mods::Message::msgVerbose( "Dbms::displayTabularSql() expected an array, but found '$ref', so just give up" );
+		msgVerbose( "Dbms::displayTabularSql() expected an array, but found '$ref', so just give up" );
 		return;
 	}
 	if( !scalar @{$result} ){
-		Mods::Message::msgVerbose( "Dbms::displayTabularSql() got an empty array, so just give up" );
+		msgVerbose( "Dbms::displayTabularSql() got an empty array, so just give up" );
 		return;
 	}
 	# expects an array of hashes
@@ -209,7 +209,7 @@ sub displayTabularSql {
 		return;
 	}
 	if( $ref ne 'HASH' ){
-		Mods::Message::msgVerbose( "Dbms::displayTabularSql() expected an array of hashes, but found an array of '$ref', so just give up" );
+		msgVerbose( "Dbms::displayTabularSql() expected an array of hashes, but found an array of '$ref', so just give up" );
 		return;
 	}
 	# first compute the max length of each field name + keep the same field order
@@ -228,7 +228,7 @@ sub displayTabularSql {
 					$lengths->{$key} = length $it->{$key};
 				}
 			} elsif( !$haveWarned ){
-				Mods::Message::msgWarn( "found a row with different result set, do you have omit '--multiple' option ?" );
+				msgWarn( "found a row with different result set, do you have omit '--multiple' option ?" );
 				$haveWarned = true;
 			}
 		}
@@ -285,7 +285,7 @@ sub execSqlCommand {
 		if( $tabular ){
 			displayTabularSql( $result->{result} );
 		} else {
-			Mods::Message::msgVerbose( "do not display tabular result as opts->{tabular}='false'" );
+			msgVerbose( "do not display tabular result as opts->{tabular}='false'" );
 		}
 	}
 	return $result;
@@ -386,17 +386,17 @@ sub restoreDatabase {
 	my ( $parms ) = @_;
 	my $result = undef;
 	my $dbms = Mods::Dbms::_buildDbms();
-	Mods::Message::msgErr( "Dbms::restoreDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
-	Mods::Message::msgErr( "Dbms::restoreDatabase() database is mandatory, but is not specified" ) if !$parms->{database} && !$parms->{verifyonly};
-	Mods::Message::msgErr( "Dbms::restoreDatabase() full backup is mandatory, but is not specified" ) if !$parms->{full};
-	Mods::Message::msgErr( "Dbms::restoreDatabase() $parms->{diff}: file not found or not readable" ) if $parms->{diff} && ! -f $parms->{diff};
+	msgErr( "Dbms::restoreDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
+	msgErr( "Dbms::restoreDatabase() database is mandatory, but is not specified" ) if !$parms->{database} && !$parms->{verifyonly};
+	msgErr( "Dbms::restoreDatabase() full backup is mandatory, but is not specified" ) if !$parms->{full};
+	msgErr( "Dbms::restoreDatabase() $parms->{diff}: file not found or not readable" ) if $parms->{diff} && ! -f $parms->{diff};
 	if( !Mods::Toops::errs()){
 		$result = Mods::Dbms::toPackage( 'apiRestoreDatabase', $dbms, $parms );
 	}
 	if( $result && $result->{ok} ){
-		Mods::Message::msgVerbose( "Dbms::restoreDatabase() returning status='true'" );
+		msgVerbose( "Dbms::restoreDatabase() returning status='true'" );
 	} else {
-		Mods::Message::msgErr( "Dbms::restoreDatabase() $parms->{instance}\\$parms->{database} NOT OK" );
+		msgErr( "Dbms::restoreDatabase() $parms->{instance}\\$parms->{database} NOT OK" );
 	}
 	return $result && $result->{ok};
 }
@@ -410,7 +410,7 @@ sub restoreDatabase {
 # returns the found and checked instance, or undef in case of an error
 sub setInstanceByName {
 	my $name = shift;
-	Mods::Message::msgVerbose( "Dbms::setInstanceByName() entering with name='".( $name || '(undef)' )."'" );
+	msgVerbose( "Dbms::setInstanceByName() entering with name='".( $name || '(undef)' )."'" );
 	my $config = Mods::Toops::getHostConfig();
 	my $instance = undef;
 	if( $config->{DBMSInstances} && $name && exists( $config->{DBMSInstances}{$name} )){
@@ -421,9 +421,9 @@ sub setInstanceByName {
 			data => $config->{DBMSInstances}{$name}
 		};
 	} else {
-		Mods::Message::msgErr( "no 'DBMSInstances' key, or name is undefined or is not defined in host configuration" );
+		msgErr( "no 'DBMSInstances' key, or name is undefined or is not defined in host configuration" );
 	}
-	Mods::Message::msgVerbose( "Dbms::setInstanceByName() returning with found='".( $instance || '(undef)' )."'" );
+	msgVerbose( "Dbms::setInstanceByName() returning with found='".( $instance || '(undef)' )."'" );
 	return $instance;
 }
 
@@ -433,25 +433,25 @@ sub setInstanceByName {
 sub toPackage {
 	my ( $fname, $dbms, $parms ) = @_;
 	my $result = undef;
-	Mods::Message::msgErr( "Dbms::toPackage() function name must be specified" ) if !$fname;
+	msgErr( "Dbms::toPackage() function name must be specified" ) if !$fname;
 	if( !Mods::Toops::errs()){
-		Mods::Message::msgVerbose( "Dbms::toPackage() entering with fname='".( $fname || '(undef)' )."'" );
+		msgVerbose( "Dbms::toPackage() entering with fname='".( $fname || '(undef)' )."'" );
 		$dbms = Mods::Dbms::_buildDbms() if !$dbms;
 		my $package = $dbms->{config}{DBMSInstances}{$dbms->{instance}{name}}{package};
-		Mods::Message::msgVerbose( "Dbms::toPackage() package='".( $package || '(undef)' )."'" );
+		msgVerbose( "Dbms::toPackage() package='".( $package || '(undef)' )."'" );
 		if( $package ){
 			Module::Load::load( $package );
 			#Module::Runtime::use_module( $package );
 			if( $package->can( $fname )){
 				$result = $package->$fname( $dbms, $parms );
 			} else {
-				Mods::Message::msgWarn( "Dbms::toPackage() package '$package' says it cannot '$fname'" );
+				msgWarn( "Dbms::toPackage() package '$package' says it cannot '$fname'" );
 			}
 		} else {
-			Mods::Message::msgErr( "unable to find a package to address '$dbms->{instance}{name}' instance" );
+			msgErr( "unable to find a package to address '$dbms->{instance}{name}' instance" );
 		}
 	}
-	Mods::Message::msgVerbose( "Dbms::toPackage() returning with result='".( defined $result ? ( $result->{ok} ? 'true':'false' ) : '(undef)' )."'" );
+	msgVerbose( "Dbms::toPackage() returning with result='".( defined $result ? ( $result->{ok} ? 'true':'false' ) : '(undef)' )."'" );
 	return $result;
 }
 

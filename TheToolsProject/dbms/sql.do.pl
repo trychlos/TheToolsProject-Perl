@@ -23,7 +23,7 @@ use Path::Tiny;
 
 use Mods::Constants qw( :all );
 use Mods::Dbms;
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -63,13 +63,13 @@ sub _result {
 			print $it if !ref( $it );
 		}
 		if( $isHash ){
-			Mods::Message::msgWarn( "result contains data, should have been displayed with '--tabular' option" );
+			msgWarn( "result contains data, should have been displayed with '--tabular' option" );
 		}
 	}
 	if( $res->{ok} ){
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "NOT OK" );
+		msgErr( "NOT OK" );
 	}
 }
 
@@ -81,23 +81,23 @@ sub execSqlStdin {
 		$command .= $_;
 	}
 	chomp $command;
-	Mods::Message::msgVerbose( "executing '$command' from stdin" );
+	msgVerbose( "executing '$command' from stdin" );
 	_result( Mods::Dbms::execSqlCommand( $command, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
 # -------------------------------------------------------------------------------------------------
 # execute the sql script
 sub execSqlScript {
-	Mods::Message::msgVerbose( "executing from '$opt_script'" );
+	msgVerbose( "executing from '$opt_script'" );
 	my $sql = path( $opt_script )->slurp_utf8;
-	Mods::Message::msgVerbose( "sql='$sql'" );
+	msgVerbose( "sql='$sql'" );
 	_result( Mods::Dbms::execSqlCommand( $sql, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
 # -------------------------------------------------------------------------------------------------
 # execute the sql command to be read from stdin
 sub execSqlCommand {
-	Mods::Message::msgVerbose( "executing command='$opt_command'" );
+	msgVerbose( "executing command='$opt_command'" );
 	_result( Mods::Dbms::execSqlCommand( $opt_command, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
@@ -117,7 +117,7 @@ if( !GetOptions(
 	"tabular!"			=> \$opt_tabular,
 	"multiple!"			=> \$opt_multiple )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -126,15 +126,15 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found instance='$opt_instance'" );
-Mods::Message::msgVerbose( "found stdin='".( $opt_stdin ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found script='$opt_script'" );
-Mods::Message::msgVerbose( "found command='$opt_command'" );
-Mods::Message::msgVerbose( "found tabular='".( $opt_tabular ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found multiple='".( $opt_multiple ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found instance='$opt_instance'" );
+msgVerbose( "found stdin='".( $opt_stdin ? 'true':'false' )."'" );
+msgVerbose( "found script='$opt_script'" );
+msgVerbose( "found command='$opt_command'" );
+msgVerbose( "found tabular='".( $opt_tabular ? 'true':'false' )."'" );
+msgVerbose( "found multiple='".( $opt_multiple ? 'true':'false' )."'" );
 
 # instance is mandatory
 Mods::Dbms::checkInstanceOpt( $opt_instance );
@@ -144,10 +144,10 @@ $count += 1 if $opt_stdin;
 $count += 1 if $opt_script;
 $count += 1 if $opt_command;
 if( $count != 1 ){
-	Mods::Message::msgErr( "either '--stdint' or '--script' or '--command' option must be specified" );
+	msgErr( "either '--stdint' or '--script' or '--command' option must be specified" );
 } elsif( $opt_script ){
 	if( ! -f $opt_script ){
-		Mods::Message::msgErr( "$opt_script: file is not found or not readable" );
+		msgErr( "$opt_script: file is not found or not readable" );
 	}
 }
 

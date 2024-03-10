@@ -20,7 +20,7 @@ use Path::Tiny;
 use Time::Moment;
 
 use Mods::Constants qw( :all );
-use Mods::Message;
+use Mods::Message qw( :all );
 use Mods::Path;
 use Mods::SMTP;
 use Mods::Toops;
@@ -56,7 +56,7 @@ $defaults->{sms} = $opt_sms ? 'yes' : 'no';
 # managed macros:
 # - DATA: the JSON content
 sub doJsonAlert {
-	Mods::Message::msgOut( "creating a new '$opt_level' json alert..." );
+	msgOut( "creating a new '$opt_level' json alert..." );
 	my $command = Mods::Toops::var([ 'alerts', 'withFile', 'command' ]);
 	if( $command ){
 		my $dir = Mods::Path::alertsDir();
@@ -79,14 +79,14 @@ sub doJsonAlert {
 			print `$command -nocolored $dummy $verbose`;
 			#$? = 256
 			$res = $? == 0;
-			Mods::Message::msgOut( "success" );
+			msgOut( "success" );
 		} else {
-			Mods::Message::msgWarn( "unable to get a dropDir for 'withFile' alerts" );
-			Mods::Message::msgErr( "alert by file NOT OK" );
+			msgWarn( "unable to get a dropDir for 'withFile' alerts" );
+			msgErr( "alert by file NOT OK" );
 		}
 	} else {
-		Mods::Message::msgWarn( "unable to get a command for alerts by file" );
-		Mods::Message::msgErr( "alert by file NOT OK" );
+		msgWarn( "unable to get a command for alerts by file" );
+		msgErr( "alert by file NOT OK" );
 	}
 }
 
@@ -98,7 +98,7 @@ sub doJsonAlert {
 # - PAYLOAD
 # - OPTIONS
 sub doMqttAlert {
-	Mods::Message::msgOut( "publishing a '$opt_level' alert on MQTT bus..." );
+	msgOut( "publishing a '$opt_level' alert on MQTT bus..." );
 	my $command = Mods::Toops::var([ 'alerts', 'withMqtt', 'command' ]);
 	my $res = false;
 	if( $command ){
@@ -123,12 +123,12 @@ sub doMqttAlert {
 		print `$command -nocolored $dummy $verbose`;
 		$res = ( $? == 0 );
 	} else {
-		Mods::Message::msgWarn( "unable to get a command for alerts by MQTT" );
+		msgWarn( "unable to get a command for alerts by MQTT" );
 	}
 	if( $res ){
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "alert by MQTT NOT OK" );
+		msgErr( "alert by MQTT NOT OK" );
 	}
 }
 
@@ -136,7 +136,7 @@ sub doMqttAlert {
 # send the alert by SMS
 # Expects have some sort of configuration in Toops json
 sub doSmsAlert {
-	Mods::Message::msgOut( "sending a '$opt_level' alert by SMS..." );
+	msgOut( "sending a '$opt_level' alert by SMS..." );
 	my $res = false;
 	my $command = Mods::Toops::var([ 'alerts', 'withSms', 'command' ]);
 	if( $command ){
@@ -160,9 +160,9 @@ Best regards.
 		Mods::Toops::msgWarn( "unable to get a command for alerts by SMS" );
 	}
 	if( $res ){
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "alert by SMS NOT OK" );
+		msgErr( "alert by SMS NOT OK" );
 	}
 }
 
@@ -173,7 +173,7 @@ Best regards.
 # - SUBJECT
 # - OPTIONS
 sub doSmtpAlert {
-	Mods::Message::msgOut( "publishing a '$opt_level' alert by SMTP..." );
+	msgOut( "publishing a '$opt_level' alert by SMTP..." );
 	my $res = false;
 	my $command = Mods::Toops::var([ 'alerts', 'withSmtp', 'command' ]);
 	if( $command ){
@@ -196,12 +196,12 @@ Best regards.
 		print `$command -nocolored $dummy $verbose`;
 		$res = ( $? == 0 );
 	} else {
-		Mods::Message::msgWarn( "unable to get a command for alerts by SMTP" );
+		msgWarn( "unable to get a command for alerts by SMTP" );
 	}
 	if( $res ){
-		Mods::Message::msgOut( "success" );
+		msgOut( "success" );
 	} else {
-		Mods::Message::msgErr( "alert by SMTP NOT OK" );
+		msgErr( "alert by SMTP NOT OK" );
 	}
 }
 
@@ -222,7 +222,7 @@ if( !GetOptions(
 	"smtp!"				=> \$opt_smtp,
 	"sms!"				=> \$opt_sms )){
 
-		Mods::Message::msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
 }
 
@@ -231,27 +231,27 @@ if( Mods::Toops::wantsHelp()){
 	Mods::Toops::ttpExit();
 }
 
-Mods::Message::msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found emitter='$opt_emitter'" );
-Mods::Message::msgVerbose( "found level='$opt_level'" );
-Mods::Message::msgVerbose( "found message='$opt_message'" );
-Mods::Message::msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found smtp='".( $opt_smtp ? 'true':'false' )."'" );
-Mods::Message::msgVerbose( "found sms='".( $opt_sms ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found emitter='$opt_emitter'" );
+msgVerbose( "found level='$opt_level'" );
+msgVerbose( "found message='$opt_message'" );
+msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
+msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+msgVerbose( "found smtp='".( $opt_smtp ? 'true':'false' )."'" );
+msgVerbose( "found sms='".( $opt_sms ? 'true':'false' )."'" );
 
 # all data are mandatory (and we provide a default value for all but the message)
-Mods::Message::msgErr( "emitter is empty, but shouldn't" ) if !$opt_emitter;
-Mods::Message::msgErr( "message is empty, but shouldn't" ) if !$opt_message;
-Mods::Message::msgErr( "level is empty, but shouldn't" ) if !$opt_level;
+msgErr( "emitter is empty, but shouldn't" ) if !$opt_emitter;
+msgErr( "message is empty, but shouldn't" ) if !$opt_message;
+msgErr( "level is empty, but shouldn't" ) if !$opt_level;
 #level must be known
-Mods::Message::msgErr( "level='$opt_level' is unknown" ) if $opt_level && !Mods::Message::isKnownLevel( $opt_level );
+msgErr( "level='$opt_level' is unknown" ) if $opt_level && !Mods::Message::isKnownLevel( $opt_level );
 
 # at least one of json or mqtt media must be specified
 if( !$opt_json && !$opt_mqtt && !$opt_smtp && !$opt_sms ){
-	Mods::Message::msgErr( "at least one of '--json', '--mqtt', '--smtp' or '--sms' options must be specified" ) if !$opt_emitter;
+	msgErr( "at least one of '--json', '--mqtt', '--smtp' or '--sms' options must be specified" ) if !$opt_emitter;
 }
 
 if( !Mods::Toops::errs()){
