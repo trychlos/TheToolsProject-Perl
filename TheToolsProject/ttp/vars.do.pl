@@ -7,6 +7,7 @@
 # @(-) --[no]siteRoot          display the site-defined root path [${siteRoot}]
 # @(-) --[no]logsRoot          display the Toops logs Root (not daily) [${logsRoot}]
 # @(-) --[no]logsDir           display the current Toops logs directory [${logsDir}]
+# @(-) --[no]alertsDir         display the 'alerts' file directory [${alertsDir}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -26,12 +27,22 @@ my $defaults = {
 	dummy => 'no',
 	siteRoot => 'no',
 	logsRoot => 'no',
-	logsDir => 'no'
+	logsDir => 'no',
+	alertsDir => 'no'
 };
 
 my $opt_siteRoot = false;
 my $opt_logsDir = false;
 my $opt_logsRoot = false;
+my $opt_alertsDir = false;
+
+# -------------------------------------------------------------------------------------------------
+# list alertsDir value - e.g. 'C:\INLINGUA\Logs\240201\Alerts'
+sub listAlertsdir {
+	my $str = "alertsDir: ".Mods::Path::alertsDir();
+	msgVerbose( "returning '$str'" );
+	print " $str".EOL;
+}
 
 # -------------------------------------------------------------------------------------------------
 # list logsDir value - e.g. 'C:\INLINGUA\Logs\240201\Toops'
@@ -68,7 +79,8 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"siteRoot!"			=> \$opt_siteRoot,
 	"logsRoot!"			=> \$opt_logsRoot,
-	"logsDir!"			=> \$opt_logsDir )){
+	"logsDir!"			=> \$opt_logsDir,
+	"alertsDir!"		=> \$opt_alertsDir )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		Mods::Toops::ttpExit( 1 );
@@ -85,11 +97,13 @@ msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found siteRoot='".( $opt_siteRoot ? 'true':'false' )."'" );
 msgVerbose( "found logsRoot='".( $opt_logsRoot ? 'true':'false' )."'" );
 msgVerbose( "found logsDir='".( $opt_logsDir ? 'true':'false' )."'" );
+msgVerbose( "found alertsDir='".( $opt_alertsDir ? 'true':'false' )."'" );
 
 if( !Mods::Toops::errs()){
 	listSiteroot() if $opt_siteRoot;
 	listLogsroot() if $opt_logsRoot;
 	listLogsdir() if $opt_logsDir;
+	listAlertsdir() if $opt_alertsDir;
 }
 
 Mods::Toops::ttpExit();

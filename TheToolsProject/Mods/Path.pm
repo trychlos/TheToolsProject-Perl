@@ -229,7 +229,7 @@ sub hostsConfigurationsDir {
 # ------------------------------------------------------------------------------------------------
 # (I):
 # - an optional options hash with following keys:
-#   > makeDirExist: whether to create the directory if it doesn't yet exist, defaulting to true
+#   > makeDirExist: whether to test, and create the directory if it doesn't yet exist, defaulting to true
 # (O):
 # returns the logs tree for the day
 # this is an optional value read from toops.json, defaulting to user temp directory, itself defaulting to /tmp (or C:\Temp)
@@ -239,13 +239,8 @@ sub hostsConfigurationsDir {
 sub logsDailyDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir;
-	my $TTPVars = Mods::Toops::TTPVars();
-	if( exists( $TTPVars->{config}{host}{logsDir} )){
-		$dir = $TTPVars->{config}{host}{logsDir};
-	} elsif( exists( $TTPVars->{config}{toops}{logsDir} )){
-		$dir = $TTPVars->{config}{toops}{logsDir};
-	} else {
+	my $dir = Mods::Toops::var([ 'logsDir' ]);
+	if( !$dir ){
 		$dir = File::Spec->catdir( logsRootDir( $opts ), 'Toops', 'logs' );
 	}
 	my $makeDirExist = true;
@@ -349,7 +344,7 @@ sub siteConfigurationsDir {
 
 # ------------------------------------------------------------------------------------------------
 sub siteRoot {
-	return Mods::Toops::var( 'siteRoot' );
+	return Mods::Toops::var([ 'siteRoot' ]);
 }
 
 # ------------------------------------------------------------------------------------------------

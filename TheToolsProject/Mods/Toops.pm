@@ -1130,7 +1130,7 @@ sub TTPVars {
 # returns the content of a var, read from toops.json, maybe overriden in host configuration
 # (I):
 # - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
-#   each provided key is expected to address a JSON hash object
+#   each provided key (but maybe the last one) is expected to address a JSON hash object
 # - an optional options hash with following keys:
 #   > config: host configuration (useful when searching for a remote host), defaulting to current host config
 # (O):
