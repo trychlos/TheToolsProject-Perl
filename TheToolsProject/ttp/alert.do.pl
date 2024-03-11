@@ -39,10 +39,10 @@ my $defaults = {
 my $opt_emitter = $defaults->{emitter};
 my $opt_level = INFO;
 my $opt_message = $defaults->{message};
-my $opt_json = Mods::Toops::var([ 'alerts', 'withFile', 'enabled' ]);
-my $opt_mqtt = Mods::Toops::var([ 'alerts', 'withMqtt', 'enabled' ]);
-my $opt_smtp = Mods::Toops::var([ 'alerts', 'withSmtp', 'enabled' ]);
-my $opt_sms = Mods::Toops::var([ 'alerts', 'withSms', 'enabled' ]);
+my $opt_json = ttpVar([ 'alerts', 'withFile', 'enabled' ]);
+my $opt_mqtt = ttpVar([ 'alerts', 'withMqtt', 'enabled' ]);
+my $opt_smtp = ttpVar([ 'alerts', 'withSmtp', 'enabled' ]);
+my $opt_sms = ttpVar([ 'alerts', 'withSms', 'enabled' ]);
 
 $defaults->{json} = $opt_json ? 'yes' : 'no';
 $defaults->{mqtt} = $opt_mqtt ? 'yes' : 'no';
@@ -56,7 +56,7 @@ $defaults->{sms} = $opt_sms ? 'yes' : 'no';
 # - DATA: the JSON content
 sub doJsonAlert {
 	msgOut( "creating a new '$opt_level' json alert..." );
-	my $command = Mods::Toops::var([ 'alerts', 'withFile', 'command' ]);
+	my $command = ttpVar([ 'alerts', 'withFile', 'command' ]);
 	if( $command ){
 		my $dir = Mods::Path::alertsDir();
 		if( $dir ){
@@ -98,7 +98,7 @@ sub doJsonAlert {
 # - OPTIONS
 sub doMqttAlert {
 	msgOut( "publishing a '$opt_level' alert on MQTT bus..." );
-	my $command = Mods::Toops::var([ 'alerts', 'withMqtt', 'command' ]);
+	my $command = ttpVar([ 'alerts', 'withMqtt', 'command' ]);
 	my $res = false;
 	if( $command ){
 		my $topic = ttpHost()."/alert";
@@ -137,7 +137,7 @@ sub doMqttAlert {
 sub doSmsAlert {
 	msgOut( "sending a '$opt_level' alert by SMS..." );
 	my $res = false;
-	my $command = Mods::Toops::var([ 'alerts', 'withSms', 'command' ]);
+	my $command = ttpVar([ 'alerts', 'withSms', 'command' ]);
 	if( $command ){
 		my $text = "Hi,
 An alert has been raised:
@@ -174,7 +174,7 @@ Best regards.
 sub doSmtpAlert {
 	msgOut( "publishing a '$opt_level' alert by SMTP..." );
 	my $res = false;
-	my $command = Mods::Toops::var([ 'alerts', 'withSmtp', 'command' ]);
+	my $command = ttpVar([ 'alerts', 'withSmtp', 'command' ]);
 	if( $command ){
 		my $subject = "[$opt_level] Alert";
 		my $text = "Hi,

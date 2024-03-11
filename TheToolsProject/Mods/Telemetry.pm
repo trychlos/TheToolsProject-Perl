@@ -33,7 +33,7 @@ sub httpPublish {
 	my ( $metric, $value, $labels, $opts ) = @_;
 	$opts //= {};
 	my $count = 0;
-	my $url = Mods::Toops::var([ 'Telemetry', 'withHttp', 'url' ]);
+	my $url = Mods::Toops::ttpVar([ 'Telemetry', 'withHttp', 'url' ]);
 	if( $url ){
 		foreach my $it ( @{$labels} ){
 			my @words = split( /=/, $it );
@@ -91,7 +91,7 @@ sub mqttPublish {
 	my ( $metric, $value, $labels, $opts ) = @_;
 	$opts //= {};
 	my $count = 0;
-	my $command = Mods::Toops::var([ 'Telemetry', 'withMqtt', 'command' ]);
+	my $command = Mods::Toops::ttpVar([ 'Telemetry', 'withMqtt', 'command' ]);
 	if( $command ){
 		my $topic = Mods::Toops::ttpHost();
 		$topic .= "/telemetry";

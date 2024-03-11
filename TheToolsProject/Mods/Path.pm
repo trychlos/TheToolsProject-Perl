@@ -50,7 +50,7 @@ use Mods::Toops;
 sub alertsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = Mods::Toops::var([ 'alerts', 'withFile', 'dropDir' ], $opts );
+	my $dir = Mods::Toops::ttpVar([ 'alerts', 'withFile', 'dropDir' ], $opts );
 	if( defined $dir && length $dir ){
 		my $makeDirExist = true;
 		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
@@ -67,7 +67,7 @@ sub alertsDir {
 sub credentialsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = Mods::Toops::var([ 'credentialsDir' ], $opts );
+	my $dir = Mods::Toops::ttpVar([ 'credentialsDir' ], $opts );
 	if( !defined $dir || !length $dir ){
 		msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
 	}
@@ -87,7 +87,7 @@ sub daemonsConfigurationsDir {
 # the current DBMS archives directory, making sure the dir exists
 # the dir can be defined in toops.json, or overriden in host configuration
 sub dbmsArchivesDir {
-	my $dir = Mods::Toops::var([ 'DBMS', 'archivesDir' ]);
+	my $dir = Mods::Toops::ttpVar([ 'DBMS', 'archivesDir' ]);
 	if( defined $dir && length $dir ){
 		# happens that \\ftpback-xx OVH backup storage spaces are sometimes unavailable during the day
 		# at least do not try to test them each time we need this address
@@ -103,7 +103,7 @@ sub dbmsArchivesDir {
 # the current DBMS archives root tree, making sure the dir exists
 # the dir can be defined in toops.json, or overriden in host configuration
 sub dbmsArchivesRoot {
-	my $dir = Mods::Toops::var([ 'DBMS', 'archivesRoot' ]);
+	my $dir = Mods::Toops::ttpVar([ 'DBMS', 'archivesRoot' ]);
 	if( defined $dir && length $dir ){
 		# happens that \\ftpback-xx OVH backup storage spaces are sometimes unavailable during the day
 		# at least do not try to test them each time we need this address
@@ -124,7 +124,7 @@ sub dbmsArchivesRoot {
 sub dbmsBackupsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = Mods::Toops::var( [ 'DBMS', 'backupsDir' ], $opts );
+	my $dir = Mods::Toops::ttpVar( [ 'DBMS', 'backupsDir' ], $opts );
 	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {
@@ -138,7 +138,7 @@ sub dbmsBackupsDir {
 # the root the the DBMS backups directories, making sure the dir exists
 # the root can be defined in toops.json, or overriden in host configuration
 sub dbmsBackupsRoot {
-	my $dir = Mods::Toops::var([ 'DBMS', 'backupsRoot' ]);
+	my $dir = Mods::Toops::ttpVar([ 'DBMS', 'backupsRoot' ]);
 	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {
@@ -157,7 +157,7 @@ sub dbmsBackupsRoot {
 sub execReportsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = Mods::Toops::var([ 'executionReports', 'withFile', 'dropDir' ], $opts );
+	my $dir = Mods::Toops::ttpVar([ 'executionReports', 'withFile', 'dropDir' ], $opts );
 	if( defined $dir && length $dir ){
 		my $makeDirExist = true;
 		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
@@ -239,7 +239,7 @@ sub hostsConfigurationsDir {
 sub logsDailyDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = Mods::Toops::var([ 'logsDir' ]);
+	my $dir = Mods::Toops::ttpVar([ 'logsDir' ]);
 	if( !$dir ){
 		$dir = File::Spec->catdir( logsRootDir( $opts ), 'Toops', 'logs' );
 	}
@@ -344,7 +344,7 @@ sub siteConfigurationsDir {
 
 # ------------------------------------------------------------------------------------------------
 sub siteRoot {
-	return Mods::Toops::var([ 'siteRoot' ]);
+	return Mods::Toops::ttpVar([ 'siteRoot' ]);
 }
 
 # ------------------------------------------------------------------------------------------------

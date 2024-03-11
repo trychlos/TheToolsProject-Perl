@@ -6,5 +6,5 @@
 	"listeningPort": 14391,
 	"listenInterval" : 2,
 	"scanInterval" : 5,
-	"monitoredDir": "[eval:Mods::Toops::var([ 'alerts', 'withFile', 'dropDir' ])]"
+	"monitoredDir": "[eval:ttpVar([ 'alerts', 'withFile', 'dropDir' ])]"
 }

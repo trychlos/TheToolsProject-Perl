@@ -45,7 +45,7 @@ sub send {
 	msgErr( "Mail::send() expect at least one target email address, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{to};
 	my $gateway = undef;
 	if( !Mods::Toops::ttpErrs()){
-		$gateway = Mods::Toops::var([ 'SMTPGateway' ]);
+		$gateway = Mods::Toops::ttpVar([ 'SMTPGateway' ]);
 		msgErr( "Mail::send() expect smtp gateway, not found" ) if !$gateway;
 		msgErr( "Mail::send() password is mandatory if a username is specified" ) if $gateway && $gateway->{username} && !$gateway->{password};
 	}

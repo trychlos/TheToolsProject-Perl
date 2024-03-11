@@ -29,7 +29,7 @@ sub get {
 		msgErr( "Credentials::get() expects an array, found '".ref( $keys )."'" );
 	} else {
 		# first look in the Toops/host configurations
-		$res = Mods::Toops::var( $keys );
+		$res = Mods::Toops::ttpVar( $keys );
 		# if not found, looks at credentials/toops.json
 		if( !defined( $res )){
 			my $fname = File::Spec->catdir( Mods::Path::credentialsDir(), "toops.json" );

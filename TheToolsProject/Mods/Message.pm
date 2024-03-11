@@ -307,7 +307,7 @@ sub _printMsg {
 	$line .= $args->{msg} if exists $args->{msg};
 	# writes in log ?
 	my $withLog = true;
-	$var = Mods::Toops::var([ 'Message',  $Definitions->{$level}{key}, 'withLog' ]) if exists $Definitions->{$level}{key};
+	$var = Mods::Toops::ttpVar([ 'Message',  $Definitions->{$level}{key}, 'withLog' ]) if exists $Definitions->{$level}{key};
 	$withLog = $var if defined $var;
 	Mods::Message::_msgLogAppend( $line ) if $withLog;
 	# output to the console ?
@@ -318,7 +318,7 @@ sub _printMsg {
 		# global runtime option is only considered if not disabled in toops/host configuration
 		my $withColor = true;
 		$var = undef;
-		$var = Mods::Toops::var([ 'Message',  $Definitions->{$level}{key}, 'withColor' ]) if exists $Definitions->{$level}{key};
+		$var = Mods::Toops::ttpVar([ 'Message',  $Definitions->{$level}{key}, 'withColor' ]) if exists $Definitions->{$level}{key};
 		$withColor = $var if defined $var;
 		$withColor = $TTPVars->{run}{colored} if $withColor;
 		my $colorstart = $withColor && exists( $Definitions->{$level}{color} ) ? color( $Definitions->{$level}{color} ) : '';

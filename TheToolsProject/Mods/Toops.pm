@@ -149,7 +149,7 @@ sub copyDir {
 		return false;
 	}
 	my $cmdres = commandByOs({
-		command => var([ 'copyDir', 'byOS', $Config{osname}, 'command' ]),
+		command => ttpVar([ 'copyDir', 'byOS', $Config{osname}, 'command' ]),
 		macros => {
 			SOURCE => $source,
 			TARGET => $target
@@ -190,7 +190,7 @@ sub copyFile {
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $source );
 	my $srcpath = File::Spec->catpath( $vol, $dirs );
 	my $cmdres = commandByOs({
-		command => var([ 'copyFile', 'byOS', $Config{osname}, 'command' ]),
+		command => ttpVar([ 'copyFile', 'byOS', $Config{osname}, 'command' ]),
 		macros => {
 			SOURCE => $srcpath,
 			TARGET => $target,
@@ -329,12 +329,12 @@ sub _evaluatePrint {
 sub executionReport {
 	my ( $args ) = @_;
 	# write JSON file if configuration enables that and relevant arguments are provided
-	my $enabled = var([ 'executionReports', 'withFile', 'enabled' ]);
+	my $enabled = ttpVar([ 'executionReports', 'withFile', 'enabled' ]);
 	if( $enabled && $args->{file} ){
 		_executionReportToFile( $args->{file} );
 	}
 	# publish MQTT message if configuration enables that and relevant arguments are provided
-	$enabled = var([ 'executionReports', 'withMqtt', 'enabled' ]);
+	$enabled = ttpVar([ 'executionReports', 'withMqtt', 'enabled' ]);
 	if( $enabled && $args->{mqtt} ){
 		_executionReportToMqtt( $args->{mqtt} );
 	}
@@ -372,7 +372,7 @@ sub _executionReportToFile {
 	$data = $args->{data} if exists $args->{data};
 	if( defined $data ){
 		$data = _executionReportCompleteData( $data );
-		my $command = var([ 'executionReports', 'withFile', 'command' ]);
+		my $command = ttpVar([ 'executionReports', 'withFile', 'command' ]);
 		if( $command ){
 			my $json = JSON->new;
 			my $str = $json->encode( $data );
@@ -419,7 +419,7 @@ sub _executionReportToMqtt {
 		if( $topic ){
 			my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
 			my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
-			my $command = var([ 'executionReports', 'withMqtt', 'command' ]);
+			my $command = ttpVar([ 'executionReports', 'withMqtt', 'command' ]);
 			if( $command ){
 				foreach my $key ( keys %{$data} ){
 					if( !grep( /$key/, @{$excludes} )){
@@ -875,7 +875,7 @@ sub moveDir {
 		return true;
 	}
 	my $cmdres = commandByOs({
-		command => var([ 'moveDir', 'byOS', $Config{osname}, 'command' ]),
+		command => ttpVar([ 'moveDir', 'byOS', $Config{osname}, 'command' ]),
 		macros => {
 			SOURCE => $source,
 			TARGET => $target
@@ -1121,12 +1121,6 @@ sub ttpHost {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Used by verbs to access our global variables
-sub TTPVars {
-	return $TTPVars;
-}
-
-# -------------------------------------------------------------------------------------------------
 # returns the content of a var, read from toops.json, maybe overriden in host configuration
 # (I):
 # - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
@@ -1135,7 +1129,7 @@ sub TTPVars {
 #   > config: host configuration (useful when searching for a remote host), defaulting to current host config
 # (O):
 # - the evaluated value of this variable, which may be undef
-sub var {
+sub ttpVar {
 	my ( $keys, $opts ) = @_;
 	$opts //= {};
 	my $result = varSearch( $keys, $TTPVars->{config}{toops} );
@@ -1144,6 +1138,12 @@ sub var {
 	my $hostValue = varSearch( $keys, $config );
 	$result = $hostValue if defined $hostValue;
 	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Used by verbs to access our global variables
+sub TTPVars {
+	return $TTPVars;
 }
 
 # -------------------------------------------------------------------------------------------------

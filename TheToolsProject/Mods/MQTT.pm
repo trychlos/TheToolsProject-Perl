@@ -34,7 +34,7 @@ sub connect {
 	my ( $args ) = @_;
 	my $mqtt = undef;
 
-	my $broker = Mods::Toops::var([ 'MQTTGateway', 'broker' ]);
+	my $broker = Mods::Toops::ttpVar([ 'MQTTGateway', 'broker' ]);
 	$broker = $args->{broker} if $args->{broker};
 	msgErr( "MQTT::connect() broker is not configured nor provided as an argument" ) if !$broker;
 
