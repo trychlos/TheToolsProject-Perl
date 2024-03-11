@@ -1,9 +1,6 @@
 #!/usr/bin/perl
 # @(#) Monitor the services URLs
 #
-# @(-) --[no]help              print this message, and exit [${help}]
-# @(-) --service=<service>     the service to be monitored, may be specified several times or as a comma-separated listt [${service}]
-#
 # This script is run from an external (Linux) monitoring host, so cannot take advantage of TTP.
 #
 # Copyright (@) 2023-2024 PWI Consulting
@@ -11,7 +8,6 @@
 use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
-use Path::Tiny;
 
 use constant { true => 1, false => 0 };
 
@@ -36,7 +32,7 @@ sub msgHelp {
   Usage: $0 [options]
   where available options are:
     --[no]help              print this message, and exit [$defaults->{help}]
-    --service=<name>        the service to be monitored, may be specified several times or as a comma-separated listt [$defaults->{service}]
+    --service=<name>        the service to be monitored, may be specified several times or as a comma-separated list [$defaults->{service}]
 ";
 }
 
