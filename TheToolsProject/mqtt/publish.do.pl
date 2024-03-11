@@ -40,6 +40,7 @@ sub doPublish {
 
 	my $mqtt = Mods::MQTT::connect();
 	if( $mqtt ){
+		$opt_payload //= "";
 		if( $opt_retain ){
 			$mqtt->retain( $opt_topic, $opt_payload );
 		} else {
