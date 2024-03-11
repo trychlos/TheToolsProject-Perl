@@ -7,7 +7,7 @@
 	set argC=0
 	for %%x in (%*) do set /A argC+=1
 	if not %argC% == 1 (
-		call :logMe expected 1 'TaskName' regular expression argument, found %argC%
+		call :logMe ERR expected 1 TaskName regular expression argument, found %argC%
 		exit /b 1
 	)
 	set name=%1

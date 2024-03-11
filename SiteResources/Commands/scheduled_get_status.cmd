@@ -7,7 +7,7 @@
 	set argC=0
 	for %%x in (%*) do set /A argC+=1
 	if not %argC% == 1 (
-		call :logMe expected 1 'TaskName' argument, found %argC%
+		call :logMe ERR expected 1 TaskName argument, found %argC%
 		exit /b 1
 	)
 	set task=%1
@@ -35,6 +35,4 @@
 	for /f "tokens=2" %%a in ('ttp.pl vars -logsDir -nocolored') do @set _logsdir=%%a
 	set _time=%TIME: =0%
 	set LOGFILE=%_logsdir%\\%1.log
-	set VALUES=%_logsdir%\\%1.values
-	echo > %VALUES%
 	exit /b
