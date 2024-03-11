@@ -52,6 +52,11 @@
 				},
 				"ovh": {
 					"ip": "ip-87.98.189.58"
+				},
+				"externalMonitor": {
+					"commands": [
+						"http.pl status -url http://canal33.sysnrg.com -header X-Sent-By -mqtt -mqttTopic Service/<SERVICE> -http"
+					]
 				}
 			},
 			"Dom.2008": {
