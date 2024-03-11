@@ -17,6 +17,7 @@
 # Copyright (@) 2023-2024 PWI Consulting
 
 use Data::Dumper;
+use HTTP::Request;
 use LWP::UserAgent;
 
 use Mods::Constants qw( :all );
@@ -43,18 +44,23 @@ my $opt_ignore = false;
 sub doGet {
 	msgOut( "requesting '$opt_url'..." );
 	my $ua = LWP::UserAgent->new();
-	my $response = $ua->get( $opt_url );
-	my $res = false;
-	if( $opt_ignore ){
-		msgVerbose( "receiving HTTP status=$response->code, ignored as opt_ignore='true'" );
-		$res = true;
+	$ua->timeout( 5 );
+	my $req = HTTP::Request->new( GET => $opt_url );
+	my $response = $ua->request( $req );
+	my $res = $response->is_success;
+	msgVerbose( "receiving HTTP status='".$response->code."', success='".( $res ? 'true' : 'false' )."'" );
+	if( $res ){
+		msgLog( "content='".$response->decoded_content."'" );
 	} else {
-		$res = $response->is_success;
-		msgLog( $response );
+		msgLog( "status='".$response->status_line."'" );
+		if( $opt_ignore ){
+			msgVerbose( "erroneous HTTP status ignored as opt_ignore='true'" );
+			$res = true;
+		}
 	}
 	if( $opt_header ){
 		my $header = $response->header( $opt_header );
-		msgOut( "got $opt_header='$header'" );
+		print "  $opt_header: $header".EOL;
 	} else {
 		print Dumper( $response );
 	}

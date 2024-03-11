@@ -82,11 +82,12 @@ sub doSwitchIP {
 						my $start = localtime->epoch;
 						my $end = false;
 						my $timeout = false;
-						print "waiting for move";
+						print "waiting for IP move";
 						do {
 							print ".";
-							sleep 2;
-							$out = ttpFilter( `ovh.pl ipget -ip $opt_ip -routed -nocolored $verbose $dummy` );
+							sleep 1;
+							$out = ttpFilter( `ovh.pl ipget -ip $opt_ip -routed -nocolored $dummy $verbose` );
+							msgLog( "ttpFilter() returns: '".Dumper( $out )."'" );
 							@words = split( /\s+/, $out->[0] );
 							$current = $words[1];
 							if( $current eq $opt_to ){
@@ -103,12 +104,11 @@ sub doSwitchIP {
 								$end = false;
 								do {
 									print ".";
-									sleep 2;
-									$out = `http.pl get -url $opt_url -header X-Sent-By -ignore -nocolored $dummy $verbose`;
-									my @grepped = grep( / got /, split( /[\r\n]/, $out ));
-									my $line = $grepped[0];
-									$line =~ s/^[^=]+='([^']+)'$/$1/;
-									msgVerbose( "got '$line'" );
+									sleep 1;
+									$out = ttpFilter( `http.pl get -url $opt_url -header X-Sent-By -ignore -nocolored $dummy $verbose` );
+									msgLog( "ttpFilter() returns: '".Dumper( $out )."'" );
+									@words = split( /\s+/, $out->[0] );
+									$line = $words[1];
 									if( $line eq $opt_sender ){
 										$end = true;
 									} elsif( localtime->epoch - $start > $opt_timeout ){
