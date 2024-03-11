@@ -45,7 +45,8 @@
 					"commands": [
 						"dbms.pl status -service <SERVICE> -state"
 					]
-				}
+				},
+				"url": "https://tom17.blingua.fr"
 			},
 			"Tom21": {
 				"instance": "MSSQLSERVER",
@@ -87,7 +88,8 @@
 					"commands": [
 						"dbms.pl status -service <SERVICE> -state"
 					]
-				}
+				},
+				"url": "https://tom21.blingua.fr"
 			},
 			"Tom59": {
 				"instance": "MSSQLSERVER",
@@ -129,7 +131,8 @@
 					"commands": [
 						"dbms.pl status -service <SERVICE> -state"
 					]
-				}
+				},
+				"url": "https://tom59.blingua.fr"
 			},
 			"Technical.Services": {
 				"hidden": true,
