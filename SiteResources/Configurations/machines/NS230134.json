@@ -53,11 +53,7 @@
 				"ovh": {
 					"ip": "ip-87.98.189.58"
 				},
-				"externalMonitor": {
-					"commands": [
-						"http.pl status -url http://canal33.sysnrg.com -header X-Sent-By -mqtt -mqttTopic Service/<SERVICE> -http"
-					]
-				}
+				"url": "http://canal33.sysnrg.com"
 			},
 			"Dom.2008": {
 				"instance": "MSSQLSERVER",
