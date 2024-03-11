@@ -9,6 +9,12 @@
 	set _name=%1
 	set _property=%2
 	set _expected=%3
+	set argC=0
+	for %%x in (%*) do set /A argC+=1
+	if not %argC% == 3 (
+		echo expected 3 arguments, found %argC%
+		exit /b 1
+	)
 	set a=0
 	set b=0
 	call :setLogFile %~n0.log
@@ -51,4 +57,5 @@
 	for /f "tokens=2" %%a in ('ttp.pl vars -logsDir -nocolored') do @set _logsdir=%%a
 	set _time=%TIME: =0%
 	set LOGFILE=%_logsdir%\\%1
+	echo logging in %LOGFILE%
 	exit /b
