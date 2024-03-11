@@ -48,26 +48,30 @@ sub doGet {
 	my $req = HTTP::Request->new( GET => $opt_url );
 	my $response = $ua->request( $req );
 	my $res = $response->is_success;
+	my $status = undef;
 	msgVerbose( "receiving HTTP status='".$response->code."', success='".( $res ? 'true' : 'false' )."'" );
 	if( $res ){
 		msgLog( "content='".$response->decoded_content."'" );
 	} else {
-		msgLog( "status='".$response->status_line."'" );
-		if( $opt_ignore ){
-			msgVerbose( "erroneous HTTP status ignored as opt_ignore='true'" );
+		$status = $response->status_line;
+		msgLog( "status='$status'" );
+		# 500 Can't connect to ip.test.blingua.net:443 (Connection timed out)
+		if( $opt_ignore && $status !~ m/Connection timed out/ ){
+			msgVerbose( "erroneous HTTP status ignored as opt_ignore='true' (and not timed out)" );
 			$res = true;
 		}
 	}
-	if( $opt_header ){
-		my $header = $response->header( $opt_header );
-		print "  $opt_header: $header".EOL;
-	} else {
-		print Dumper( $response );
-	}
 	if( $res ){
+		if( $opt_header ){
+			my $header = $response->header( $opt_header );
+			print "  $opt_header: $header".EOL;
+		} else {
+			print Dumper( $response );
+		}
 		msgOut( "success" );
 	} else {
-		msgErr( "NOT OK" );
+		msgLog( Dumper( $response ));
+		msgErr( "NOT OK: $status" );
 	}
 }
 
