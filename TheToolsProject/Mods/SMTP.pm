@@ -79,7 +79,7 @@ sub send {
 		$opts->{sasl_username} = $username if $username;
 		$opts->{sasl_password} = $password if $username;
 
-		$opts->{helo} = $gateway->{helo} || Mods::Toops::_hostname();
+		$opts->{helo} = $gateway->{helo} || Mods::Toops::ttpHost();
 		$opts->{ssl} = $gateway->{security} if $gateway->{security};
 		if( $gateway->{port} && !$gateway->{security} ){
 			$opts->{ssl} = 'ssl' if $gateway->{port} == 465;

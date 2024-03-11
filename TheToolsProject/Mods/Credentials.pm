@@ -46,7 +46,7 @@ sub get {
 		}
 		# if not found, looks at credentials/<host>.json
 		if( !defined( $res )){
-			my $host = Mods::Toops::_hostname();
+			my $host = Mods::Toops::ttpHost();
 			my $fname = File::Spec->catdir( Mods::Path::credentialsDir(), "$host.json" );
 			my $data = Mods::Toops::evaluate( Mods::Toops::jsonRead( $fname ));
 			$res = $data;

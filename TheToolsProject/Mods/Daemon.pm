@@ -83,7 +83,7 @@ sub _status {
 # ------------------------------------------------------------------------------------------------
 sub _topic {
 	my ( $name ) = @_;
-	my $topic = Mods::Toops::_hostname();
+	my $topic = Mods::Toops::ttpHost();
 	$topic .= "/daemon";
 	$topic .= "/$name";
 	$topic .= "/status";

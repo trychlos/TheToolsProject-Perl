@@ -347,7 +347,7 @@ sub _executionReportCompleteData {
 	$data->{cmdline} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
 	$data->{command} = $TTPVars->{run}{command}{basename};
 	$data->{verb} = $TTPVars->{run}{verb}{name};
-	$data->{host} = _hostname();
+	$data->{host} = ttpHost();
 	$data->{code} = $TTPVars->{run}{exitCode};
 	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
@@ -755,18 +755,6 @@ sub hostConfigRead {
 }
 
 # -------------------------------------------------------------------------------------------------
-# returns the hostname
-# (O):
-# - the short hostname
-#   > as-is in *nix environments (including Darwin)
-#   > in uppercase on Windows
-sub _hostname {
-	my $name = hostname;
-	$name = uc $name if $Config{osname} eq 'MSWin32';
-	return $name;
-}
-
-# -------------------------------------------------------------------------------------------------
 # Initialize TheToolsProject
 # - reading the toops+site and host configuration files and interpreting them before first use
 # - initialize the logs internal variables
@@ -784,7 +772,7 @@ sub init {
 		print STDERR "Site own keys should be inside 'site' hierarchy\n";
 		exit( 1 );
 	}
-	$TTPVars->{raw}{host} = hostConfigRead( _hostname());
+	$TTPVars->{raw}{host} = hostConfigRead( ttpHost());
 	ttpEvaluate();
 	msgLog( "executing $0 ".join( ' ', @ARGV ));
 }
@@ -1118,6 +1106,18 @@ sub ttpFilter {
 		push( @result, $it ) if !grep( /\[[^\]]+\]/, $it ) && $it !~ /\(WAR\)/ && $it !~ /\(ERR\)/;
 	}
 	return \@result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the hostname
+# (O):
+# - the short hostname
+#   > as-is in *nix environments (including Darwin)
+#   > in uppercase on Windows
+sub ttpHost {
+	my $name = hostname;
+	$name = uc $name if $Config{osname} eq 'MSWin32';
+	return $name;
 }
 
 # -------------------------------------------------------------------------------------------------

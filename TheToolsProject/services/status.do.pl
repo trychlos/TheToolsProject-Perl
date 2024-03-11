@@ -35,7 +35,7 @@ my $opt_service = $defaults->{service};
 sub executeStatus {
 	msgOut( "checking '$opt_service' service..." );
 	my $cmdCount = 0;
-	my $host = Mods::Toops::_hostname();
+	my $host = ttpHost();
 	my $config = Mods::Toops::getHostConfig();
 	my $status = $config->{Services}{$opt_service}{status};
 	if( $status && ref( $status ) eq 'HASH' ){

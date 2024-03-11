@@ -119,7 +119,7 @@ sub printSummary {
 	# must manage SUBJECT and OPTIONS macros
 	my $command = $TTPVars->{config}{site}{workloadSummary}{command};
 	if( $command ){
-		my $host = Mods::Toops::_hostname();
+		my $host = Mods::Toops::ttpHost();
 		my $textfname = Mods::Toops::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );

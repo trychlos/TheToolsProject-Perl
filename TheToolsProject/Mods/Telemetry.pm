@@ -93,7 +93,7 @@ sub mqttPublish {
 	my $count = 0;
 	my $command = Mods::Toops::var([ 'Telemetry', 'withMqtt', 'command' ]);
 	if( $command ){
-		my $topic = Mods::Toops::_hostname();
+		my $topic = Mods::Toops::ttpHost();
 		$topic .= "/telemetry";
 		foreach my $it ( @{$labels} ){
 			my @words = split( /=/, $it );

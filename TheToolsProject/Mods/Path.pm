@@ -214,7 +214,7 @@ sub fromCommand {
 # returns the full path of the host configuration file
 sub hostConfigurationPath {
 	my ( $host ) = @_;
-	$host = Mods::Toops::_hostname() if !$host;
+	$host = Mods::Toops::ttpHost() if !$host;
 	return File::Spec->catdir( hostsConfigurationsDir(), "$host.json" );
 }
 
