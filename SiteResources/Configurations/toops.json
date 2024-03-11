@@ -112,7 +112,7 @@
 			"withFile": {
 				"enabled": true,
 				"dropDir": "[eval:File::Spec->catdir( Mods::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'execReports' )]",
-				"command": "ttp.pl writejson -file [eval:File::Spec->catdir( Mods::Path::execReportsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'-'.Mods::Toops::getRandom().'.json' )] -data \"<DATA>\""
+				"command": "ttp.pl writejson -file [eval:File::Spec->catdir( Mods::Path::execReportsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'-'.ttpRandom().'.json' )] -data \"<DATA>\""
 			},
 			"withMqtt_comments": [
 				"manage macros: SUBJECT, DATA, OPTIONS"

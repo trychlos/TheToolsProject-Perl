@@ -520,20 +520,11 @@ sub getHostConfig {
 }
 
 # -------------------------------------------------------------------------------------------------
-# returns a random identifier
-sub getRandom {
-	my $ug = new Data::UUID;
-	my $uuid = lc $ug->create_str();
-	$uuid =~ s/-//g;
-	return $uuid;
-}
-
-# -------------------------------------------------------------------------------------------------
 # returns a new unique temp filename
 sub getTempFileName {
 	my $fname = $TTPVars->{run}{command}{name};
 	$fname .= "-$TTPVars->{run}{verb}{name}" if $TTPVars->{run}{verb}{name};
-	my $random = getRandom();
+	my $random = ttpRandom();
 	my $tempfname = File::Spec->catdir( Mods::Path::logsDailyDir(), "$fname-$random.tmp" );
 	msgVerbose( "getTempFileName() tempfname='$tempfname'" );
 	return $tempfname;
@@ -1118,6 +1109,15 @@ sub ttpHost {
 	my $name = hostname;
 	$name = uc $name if $Config{osname} eq 'MSWin32';
 	return $name;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns a random identifier
+sub ttpRandom {
+	my $ug = new Data::UUID;
+	my $uuid = lc $ug->create_str();
+	$uuid =~ s/-//g;
+	return $uuid;
 }
 
 # -------------------------------------------------------------------------------------------------
