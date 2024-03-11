@@ -1,35 +1,25 @@
 @echo off
-	rem List the scheduled tasks
+	rem Display the status of a task
 	rem Expected arguments:
-	rem 1. a task name regular expression suitable for FINDSTR
+	rem 1. a task name
 	set ME=[%~nx0]
 	call :setLogFile %~n0
 	set argC=0
 	for %%x in (%*) do set /A argC+=1
 	if not %argC% == 1 (
-		call :logMe expected 1 'TaskName' regular expression argument, found %argC%
+		call :logMe expected 1 'TaskName' argument, found %argC%
 		exit /b 1
 	)
-	set name=%1
-	set cTasks=0
+	set task=%1
 	call :doExecute %*
 	exit /b
 
 :doExecute
-	call :logMe ++ executing %~f0, matching (insensitively) %name% tasks
-	for /f "tokens=2" %%T in ('schtasks /Query /fo list ^| findstr TaskName: ^| findstr /I %name%') do call :doListTask %%T
-	call :logMe done (%cTasks% found tasks)
+	call :logMe ++ executing %~f0, querying "%task%" task
+	for /f %%i in ('echo %task%') do set name=%%~nxi
+	for /f "tokens=3" %%S in ('schtasks /Query /fo table /TN %task% ^| findstr %name%') do call :logShort %name%: %%S
+	call :logMe done
     exit /b
-
-:doListTask
-	set task=%1
-	find "%task%" "%VALUES%" >nul
-	if not %ERRORLEVEL% == 0 (
-		echo "%task%" >> "%VALUES%"
-		set /A cTasks+=1
-		call :logShort %task%
-	)
-	exit /b
 
 :logShort
 	echo.  %*
