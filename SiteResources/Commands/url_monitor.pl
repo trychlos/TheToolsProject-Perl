@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # @(#) Monitor the services URLs
 #
-# This script is run from an external (Linux) monitoring host, so cannot take advantage of TTP.
+# This script is run from an external (Linux) monitoring host in a crontab, so cannot take advantage of TTP.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 

@@ -53,11 +53,11 @@ use File::stat;
 use Getopt::Long;
 use Time::Piece;
 
+use Mods::Toops;
 use Mods::Constants qw( :all );
 use Mods::Daemon;
 use Mods::Message qw( :all );
 use Mods::Path;
-use Mods::Toops;
 
 my $defaults = {
 	help => 'no',

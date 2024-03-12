@@ -23,10 +23,9 @@ use Data::Dumper;
 use Getopt::Long;
 use Path::Tiny;
 
+use Mods::Toops;
 use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
-use Mods::Services;
-use Mods::Toops;
 
 # TTP initialization
 my $TTPVars = Mods::Toops::initExtern();

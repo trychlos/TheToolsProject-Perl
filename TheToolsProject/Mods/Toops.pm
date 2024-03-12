@@ -813,8 +813,7 @@ sub jsonAppend {
 # - the full path to the to-be-loaded-and-interpreted json file
 sub jsonRead {
 	my ( $conf ) = @_;
-	# Undefined subroutine &Mods::Toops::msgVerbose called at C:\INLINGUA\TheToolsProject/Mods/Toops.pm line 816 ??
-	Mods::Message::msgVerbose( "jsonRead() conf='$conf'" );
+	msgVerbose( "jsonRead() conf='$conf'" );
 	my $result = undef;
 	if( $conf && -r $conf ){
 		my $content = do {
