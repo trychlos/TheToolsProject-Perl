@@ -60,7 +60,7 @@
 						"commands": [
 							"[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\canal33.backup /Disable"
 						]
-					},
+					}
 				}
 			},
 			"Technical.Services": {
