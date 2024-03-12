@@ -146,6 +146,7 @@ if( !$nberrs || $opt_force ){
 	msgVerbose( "rc=$rc" );
 
 	# and last switch the ip service itself
+	# get the ip service
 	msgOut( "switching the IP service..." );
 	$command = "ssh inlingua-user\@$opt_to services.pl vars -service $opt_service -key monitor,ovh,ip";
 	msgVerbose( $command );
@@ -154,37 +155,66 @@ if( !$nberrs || $opt_force ){
 	msgVerbose( $stdout );
 	msgVerbose( "rc=$rc" );
 	@lines = grep( !/^\[|\(WAR\)|^$/, split( /[\r\n]/, $stdout ));
-	if( !scalar( @lines )){
-		msgWarn( "No IP service is defined for '$opt_service' service" );
-	} else {
+	my $ipService = undef;
+	if( scalar( @lines )){
 		my @words = split( /\s+/, $lines[0] );
-		my $ipService = $words[2];
-		if( !$ipService ){
-			msgWarn( "No IP service found for '$opt_service' service" );
+		$ipService = $words[2];
+	}
+	msgVerbose( "got ipService='$ipService'" );
+	if( !$ipService ){
+		msgWarn( "No IP service found for '$opt_service' service" );
+
+	} else {
+		# get the target host service
+		$command = "ssh inlingua-user\@$opt_to ttp.pl vars -key Environment,physical,ovh";
+		msgVerbose( $command );
+		$stdout = `$command`;
+		$rc = $?;
+		msgVerbose( $stdout );
+		msgVerbose( "rc=$rc" );
+		@lines = grep( !/^\[|\(WAR\)|^$/, split( /[\r\n]/, $stdout ));
+		my $physical = undef;
+		if( scalar( @lines )){
+			my @words = split( /\s+/, $lines[0] );
+			$physical = $words[2];
+		}
+		msgVerbose( "got physical='$physical'" );
+		if( !$physical ){
+			msgErr( "An OVH IP Failover is defined but no OVH server service has been found for '$opt_service' service" );
 		} else {
-			$command = "ssh inlingua-user\@$opt_to services.pl vars -service $opt_service -key monitor,ovh,ip";
+			# get the url to be tested
+			$command = "ssh inlingua-user\@$opt_to services.pl vars -service $opt_service -key monitor,url";
 			msgVerbose( $command );
 			$stdout = `$command`;
 			$rc = $?;
 			msgVerbose( $stdout );
 			msgVerbose( "rc=$rc" );
 			@lines = grep( !/^\[|\(WAR\)|^$/, split( /[\r\n]/, $stdout ));
-			if( !scalar( @lines )){
-				msgWarn( "No IP service is defined for '$opt_service' service" );
-			} else {
+			my $url = undef;
+			if( scalar( @lines )){
 				my @words = split( /\s+/, $lines[0] );
-				my $ipService = $words[2];
+				$url = $words[2];
 			}
+			msgVerbose( "got url='$url'" );
+			if( !$url ){
+				msgWarn( "No URL is defined for '$opt_service' service" );
+			}
+			# running the switch requires ip service and target host, url is optional
+			my $urlopt = $url ? "-url $url -sender $opt_to" : "";
+			$urlopt = $url ? "-url $url -sender WS22DEV1" : "";
+			$command = "ovh.pl ipswitch -ip $ipService -to $physical -wait $urlopt";
+			msgVerbose( $command );
+			$stdout = `$command`;
+			$rc = $?;
+			msgVerbose( $stdout );
+			msgVerbose( "rc=$rc" );
 		}
 	}
-
-	$command = "ovh.pl ipswitch -service $opt_service -key monitor,switch,admin";
-	msgVerbose( $command );
-	$stdout = `$command`;
-	$rc = $?;
-	msgVerbose( $stdout );
-	msgVerbose( "rc=$rc" );
-	@lines = grep( !/^\[|\(WAR\)|^$/, split( /[\r\n]/, $stdout ));
+	if( $nberrs ){
+		msgErr( "NOT OK" );
+	} else {
+		msgOut( "success" );
+	}
 }
 
 exit( $nberrs );

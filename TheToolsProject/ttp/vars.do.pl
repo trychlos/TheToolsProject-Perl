@@ -8,6 +8,7 @@
 # @(-) --[no]logsRoot          display the Toops logs Root (not daily) [${logsRoot}]
 # @(-) --[no]logsDir           display the current Toops logs directory [${logsDir}]
 # @(-) --[no]alertsDir         display the 'alerts' file directory [${alertsDir}]
+# @(-) --key=<name[,...]>      the key which addresses the desired value, may be specified several times or as a comma-separated list [${key}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -28,7 +29,8 @@ my $defaults = {
 	siteRoot => 'no',
 	logsRoot => 'no',
 	logsDir => 'no',
-	alertsDir => 'no'
+	alertsDir => 'no',
+	key => ''
 };
 
 my $opt_siteRoot = false;
@@ -36,12 +38,21 @@ my $opt_logsDir = false;
 my $opt_logsRoot = false;
 my $opt_alertsDir = false;
 
+# list of keys
+my @keys = ();
+
 # -------------------------------------------------------------------------------------------------
 # list alertsDir value - e.g. 'C:\INLINGUA\Logs\240201\Alerts'
 sub listAlertsdir {
 	my $str = "alertsDir: ".Mods::Path::alertsDir();
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
+sub listByKeys {
+	my $value = ttpVar( \@keys );
+	print "  ".join( ',', @keys ).": $value".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -80,7 +91,8 @@ if( !GetOptions(
 	"siteRoot!"			=> \$opt_siteRoot,
 	"logsRoot!"			=> \$opt_logsRoot,
 	"logsDir!"			=> \$opt_logsDir,
-	"alertsDir!"		=> \$opt_alertsDir )){
+	"alertsDir!"		=> \$opt_alertsDir,
+	"key=s@"			=> \$opt_key )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		ttpExit( 1 );
@@ -98,12 +110,15 @@ msgVerbose( "found siteRoot='".( $opt_siteRoot ? 'true':'false' )."'" );
 msgVerbose( "found logsRoot='".( $opt_logsRoot ? 'true':'false' )."'" );
 msgVerbose( "found logsDir='".( $opt_logsDir ? 'true':'false' )."'" );
 msgVerbose( "found alertsDir='".( $opt_alertsDir ? 'true':'false' )."'" );
+@keys = split( /,/, join( ',', @{$opt_key} ));
+msgVerbose( "found keys='".join( ',', @keys )."'" );
 
 if( !ttpErrs()){
 	listSiteroot() if $opt_siteRoot;
 	listLogsroot() if $opt_logsRoot;
 	listLogsdir() if $opt_logsDir;
 	listAlertsdir() if $opt_alertsDir;
+	listByKeys() if scalar @keys;
 }
 
 ttpExit();

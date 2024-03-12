@@ -39,7 +39,7 @@ my @keys = ();
 # - HOST
 # - SERVICE
 sub executeCommands {
-	msgOut( "executing '$opt_service\\'".join( ', ', @keys )."' commands..." );
+	msgOut( "executing '$opt_service\\[".join( ', ', @keys )."]' commands..." );
 	my $cmdCount = 0;
 	my $host = ttpHost();
 	my $config = Mods::Toops::getHostConfig();
@@ -58,10 +58,10 @@ sub executeCommands {
 				msgLog( "got rc=$rc" );
 			}
 		} else {
-			msgWarn( "hostConfig->{Services}{$opt_service}{$opt_key}{commands} is not defined, or not an array, or is empty" );
+			msgWarn( "hostConfig->{Services}{$opt_service}[".join( ', ', @keys )."] is not defined, or not an array, or is empty" );
 		}
 	} else {
-		msgWarn( "hostConfig->{Services}{$opt_service}{$opt_key} is not defined (or not a hash)" );
+		msgWarn( "hostConfig->{Services}{$opt_service}[".join( ', ', @keys )."] is not defined (or not a hash)" );
 	}
 	msgOut( "$cmdCount executed command(s)" );
 }
