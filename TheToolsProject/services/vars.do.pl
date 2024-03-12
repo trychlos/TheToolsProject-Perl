@@ -96,7 +96,7 @@ msgVerbose( "found service='$opt_service'" );
 msgVerbose( "found keys='".join( ',', @keys )."'" );
 
 msgErr( "a service is required, but not found" ) if !$opt_service;
-msgErr( "at least a key is required, but not found" ) if !scalar( @keys );
+msgErr( "at least a key is required, but none found" ) if !scalar( @keys );
 
 if( !ttpErrs()){
 	displayVar() if $opt_service && scalar( @keys );

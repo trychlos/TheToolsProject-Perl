@@ -5,7 +5,7 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --service=<name>        display informations about the named service [${service}]
-# @(-) --key=<name>            the key to be searched for in JSON configuration file [${key}]
+# @(-) --key=<name[,...]>      the key to be searched for in JSON configuration file, ay be specified several times or as a comma-separated list [${key}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 #
@@ -30,18 +30,20 @@ my $defaults = {
 my $opt_service = $defaults->{service};
 my $opt_key = $defaults->{key};
 
+# the list of keys
+my @keys = ();
+
 # -------------------------------------------------------------------------------------------------
 # execute the commands registered for the service
 # manage macros:
 # - HOST
 # - SERVICE
-# - KEY
-sub executeStatus {
+sub executeCommands {
 	msgOut( "executing '$opt_service\\$opt_key' commands..." );
 	my $cmdCount = 0;
 	my $host = ttpHost();
 	my $config = Mods::Toops::getHostConfig();
-	my $hash = $config->{Services}{$opt_service}{$opt_key};
+	my $hash = ttpVar( \@keys, { config => $config->{Services}{$opt_service} });
 	if( $hash && ref( $hash ) eq 'HASH' ){
 		my $commands = $hash->{commands};
 		if( $commands && ref( $commands ) eq 'ARRAY' && scalar @{$commands} > 0 ){
@@ -49,7 +51,6 @@ sub executeStatus {
 				$cmdCount += 1;
 				$cmd =~ s/<HOST>/$host/g;
 				$cmd =~ s/<SERVICE>/$opt_service/g;
-				$cmd =~ s/<KEY>/$opt_key/g;
 				msgOut( "  $cmd" );
 				my $stdout = `$cmd`;
 				my $rc = $?;
@@ -75,7 +76,7 @@ if( !GetOptions(
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"service=s"			=> \$opt_service,
-	"key=s"				=> \$opt_key )){
+	"key=s@"			=> \$opt_key )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		ttpExit( 1 );
@@ -90,13 +91,14 @@ msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" 
 msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
-msgVerbose( "found key='$opt_key'" );
+@keys = split( /,/, join( ',', @{$opt_key} ));
+msgVerbose( "found keys='".join( ',', @keys )."'" );
 
 msgErr( "a service is required, but not found" ) if !$opt_service;
-msgErr( "a key is required, but not found" ) if !$opt_key;
+msgErr( "at least a key is required, but none found" ) if !scalar( @keys );
 
 if( !ttpErrs()){
-	executeStatus() if $opt_service && $opt_key;
+	executeCommands() if $opt_service && scalar( @keys );
 }
 
 ttpExit();
