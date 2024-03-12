@@ -36,10 +36,15 @@
 				],
 				"workloads": {
 				},
-				"ovh": {
-					"ip": "ip-87.98.189.58"
-				},
-				"url": "http://canal33.sysnrg.com"
+				"monitor": {
+					"ovh": {
+						"ip": "ip-87.98.189.58"
+					},
+					"url": "http://canal33.sysnrg.com",
+					"switch": {
+						"scheduled": "\\Inlingua\\tom17.backup.startup"
+					}
+				}
 			},
 			"Dom.2008": {
 				"instance": "DEV",
@@ -61,6 +66,17 @@
 					"commands": [
 						"dbms.pl status -service <SERVICE> -state"
 					]
+				},
+				"monitor": {
+					"ovh": {
+						"ip": "ip-87.98.189.58"
+					},
+					"url": "http://ip.test.blingua.net",
+					"admin": {
+						"commands": [
+							"[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom17.backup.startup /Disable"
+						]
+					}
 				}
 			},
 			"Technical Workloads": {

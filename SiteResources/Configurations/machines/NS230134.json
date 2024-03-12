@@ -50,10 +50,22 @@
 						"dbms.pl status -service <SERVICE> -state -mqtt -http"
 					]
 				},
-				"ovh": {
-					"ip": "ip-87.98.189.58"
-				},
-				"url": "http://canal33.sysnrg.com"
+				"monitor": {
+					"url": "http://canal33.sysnrg.com",
+					"switch": {
+						"commands": [
+							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'canal33-backup-monitor-daemon.json' )] -ignore -wait 2"
+						],
+					},
+					"admin": {
+						"commands": [
+							"[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\canal33.backup /Disable"
+						]
+					},
+					"ovh": {
+						"ip": "ip-87.98.189.58"
+					}
+				}
 			},
 			"Dom.2008": {
 				"instance": "MSSQLSERVER",

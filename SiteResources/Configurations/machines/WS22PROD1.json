@@ -44,7 +44,19 @@
 						"dbms.pl status -service <SERVICE> -state"
 					]
 				},
-				"url": "https://tom17.blingua.fr"
+				"monitor": {
+					"url": "https://tom17.blingua.fr",
+					"switch": {
+						"commands": [
+							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -ignore -wait 2"
+						]
+					},
+					"admin": {
+						"commands": [
+							"[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom17.backup /Disable"
+						]
+					}
+				}
 			},
 			"Tom21": {
 				"instance": "PROD",
@@ -87,7 +99,19 @@
 						"dbms.pl status -service <SERVICE> -state"
 					]
 				},
-				"url": "https://tom21.blingua.fr"
+				"monitor": {
+					"url": "https://tom21.blingua.fr",
+					"switch": {
+						"commands": [
+							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -ignore -wait 2"
+						]
+					},
+					"admin": {
+						"commands": [
+							"[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom21.backup /Disable"
+						]
+					}
+				}
 			},
 			"Tom59": {
 				"instance": "PROD",
@@ -130,7 +154,19 @@
 						"dbms.pl status -service <SERVICE> -state"
 					]
 				},
-				"url": "https://tom59.blingua.fr"
+				"monitor": {
+					"url": "https://tom59.blingua.fr",
+					"switch": {
+						"commands": [
+							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -ignore -wait 2"
+						]
+					},
+					"admin": {
+						"commands": [
+							"[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom59.backup /Disable"
+						]
+					}
+				}
 			},
 			"Technical.Services": {
 				"hidden": true,

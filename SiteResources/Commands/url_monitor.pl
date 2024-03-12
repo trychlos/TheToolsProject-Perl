@@ -103,7 +103,7 @@ foreach my $service ( @services ){
 	foreach my $host ( @hosts ){
 		if( !$url ){
 			msgOut( "trying $host" );
-			$command = "ssh inlingua-user\@$host services.pl vars -nocolored -service $service -key url";
+			$command = "ssh inlingua-user\@$host services.pl vars -nocolored -service $service -key monitor,url";
 			msgVerbose( $command );
 			$stdout = `$command`;
 			$rc = $?;
@@ -165,3 +165,5 @@ Run: 'url_switch.pl -service $service -to $next'\"";
 		msgAlert( "service $service has no defined url" );
 	}
 }
+
+exit( 0 );
