@@ -223,7 +223,7 @@ sub _msgLogAppend {
 	if( $logFile ){
 		my $host = Mods::Toops::ttpHost();
 		my $username = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME} || 'unknown'; #getpwuid( $< );
-		my $line = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%5N' )." $host $username $msg";
+		my $line = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%5N' )." $host $$ $username $msg";
 		path( $logFile )->append_utf8( $line.EOL );
 	}
 }
