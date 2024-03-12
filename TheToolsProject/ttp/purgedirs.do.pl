@@ -41,43 +41,47 @@ my $opt_keep = $defaults->{keep};
 sub doPurgeDirs {
 	msgOut( "purging from '$opt_dirpath', keeping '$opt_keep' item(s)" );
 	my $count = 0;
-	opendir( FD, "$opt_dirpath" ) || msgErr( "unable to open directory $opt_dirpath: $!" );
-	if( !ttpErrs()){
-		my @list = ();
-		while ( my $it = readdir( FD )){
-			my $path = File::Spec->catdir( $opt_dirpath, $it );
-			if( $it =~ /^\./ ){
+	if( -d $opt_dirpath ){
+		opendir( FD, "$opt_dirpath" ) || msgErr( "unable to open directory $opt_dirpath: $!" );
+		if( !ttpErrs()){
+			my @list = ();
+			while ( my $it = readdir( FD )){
+				my $path = File::Spec->catdir( $opt_dirpath, $it );
+				if( $it =~ /^\./ ){
+					msgVerbose( "ignoring '$path'" );
+					next;
+				}
+				if( -d "$path" ){
+					push( @list, "$it" );
+					next;
+				}
 				msgVerbose( "ignoring '$path'" );
-				next;
 			}
-			if( -d "$path" ){
-				push( @list, "$it" );
-				next;
-			}
-			msgVerbose( "ignoring '$path'" );
-		}
-		closedir( FD );
-		# sort in inverse order: most recent first
-		@list = sort { $b cmp $a } @list;
-		msgVerbose( "got ".scalar @list." item(s) in $opt_dirpath" );
-		# build the lists to be kept and moved
-		my @keep = ();
-		if( $opt_keep >= scalar @list ){
-			msgOut( "found ".scalar @list." item(s) in '$opt_dirpath' while wanting keep $opt_keep: nothing to do" );
-		} else {
-			for( my $i=0 ; $i<$opt_keep ; ++$i ){
-				my $it = shift( @list );
-				msgVerbose( "keeping "._sourcePath( $it ));
-				push( @keep, $it );
-			}
-			# and remove the rest
-			foreach my $it ( @list ){
-				my $dir = File::Spec->catdir( $opt_dirpath, $it );
-				msgOut( " removing '$dir'" );
-				remove_tree( $dir );
-				$count += 1;
+			closedir( FD );
+			# sort in inverse order: most recent first
+			@list = sort { $b cmp $a } @list;
+			msgVerbose( "got ".scalar @list." item(s) in $opt_dirpath" );
+			# build the lists to be kept and moved
+			my @keep = ();
+			if( $opt_keep >= scalar @list ){
+				msgOut( "found ".scalar @list." item(s) in '$opt_dirpath' while wanting keep $opt_keep: nothing to do" );
+			} else {
+				for( my $i=0 ; $i<$opt_keep ; ++$i ){
+					my $it = shift( @list );
+					msgVerbose( "keeping "._sourcePath( $it ));
+					push( @keep, $it );
+				}
+				# and remove the rest
+				foreach my $it ( @list ){
+					my $dir = File::Spec->catdir( $opt_dirpath, $it );
+					msgOut( " removing '$dir'" );
+					remove_tree( $dir );
+					$count += 1;
+				}
 			}
 		}
+	} else {
+		msgOut( "'$opt_dirpath' doesn't exist: nothing to purge" );
 	}
 	msgOut( "$count purged directory(ies)" );
 }
@@ -127,8 +131,9 @@ $count += 1 if $opt_dirpath;
 $count += 1 if $opt_dircmd;
 msgErr( "one of '--dirpath' and '--dircmd' options must be specified" ) if $count != 1;
 
-# if we have a source cmd, get the path and check it exists
-$opt_dirpath = Mods::Path::fromCommand( $opt_dircmd, { mustExists => true }) if $opt_dircmd;
+# if we have a source cmd, get the path
+# no need to make it exist: if not exist, there is just nothing to purge
+$opt_dirpath = Mods::Path::fromCommand( $opt_dircmd ) if $opt_dircmd;
 
 if( !ttpErrs()){
 	doPurgeDirs();

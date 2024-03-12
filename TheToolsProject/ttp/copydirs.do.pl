@@ -44,23 +44,19 @@ my $opt_dirs = false;
 sub doCopyDirs {
 	msgOut( "copying from '$opt_sourcepath' to '$opt_targetpath'..." );
 	my $count = 0;
-	my $res = Mods::Toops::copyDir( $opt_sourcepath, $opt_targetpath );
+	my $res = false;
+	if( -d $opt_sourcepath ){
+		$res = Mods::Toops::copyDir( $opt_sourcepath, $opt_targetpath );
+		$count += 1 if $res;
+	} else {
+		msgOut( "'$opt_sourcepath' doesn't exist: nothing to copy" );
+		$res = true;
+	}
 	if( $res ){
-		$count += 1;
 		msgOut( "$count copied directory(ies)" );
 	} else {
 		msgErr( "NOT OK" );
 	}
-}
-
-sub _sourcePath {
-	my ( $it ) = @_;
-	return File::Spec->catdir( $opt_sourcepath, $it );
-}
-
-sub _targetPath {
-	my ( $it ) = @_;
-	return File::Spec->catdir( $opt_targetpath, $it );
 }
 
 # =================================================================================================
@@ -108,8 +104,9 @@ $count += 1 if $opt_targetpath;
 $count += 1 if $opt_targetcmd;
 msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if $count != 1;
 
-# if we have a source cmd, get the path and check it exists
-$opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd, { mustExists => true }) if $opt_sourcecmd;
+# if we have a source cmd, get the path
+# no need to make dir exist: if not exist, just nothing to copy
+$opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd ) if $opt_sourcecmd;
 
 # if we have a target cmd, get the path
 $opt_targetpath = Mods::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;

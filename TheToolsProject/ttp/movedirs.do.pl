@@ -49,53 +49,57 @@ my $opt_keep = $defaults->{keep};
 sub doMoveDirs {
 	msgOut( "moving from '$opt_sourcepath' to '$opt_targetpath', keeping '$opt_keep' item(s)" );
 	my $count = 0;
-	opendir( FD, "$opt_sourcepath" ) || msgErr( "unable to open directory $opt_sourcepath: $!" );
-	if( !ttpErrs()){
-		my @list = ();
-		while ( my $it = readdir( FD )){
-			my $path = _sourcePath( $it );
-			if( $it =~ /^\./ ){
+	if( -d $opt_sourcepath ){
+		opendir( FD, "$opt_sourcepath" ) || msgErr( "unable to open directory $opt_sourcepath: $!" );
+		if( !ttpErrs()){
+			my @list = ();
+			while ( my $it = readdir( FD )){
+				my $path = _sourcePath( $it );
+				if( $it =~ /^\./ ){
+					msgVerbose( "ignoring '$path'" );
+					next;
+				}
+				if( $opt_dirs && -d "$path" ){
+					push( @list, "$it" );
+					next;
+				}
 				msgVerbose( "ignoring '$path'" );
-				next;
 			}
-			if( $opt_dirs && -d "$path" ){
-				push( @list, "$it" );
-				next;
-			}
-			msgVerbose( "ignoring '$path'" );
-		}
-		closedir( FD );
-		# sort in inverse order: most recent first
-		@list = sort { $b cmp $a } @list;
-		msgVerbose( "got ".scalar @list." item(s) in $opt_sourcepath" );
-		# build the lists to be kept and moved
-		my @keep = ();
-		if( $opt_keep >= scalar @list ){
-			msgOut( "found ".scalar @list." item(s) in '$opt_sourcepath' while wanting keep $opt_keep: nothing to do" );
-			@keep = @list;
-			@list = ();
-		} elsif( !$opt_keep ){
-				msgVerbose( "keep='$opt_keep': doesn't keep anything in the source" );
-		} else {
-			for( my $i=0 ; $i<$opt_keep ; ++$i ){
-				my $it = shift( @list );
-				msgVerbose( "keeping "._sourcePath( $it ));
-				push( @keep, $it );
-			}
-		}
-		# and move the rest, making sure the initial path at least exists
-		Mods::Path::makeDirExist( $opt_targetpath );
-		foreach my $it ( @list ){
-			my $source = _sourcePath( $it );
-			my $target = _targetPath( $it );
-			msgOut( " moving '$source' to '$target'" );
-			my $res = Mods::Toops::moveDir( $source, $target );
-			if( $res ){
-				$count += 1;
+			closedir( FD );
+			# sort in inverse order: most recent first
+			@list = sort { $b cmp $a } @list;
+			msgVerbose( "got ".scalar @list." item(s) in $opt_sourcepath" );
+			# build the lists to be kept and moved
+			my @keep = ();
+			if( $opt_keep >= scalar @list ){
+				msgOut( "found ".scalar @list." item(s) in '$opt_sourcepath' while wanting keep $opt_keep: nothing to do" );
+				@keep = @list;
+				@list = ();
+			} elsif( !$opt_keep ){
+					msgVerbose( "keep='$opt_keep': doesn't keep anything in the source" );
 			} else {
-				msgErr( "error detected" );
+				for( my $i=0 ; $i<$opt_keep ; ++$i ){
+					my $it = shift( @list );
+					msgVerbose( "keeping "._sourcePath( $it ));
+					push( @keep, $it );
+				}
+			}
+			# and move the rest, making sure the initial path at least exists
+			Mods::Path::makeDirExist( $opt_targetpath );
+			foreach my $it ( @list ){
+				my $source = _sourcePath( $it );
+				my $target = _targetPath( $it );
+				msgOut( " moving '$source' to '$target'" );
+				my $res = Mods::Toops::moveDir( $source, $target );
+				if( $res ){
+					$count += 1;
+				} else {
+					msgErr( "error detected" );
+				}
 			}
 		}
+	} else {
+		msgOut( "'$opt_sourcepath' doesn't exist: nothing to move" );
 	}
 	msgOut( "$count moved directory(ies)" );
 }
@@ -158,7 +162,8 @@ $count += 1 if $opt_targetcmd;
 msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if $count != 1;
 
 # if we have a source cmd, get the path and check it exists
-$opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd, { mustExists => true }) if $opt_sourcecmd;
+# no need to make the dir exist: if not exist, then there is just nothing to move
+$opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd ) if $opt_sourcecmd;
 
 # if we have a target cmd, get the path
 $opt_targetpath = Mods::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;

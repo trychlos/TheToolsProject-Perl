@@ -173,7 +173,7 @@ sub execReportsDir {
 # (I):
 # - the command to be executed
 # - an optional options hash with following keys:
-#   > mustExists, defaulting to false
+#   > makeExist, defaulting to false
 # ((O):
 # - returns a path of undef if an error has occured
 sub fromCommand {
@@ -195,11 +195,11 @@ sub fromCommand {
 		}
 	}
 	if( !Mods::Toops::ttpErrs()){
-		my $mustExists = false;
-		$mustExists = $opts->{mustExists} if exists $opts->{mustExists};
-		if( $mustExists && !-r $path ){
-			msgErr( "Path::fromCommand() path='$path' doesn't exist or is not readable" );
-			$path = undef;
+		my $makeExist = false;
+		$makeExist = $opts->{makeExist} if exists $opts->{makeExist};
+		if( $makeExist ){
+			my $rc = makeDirExist( $path );
+			$path = undef if !$rc;
 		}
 	}
 	$path = undef if Mods::Toops::ttpErrs();
