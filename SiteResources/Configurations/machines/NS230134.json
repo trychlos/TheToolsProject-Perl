@@ -55,7 +55,7 @@
 					"switch": {
 						"commands": [
 							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'canal33-backup-monitor-daemon.json' )] -ignore -wait 2"
-						],
+						]
 					},
 					"admin": {
 						"commands": [
