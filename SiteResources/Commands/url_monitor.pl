@@ -9,17 +9,24 @@ use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
 
-use constant { true => 1, false => 0 };
+use Mods::Toops;
+use Mods::Constants qw( :all );
+use Mods::Message qw( :all );
+
+# TTP initialization
+my $TTPVars = Mods::Toops::initExtern();
 
 my $me = basename( $0 );
 my $nbopts = scalar @ARGV;
 
 my $defaults = {
 	help => 'no',
+	verbose => 'no',
 	service => ''
 };
 
 my $opt_help = false;
+my $opt_verbose = false;
 my $opt_service = $defaults->{service};
 
 # the list of to-be-monitored services
@@ -32,6 +39,7 @@ sub msgHelp {
   Usage: $0 [options]
   where available options are:
     --[no]help              print this message, and exit [$defaults->{help}]
+    --[no]verbose           verbosely run [$defaults->{verbose}]
     --service=<name>        the service to be monitored, may be specified several times or as a comma-separated list [$defaults->{service}]
 ";
 }
@@ -42,31 +50,13 @@ sub msgAlert {
 	msgOut( @_ );
 }
 
-# -------------------------------------------------------------------------------------------------
-# 
-sub msgOut {
-	my ( $msg ) = @_;
-	if( !ref $msg ){
-		print "$msg\n";
-	} elsif( ref $msg eq 'ARRAY' ){
-		foreach my $it ( @{$msg} ){
-			msgOut( $it );
-		}
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# 
-sub msgVerbose {
-	msgOut( @_ );
-}
-
 # =================================================================================================
 # MAIN
 # =================================================================================================
 
 if( !GetOptions(
 	"help!"				=> \$opt_help,
+	"verbose!"			=> \$opt_verbose,
 	"service=s@"		=> \$opt_service )){
 
 		msgOut( "try '$0 --help' to get full usage syntax" );
@@ -81,6 +71,7 @@ if( $opt_help ){
 }
 
 msgVerbose( "found help='".( $opt_help ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $opt_verbose ? 'true':'false' )."'" );
 @services = split( /,/, join( ',', @{$opt_service} ));
 msgVerbose( "found services='".join( ',', @services )."'" );
 
@@ -92,13 +83,17 @@ foreach my $service ( @services ){
 	#    X: NS230134
 	#    X: WS12PROD1
 	# [services.pl list] 2 found machine(s)
-	my $stdout = `services.pl list -nocolored -service $service -type X -machines`;
+	my $command = "services.pl list -nocolored -service $service -type X -machines";
+	msgVerbose( $command );
+	my $stdout = `$command`;
+	my $rc = $?;
+	msgVerbose( "rc=$rc" );
 	my @lines = grep( !/^\[|\(WAR\)/, split( /[\r\n]/, $stdout ));
 	my @hosts = ();
 	foreach my $it ( @lines ){
 		my @words = split( /\s+/, $it );
-		push( @hosts, $words[2] );
 		msgVerbose( "pushing host $words[2]" );
+		push( @hosts, $words[2] );
 	}
 
 	# we expect that each host of this same service has the same canonical url in its configuration file
@@ -107,37 +102,57 @@ foreach my $service ( @services ){
 	my $url = "";
 	foreach my $host ( @hosts ){
 		if( !$url ){
-			msgVerbose( "trying $host" );
-			$stdout = `ssh inlingua-user\@$host services.pl vars -nocolored -service $service -key url`;
+			msgOut( "trying $host" );
+			$command = "ssh inlingua-user\@$host services.pl vars -nocolored -service $service -key url";
+			msgVerbose( $command );
+			$stdout = `$command`;
+			$rc = $?;
+			msgVerbose( "rc=$rc" );
 			@lines = grep( !/^\[|\(WAR\)/, split( /[\r\n]/, $stdout ));
-			my @words = split( /\s+/, $lines[0] );
-			$url = $words[1];
+			my @words = split( /\s+/, $lines[1] );
+			$url = $words[2];
+			msgOut( "got url='$url'" );
 
 			# when we have found an url, test it to get the live host server
 			if( $url ){
-				$stdout = `http.pl get -nocolored -url $url -header X-Sent-By -ignore`;
+				$command = "http.pl get -nocolored -url $url -header X-Sent-By -ignore";
+				msgVerbose( $command );
+				$stdout = `$command`;
+				$rc = $?;
+				msgVerbose( "rc=$rc" );
 				@lines = grep( !/^\[|\(WAR\)/, split( /[\r\n]/, $stdout ));
 				my $status = scalar( @lines ) ? '1' : '0' ;
 				my $live = '';
 				my $next = '';
 				if( $status ){
 					@words = split( /\s+/, $lines[0] );
-					$live = $words[1];
-				} else {
-					my @others = grep( !/$host/, @hosts );
-					$next = $others[0];
+					$live = $words[2];
+					msgOut( "got live='$live'" );
 				}
+				my @others = grep( !/$host/, @hosts );
+				$next = $others[0];
+				msgOut( "got next='$next'" );
 				# publish something to the telemetry
 				my $live_label = "-label live=$live" if $live;
 				my $next_label = "-label next=$next" if $next;
-				`ssh inlingua-user\@$host telemetry.pl publish -metric status -label service=$service -label url=$url $live_label $next_label -value=$status -httpPrefix ttp_live_ -mqttPrefix live/`;
+				# not a good idea to publish the URL as part of the topic or the labels
+				# -label url=$url
+				$command = "ssh inlingua-user\@$host telemetry.pl publish -metric status -label service=$service  $live_label $next_label -value=$status -httpPrefix ttp_live_ -mqttPrefix live/";
+				msgVerbose( $command );
+				`$command`;
+				$rc = $?;
+				msgVerbose( "rc=$rc" );
 
 				# if the url didn't answer, then alert
 				if( !$status ){
-					`ssh inlingua-user\@$host ttp.pl alert -level ALERT -message "URL DIDN'T ANSWER
+					$command = "ssh inlingua-user\@$host ttp.pl alert -level ALERT -message \"URL DIDN'T ANSWER
 Service: $service
 Next: $next
-Run: 'url_switch.pl -service $service -to $next'"`;
+Run: 'url_switch.pl -service $service -to $next'\"";
+					msgVerbose( $command );
+					`$command`;
+					$rc = $?;
+					msgVerbose( "rc=$rc" );
 				}
 			} else {
 				msgVerbose( "url not found" );
