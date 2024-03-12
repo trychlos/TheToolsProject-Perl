@@ -121,7 +121,7 @@ $count += 1 if $opt_dirpath;
 $count += 1 if $opt_dircmd;
 msgErr( "one of '--dirpath' and '--dircmd' options must be specified" ) if $count != 1;
 
-# if we have a source cmd, get the path and make it exist
+# if we have a source cmd, get the path and make it exist to be sure to have something to publish
 $opt_dirpath = Mods::Path::fromCommand( $opt_dircmd, { makeExist => true }) if $opt_dircmd;
 
 if( !ttpErrs()){
