@@ -39,6 +39,14 @@ my $opt_url = $defaults->{url};
 my $opt_header = $defaults->{header};
 my $opt_ignore = false;
 
+# a list of not-ignored status
+# 500 Can't connect to ip.test.blingua.net:443 (Connection timed out)
+# 500 Can't connect to ip2.test.blingua.net:80 (No such host is known)
+my @notIgnored = (
+	'Connection timed out',
+	'No such host is known'
+);
+
 # -------------------------------------------------------------------------------------------------
 # request the url
 sub doGet {
@@ -55,9 +63,8 @@ sub doGet {
 	} else {
 		$status = $response->status_line;
 		msgLog( "status='$status'" );
-		# 500 Can't connect to ip.test.blingua.net:443 (Connection timed out)
-		if( $opt_ignore && $status !~ m/Connection timed out/ ){
-			msgVerbose( "erroneous HTTP status ignored as opt_ignore='true' (and not timed out)" );
+		if( $opt_ignore && _isIgnored( $status )){
+			msgVerbose( "erroneous HTTP status ignored as opt_ignore='true'" );
 			$res = true;
 		}
 	}
@@ -73,6 +80,21 @@ sub doGet {
 		msgLog( Dumper( $response ));
 		msgErr( "NOT OK: $status" );
 	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# whether a status must return an error
+# (I):
+# - status
+# (O):
+# - returns true|false
+sub _isIgnored {
+	my ( $status ) = @_;
+	my $ignored = true;
+	foreach my $it ( @notIgnored ){
+		$ignored = false if $status =~ m/$it/;
+	}
+	return $ignored;
 }
 
 # =================================================================================================
