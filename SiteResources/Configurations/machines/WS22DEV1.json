@@ -39,11 +39,10 @@
 				"X is production; this same indicator must be used both for production live and for production backup",
 				"D is for development"
 			],
-			"type": "D",
-			"physical": {
-				"ovh": "ns3153065.ip-51-91-25.eu",
-				"inlingua": "inlingua-rl9-1"
-			}
+			"type": "D"
+		},
+		"DBMS": {
+			"archivesRoot": "[_eval:File::Spec->catpath( '\\\\\\ftpback-rbx7-618.ovh.net\\\\', File::Spec->catdir( 'ns3153065.ip-51-91-25.eu', ttpHost(), 'SQLBackups' ))]"
 		},
 		"remoteShare": "\\\\10.122.1.12\\C"
 	}

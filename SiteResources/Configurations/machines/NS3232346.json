@@ -43,19 +43,20 @@
 				},
 				"status": {
 					"commands": [
-						"dbms.pl status -service <SERVICE> -state"
-					]
+						"dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"http.pl get -nocolored -url https://tom17.blingua.fr -label service=<SERVICE> -mqtt -http",
+						"http.pl get -nocolored -url https://tom17.archive.blingua.net -label service=<SERVICE> -mqtt -http",
+						"http.pl get -nocolored -url https://tom17.backup.blingua.net -label service=<SERVICE> -mqtt -http"
+					],
+					"get_live": "http.pl get -nocolored -url https://tom17.blingua.fr -header X-Sent-By -ignore"
 				},
-				"monitor": {
-					"url": "https://tom17.blingua.fr",
-					"switch": {
-						"commands": [
-							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -ignore -wait 2"
-						]
+				"switch": {
+					"to_backup": {
 					},
-					"admin": {
+					"to_live": {
 						"commands": [
-							"[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom17.backup /Disable"
+							"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -ignore -wait 2",
+							"ssh inlingua-adm@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom17.backup /Disable"
 						]
 					}
 				}
@@ -98,19 +99,20 @@
 				},
 				"status": {
 					"commands": [
-						"dbms.pl status -service <SERVICE> -state"
-					]
+						"dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"http.pl get -nocolored -url https://tom21.blingua.fr -label service=<SERVICE> -mqtt -http",
+						"http.pl get -nocolored -url https://tom21.archive.blingua.net -label service=<SERVICE> -mqtt -http",
+						"http.pl get -nocolored -url https://tom21.backup.blingua.net -label service=<SERVICE> -mqtt -http"
+					],
+					"get_live": "http.pl get -nocolored -url https://tom21.blingua.fr -header X-Sent-By -ignore"
 				},
-				"monitor": {
-					"url": "https://tom21.blingua.fr",
-					"switch": {
-						"commands": [
-							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -ignore -wait 2"
-						]
+				"switch": {
+					"to_backup": {
 					},
-					"admin": {
+					"to_live": {
 						"commands": [
-							"[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom21.backup /Disable"
+							"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -ignore -wait 2",
+							"ssh inlingua-adm@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom21.backup /Disable"
 						]
 					}
 				}
@@ -153,19 +155,20 @@
 				},
 				"status": {
 					"commands": [
-						"dbms.pl status -service <SERVICE> -state"
-					]
+						"dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"http.pl get -nocolored -url https://tom59.blingua.fr -label service=<SERVICE> -mqtt -http",
+						"http.pl get -nocolored -url https://tom59.archive.blingua.net -label service=<SERVICE> -mqtt -http",
+						"http.pl get -nocolored -url https://tom59.backup.blingua.net -label service=<SERVICE> -mqtt -http"
+					],
+					"get_live": "http.pl get -nocolored -url https://tom59.blingua.fr -header X-Sent-By -ignore"
 				},
-				"monitor": {
-					"url": "https://tom59.blingua.fr",
-					"switch": {
-						"commands": [
-							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -ignore -wait 2"
-						]
+				"switch": {
+					"to_backup": {
 					},
-					"admin": {
+					"to_live": {
 						"commands": [
-							"[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom59.backup /Disable"
+							"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -ignore -wait 2",
+							"ssh inlingua-adm@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom59.backup /Disable"
 						]
 					}
 				}
@@ -216,10 +219,7 @@
 			"archivesRoot": "[_eval:File::Spec->catpath( '\\\\\\ftpback-rbx7-618.ovh.net\\\\', File::Spec->catdir( 'ns3153065.ip-51-91-25.eu', ttpHost(), 'SQLBackups' ))]"
 		},
 		"Environment": {
-			"type": "X",
-			"physical": {
-				"ovh": "ns3232346.ovh.net"
-			}
+			"type": "X"
 		},
 		"remoteShare": "\\\\ns3232346.ovh.net\\C"
 	}

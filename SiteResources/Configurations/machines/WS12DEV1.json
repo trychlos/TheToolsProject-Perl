@@ -78,10 +78,6 @@
 					"get_live": "http.pl get -nocolored -url http://ip.test.blingua.net -header X-Sent-By -ignore"
 				},
 				"switch": {
-					"ovh": {
-						"ip": ""
-					},
-					"url": "http://ip.test.blingua.net",
 					"to_backup": {
 					},
 					"to_live": {

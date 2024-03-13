@@ -47,29 +47,26 @@
 				},
 				"status": {
 					"commands": [
-						"dbms.pl status -service <SERVICE> -state -mqtt -http"
-					]
+						"dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"http.pl get -nocolored -url http://canal33.blingua.net -label service=<SERVICE> -mqtt -http",
+						"http.pl get -nocolored -url http://canal33.backup.blingua.net -label service=<SERVICE> -mqtt -http",
+						"http.pl get -nocolored -url http://c33.blingua.fr -label service=<SERVICE> -mqtt -http"
+					],
+					"get_live": "http.pl get -nocolored -url http://canal33.blingua.net -header X-Sent-By -ignore"
 				},
-				"monitor": {
-					"urls": [
-						"http://ip1.test.blingua.net",
-						"http://ip2.test.blingua.net"
-					]
-				},
-				"monitorx": {
-					"url": "http://canal33.sysnrg.com",
-					"switch": {
-						"commands": [
-							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'canal33-backup-monitor-daemon.json' )] -ignore -wait 2"
-						]
+				"switch": {
+					"to_backup": {
 					},
-					"admin": {
+					"to_live": {
 						"commands": [
-							"[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\canal33.backup /Disable"
+							"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'canal33-backup-monitor-daemon.json' )] -ignore -wait 2",
+							"ssh inlingua-adm@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\canal33.backup /Disable",
+							"ssh inlingua-adm@<HOST> sc config start= auto Canal33Ftp",
+							"ssh inlingua-adm@<HOST> sc start Canal33Ftp",
+							"ssh inlingua-adm@<HOST> sc config start= auto Canal33Svc",
+							"ssh inlingua-adm@<HOST> sc start Canal33Svc",
+							"ovh.pl ipswitch -ip ip-87.98.189.58 -to ns230134.ovh.net -wait http://canal33.blingua.net"
 						]
-					},
-					"ovh": {
-						"ip": "ip-87.98.189.58"
 					}
 				}
 			},
@@ -156,10 +153,7 @@
 				"X is production; this same indicator must be used both for production live and for production backup",
 				"D is for development"
 			],
-			"type": "X",
-			"physical": {
-				"ovh": "ns230134.ovh.net"
-			}
+			"type": "X"
 		},
 		"remoteShare": "\\\\ns230134.ovh.net\\C"
 	}

@@ -85,8 +85,12 @@ sub doSwitch {
 	}
 	
 	msgOut( "$count executed command(s), $cOk/$count OK" );
+}
 
-=pod
+# -------------------------------------------------------------------------------------------------
+#
+sub _obsoleteCode {
+
 	# make sure the service is defined on the target host
 	# [services.pl list] displaying services defined on WS12DEV1...
 	#  Canal33
@@ -102,7 +106,7 @@ sub doSwitch {
 	} else {
 		msgOut( "service '$opt_service' exists" );
 	}
-	if( !$nberrs || $opt_force ){
+
 		# get the list of hosts which hold the production of this service, and check that the target host is actually member of the group
 		# [services.pl list] displaying machines which provide \'Canal33\' service in \'X\' environment...
 		#    X: NS230134
@@ -127,8 +131,7 @@ sub doSwitch {
 		} else {
 			msgOut( "host '$opt_to' is a valid target" );
 		}
-	}
-	if( !$nberrs || $opt_force ){
+
 		# VERY IMPORTANT
 		# first task is to stop the backup daemons on the target host
 		msgOut( "stopping backup daemons..." );
@@ -213,13 +216,6 @@ sub doSwitch {
 				msgVerbose( "rc=$rc" );
 			}
 		}
-		if( $nberrs ){
-			msgErr( "NOT OK" );
-		} else {
-			msgOut( "success" );
-		}
-	}
-=cut
 }
 
 # =================================================================================================
