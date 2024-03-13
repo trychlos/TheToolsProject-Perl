@@ -1,14 +1,16 @@
 # @(#) run a GET on a HTTP endpoint
 #
-# @(-) --[no]help                  print this message, and exit [${help}]
-# @(-) --[no]verbose               run verbosely [${verbose}]
-# @(-) --[no]colored               color the output depending of the message level [${colored}]
-# @(-) --[no]dummy                 dummy run (ignored here) [${dummy}]
-# @(-) --url=<url>                 the URL to be requested [${url}]
-# @(-) --header=<header>           output the received (case insensitive) header [${header}]
-# @(-) --[no]ignore                ignore HTTP status as soon as we receive something from the server [${ignore}]
-#
-# @(@) Unless otherwise specified, default is to dump the site answer to stdout.
+# @(-) --[no]help              print this message, and exit [${help}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --url=<url>             the URL to be requested [${url}]
+# @(-) --header=<header>       output the received (case insensitive) header [${header}]
+# @(-) --[no]ignore            ignore HTTP status as soon as we receive something from the server [${ignore}]
+# @(-) --[no]response          print the received response to stdout [${response}]
+# @(-) --[no]mqtt              publish MQTT telemetry [${mqtt}]
+# @(-) --[no]http              publish HTTP telemetry [${http}]
+# @(-) --label=<name=value>    label to be added to the telemetry, may be specified several times or as a comma-separated list [${label}]
 #
 # Among other uses, this verb is notably used to check which machine answers to a given URL in an architecture which wants take advantage of IP Failover system.
 # But, in such a system, all physical hosts hold the FO IP, and will answer to this IP is the request originates from the same physical host.
@@ -32,12 +34,23 @@ my $defaults = {
 	dummy => 'no',
 	url => '',
 	header => '',
-	ignore => 'no'
+	response => 'no',
+	ignore => 'no',
+	mqtt => 'no',
+	http => 'no',
+	label => ''
 };
 
 my $opt_url = $defaults->{url};
 my $opt_header = $defaults->{header};
+my $opt_response = false;
 my $opt_ignore = false;
+my $opt_mqtt = false;
+my $opt_http = false;
+my $opt_label = $defaults->{label};
+
+# list of labels
+my @labels = ();
 
 # a list of not-ignored status
 # 500 Can't connect to ip.test.blingua.net:443 (Connection timed out)
@@ -68,11 +81,32 @@ sub doGet {
 			$res = true;
 		}
 	}
+
+	# and send the telemetry if opt-ed in
+	my $live_label = "-label live=$live" if $live;
+	my ( $proto, $path ) = split( /:\/\//, $url );
+	my $status = ( $rc == 0 ) ? "1" : "0";
+	my $proto_label = "-label proto=$proto";
+	my $path_label = "-label path=$path";
+	my $added_labels = "";
+	foreach my $it ( @labels ){
+		$added_labels .= " -label $it";
+	}
+	if( $opt_mqtt ){
+		$command = "telemetry.pl publish -metric status -label service=$opt_service $live_label $proto_label $path_label $added_labels -value=$status -mqttPrefix live/ -nohttp";
+		`$command`;
+	}
+	if( $opt_http ){
+		$command = "telemetry.pl publish -metric status -label service=$opt_service $live_label $proto_label $path_label $added_labels -value=$status -httpPrefix ttp_live_ -nomqtt";
+		`$command`;
+	}
+
 	if( $res ){
 		if( $opt_header ){
 			my $header = $response->header( $opt_header );
 			print "  $opt_header: $header".EOL;
-		} else {
+		}
+		if( $opt_response ){
 			print Dumper( $response );
 		}
 		msgOut( "success" );
@@ -108,7 +142,11 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"url=s"				=> \$opt_url,
 	"header=s"			=> \$opt_header,
-	"ignore!"			=> \$opt_ignore	)){
+	"response!"			=> \$opt_response,
+	"ignore!"			=> \$opt_ignore,
+	"mqtt!"				=> \$opt_mqtt,
+	"http!"				=> \$opt_http,
+	"label=s@"			=> \$opt_label )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		ttpExit( 1 );
@@ -124,7 +162,12 @@ msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" 
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found url='$opt_url'" );
 msgVerbose( "found header='$opt_header'" );
+msgVerbose( "found response='".( $opt_response ? 'true':'false' )."'" );
 msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
+msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
+@labels = split( /,/, join( ',', @{$opt_label} ));
+msgVerbose( "found labels='".join( ',', @labels )."'" );
 
 # url is mandatory
 msgErr( "url is required, but is not specified" ) if !$opt_url;
