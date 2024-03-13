@@ -61,7 +61,7 @@
 							"ssh inlingua-adm@<HOST> sc start Canal33Ftp",
 							"ssh inlingua-adm@<HOST> sc config start= auto Canal33Svc",
 							"ssh inlingua-adm@<HOST> sc start Canal33Svc",
-							"ovh.pl ipswitch -ip ip-87.98.189.58 -to ns3153065.ip-51-91-25.eu -wait http://canal33.blingua.net"
+							"ovh.pl ipswitch -ip ip-87.98.189.58 -to ns3153065.ip-51-91-25.eu -wait -url http://canal33.blingua.net"
 						]
 					}
 				}
