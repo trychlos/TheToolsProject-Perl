@@ -1,4 +1,4 @@
-# @(#) display a configuration varaible on stdout
+# @(#) display a configuration variable on stdout
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]

@@ -1,13 +1,14 @@
 # @(#) monitor the URLs of a service, publishing relevant telemetry
 #
-# @(-) --[no]help                  print this message, and exit [${help}]
-# @(-) --[no]verbose               run verbosely [${verbose}]
-# @(-) --[no]colored               color the output depending of the message level [${colored}]
-# @(-) --[no]dummy                 dummy run (ignored here) [${dummy}]
-# @(-) --service=<name>            the service whose URLs are to be monitored [${service}]
-# @(-) --[no]urls                  monitor URL's [${urls}]
-# @(-) --[no]mqtt                  publish MQTT telemetry [${mqtt}]
-# @(-) --[no]http                  publish HTTP telemetry [${http}]
+# @(-) --[no]help              print this message, and exit [${help}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --service=<name>        the service whose URLs are to be monitored [${service}]
+# @(-) --[no]urls              monitor URL's [${urls}]
+# @(-) --[no]mqtt              publish MQTT telemetry [${mqtt}]
+# @(-) --[no]http              publish HTTP telemetry [${http}]
+# @(-) --label=<name=value>    label to be added to the telemetry, may be specified several times or as a comma-separated list [${label}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -27,13 +28,18 @@ my $defaults = {
 	service => '',
 	urls => 'no',
 	mqtt => 'no',
-	http => 'no'
+	http => 'no',
+	label => ''
 };
 
 my $opt_service = $defaults->{service};
 my $opt_urls = false;
 my $opt_mqtt = false;
 my $opt_http = false;
+my $opt_label = $defaults->{label};
+
+# list of labels
+my @labels = ();
 
 # -------------------------------------------------------------------------------------------------
 # request the urls defined for this service
@@ -60,6 +66,7 @@ sub doMonitorUrls {
 			$command = "http.pl get -url $url -header X-Sent-By -ignore";
 			@stdout = `$command`;
 			$rc = $?;
+			$res = false if $rc;
 			msgLog( \@stdout );
 			msgLog( "rc=$rc" );
 			$output = ttpFilter( @stdout );
@@ -73,16 +80,17 @@ sub doMonitorUrls {
 			my $status = ( $rc == 0 ) ? "1" : "0";
 			my $proto_label = "-label proto=$proto";
 			my $path_label = "-label path=$path";
-
+			my $added_labels = "";
+			foreach my $it ( @labels ){
+				$added_labels .= " -label $it";
+			}
 			if( $opt_mqtt ){
-				$command = "telemetry.pl publish -metric status -label service=$opt_service $live_label $proto_label $path_label -value=$status -mqttPrefix live/ -nohttp";
-				@stdout = `$command`;
-				msgLog( \@stdout );
+				$command = "telemetry.pl publish -metric status -label service=$opt_service $live_label $proto_label $path_label $added_labels -value=$status -mqttPrefix live/ -nohttp";
+				`$command`;
 			}
 			if( $opt_http ){
-				$command = "telemetry.pl publish -metric status -label service=$opt_service $live_label $proto_label $path_label -value=$status -httpPrefix ttp_live_ -nomqtt";
-				@stdout = `$command`;
-				msgLog( \@stdout );
+				$command = "telemetry.pl publish -metric status -label service=$opt_service $live_label $proto_label $path_label $added_labels -value=$status -httpPrefix ttp_live_ -nomqtt";
+				`$command`;
 			}
 		}
 	}
@@ -105,7 +113,8 @@ if( !GetOptions(
 	"service=s"			=> \$opt_service,
 	"urls!"				=> \$opt_urls,
 	"mqtt!"				=> \$opt_mqtt,
-	"http!"				=> \$opt_http	)){
+	"http!"				=> \$opt_http,
+	"label=s@"			=> \$opt_label )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		ttpExit( 1 );
@@ -123,6 +132,8 @@ msgVerbose( "found service='$opt_service'" );
 msgVerbose( "found urls='".( $opt_urls ? 'true':'false' )."'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
 msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
+@labels = split( /,/, join( ',', @{$opt_label} ));
+msgVerbose( "found labels='".join( ',', @labels )."'" );
 
 # service is mandatory
 if( $opt_service ){
