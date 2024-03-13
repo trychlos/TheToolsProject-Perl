@@ -42,6 +42,7 @@ sub displayVar {
 	my $found = false;
 	my $hash = $serviceConfig;
 	my $last = pop( @keys );
+	my $count = 0;
 	foreach my $key ( @keys ){
 		if( ref( $hash ) eq 'HASH' && exists $hash->{$key} ){
 			$hash = $hash->{$key};
@@ -54,14 +55,24 @@ sub displayVar {
 		}
 	}
 	if( !ttpErrs()){
-		if( exists( $hash->{$last} ) && !ref( $hash->{$last} )){
-			print "  ".join( ',', @initialKeys ).": $hash->{$last}".EOL;
+		if( exists( $hash->{$last} )){
+			if( !ref( $hash->{$last} )){
+				print "  ".join( ',', @initialKeys ).": $hash->{$last}".EOL;
+				$count += 1;
+			} elsif( ref( $hash->{$last} ) eq 'ARRAY' ){
+				foreach my $it ( @{$hash->{$last}} ){
+					print "  ".join( ',', @initialKeys ).": $it".EOL;
+					$count += 1;
+				}
+			} else {
+				msgErr( "'$last' key doesn't address a scalar nor an array value" );
+			}
 		} else {
-			msgErr( "'$last' key doesn't exist or doesn't address a scalar value" );
+			msgWarn( "'$last' key doesn't exist" );
 		}
 	}
 	if( !ttpErrs()){
-		msgOut( "success" );
+		msgOut( "$count displayed value(s)" );
 	} else {
 		msgErr( "NOT OK" );
 	}
