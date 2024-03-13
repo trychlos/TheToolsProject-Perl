@@ -51,6 +51,12 @@
 					]
 				},
 				"monitor": {
+					"urls": [
+						"http://ip1.test.blingua.net",
+						"http://ip2.test.blingua.net"
+					]
+				},
+				"monitorx": {
 					"url": "http://canal33.sysnrg.com",
 					"switch": {
 						"commands": [

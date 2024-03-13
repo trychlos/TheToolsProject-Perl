@@ -64,17 +64,28 @@
 				},
 				"status": {
 					"commands": [
-						"dbms.pl status -service <SERVICE> -state"
+						"dbms.pl status -nocolored -service <SERVICE> -state",
+						"services.pl monitor -nocolored -service <SERVICE> -url http://ip1.test.blingua.net -mqtt -http"
 					]
 				},
 				"monitor": {
+					"urls": [
+						"http://ip1.test.blingua.net",
+						"http://ip2.test.blingua.net"
+					]
+				},
+				"monitor_x": {
 					"ovh": {
 						"ip": "ip-87.98.189.58"
 					},
 					"url": "http://ip.test.blingua.net",
-					"admin": {
+					"to_backup": {
+					},
+					"to_live": {
 						"commands": [
-							"[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom17.backup.startup /Disable"
+							"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'canal33-backup-monitor-daemon.json' )] -ignore -wait 2",
+							"ssh inlingua-adm@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom17.backup.startup /Disable",
+							"ssh inlingua-adm@<HOST> sc config start= auto Canal33Ftp"
 						]
 					}
 				}

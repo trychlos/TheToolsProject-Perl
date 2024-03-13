@@ -1,7 +1,15 @@
 #!/usr/bin/perl
-# @(#) Monitor the services URLs
+# @(#) Monitor the service URLs, alerting when not answered
 #
-# This script is run from an external (Linux) monitoring host in a crontab, so cannot take advantage of TTP.
+# @(-) --[no]help              print this message, and exit [${help}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --service=<name>        the service to be monitored, may be specified several times or as a comma-separated list [${service}]
+# @(-) --environment=<env>     the environment to be monitored [${environment}]
+# @(-) --[no]alert             whether to alert on non-response [${alert}]
+#
+# @(@) This script is run from an external (Linux) monitoring host's crontab.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -22,32 +30,71 @@ my $nbopts = scalar @ARGV;
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
-	service => ''
+	colored => 'no',
+	dummy => 'no',
+	service => '',
+	environment => 'X',
+	alert => 'no'
 };
 
-my $opt_help = false;
-my $opt_verbose = false;
 my $opt_service = $defaults->{service};
-
-# the list of to-be-monitored services
-my @services = ();
-
-# -------------------------------------------------------------------------------------------------
-# 
-sub msgHelp {
-	print "Monitor the services URL's
-  Usage: $0 [options]
-  where available options are:
-    --[no]help              print this message, and exit [$defaults->{help}]
-    --[no]verbose           verbosely run [$defaults->{verbose}]
-    --service=<name>        the service to be monitored, may be specified several times or as a comma-separated list [$defaults->{service}]
-";
-}
+my $opt_environment = $defaults->{environment};
+my $opt_alert = false;
 
 # -------------------------------------------------------------------------------------------------
 # 
-sub msgAlert {
-	msgOut( @_ );
+sub doMonitor {
+	msgOut( "monitoring '$opt_service' service URLs..." );
+	# get the list of hosts which hold this environment production of this service
+	# [services.pl list] displaying machines which provide \'Canal33\' service in \'X\' environment...
+	#    X: NS230134
+	#    X: WS12PROD1
+	# [services.pl list] 2 found machine(s)
+	my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
+	my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+	my $command = "services.pl list -nocolored -service $opt_service -type $opt_environment -machines $dummy $verbose";
+	msgVerbose( $command );
+	my $stdout = `$command`;
+	my $rc = $?;
+	#msgVerbose( join( "", @stdout ));
+	msgVerbose( $stdout );
+	msgVerbose( "rc=$rc" );
+	my @lines = grep( !/^\[|\(WAR|\(ERR|\(VER|\(DUM/, split( /[\r\n]/, $stdout ));
+	my @hosts = ();
+	foreach my $it ( @lines ){
+		my @words = split( /\s+/, $it );
+		print Dumper( @words );
+		msgVerbose( "pushing host $words[2]" );
+		push( @hosts, $words[2] );
+	}
+
+	# ask each host of this same service to monitor its own urls
+	foreach my $host ( @hosts ){
+		msgOut( "asking $host for its to-be-monitored URLs" );
+
+		my @others = grep( !/$host/, @hosts );
+		$next = $others[0];
+		msgOut( "got next='$next'" );
+		my $next_label = $next ? "-label next=$next" : "";
+		$command = "ssh inlingua-user\@$host services.pl monitor -service $opt_service -urls $next_label -mqtt -http -nocolored $dummy $verbose";
+		msgVerbose( $command );
+		$stdout = `$command`;
+		$rc = $?;
+		msgVerbose( $stdout );
+		msgVerbose( "rc=$rc" );
+
+		# if one of the monitored urls didn't answer, then alert
+		if( $rc && $opt_alert ){
+			$command = "ssh inlingua-user\@$host ttp.pl alert -level ALERT -message \"URL DIDN'T ANSWER
+Service: $service
+Next: $next
+Run: 'url_switch.pl -service $service -to $next'\"";
+			msgVerbose( $command );
+			`$command`;
+			$rc = $?;
+			msgVerbose( "rc=$rc" );
+		}
+	}
 }
 
 # =================================================================================================
@@ -55,115 +102,36 @@ sub msgAlert {
 # =================================================================================================
 
 if( !GetOptions(
-	"help!"				=> \$opt_help,
-	"verbose!"			=> \$opt_verbose,
-	"service=s@"		=> \$opt_service )){
+	"help!"				=> \$TTPVars->{run}{help},
+	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"colored!"			=> \$TTPVars->{run}{colored},
+	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"service=s"			=> \$opt_service,
+	"environment=s"		=> \$opt_environment,
+	"alert!"			=> \$opt_alert )){
 
-		msgOut( "try '$0 --help' to get full usage syntax" );
-		exit( 1 );
+		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
+		Mods::Toops::ttpExit( 1 );
 }
 
-$opt_help = true if !$nbopts;
-
-if( $opt_help ){
-	msgHelp();
-	exit( 0 );
+if( Mods::Toops::wantsHelp()){
+	Mods::Toops::helpExtern( $defaults );
+	Mods::Toops::ttpExit();
 }
 
-msgVerbose( "found help='".( $opt_help ? 'true':'false' )."'" );
-msgVerbose( "found verbose='".( $opt_verbose ? 'true':'false' )."'" );
-@services = split( /,/, join( ',', @{$opt_service} ));
-msgVerbose( "found services='".join( ',', @services )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found service='$opt_service'" );
+msgVerbose( "found environment='$opt_environment'" );
+msgVerbose( "found alert='".( $opt_alert ? 'true':'false' )."'" );
 
-foreach my $service ( @services ){
-	msgVerbose( "new service $service" );
+# service is mandatory
+# cannot use Mods::Services::checkServiceOpt() here as we are not tied to a specific host when running from the Linux crontab
+msgErr( "service is required, but is not specified" ) if !$opt_service;
 
-	# get the list of hosts which hold the production of this service
-	# [services.pl list] displaying machines which provide \'Canal33\' service in \'X\' environment...
-	#    X: NS230134
-	#    X: WS12PROD1
-	# [services.pl list] 2 found machine(s)
-	my $command = "services.pl list -nocolored -service $service -type X -machines";
-	msgVerbose( $command );
-	my $stdout = `$command`;
-	my $rc = $?;
-	msgVerbose( "rc=$rc" );
-	my @lines = grep( !/^\[|\(WAR\)/, split( /[\r\n]/, $stdout ));
-	my @hosts = ();
-	foreach my $it ( @lines ){
-		my @words = split( /\s+/, $it );
-		msgVerbose( "pushing host $words[2]" );
-		push( @hosts, $words[2] );
-	}
-
-	# we expect that each host of this same service has the same canonical url in its configuration file
-	# so examines the configurations until having found a non-empty url
-	# we stop at the first found, hoping that other(s) url(s) are the exact same
-	my $url = "";
-	foreach my $host ( @hosts ){
-		if( !$url ){
-			msgOut( "trying $host" );
-			$command = "ssh inlingua-user\@$host services.pl vars -nocolored -service $service -key monitor,url";
-			msgVerbose( $command );
-			$stdout = `$command`;
-			$rc = $?;
-			msgVerbose( "rc=$rc" );
-			@lines = grep( !/^\[|\(WAR\)/, split( /[\r\n]/, $stdout ));
-			my @words = split( /\s+/, $lines[1] );
-			$url = $words[2];
-			msgOut( "got url='$url'" );
-
-			# when we have found an url, test it to get the live host server
-			if( $url ){
-				$command = "http.pl get -nocolored -url $url -header X-Sent-By -ignore";
-				msgVerbose( $command );
-				$stdout = `$command`;
-				$rc = $?;
-				msgVerbose( "rc=$rc" );
-				@lines = grep( !/^\[|\(WAR\)/, split( /[\r\n]/, $stdout ));
-				my $status = scalar( @lines ) ? '1' : '0' ;
-				my $live = '';
-				my $next = '';
-				if( $status ){
-					@words = split( /\s+/, $lines[0] );
-					$live = $words[2];
-					msgOut( "got live='$live'" );
-				}
-				my @others = grep( !/$host/, @hosts );
-				$next = $others[0];
-				msgOut( "got next='$next'" );
-				# publish something to the telemetry
-				my $live_label = "-label live=$live" if $live;
-				my $next_label = "-label next=$next" if $next;
-				# not a good idea to publish the URL as part of the topic or the labels
-				# -label url=$url
-				$command = "ssh inlingua-user\@$host telemetry.pl publish -metric status -label service=$service  $live_label $next_label -value=$status -httpPrefix ttp_live_ -mqttPrefix live/";
-				msgVerbose( $command );
-				`$command`;
-				$rc = $?;
-				msgVerbose( "rc=$rc" );
-
-				# if the url didn't answer, then alert
-				if( !$status ){
-					$command = "ssh inlingua-user\@$host ttp.pl alert -level ALERT -message \"URL DIDN'T ANSWER
-Service: $service
-Next: $next
-Run: 'url_switch.pl -service $service -to $next'\"";
-					msgVerbose( $command );
-					`$command`;
-					$rc = $?;
-					msgVerbose( "rc=$rc" );
-				}
-			} else {
-				msgVerbose( "url not found" );
-			}
-		} else {
-			msgVerbose( "no need to request $host as url has already been found" );
-		}
-	}
-	if( !$url ){
-		msgAlert( "service $service has no defined url" );
-	}
+if( !Mods::Toops::ttpErrs()){
+	doMonitor();
 }
 
-exit( 0 );
+Mods::Toops::ttpExit();

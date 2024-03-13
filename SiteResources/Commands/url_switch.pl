@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # @(#) Switch a service to another host
 #
-# This script is run from an external (Linux) monitoring host, so cannot take advantage of TTP.
+# This script is run from an external (Linux) monitoring host.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
