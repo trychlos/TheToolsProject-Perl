@@ -79,7 +79,7 @@
 				},
 				"switch": {
 					"ovh": {
-						"ip": "ip-87.98.189.58"
+						"ip": ""
 					},
 					"url": "http://ip.test.blingua.net",
 					"to_backup": {
@@ -91,7 +91,8 @@
 							"ssh inlingua-adm@<HOST> sc config start= auto Canal33Ftp",
 							"ssh inlingua-adm@<HOST> sc start Canal33Ftp",
 							"ssh inlingua-adm@<HOST> sc config start= auto Canal33Svc",
-							"ssh inlingua-adm@<HOST> sc start Canal33Svc"
+							"ssh inlingua-adm@<HOST> sc start Canal33Svc",
+							"ovh.pl ipswitch -ip ip-87.98.189.58 -to ns3153065.ip-51-91-25.eu -wait http://ip.test.blingua.net"
 						]
 					}
 				}
@@ -154,11 +155,7 @@
 		},
 		"Environment": {
 			"type_comments": [],
-			"type": "D",
-			"physical": {
-				"ovh": "ns3153065.ip-51-91-25.eu",
-				"inlingua": "inlingua-rl9-1"
-			}
+			"type": "D"
 		},
 		"remoteShare": "\\\\10.122.1.14\\C"
 	}
