@@ -1094,7 +1094,7 @@ sub ttpFilter {
 		chomp $it;
 		$it =~ s/^\s*//;
 		$it =~ s/\s*$//;
-		push( @result, $it ) if !grep( /\[[^\]]+\]/, $it ) && $it !~ /\(WAR\)/ && $it !~ /\(ERR\)/;
+		push( @result, $it ) if !grep( /^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, $it ) && $it !~ /\(WAR\)/ && $it !~ /\(ERR\)/;
 	}
 	return \@result;
 }

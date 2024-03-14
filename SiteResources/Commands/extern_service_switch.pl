@@ -64,7 +64,7 @@ sub doSwitch {
 	my $rc = $?;
 	msgVerbose( $stdout );
 	msgVerbose( "rc=$rc" );
-	my @output = grep( !/^\[|\(ERR\)|\(DUM\)|\(VER\)|\(WAR\)|^$/, split( /[\r\n]/, $stdout ));
+	my @output = grep( !/^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, split( /[\r\n]/, $stdout ));
 	my $count = 0;
 	my $cOk = 0;
 	foreach my $line ( @output ){
@@ -90,7 +90,7 @@ sub doSwitch {
 # -------------------------------------------------------------------------------------------------
 #
 sub _obsoleteCode {
-
+=pod
 	# make sure the service is defined on the target host
 	# [services.pl list] displaying services defined on WS12DEV1...
 	#  Canal33
@@ -118,7 +118,7 @@ sub _obsoleteCode {
 		$rc = $?;
 		msgVerbose( $stdout );
 		msgVerbose( "rc=$rc" );
-		@lines = grep( !/^\[|\(WAR\)/, split( /[\r\n]/, $stdout ));
+		@lines = grep( !/^\[|\(ERR|\(WAR|\(VER|\(DUM|^$/, split( /[\r\n]/, $stdout ));
 		my @hosts = ();
 		foreach my $it ( @lines ){
 			my @words = split( /\s+/, $it );
@@ -178,7 +178,7 @@ sub _obsoleteCode {
 			$rc = $?;
 			msgVerbose( $stdout );
 			msgVerbose( "rc=$rc" );
-			@lines = grep( !/^\[|\(WAR\)|^$/, split( /[\r\n]/, $stdout ));
+			@lines = grep( !/^\[|\(ERR|\(WAR|\(VER|\(DUM|^$/, split( /[\r\n]/, $stdout ));
 			my $physical = undef;
 			if( scalar( @lines )){
 				my @words = split( /\s+/, $lines[0] );
@@ -195,7 +195,7 @@ sub _obsoleteCode {
 				$rc = $?;
 				msgVerbose( $stdout );
 				msgVerbose( "rc=$rc" );
-				@lines = grep( !/^\[|\(WAR\)|^$/, split( /[\r\n]/, $stdout ));
+				@lines = grep( !/^\[|\(ERR|\(WAR|\(VER|\(DUM|^$/, split( /[\r\n]/, $stdout ));
 				my $url = undef;
 				if( scalar( @lines )){
 					my @words = split( /\s+/, $lines[0] );
@@ -216,6 +216,7 @@ sub _obsoleteCode {
 				msgVerbose( "rc=$rc" );
 			}
 		}
+=cut
 }
 
 # =================================================================================================

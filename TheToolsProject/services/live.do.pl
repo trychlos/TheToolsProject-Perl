@@ -54,7 +54,7 @@ sub getLive {
 					msgVerbose( $stdout );
 					msgVerbose( "rc=$rc" );
 					if( !$rc ){
-						my @output = grep( !/^\[|^\(ERR|^\(WAR|^\(VER|^\(DUM/, split( /[\r\n]/, $stdout ));
+						my @output = grep( !/^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, split( /[\r\n]/, $stdout ));
 						if( scalar( @output )){
 							# expects a single line
 							my @words = split( /\s+/, $output[0] );
