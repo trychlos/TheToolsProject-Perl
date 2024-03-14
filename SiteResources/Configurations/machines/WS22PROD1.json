@@ -42,6 +42,7 @@
 				"status": {
 					"commands": [
 						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url https://tom17.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom17.archive.blingua.net -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom17.backup.blingua.net -label service=<SERVICE> -nomqtt -http"
@@ -98,6 +99,7 @@
 				"status": {
 					"commands": [
 						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url https://tom21.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom21.archive.blingua.net -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom21.backup.blingua.net -label service=<SERVICE> -nomqtt -http"
@@ -154,6 +156,7 @@
 				"status": {
 					"commands": [
 						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url https://tom59.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom59.archive.blingua.net -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom59.backup.blingua.net -label service=<SERVICE> -nomqtt -http"

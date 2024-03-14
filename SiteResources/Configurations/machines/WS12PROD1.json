@@ -44,6 +44,7 @@
 				"status": {
 					"commands": [
 						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url http://canal33.blingua.net -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url http://canal33.backup.blingua.net -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url http://c33.blingua.fr -label service=<SERVICE> -nomqtt -http",
