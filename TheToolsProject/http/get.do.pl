@@ -57,7 +57,8 @@ my @labels = ();
 # 500 Can't connect to ip2.test.blingua.net:80 (No such host is known)
 my @notIgnored = (
 	'Connection timed out',
-	'No such host is known'
+	'No such host is known',
+	'Name or service not known'
 );
 
 # -------------------------------------------------------------------------------------------------
@@ -69,8 +70,8 @@ sub doGet {
 	my $req = HTTP::Request->new( GET => $opt_url );
 	my $response = $ua->request( $req );
 	my $res = $response->is_success;
-	my $status = undef;
-	msgVerbose( "receiving HTTP status='".$response->code."', success='".( $res ? 'true' : 'false' )."'" );
+	my $status = $response->code;
+	msgVerbose( "receiving HTTP status='$status', success='".( $res ? 'true' : 'false' )."'" );
 	if( $res ){
 		msgLog( "content='".$response->decoded_content."'" );
 	} else {
@@ -83,21 +84,22 @@ sub doGet {
 	}
 
 	# and send the telemetry if opt-ed in
-	my $live_label = "-label live=$live" if $live;
-	my ( $proto, $path ) = split( /:\/\//, $url );
-	my $status = ( $rc == 0 ) ? "1" : "0";
-	my $proto_label = "-label proto=$proto";
-	my $path_label = "-label path=$path";
-	my $added_labels = "";
+	my ( $proto, $path ) = split( /:\/\//, $opt_url );
+	my $value = $res ? "1" : "0";
+	my $other_labels = "";
 	foreach my $it ( @labels ){
-		$added_labels .= " -label $it";
+		$other_labels .= " -label $it";
 	}
+	$other_labels .= " -label proto=$proto";
+	$other_labels .= " -label path=$path";
+	msgVerbose( "added labels '$labels'" );
 	if( $opt_mqtt ){
-		$command = "telemetry.pl publish -metric status -label service=$opt_service $live_label $proto_label $path_label $added_labels -value=$status -mqttPrefix live/ -nohttp";
+		# topic is HOST/telemetry/service/SERVICE/proto/PROTO/path/PATH/url_status
+		$command = "telemetry.pl publish -metric url_status $other_labels -value=$value -mqtt -nohttp";
 		`$command`;
 	}
 	if( $opt_http ){
-		$command = "telemetry.pl publish -metric status -label service=$opt_service $live_label $proto_label $path_label $added_labels -value=$status -httpPrefix ttp_live_ -nomqtt";
+		$command = "telemetry.pl publish -metric ttp_url_status $other_labels -value=$value -nomqtt -http";
 		`$command`;
 	}
 
