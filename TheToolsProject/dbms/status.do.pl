@@ -99,7 +99,7 @@ sub doState {
 					my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
 					print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$instance -label database=$db -label state=$states->{$key} -nocolored $dummy $verbose -nomqtt`;
 					my $rc = $?;
-					msgVerbose( "doState() HTTP key='$key' got rc=$rc" );
+					msgVerbose( "doState() HTTP key='$key' state='$states->{$key}' got rc=$rc" );
 					$code += $rc;
 				}
 			}
