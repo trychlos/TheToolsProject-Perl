@@ -119,7 +119,8 @@
 			}
 		},
 		"DBMS": {
-			"archivesRoot": "[_eval:File::Spec->catpath( '\\\\\\ftpback-rbx7-618.ovh.net\\\\', File::Spec->catdir( 'ns3153065.ip-51-91-25.eu', ttpHost(), 'SQLBackups' ))]"
+			"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]",
+			"archivesRoot": "\\[eval:File::Spec->catdir( '\\ftpback-rbx7-618.ovh.net', 'ns3153065.ip-51-91-25.eu', ttpHost(), 'SQLBackups' )]"
 		},
 		"Environment": {
 			"type_comments": [

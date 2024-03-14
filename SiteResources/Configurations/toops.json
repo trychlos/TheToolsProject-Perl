@@ -81,10 +81,8 @@
 		},
 		"credentialsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'credentials' )]",
 		"DBMS": {
-			"backupsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'byDaySQLBackups' )]",
 			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), ttpHost() )]",
-			"archivesRoot": "",
-			"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]"
+			"backupsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'byDaySQLBackups' )]"
 		},
 		"deployments": {
 			"sourceDirs": [
