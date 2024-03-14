@@ -64,12 +64,12 @@
 				},
 				"status": {
 					"commands_comments": [
-						"Because these commands are also expected to test URLs, they have to be run from a machine outside of our two main physicals",
-						"Hence a crontab in an external Linux machine"
+						"Because these commands are also expected to test URLs, they have to be run from a machine outside of our two main physicals which both hold the FailOver IPs",
+						"Hence a crontab in an external Linux machine. Hence the below ssh.."
 					],
 					"commands": [
-						"dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
-						"http.pl get -nocolored -url http://ip1.test.blingua.net -label service=<SERVICE> -mqtt -http"
+						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"http.pl get -nocolored -url http://ip1.test.blingua.net -label service=<SERVICE> -http"
 					],
 					"live_comments": [
 						"A command which let us determine where is the live production. This is a single command as we manage a single live production",

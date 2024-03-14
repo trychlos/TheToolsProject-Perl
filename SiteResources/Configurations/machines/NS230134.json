@@ -47,10 +47,11 @@
 				},
 				"status": {
 					"commands": [
-						"dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
-						"http.pl get -nocolored -url http://canal33.blingua.net -label service=<SERVICE> -mqtt -http",
-						"http.pl get -nocolored -url http://canal33.backup.blingua.net -label service=<SERVICE> -mqtt -http",
-						"http.pl get -nocolored -url http://c33.blingua.fr -label service=<SERVICE> -mqtt -http"
+						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"http.pl get -nocolored -url http://canal33.blingua.net -label service=<SERVICE> -nomqtt -http",
+						"http.pl get -nocolored -url http://canal33.backup.blingua.net -label service=<SERVICE> -nomqtt -http",
+						"http.pl get -nocolored -url http://c33.blingua.fr -label service=<SERVICE> -nomqtt -http",
+						"http.pl get -nocolored -url http://c33.backup.blingua.net -label service=<SERVICE> -nomqtt -http"
 					],
 					"get_live": "http.pl get -nocolored -url http://canal33.blingua.net -header X-Sent-By -ignore"
 				},
