@@ -6,6 +6,9 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --service=<name>        the named service [${service}]
 # @(-) --environment=<type>    the searched for environment [${environment}]
+# @(-) --[no]next              also search for next machine [${next}]
+# @(-) --[no]mqtt              publish MQTT telemetry [${mqtt}]
+# @(-) --[no]http              publish HTTP telemetry [${http}]
 #
 # @(@) This script relies on the 'status/get_live' entry in the JSON configuration file.
 # @(@) *All* machines are scanned until a 'status/get_live' command has been found for the service for the environment.
@@ -27,43 +30,89 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	service => '',
-	environment => 'X'
+	environment => 'X',
+	next => 'no',
+	mqtt => 'no',
+	http => 'no'
 };
 
 my $opt_service = $defaults->{service};
 my $opt_environment = $defaults->{environment};
+my $opt_next = false;
+my $opt_mqtt = false;
+my $opt_http = false;
 
 # -------------------------------------------------------------------------------------------------
-# A single response is expected (or none)
+# Display the 'live' machine for a service
+# If asked for, also display the next one
+# and publish a telemetry if opted for
 sub getLive {
 	msgOut( "displaying live '$opt_environment' machine for '$opt_service' service..." );
-	my @hosts = Mods::Toops::getDefinedHosts();
-	msgVerbose( "found ".scalar @hosts." host(s)" );
-	my $found = false;
+	my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
+	my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+	my @hosts = ();
+	my $command = "services.pl list -service $opt_service -type $opt_environment -machines -nocolored $dummy $verbose";
+	msgLog( $command );
+	my $stdout = `$command`;
+	my $rc = $?;
+	msgLog( $stdout );
+	msgLog( "rc=$rc" );
+	my @output = grep( !/^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, split( /[\r\n]/, $stdout ));
+	foreach my $it ( @output ){
+		my @words = split( /\s+/, $it );
+		push( @hosts, $words[scalar( @words )-1] );
+	}
+	my $live = undef;
+	my $next = undef;
 	foreach my $host ( @hosts ){
 		msgVerbose( "examining '$host'" );
 		my $hostConfig = Mods::Toops::getHostConfig( $host );
-		if( $hostConfig->{Environment}{type} eq $opt_environment && exists( $hostConfig->{Services}{$opt_service} )){
-			msgVerbose( "  $hostConfig->{Environment}{type}: $host" );
-			if( exists( $hostConfig->{Services}{$opt_service}{status}{get_live} )){
-				my $command = $hostConfig->{Services}{$opt_service}{status}{get_live};
-				if( $command ){
-					$found = true;
-					my $stdout = `$command`;
-					my $rc = $?;
-					msgVerbose( $stdout );
-					msgVerbose( "rc=$rc" );
-					if( !$rc ){
-						my @output = grep( !/^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, split( /[\r\n]/, $stdout ));
-						if( scalar( @output )){
-							# expects a single line
-							my @words = split( /\s+/, $output[0] );
-							print "  live: ".$words[scalar( @words )-1].EOL;
+		if( exists( $hostConfig->{Services}{$opt_service}{status}{get_live} )){
+			$command = $hostConfig->{Services}{$opt_service}{status}{get_live};
+			if( $command ){
+				$found = true;
+				msgLog( $command );
+				$stdout = `$command`;
+				$rc = $?;
+				msgVerbose( $stdout );
+				msgVerbose( "rc=$rc" );
+				if( !$rc ){
+					my @output = grep( !/^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, split( /[\r\n]/, $stdout ));
+					if( scalar( @output )){
+						# expects a single line
+						my @words = split( /\s+/, $output[0] );
+						$live = $words[scalar( @words )-1];
+						print "  live: $live".EOL;
+						if( $opt_next ){
+							my @nexts = grep( !/$live/, @hosts );
+							$next = $nexts[0];
+							print "  next: $next".EOL;
 						}
 					}
-					last;
 				}
+				last;
 			}
+		}
+	}
+	my $labels = "";
+	$labels = "-label service=$opt_service -label environment=$opt_environment";
+	if( $opt_mqtt ){
+		# topic is HOST/telemetry/service/SERVICE/environment/ENVIRONMENT/machine/live=live
+		# topic is HOST/telemetry/service/SERVICE/environment/ENVIRONMENT/machine/next=next
+		if( $live ){
+			$command = "telemetry.pl publish -metric machine_live $labels -value=$live -mqtt -nohttp";
+			`$command`;
+		}
+		if( $opt_next && $next ){
+			$command = "telemetry.pl publish -metric machine_next $labels -value=$next -mqtt -nohttp";
+			`$command`;
+		}
+	}
+	if( $opt_http ){
+		foreach my $host ( @hosts ){
+			my $value = ( $live && $host eq $live ) ? "1" : "0";
+			$command = "telemetry.pl publish -metric ttp_service_host $labels -label host=$host -value=$value -nomqtt -http";
+			`$command`;
 		}
 	}
 	if( $found ){
@@ -83,7 +132,10 @@ if( !GetOptions(
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"service=s"			=> \$opt_service,
-	"environment=s"		=> \$opt_environment )){
+	"environment=s"		=> \$opt_environment,
+	"next!"				=> \$opt_next,
+	"mqtt!"				=> \$opt_mqtt,
+	"http!"				=> \$opt_http )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		ttpExit( 1 );
@@ -99,6 +151,8 @@ msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" 
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
 msgVerbose( "found environment='$opt_environment'" );
+msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 
 msgErr( "'--service' service name must be specified, but is not found" ) if !$opt_service;
 msgErr( "'--environment' environment type must be specified, but is not found" ) if !$opt_environment;
