@@ -4,6 +4,12 @@ rem Standard workloads on all machines
 set WORKLOAD=C:\INLINGUA\SiteResources\Commands\workload.cmd
 set RUNNER=/RU %COMPUTERNAME%\inlingua-user /RP GRlCvlNazmGcvRL0a3Ow
 
+set JOB=daily.user
+echo %JOB%
+@schtasks /Delete /TN Inlingua\%JOB% /F 1>NUL 2>NUL
+schtasks /Create /TN Inlingua\%JOB% /TR "net user inlingua-user /active:yes" /SC DAILY /ST 04:59 /F /RU SYSTEM
+schtasks /Change /TN Inlingua\%JOB% /Enable
+
 set JOB=daily.morning
 echo %JOB%
 @schtasks /Delete /TN Inlingua\%JOB% /F 1>NUL 2>NUL
