@@ -84,13 +84,12 @@ sub doBackup {
 				data => $data
 			},
 			mqtt => {
-				topic => "$TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$db/$mode",
+				topic => "$TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$db",
 				data => $data,
 				options => "-retain",
 				excludes => [
 					'instance',
 					'database',
-					'mode',
 					'cmdline',
 					'command',
 					'verb',
