@@ -58,6 +58,12 @@
 				},
 				"switch": {
 					"to_backup": {
+						"commands": [
+							"ssh inlingua-adm@<HOST> sc stop Canal33Ftp",
+							"ssh inlingua-adm@<HOST> sc config start= disabled Canal33Ftp",
+							"ssh inlingua-adm@<HOST> sc stop Canal33Svc",
+							"ssh inlingua-adm@<HOST> sc config start= disabled Canal33Svc"
+						]
 					},
 					"to_live": {
 						"commands": [
