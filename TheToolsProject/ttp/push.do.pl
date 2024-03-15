@@ -61,6 +61,9 @@ sub doPublish {
 			msgVerbose( "num_of_files_and_dirs='$num_of_files_and_dirs'" );
 			msgVerbose( "num_of_dirs='$num_of_dirs'" );
 			msgVerbose( "depth_traversed='$depth_traversed'" );
+			if( !$num_of_files_and_dirs ){
+				msgErr( "error detected in dircopy()! $!" );
+			}
 		}
 		$done += 1;
 	}
