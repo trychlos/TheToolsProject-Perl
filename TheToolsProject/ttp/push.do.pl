@@ -36,17 +36,17 @@ my $opt_tag = true;
 # -------------------------------------------------------------------------------------------------
 # publish  the reference tree to the pull target
 sub doPublish {
-	#my ( $pullConfig ) = @_;
 	my $result = false;
-	my $tohost = $TTPVars->{config}{toops}{deployments}{pullReference};
+	my $tohost = ttpVar([ 'deployments', 'pullReference' ]);
 	msgOut( "publishing to '$tohost'..." );
 	my $asked = 0;
 	my $done = 0;
-	foreach my $dir ( @{$TTPVars->{config}{toops}{deployments}{sourceDirs}} ){
+	foreach my $dir ( @{ttpVar([ 'deployments', 'sourceDirs' ])} ){
 		$asked += 1;
 		my @dirs = File::Spec->splitdir( $dir );
 		my $srcdir = File::Spec->rel2abs( File::Spec->catdir( File::Spec->curdir(), $dirs[scalar @dirs - 1] ));
 		msgOut( "  to $dir" );
+		msgVerbose( "from $srcdir" );
 		msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
 		if( !Mods::Toops::wantsDummy()){
 			my $res = pathrmdir( $dir );
