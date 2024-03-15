@@ -59,8 +59,8 @@ our $TTPVars = {
 		],
 		# main configuration keys
 		ConfigKeys => [
-			'toops',
 			'site',
+			'toops',
 			'host'
 		],
 		# some internally used constants
@@ -81,6 +81,23 @@ our $TTPVars = {
 		colored => true
 	}
 };
+
+# -------------------------------------------------------------------------------------------------
+# Check the top keys of the provided (raw) hash, making sure only allowed keys are here
+# or, maybe, keys derived from allowed keys (e.g. allow 'site_comments' if 'site' is allowed)
+# (I):
+# - hash ref to be checked
+# - array ref of allowed keys
+# (O):
+# - a ref to the array of unallowed keys
+sub checkConfigKeys {
+	my ( $hash, $keys ) = @_;
+	my $others = [];
+	foreach my $key ( keys %{$hash} ){
+		push( @{$others}, $key ) if !grep( /^$key$|^$key[-_\.]/, @{$keys} );
+	}
+	return $others;
+}
 
 # -------------------------------------------------------------------------------------------------
 # Execute a command dependant of the running OS.
@@ -754,16 +771,20 @@ sub init {
 	# make sure the toops+site configuration doesn't have any other key
 	# immediately aborting if this is the case
 	# accepting anyway 'toops' and 'site'-derived keys (like 'site_comments' for example)
-	my @others = ();
-	foreach my $key ( keys %{$TTPVars->{raw}} ){
-		push( @others, "'$key'" ) unless index( $key, "toops" )==0 || index( $key, "site" )==0;
-	}
-	if( scalar @others ){
-		print STDERR "Invalid key(s) found in toops.json configuration file: ".join( ', ', @others )."\n";
-		print STDERR "Site own keys should be inside 'site' hierarchy\n";
+	my $others = checkConfigKeys( $TTPVars->{raw}, [ 'site', 'toops' ] );
+	if( scalar @{$others} ){
+		print STDERR "Invalid key(s) found in toops.json configuration file: ".join( ', ', @{$others} )."\n";
+		print STDERR "Remind that site own keys should be inside 'site' hierarchy while TTP global configuration must be inside 'toops' hierarchy\n";
+		print STDERR "Exiting with code 1\n";
 		exit( 1 );
 	}
-	$TTPVars->{raw}{host} = hostConfigRead( ttpHost());
+	my $raw = hostConfigRead( ttpHost());
+	if( !defined $raw ){
+		print STDERR "Unable to read this host configuration file\n";
+		print STDERR "Exiting with code 1\n";
+		exit( 1 );
+	}
+	$TTPVars->{raw}{host} = $raw;
 	ttpEvaluate();
 	msgLog( "executing $0 ".join( ' ', @ARGV ));
 }
@@ -1049,7 +1070,7 @@ sub ttpErrs {
 }
 
 # -------------------------------------------------------------------------------------------------
-# re-evaluate both toops and host configurations
+# re-evaluate both toops and (execution) host configurations
 # Rationale: we could have decided to systematically reevaluate the configuration data at each use
 # with the benefit that the data is always up to date
 # with the possible inconvenient of a rare condition where a command+verb execution will be logged
@@ -1064,8 +1085,7 @@ sub ttpEvaluate {
 		$TTPVars->{config}{$key} = $TTPVars->{raw}{$key};
 	}
 	# then evaluate
-	# sort the keys to try to get something which is predictable
-	foreach my $key ( sort @{$TTPVars->{Toops}{ConfigKeys}} ){
+	foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
 		$TTPVars->{config}{$key} = evaluate( $TTPVars->{config}{$key} );
 	}
 	# and reevaluates the logs too
