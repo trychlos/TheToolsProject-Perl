@@ -100,18 +100,21 @@ sub getLive {
 		# topic is HOST/telemetry/service/SERVICE/environment/ENVIRONMENT/machine/live=live
 		# topic is HOST/telemetry/service/SERVICE/environment/ENVIRONMENT/machine/next=next
 		if( $live ){
-			$command = "telemetry.pl publish -metric machine_live $labels -value=$live -mqtt -nohttp";
+			$command = "telemetry.pl publish -metric live $labels -value=$live -mqtt -mqttPrefix machine/ -nohttp";
 			`$command`;
 		}
 		if( $opt_next && $next ){
-			$command = "telemetry.pl publish -metric machine_next $labels -value=$next -mqtt -nohttp";
+			$command = "telemetry.pl publish -metric backup $labels -value=$next -mqtt -mqttPrefix machine/ -nohttp";
 			`$command`;
 		}
 	}
 	if( $opt_http ){
 		foreach my $host ( @hosts ){
 			my $value = ( $live && $host eq $live ) ? "1" : "0";
-			$command = "telemetry.pl publish -metric ttp_service_machine $labels -label host=$host -value=$value -nomqtt -http";
+			my $httpLabels = $labels;
+			$httpLabels .= " -label live=$live" if $live;
+			$httpLabels .= " -label backup=$next" if $next;
+			$command = "telemetry.pl publish -metric ttp_service_machine $httpLabels -value=$value -nomqtt -http";
 			`$command`;
 		}
 	}
