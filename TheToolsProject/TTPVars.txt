@@ -12,7 +12,7 @@ TTPVars
  |   +- toops
  |   +- host
  |
- +- config                  Store here dynamically evaluated json configuration files
+ +- config                  Store here dynamically evaluated json configuration files of the current execution context
  |   |
  |   +- site
  |   +- toops

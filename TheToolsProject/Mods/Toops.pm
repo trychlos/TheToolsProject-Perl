@@ -94,7 +94,12 @@ sub checkConfigKeys {
 	my ( $hash, $keys ) = @_;
 	my $others = [];
 	foreach my $key ( keys %{$hash} ){
-		push( @{$others}, $key ) if !grep( /^$key$|^$key[-_\.]/, @{$keys} );
+		my $allowed = false;
+		foreach my $it ( @{$keys} ){
+			$allowed = true if $key =~ m/^$it$/;
+			$allowed = true if $key =~ m/^$it[-_\.]/;
+		}
+		push( @{$others}, $key ) if !$allowed;
 	}
 	return $others;
 }
@@ -735,6 +740,37 @@ sub helpVerbStandardOptions {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Substitute the macros in a host configuration file
+# (I):
+# - the raw JSON hash
+# - an options hash with following keys:
+#   > host: the hostname being treated
+# (O):
+# - the same with substituted macros:
+#   > HOST
+sub hostConfigMacrosRec {
+	my ( $hash, $opts ) = @_;
+	my $ref = ref( $hash );
+	if( $ref eq 'HASH' ){
+		foreach my $key ( keys %{$hash} ){
+			$hash->{$key} = hostConfigMacrosRec( $hash->{$key}, $opts );
+		}
+	} elsif( $ref eq 'ARRAY' ){
+		my @array = ();
+		foreach my $it ( @{$hash} ){
+			push( @array, hostConfigMacrosRec( $it, $opts ));
+		}
+		$hash = \@array;
+	} elsif( !$ref ){
+		my $host = $opts->{host};
+		$hash =~ s/<HOST>/$host/g;
+	} else {
+		msgVerbose( "unmanaged ref: '$ref'" );
+	}
+	return $hash;
+}
+
+# -------------------------------------------------------------------------------------------------
 # read the host configuration without evaluation but checks that we have the correct top key
 # (I):
 # - the hostname
@@ -742,6 +778,8 @@ sub helpVerbStandardOptions {
 # - returns the data under the toplevel key (which is expected to be the hostname)
 #   with a new 'name' key which contains this same hostname
 # or undef in case of an error
+# Manage macros:
+# - HOST
 sub hostConfigRead {
 	my ( $host ) = @_;
 	my $result = undef;
@@ -759,6 +797,7 @@ sub hostConfigRead {
 			}
 		}
 	}
+	$result = hostConfigMacrosRec( $result, { host => $host }) if defined $result;
 	return $result;
 }
 
