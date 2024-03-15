@@ -765,7 +765,7 @@ sub hostConfigMacrosRec {
 		my $host = $opts->{host};
 		$hash =~ s/<HOST>/$host/g;
 	} else {
-		msgVerbose( "unmanaged ref: '$ref'" );
+		msgVerbose( "Toops::hostConfigMacrosRec() unmanaged ref: '$ref'" );
 	}
 	return $hash;
 }
@@ -784,13 +784,13 @@ sub hostConfigRead {
 	my ( $host ) = @_;
 	my $result = undef;
 	if( !$host ){
-		msgErr( "hostConfigRead() hostname expected" );
+		msgErr( "Toops::hostConfigRead() hostname expected" );
 	} else {
 		my $hash = jsonRead( Mods::Path::hostConfigurationPath( $host ));
 		if( $hash ){
 			my $topkey = ( keys %{$hash} )[0];
 			if( $topkey ne $host ){
-				msgErr( "expected toplevel key '$host', found '$topkey'" ) ;
+				msgErr( "Toops::hostConfigRead() expected toplevel key '$host', found '$topkey'" ) ;
 			} else {
 				$result = $hash->{$topkey};
 				$result->{name} = $host;
