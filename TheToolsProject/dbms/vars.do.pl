@@ -41,7 +41,7 @@ my $opt_archivesDir = false;
 # list archivesDir value - e.g. '\\ftpback-rbx7-618.ovh.net\ns3153065.ip-51-91-25.eu\WS12DEV1\SQLBackups\240101'
 sub listArchivesdir {
 	my $dir = Mods::Path::dbmsArchivesDir();
-	my $str = "archivesDir: $dir";
+	my $str = "archivesDir: ".( defined $dir ? $dir : "" );
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
@@ -50,7 +50,7 @@ sub listArchivesdir {
 # list archivesRoot value - e.g. '\\ftpback-rbx7-618.ovh.net\ns3153065.ip-51-91-25.eu\WS12DEV1\SQLBackups'
 sub listArchivesroot {
 	my $dir = Mods::Path::dbmsArchivesRoot();
-	my $str = "archivesRoot: $dir";
+	my $str = "archivesRoot: ".( defined $dir ? $dir : "" );
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
