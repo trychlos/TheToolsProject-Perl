@@ -295,7 +295,7 @@ sub _evaluatePrint {
 	# a still-undefined value. so have to wait until the end to resolve all values, but too late
 	# to emit a warning ?
 	#msgWarn( "something is wrong with '$value' as evaluation result is undefined" ) if !defined $result;
-	$result = $result ||'(undef)';
+	$result = $result || '(undef)';
 	#print "value='$value' result='$result'".EOL;
 	return $result;
 }
