@@ -49,8 +49,14 @@ sub doPublish {
 		msgVerbose( "from $srcdir" );
 		msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
 		if( !Mods::Toops::wantsDummy()){
-			my $res = pathrmdir( $dir );
-			msgVerbose( "doPublish.pathrmdir() got rc=$res" );
+			my $removeTree = ttpVar([ 'deployments', 'before', 'removeTree' ]);
+			$removeTree = true if !defined $removeTree;
+			if( $removeTree ){
+				my $rc = pathrmdir( $dir );
+				msgVerbose( "doPublish.pathrmdir() got rc=$rc" );
+			} else {
+				msgVerbose( "target dir not emptied as removeTree is false" );
+			}
 			my( $num_of_files_and_dirs, $num_of_dirs, $depth_traversed ) = dircopy( $srcdir, $dir );
 			msgVerbose( "num_of_files_and_dirs='$num_of_files_and_dirs'" );
 			msgVerbose( "num_of_dirs='$num_of_dirs'" );
