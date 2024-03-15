@@ -111,7 +111,7 @@ sub getLive {
 	if( $opt_http ){
 		foreach my $host ( @hosts ){
 			my $value = ( $live && $host eq $live ) ? "1" : "0";
-			$command = "telemetry.pl publish -metric ttp_service_host $labels -label host=$host -value=$value -nomqtt -http";
+			$command = "telemetry.pl publish -metric ttp_service_machine $labels -label host=$host -value=$value -nomqtt -http";
 			`$command`;
 		}
 	}
