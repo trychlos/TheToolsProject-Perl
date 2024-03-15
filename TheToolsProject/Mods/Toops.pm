@@ -282,7 +282,7 @@ sub _evaluateScalar {
 	my $type = ref( $value );
 	my $evaluate = true;
 	if( $type ){
-		msgErr( "scalar expected, but '$type' found" );
+		msgErr( "Toops::evaluateScalar() scalar expected, but '$type' found" );
 		$evaluate = false;
 	}
 	my $result = $value || '';
@@ -532,11 +532,13 @@ sub getHostConfig {
 	$opts //= {};
 	my $hash = hostConfigRead( $host );
 	if( $hash ){
+		$TTPVars->{evaluating} = $hash;
 		my $withEvaluate = true;
 		$withEvaluate = $opts->{withEvaluate} if exists $opts->{withEvaluate};
 		if( $withEvaluate ){
-			$hash = evaluate( $hash );
+			$hash = evaluate( $TTPVars->{evaluating} );
 		}
+		$TTPVars->{evaluating} = undef;
 	}
 	return $hash;
 }
@@ -1191,10 +1193,14 @@ sub ttpRandom {
 sub ttpVar {
 	my ( $keys, $opts ) = @_;
 	$opts //= {};
+	# get the toops-level result if any
 	my $result = varSearch( $keys, $TTPVars->{config}{toops} );
-	my $config = $TTPVars->{config}{host};
+	# get a host-level result if any searching for in currently evaluating, defaulting to execution host
+	my $config = $TTPVars->{evaluating};
+	$config = $TTPVars->{config}{host} if !defined $config;
 	$config = $opts->{config} if exists $opts->{config};
 	my $hostValue = varSearch( $keys, $config );
+	# host value overrides the toops one if defined
 	$result = $hostValue if defined $hostValue;
 	return $result;
 }
@@ -1209,6 +1215,7 @@ sub TTPVars {
 # returns the content of a var, read from the provided base
 # (I):
 # - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
+# - the hash ref to be searched for
 # (O):
 # - the evaluated value of this variable, which may be undef
 sub varSearch {

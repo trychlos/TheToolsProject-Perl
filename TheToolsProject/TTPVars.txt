@@ -22,6 +22,10 @@ TTPVars
  |   |
  |   +- host
  |
+ +- evaluating              While evaulating another host configuration
+ |   |
+ |   +- host
+ |
  +- run                     Store here dynamically computed variables
      |
 	 +- exitCode            exit code of the command/ver
