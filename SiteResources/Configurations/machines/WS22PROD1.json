@@ -49,6 +49,10 @@
 					],
 					"get_live": "http.pl get -nocolored -url https://tom17.blingua.fr -header X-Sent-By -ignore"
 				},
+				"switch_comments": [
+					"These commands have to be run when we want switch the status of a machine, from live to backup, or from backup to live",
+					"They have to be run via 'SiteResources\\Commands\\extern_service_switch.pl' script."
+				],
 				"switch": {
 					"to_backup": {
 					},
@@ -106,6 +110,10 @@
 					],
 					"get_live": "http.pl get -nocolored -url https://tom21.blingua.fr -header X-Sent-By -ignore"
 				},
+				"switch_comments": [
+					"These commands have to be run when we want switch the status of a machine, from live to backup, or from backup to live",
+					"They have to be run via 'SiteResources\\Commands\\extern_service_switch.pl' script."
+				],
 				"switch": {
 					"to_backup": {
 					},
@@ -163,6 +171,10 @@
 					],
 					"get_live": "http.pl get -nocolored -url https://tom59.blingua.fr -header X-Sent-By -ignore"
 				},
+				"switch_comments": [
+					"These commands have to be run when we want switch the status of a machine, from live to backup, or from backup to live",
+					"They have to be run via 'SiteResources\\Commands\\extern_service_switch.pl' script."
+				],
 				"switch": {
 					"to_backup": {
 					},

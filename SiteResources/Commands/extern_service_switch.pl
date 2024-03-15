@@ -12,8 +12,9 @@
 # @(-) --[no]force             check the initial conditions, but run even an error is detected [${force}]
 #
 # @(@) While it is OF THE FIRST IMPORTANCE that backup daemons do not run on a live production machine,
-# @(@) we may have several live production machines, or several backup production machines, or no live at all, or no backup at all.
-# @(@) Though, obviously, all that stuff will work a bit less than optimal, there will not be any loss of data. So fine from this script point of view.
+# @(@) we nonetheless may have several live production machines, or several backup production machines, or no live at all, or no backup at all.
+# @(@) Obviously, all that stuff will work a bit less than optimal, but there will not be any loss of data.
+# @(@) So fine from this script point of view.
 #
 # This script is run from an external (Linux) monitoring host.
 #

@@ -56,6 +56,10 @@
 					],
 					"get_live": "http.pl get -nocolored -url http://canal33.blingua.net -header X-Sent-By -ignore"
 				},
+				"switch_comments": [
+					"These commands have to be run when we want switch the status of a machine, from live to backup, or from backup to live",
+					"They have to be run via 'SiteResources\\Commands\\extern_service_switch.pl' script."
+				],
 				"switch": {
 					"to_backup": {
 						"commands": [
