@@ -47,8 +47,8 @@
 						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url http://canal33.blingua.net -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url http://canal33.backup.blingua.net -label service=<SERVICE> -nomqtt -http",
-						"http.pl get -nocolored -url http://c33.blingua.fr -label service=<SERVICE> -nomqtt -http",
-						"http.pl get -nocolored -url http://c33.backup.blingua.net -label service=<SERVICE> -nomqtt -http"
+						"http.pl get -nocolored -url https://c33.blingua.fr -label service=<SERVICE> -nomqtt -http",
+						"http.pl get -nocolored -url https://c33.backup.blingua.fr -label service=<SERVICE> -nomqtt -http"
 					],
 					"get_live": "http.pl get -nocolored -url http://canal33.blingua.net -header X-Sent-By -ignore"
 				},
