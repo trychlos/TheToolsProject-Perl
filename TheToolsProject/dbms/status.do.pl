@@ -67,12 +67,10 @@ sub doState {
 				print "  $key: $row->{$key}".EOL;
 			}
 			if( $opt_mqtt ){
-				# -> MQTT
-				foreach my $key ( keys %{$row} ){
-					print `telemetry.pl publish -metric $key -value $row->{$key} -label instance=$instance -label database=$db -nocolored $dummy $verbose -nohttp`;
-					my $rc = $?;
-					msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
-				}
+				# -> MQTT: only publish the label as state=<label>
+				print `telemetry.pl publish -metric state -value $row->{state_desc} -label instance=$instance -label database=$db -mqtt -nohttp -nocolored $dummy $verbose`;
+				my $rc = $?;
+				msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
 			}
 			if( $opt_http ){
 				# -> HTTP
@@ -92,13 +90,8 @@ sub doState {
 				foreach my $key ( keys( %{$states} )){
 					my $value = 0;
 					$value = 1 if "$key" eq "$row->{state}";
-					# this option will be passed as a metric qualifier instead of being part of the url
-					#my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
-					#print `telemetry.pl publish -metric telemetry_dbms_state -value $value -label instance=$instance -label database=$db $label nocolored $dummy $verbose -nomqtt $type`;
-					# this works the same, but using labels in the path instead of metric qualifier
-					my $label = "-httpOption label={state=".uri_escape( "\"$states->{$key}\"" )."}";
-					print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$instance -label database=$db -label state=$states->{$key} -nocolored $dummy $verbose -nomqtt`;
-					my $rc = $?;
+					print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$instance -label database=$db -label state=$states->{$key} -nomqtt -http -nocolored $dummy $verbose`;
+					my $rc = $?;	
 					msgVerbose( "doState() HTTP key='$key' state='$states->{$key}' got rc=$rc" );
 					$code += $rc;
 				}
