@@ -21,6 +21,7 @@
 use Data::Dumper;
 use HTTP::Request;
 use LWP::UserAgent;
+use URI::Escape;
 
 use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
@@ -92,15 +93,16 @@ sub doGet {
 	}
 	$other_labels .= " -label proto=$proto";
 	$other_labels .= " -label path=$path";
-	msgVerbose( "added labels '$labels'" );
+	msgVerbose( "added labels '$other_labels'" );
 	if( $opt_mqtt ){
 		# topic is HOST/telemetry/service/SERVICE/proto/PROTO/path/PATH/url_status
 		$command = "telemetry.pl publish -metric url_status $other_labels -value=$value -mqtt -nohttp";
 		`$command`;
 	}
 	if( $opt_http ){
-		# send the full url as a label
-		$command = "telemetry.pl publish -metric ttp_url_status -label url=$opt_url $other_labels -value=$value -nomqtt -http";
+		# even escaped, it is impossible to send the full url to the telemetry
+		#my $escaped = uri_escape( $opt_url );
+		$command = "telemetry.pl publish -metric ttp_url_status $other_labels -value=$value -nomqtt -http";
 		`$command`;
 	}
 
