@@ -99,7 +99,8 @@ sub doGet {
 		`$command`;
 	}
 	if( $opt_http ){
-		$command = "telemetry.pl publish -metric ttp_url_status $other_labels -value=$value -nomqtt -http";
+		# send the full url as a label
+		$command = "telemetry.pl publish -metric ttp_url_status -label url=$opt_url $other_labels -value=$value -nomqtt -http";
 		`$command`;
 	}
 
