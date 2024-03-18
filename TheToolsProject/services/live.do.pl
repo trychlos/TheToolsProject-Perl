@@ -109,8 +109,10 @@ sub getLive {
 		}
 	}
 	if( $opt_http ){
+		# set the value "1" when we are running of the live host
+		my $running = ttpHost();
 		foreach my $host ( @hosts ){
-			my $value = ( $live && $host eq $live ) ? "1" : "0";
+			my $value = ( $live && $live eq $running ) ? "1" : "0";
 			my $httpLabels = $labels;
 			$httpLabels .= " -label live=$live" if $live;
 			$httpLabels .= " -label backup=$next" if $next;

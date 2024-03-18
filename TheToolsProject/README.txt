@@ -90,7 +90,7 @@ TODO
 Topics tree
 
   published
-	<emitter_host> / executionReport / <command> / <verb>															-> the json execution report (command/verb dependant)
+	<emitter_host> / executionReport / <command.pl> / <verb>														-> the json execution report (command/verb dependant)
 	<emitter_host> / telemetry / dbms / <instance> / database / <database> / dbsize / <size_item>					-> size_item_value
 	<emitter_host> / telemetry / dbms / <instance> / database / <database> / table / <table_name> / rows_count		-> size_item_value
 
