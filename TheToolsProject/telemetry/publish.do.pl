@@ -126,8 +126,8 @@ msgVerbose( "found mqttPrefix='$opt_mqttPrefix'" );
 msgVerbose( "found mqttOptions='".join( ',', @mqttOptions )."'" );
 
 # metric and values are mandatory
-msgErr( "metric is required, but is not specified" ) if !$opt_metric;
-msgErr( "value is required, but is not specified" ) if !defined $opt_value;
+msgErr( "'--metric' metric option is required, but is not specified" ) if !$opt_metric;
+msgErr( "'--value' value option is required, but is not specified" ) if !defined $opt_value;
 
 # if labels are specified, check that each one is of the 'name=value' form
 foreach my $label ( @labels ){
