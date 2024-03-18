@@ -48,7 +48,8 @@
 						"http.pl get -nocolored -url http://canal33.blingua.net -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url http://canal33.backup.blingua.net -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://c33.blingua.fr -label service=<SERVICE> -nomqtt -http",
-						"http.pl get -nocolored -url https://c33.backup.blingua.fr -label service=<SERVICE> -nomqtt -http"
+						"http.pl get -nocolored -url https://c33.backup.blingua.fr -label service=<SERVICE> -nomqtt -http",
+						"ssh inlingua-user@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'daemon-monitor.pl' )] -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'canal33-backup-monitor-daemon.json' )] -metric ttp_service_backup_daemon -label service=<SERVICE -label environment=X"
 					],
 					"get_live": "http.pl get -nocolored -url http://canal33.blingua.net -header X-Sent-By -ignore"
 				},

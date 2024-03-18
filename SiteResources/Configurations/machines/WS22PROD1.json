@@ -45,7 +45,8 @@
 						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url https://tom17.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom17.archive.blingua.net -label service=<SERVICE> -nomqtt -http",
-						"http.pl get -nocolored -url https://tom17.backup.blingua.net -label service=<SERVICE> -nomqtt -http"
+						"http.pl get -nocolored -url https://tom17.backup.blingua.net -label service=<SERVICE> -nomqtt -http",
+						"ssh inlingua-user@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'daemon-monitor.pl' )] -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -metric ttp_service_backup_daemon -label service=<SERVICE -label environment=X"
 					],
 					"get_live": "http.pl get -nocolored -url https://tom17.blingua.fr -header X-Sent-By -ignore"
 				},
@@ -106,7 +107,8 @@
 						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url https://tom21.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom21.archive.blingua.net -label service=<SERVICE> -nomqtt -http",
-						"http.pl get -nocolored -url https://tom21.backup.blingua.net -label service=<SERVICE> -nomqtt -http"
+						"http.pl get -nocolored -url https://tom21.backup.blingua.net -label service=<SERVICE> -nomqtt -http",
+						"ssh inlingua-user@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'daemon-monitor.pl' )] -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -metric ttp_service_backup_daemon -label service=<SERVICE -label environment=X"
 					],
 					"get_live": "http.pl get -nocolored -url https://tom21.blingua.fr -header X-Sent-By -ignore"
 				},
@@ -167,7 +169,8 @@
 						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url https://tom59.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom59.archive.blingua.net -label service=<SERVICE> -nomqtt -http",
-						"http.pl get -nocolored -url https://tom59.backup.blingua.net -label service=<SERVICE> -nomqtt -http"
+						"http.pl get -nocolored -url https://tom59.backup.blingua.net -label service=<SERVICE> -nomqtt -http",
+						"ssh inlingua-user@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'daemon-monitor.pl' )] -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -metric ttp_service_backup_daemon -label service=<SERVICE -label environment=X"
 					],
 					"get_live": "http.pl get -nocolored -url https://tom59.blingua.fr -header X-Sent-By -ignore"
 				},
