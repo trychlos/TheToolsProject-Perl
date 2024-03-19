@@ -65,9 +65,11 @@ sub doPublish {
 				msgErr( "error detected in dircopy(): $!" );
 			}
 		}
-		$done += 1;
+		if( !ttpErrs()){
+			$done += 1;
+		}
 	}
-	if( $opt_tag ){
+	if( $done == $asked && !ttpErrs() && $opt_tag ){
 		msgOut( "tagging the git repository" );
 		my $now = localtime->strftime( '%Y%m%d_%H%M%S' );
 		my $message = "$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name}";
