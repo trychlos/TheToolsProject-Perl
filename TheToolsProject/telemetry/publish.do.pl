@@ -12,7 +12,7 @@
 # @(-) --httpOption <name=value>   an option to be passed to HTTP publication, may be specified several times or with a comma-separated list [${httpOption}]
 # @(-) --[no]mqtt                  publish to MQTT bus [${mqtt}]
 # @(-) --mqttPrefix=<prefix>       a prefix to be set on MQTT metrics name [${mqttPrefix}]
-# @(-) --mqttOption <name=value>   an option to be passed to MQTT publication, may be specified several times or with a comma-separated list [${httpOption}]
+# @(-) --mqttOption <name=value>   an option to be passed to MQTT publication, may be specified several times or with a comma-separated list [${mqttOption}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
