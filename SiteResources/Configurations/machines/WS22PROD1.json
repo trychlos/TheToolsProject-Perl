@@ -46,7 +46,7 @@
 						"http.pl get -nocolored -url https://tom17.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://inlingua17.archive.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom17.backup.blingua.fr -label service=<SERVICE> -nomqtt -http",
-						"ssh inlingua-user@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'daemon-monitor.pl' )] -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -metric ttp_service_backup_daemon -label service=<SERVICE -label environment=X"
+						"ssh inlingua-user@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'daemon-monitor.pl' )] -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -metric ttp_service_backup_daemon -label service=<SERVICE> -label environment=X"
 					],
 					"get_live": "http.pl get -nocolored -url https://tom17.blingua.fr -header X-Sent-By -ignore"
 				},
@@ -108,7 +108,7 @@
 						"http.pl get -nocolored -url https://tom21.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://inlingua21.archive.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom21.backup.blingua.fr -label service=<SERVICE> -nomqtt -http",
-						"ssh inlingua-user@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'daemon-monitor.pl' )] -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -metric ttp_service_backup_daemon -label service=<SERVICE -label environment=X"
+						"ssh inlingua-user@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'daemon-monitor.pl' )] -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -metric ttp_service_backup_daemon -label service=<SERVICE> -label environment=X"
 					],
 					"get_live": "http.pl get -nocolored -url https://tom21.blingua.fr -header X-Sent-By -ignore"
 				},
@@ -172,7 +172,7 @@
 						"http.pl get -nocolored -url https://inlingua33.archive.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://inlingua59.archive.blingua.fr -label service=<SERVICE> -nomqtt -http",
 						"http.pl get -nocolored -url https://tom59.backup.blingua.fr -label service=<SERVICE> -nomqtt -http",
-						"ssh inlingua-user@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'daemon-monitor.pl' )] -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -metric ttp_service_backup_daemon -label service=<SERVICE -label environment=X"
+						"ssh inlingua-user@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'daemon-monitor.pl' )] -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -metric ttp_service_backup_daemon -label service=<SERVICE> -label environment=X"
 					],
 					"get_live": "http.pl get -nocolored -url https://tom59.blingua.fr -header X-Sent-By -ignore"
 				},
