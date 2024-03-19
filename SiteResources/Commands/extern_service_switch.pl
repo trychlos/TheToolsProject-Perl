@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 # @(#) Switch a service to a target host
+# @(#) IMPORTANT: this script is to be run from an external (Linux) monitoring host.
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
@@ -15,8 +16,6 @@
 # @(@) we nonetheless may have several live production machines, or several backup production machines, or no live at all, or no backup at all.
 # @(@) Obviously, all that stuff will work a bit less than optimal, but there will not be any loss of data.
 # @(@) So fine from this script point of view.
-#
-# This script is run from an external (Linux) monitoring host.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
