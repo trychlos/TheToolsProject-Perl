@@ -5,10 +5,13 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
+# @(-) --bname=<name>          the JSON file basename [${bname}]
 # @(-) --port=<port>           the port number to address [${port}]
+# @(-) --[no]http              whether to publish an HTTP telemetry [${http}]
 #
 # @(@) The Tools Project is able to manage any daemons with these very same verbs.
 # @(@) Each separate daemon is characterized by its own JSON properties which uniquely identifies it from the TTP point of view.
+# @(@) This script accepts other options, after a '--' double dash, which will be passed to 'telemetry.pl publish' verb.
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
@@ -18,6 +21,7 @@ use File::Spec;
 use Mods::Constants qw( :all );
 use Mods::Daemon;
 use Mods::Message qw( :all );
+use Mods::Path;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -27,11 +31,14 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	json => '',
-	port => ''
+	bname => '',
+	port => '',
+	http => 'no'
 };
 
 my $opt_json = $defaults->{json};
 my $opt_port = -1;
+my $opt_http = false;
 
 # -------------------------------------------------------------------------------------------------
 # get a daemon status
@@ -47,7 +54,17 @@ sub doStatus {
 	}
 	$cmd .= " -port $opt_port" if $opt_port != -1;
 	my $res = `$cmd`;
-	if( $res && length $res && !$? ){
+	my $result = ( $res && length $res && $? == 0 );
+	if( $opt_http ){
+		my $value = $result ? "1" : "0";
+		my $command = "telemetry.pl publish -value $value ".join( ' ', @ARGV )." -nomqtt -http -nocolored $dummy $verbose";
+		msgVerbose( $command );
+		my $stdout = `$command`;
+		my $rc = $?;
+		msgVerbose( $stdout );
+		msgVerbose( "rc=$rc" );
+	}
+	if( $result ){
 		print "$res";
 		msgOut( "done" );
 	} else {
@@ -66,7 +83,9 @@ if( !GetOptions(
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"json=s"			=> \$opt_json,
-	"port=i"			=> \$opt_port )){
+	"bname=s"			=> \$opt_bname,
+	"port=i"			=> \$opt_port,
+	"http!"				=> \$opt_http )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		ttpExit( 1 );
@@ -81,16 +100,23 @@ msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" 
 msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
+msgVerbose( "found bname='$opt_bname'" );
 msgVerbose( "found port='$opt_port'" );
+msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 
-# either the json or the port must be specified (and not both)
+# either the json or the basename or the port must be specified (and not both)
 my $count = 0;
 $count += 1 if $opt_json;
+$count += 1 if $opt_bname;
 $count += 1 if $opt_port != -1;
 if( $count == 0 ){
-	msgErr( "one of '--json' or '--port' options must be specified, none found" );
+	msgErr( "one of '--json' or '--bname' or '--port' options must be specified, none found" );
 } elsif( $count > 1 ){
-	msgErr( "one of '--json' or '--port' options must be specified, both were found" );
+	msgErr( "one of '--json' or '--bname' or '--port' options must be specified, several were found" );
+}
+#if a bname is specified, build the full filename
+if( $opt_bname ){
+	$opt_json = File::Spec->catdir( Mods::Path::daemonsConfigurationsDir(), $opt_bname );
 }
 #if a json is specified, must have a listeningPort
 if( $opt_json ){
