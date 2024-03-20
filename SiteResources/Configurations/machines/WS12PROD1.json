@@ -50,8 +50,8 @@
 						"http.pl get -nocolored -url https://c33.blingua.fr -label service=<SERVICE> -ignore -mqtt -http",
 						"http.pl get -nocolored -url https://c33.backup.blingua.net -label service=<SERVICE> -ignore -mqtt -http",
 						"ssh inlingua-user@<HOST> daemon.pl status -bname canal33-backup-monitor-daemon.json -http -- -metric ttp_service_daemon -label service=<SERVICE> -label role=backup -label environment=X",
-						"ssh inlingua-user@<HOST> mswin.pl service -service Canal33Ftp -query -mqtt -http -- -label service=<SERVICE>",
-						"ssh inlingua-user@<HOST> mswin.pl service -service Canal33Svc -query -mqtt -http -- -label service=<SERVICE>"
+						"ssh inlingua-adm@<HOST> mswin.pl service -name Canal33Ftp -state -mqtt -http -- -label service=<SERVICE>",
+						"ssh inlingua-adm@<HOST> mswin.pl service -name Canal33Svc -state -mqtt -http -- -label service=<SERVICE>"
 					],
 					"get_live": "http.pl get -nocolored -url http://canal33.blingua.net -header X-Sent-By -ignore"
 				},
