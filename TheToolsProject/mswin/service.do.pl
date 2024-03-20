@@ -59,7 +59,7 @@ sub doServiceState {
 		my $state = undef;
 		foreach my $line ( @lines ){
 			if( $line =~ m/STATE/ ){
-				my @words = split( /\s+/, $stdout );
+				my @words = split( /\s+/, $line );
 				$label = $words[scalar( @words )-1];
 				$value = "$words[scalar( @words )-2]";
 				msgOut( "  $value: $label" );
