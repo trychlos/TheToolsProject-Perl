@@ -68,7 +68,12 @@ sub doRestore {
 			full => $opt_full,
 			mode => $mode
 		};
-		$data->{diff} = $opt_diff if $opt_diff;
+		if( $opt_diff ){
+			$data->{diff} = $opt_diff;
+		} else {
+			msgVerbose( "emptying '/diff' MQTT message as restored from a full backup" );
+			`mqtt.pl publish -topic $TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$opt_database/diff -payload "" -retain -nocolored`;
+		}
 		Mods::Toops::executionReport({
 			file => {
 				data => $data
