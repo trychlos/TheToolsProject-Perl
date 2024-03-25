@@ -76,7 +76,7 @@ sub doBackup {
 			instance => $opt_instance,
 			database => $db,
 			mode => $mode,
-			output => $res->{output},
+			output => ( $res->{status} ? $res->{output} : "" ),
 			compress => $opt_compress
 		};
 		Mods::Toops::executionReport({
