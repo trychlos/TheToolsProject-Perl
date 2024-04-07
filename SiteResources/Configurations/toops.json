@@ -82,7 +82,7 @@
 		"credentialsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'credentials' )]",
 		"DBMS": {
 			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), ttpHost() )]",
-			"backupsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'byDaySQLBackups' )]"
+			"backupsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'dailySQLBackups' )]"
 		},
 		"deployments": {
 			"sourceDirs": [
@@ -120,7 +120,7 @@
 				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
 			}
 		},
-		"logsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'byDayLogs' )]",
+		"logsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'dailyLogs' )]",
 		"logsDir": "[eval:File::Spec->catdir( Mods::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Toops' )]",
 		"Message": {
 			"msgDummy": {
