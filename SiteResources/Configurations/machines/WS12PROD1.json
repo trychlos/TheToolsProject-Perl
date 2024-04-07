@@ -11,7 +11,7 @@
 						{
 							"label": "(Production Live) Sauvegarde quotidienne de la base Canall33",
 							"commands": [
-								"dbms.pl backup -nocolored -service Canal33 -full",
+								"dbms.pl backup -nocolored -service Canal33 -full -compress",
 								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -nocolored -backupsDir\" -targetcmd \"dbms.pl vars -nocolored -archivesDir\" -dirs",
 								"dbms.pl telemetry -nocolored -service Canal33 -dbsize",
 								"dbms.pl telemetry -nocolored -service Canal33 -tabcount",
@@ -22,9 +22,8 @@
 					"canal33.live.every.5h": [
 						{
 							"label": "(Production Live) Sauvegarde différentielle en journée",
-							"commands_x": [
-								"-> désactivée sur ns230134 faute d'espace disque suffisant",
-								"dbms.pl backup -nocolored -service Canal33 -diff",
+							"commands": [
+								"dbms.pl backup -nocolored -service Canal33 -diff -compress",
 								"ttp.pl copydirs -nocolored -sourcecmd \"dbms.pl vars -nocolored -backupsDir\" -targetcmd \"dbms.pl vars -nocolored -archivesDir\" -dirs"
 							]
 						}
@@ -47,7 +46,7 @@
 						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url http://canal33.blingua.net -label service=<SERVICE> -ignore -mqtt -http",
 						"http.pl get -nocolored -url http://canal33.backup.blingua.net -label service=<SERVICE> -ignore -mqtt -http",
-						"http.pl get -nocolored -url https://c33.blingua.fr -label service=<SERVICE> -ignore -mqtt -http",
+						"http.pl get -nocolored -url https://c33.blingua.net -label service=<SERVICE> -ignore -mqtt -http",
 						"http.pl get -nocolored -url https://c33.backup.blingua.net -label service=<SERVICE> -ignore -mqtt -http",
 						"ssh inlingua-user@<HOST> daemon.pl status -bname canal33-backup-monitor-daemon.json -mqtt -http -- -metric ttp_service_daemon -label service=<SERVICE> -label role=backup -label environment=X",
 						"ssh inlingua-adm@<HOST> mswin.pl service -name Canal33Ftp -state -mqtt -http -- -label service=<SERVICE>",
@@ -89,13 +88,12 @@
 							"label": "Purge backups directory",
 							"order": "00",
 							"order_comments": [
-								"ns230134 has very low free space on its local disk, just enough for one backup set, not two.",
-								"Make sure the SQLBackups is empty before our daily full backups. It will be immediately copied to the archive, and moved again to the archive at evening."
+								""
 							],
 							"commands": [
 								"ttp.pl pull -nocolored",
-								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -nocolored -backupsRoot\" -keep 1",
-								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -nocolored -archivesRoot\" -keep 5",
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -nocolored -backupsRoot\" -keep 2",
+								"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -nocolored -archivesRoot\" -keep 7",
 								"ttp.pl purgedirs -nocolored -dircmd \"ttp.pl vars -nocolored -logsRoot\" -keep 7"
 							]
 						},
