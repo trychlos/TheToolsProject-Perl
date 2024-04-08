@@ -6,7 +6,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --service=<name>        display informations about the named service [${service}]
 # @(-) --host=<name>           search for the service in the given host [${host}]
-# @(-) --key=<name[,...]>      the key to be searched for in JSON configuration file, ay be specified several times or as a comma-separated list [${key}]
+# @(-) --key=<name[,...]>      the key to be searched for in JSON configuration file, may be specified several times or as a comma-separated list [${key}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 #
