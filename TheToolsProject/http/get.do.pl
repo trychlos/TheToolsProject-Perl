@@ -6,7 +6,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --url=<url>             the URL to be requested [${url}]
 # @(-) --header=<header>       output the received (case insensitive) header [${header}]
-# @(-) --[no]ignore            ignore HTTP status as soon as we receive something from the server [${ignore}]
+# @(-) --accept=<code>         consider the return code as OK, regex, may be specified several times or as a comma-separated list [${accept}]
 # @(-) --[no]response          print the received response to stdout [${response}]
 # @(-) --[no]mqtt              publish MQTT telemetry [${mqtt}]
 # @(-) --[no]http              publish HTTP telemetry [${http}]
@@ -36,7 +36,7 @@ my $defaults = {
 	url => '',
 	header => '',
 	response => 'no',
-	ignore => 'no',
+	accept => '200',
 	mqtt => 'no',
 	http => 'no',
 	label => ''
@@ -46,21 +46,13 @@ my $opt_url = $defaults->{url};
 my $opt_header = $defaults->{header};
 my $opt_response = false;
 my $opt_ignore = false;
+my $opt_accept = [ $defaults->{accept} ];
 my $opt_mqtt = false;
 my $opt_http = false;
 my $opt_label = $defaults->{label};
 
 # list of labels
 my @labels = ();
-
-# a list of not-ignored status
-# 500 Can't connect to ip.test.blingua.net:443 (Connection timed out)
-# 500 Can't connect to ip2.test.blingua.net:80 (No such host is known)
-my @notIgnored = (
-	'Connection timed out',
-	'No such host is known',
-	'Name or service not known'
-);
 
 # -------------------------------------------------------------------------------------------------
 # request the url
@@ -77,35 +69,41 @@ sub doGet {
 		msgLog( "content='".$response->decoded_content."'" );
 	} else {
 		$status = $response->status_line;
-		msgLog( "status='$status'" );
-		if( $opt_ignore && _isIgnored( $status )){
-			msgVerbose( "erroneous HTTP status ignored as opt_ignore='true'" );
+		msgLog( "additional status: '$status'" );
+		my $acceptedRegex = undef;
+		foreach my $regex ( @{$opt_accept} ){
+			$acceptedRegex = $regex if ( $response->code =~ /$regex/ );
+			last if defined $acceptedRegex;
+		}
+		if( defined $acceptedRegex ){
+			msgVerbose( "status code match '$acceptedRegex' accepted regex, forcing result to true" );
 			$res = true;
 		}
 	}
 
 	# and send the telemetry if opt-ed in
-	my ( $proto, $path ) = split( /:\/\//, $opt_url );
-	my $value = $res ? "1" : "0";
-	my $other_labels = "";
-	foreach my $it ( @labels ){
-		$other_labels .= " -label $it";
+	if( $opt_mqtt || $opt_http ){
+		my ( $proto, $path ) = split( /:\/\//, $opt_url );
+		my $value = $res ? "1" : "0";
+		my $other_labels = "";
+		foreach my $it ( @labels ){
+			$other_labels .= " -label $it";
+		}
+		$other_labels .= " -label proto=$proto";
+		$other_labels .= " -label path=$path";
+		msgVerbose( "added labels '$other_labels'" );
+		if( $opt_mqtt ){
+			# topic is HOST/telemetry/service/SERVICE/proto/PROTO/path/PATH/url_status
+			$command = "telemetry.pl publish -metric url_status $other_labels -value=$value -mqtt -nohttp";
+			`$command`;
+		}
+		if( $opt_http ){
+			# even escaped, it is impossible to send the full url to the telemetry
+			#my $escaped = uri_escape( $opt_url );
+			$command = "telemetry.pl publish -metric ttp_url_status $other_labels -value=$value -nomqtt -http";
+			`$command`;
+		}
 	}
-	$other_labels .= " -label proto=$proto";
-	$other_labels .= " -label path=$path";
-	msgVerbose( "added labels '$other_labels'" );
-	if( $opt_mqtt ){
-		# topic is HOST/telemetry/service/SERVICE/proto/PROTO/path/PATH/url_status
-		$command = "telemetry.pl publish -metric url_status $other_labels -value=$value -mqtt -nohttp";
-		`$command`;
-	}
-	if( $opt_http ){
-		# even escaped, it is impossible to send the full url to the telemetry
-		#my $escaped = uri_escape( $opt_url );
-		$command = "telemetry.pl publish -metric ttp_url_status $other_labels -value=$value -nomqtt -http";
-		`$command`;
-	}
-
 	if( $res ){
 		if( $opt_header ){
 			my $header = $response->header( $opt_header );
@@ -149,6 +147,7 @@ if( !GetOptions(
 	"header=s"			=> \$opt_header,
 	"response!"			=> \$opt_response,
 	"ignore!"			=> \$opt_ignore,
+	"accept=s@"			=> \$opt_accept,
 	"mqtt!"				=> \$opt_mqtt,
 	"http!"				=> \$opt_http,
 	"label=s@"			=> \$opt_label )){
@@ -169,6 +168,7 @@ msgVerbose( "found url='$opt_url'" );
 msgVerbose( "found header='$opt_header'" );
 msgVerbose( "found response='".( $opt_response ? 'true':'false' )."'" );
 msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
+msgVerbose( "found accept='".join( ',', @{$opt_accept} )."'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
 msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 @labels = split( /,/, join( ',', @{$opt_label} ));
