@@ -42,7 +42,7 @@ my @keys = ();
 # - HOST
 # - SERVICE
 sub executeCommands {
-	msgOut( "executing '$opt_service\\[".join( ', ', @keys )."]' commands..." );
+	msgOut( "executing '$opt_service [".join( ',', @keys )."]' commands..." );
 	my $cmdCount = 0;
 	my $host = $opt_host || ttpHost();
 	my $config = Mods::Toops::getHostConfig( $host );
