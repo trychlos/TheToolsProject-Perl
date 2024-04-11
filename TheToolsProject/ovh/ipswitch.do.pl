@@ -105,7 +105,7 @@ sub doSwitchIP {
 								do {
 									print ".";
 									sleep 1;
-									$out = ttpFilter( `http.pl get -url $opt_url -header X-Sent-By -ignore -nocolored $dummy $verbose` );
+									$out = ttpFilter( `http.pl get -url $opt_url -header X-Sent-By -accept [1-3].. -nocolored $dummy $verbose` );
 									msgLog( "ttpFilter() returns: '".Dumper( $out )."'" );
 									@words = split( /\s+/, $out->[0] );
 									$line = $words[1];

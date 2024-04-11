@@ -44,15 +44,15 @@
 					"commands": [
 						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
 						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
-						"http.pl get -nocolored -url http://canal33.blingua.net -label service=<SERVICE> -ignore -mqtt -http",
-						"http.pl get -nocolored -url http://canal33.backup.blingua.net -label service=<SERVICE> -ignore -mqtt -http",
-						"http.pl get -nocolored -url https://c33.blingua.net -label service=<SERVICE> -ignore -mqtt -http",
-						"http.pl get -nocolored -url https://c33.backup.blingua.net -label service=<SERVICE> -ignore -mqtt -http",
+						"http.pl get -nocolored -url http://canal33.blingua.net -label service=<SERVICE> -accept [1-3].. -mqtt -http",
+						"http.pl get -nocolored -url http://canal33.backup.blingua.net -label service=<SERVICE> -accept [1-3].. -mqtt -http",
+						"http.pl get -nocolored -url https://c33.blingua.net -label service=<SERVICE> -accept [1-3].. -mqtt -http",
+						"http.pl get -nocolored -url https://c33.backup.blingua.net -label service=<SERVICE> -accept [1-3].. -mqtt -http",
 						"ssh inlingua-user@<HOST> daemon.pl status -bname canal33-backup-monitor-daemon.json -mqtt -http -- -metric ttp_service_daemon -label service=<SERVICE> -label role=backup -label environment=X",
 						"ssh inlingua-adm@<HOST> mswin.pl service -name Canal33Ftp -state -mqtt -http -- -label service=<SERVICE>",
 						"ssh inlingua-adm@<HOST> mswin.pl service -name Canal33Svc -state -mqtt -http -- -label service=<SERVICE>"
 					],
-					"get_live": "http.pl get -nocolored -url http://canal33.blingua.net -header X-Sent-By -ignore"
+					"get_live": "http.pl get -nocolored -url http://canal33.blingua.net -header X-Sent-By -accept ..."
 				},
 				"switch_comments": [
 					"These commands have to be run when we want switch the status of a machine, from live to backup, or from backup to live",

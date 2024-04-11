@@ -75,7 +75,7 @@
 						"A command which let us determine where is the live production. This is a single command as we manage a single live production",
 						"Only useful when about to switch a machine status to or from live or backup"
 					],
-					"get_live": "http.pl get -nocolored -url http://ip.test.blingua.net -header X-Sent-By -ignore"
+					"get_live": "http.pl get -nocolored -url http://ip.test.blingua.net -header X-Sent-By -accept ..."
 				},
 				"switch_comments": [
 					"These commands have to be run when we want switch the status of a machine, from live to backup, or from backup to live",
