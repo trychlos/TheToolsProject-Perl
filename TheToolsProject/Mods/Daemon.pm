@@ -50,6 +50,12 @@ use constant {
 # auto-flush on socket
 $| = 1;
 
+our $commonCommands = {
+	help => \&do_help,
+	status => \&do_status,
+	terminate => \&do_terminate
+};
+
 # ------------------------------------------------------------------------------------------------
 # build and returns the last will MQTT message for the daemon
 sub _lastwill {
@@ -65,19 +71,6 @@ sub _lastwill {
 sub _running {
 	my $TTPVars = Mods::Toops::TTPVars();
 	return "running since $TTPVars->{run}{command}{started}";
-}
-
-# ------------------------------------------------------------------------------------------------
-# answering to a 'status' request with:
-# - running since yyyy-mm-dd hh:mi:ss
-# - json: 
-# - listeningPort:
-sub _status {
-	my ( $daemon ) = @_;
-	my $answer = _running();
-	$answer .= "\njson: $daemon->{json}";
-	$answer .= "\nlisteningPort: $daemon->{config}{listeningPort}";
-	return $answer;
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -108,32 +101,35 @@ sub daemonAdvertize {
 
 # ------------------------------------------------------------------------------------------------
 # the daemon answers to the client
+# the answer string is expected to be '\n'-terminated
+# we send the answer prefixing each line by the daemon pid
 sub daemonAnswer {
 	my ( $daemon, $req, $answer ) = @_;
-	msgLog( "answering '$answer'" );
-	$req->{socket}->send( "$answer\n" );
-	$req->{socket}->shutdown( true );
+	msgLog( "answering '$answer' and ok-ing" );
+	foreach my $line ( split( /[\r\n]+/, $answer )){
+		$req->{socket}->send( "$$ $line\n" );
+	}
+	$req->{socket}->send( "$$ OK\n" );
+	$req->{socket}->shutdown( SHUT_WR );
 }
 
 # ------------------------------------------------------------------------------------------------
 # the daemon deals with the received command
 # - we are able to answer here to 'help', 'status' and 'terminate' commands and the daemon doesn't need to declare them.
+# (I):
+# - the Daemon object
+# - the received request_method
+# - the hash of the daemon specific commands
 sub daemonCommand {
 	my ( $daemon, $req, $commands ) = @_;
 	my $answer = undef;
-	if( $req->{command} eq "help" ){
-		$commands->{help} = 1;
-		$commands->{status} = 1;
-		$commands->{terminate} = 1;
-		$answer = join( ', ', sort keys %{$commands} )."\nOK";
-	} elsif( $req->{command} eq "status" ){
-		#$answer = _running()."\nOK";
-		$answer = _status( $daemon )."\nOK";
-	} elsif( $req->{command} eq "terminate" ){
-		$daemon->{terminating} = true;
-		$answer = "OK";
-	} elsif( exists( $commands->{$req->{command}} )){
+	# first try to execute a specific daemon command, passing it the received request
+	if( $commands->{$req->{command}} ){
 		$answer = $commands->{$req->{command}}( $req );
+	# else ty to execute a standard command
+	} elsif( $commonCommands->{$req->{command}} ){
+		$answer = $commonCommands->{$req->{command}}( $daemon, $req, $commands );
+	# else the command is just unknowned
 	} else {
 		$answer = "unknowned command '$req->{command}'";
 	}
@@ -179,6 +175,44 @@ sub daemonListen {
 	# advertize my status on communication bus
 	daemonAdvertize( $daemon );
 	return $result;
+}
+
+# ------------------------------------------------------------------------------------------------
+# answers to 'help' command
+sub do_help {
+	my ( $daemon, $req, $commands ) = @_;
+	my $hash = {};
+	foreach my $k ( keys %{$commands} ){
+		$hash->{$k} = 1;
+	}
+	foreach my $k ( keys %{$commonCommands} ){
+		$hash->{$k} = 1;
+	}
+	my $answer = join( ', ', sort keys %{$hash} ).EOL;
+	return $answer;
+}
+
+# ------------------------------------------------------------------------------------------------
+# answers to 'status' command with:
+# - running since yyyy-mm-dd hh:mi:ss
+# - json: 
+# - listeningPort:
+# - pid:
+sub do_status {
+	my ( $daemon, $req, $commands ) = @_;
+	my $answer = _running().EOL;
+	$answer .= "json: $daemon->{json}".EOL;
+	$answer .= "listeningPort: $daemon->{config}{listeningPort}".EOL;
+	return $answer;
+}
+
+# ------------------------------------------------------------------------------------------------
+# answers to 'terminate' command
+sub do_terminate {
+	my ( $daemon, $req, $commands ) = @_;
+	$daemon->{terminating} = true;
+	my $answer = "";
+	return $answer;
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -325,6 +359,7 @@ sub run {
 			LocalHost => '0.0.0.0',
 			LocalPort => $config->{listeningPort},
 			Proto => 'tcp',
+			Type => SOCK_STREAM,
 			Listen => 5,
 			ReuseAddr => true,
 			Blocking => false,
