@@ -113,7 +113,7 @@ sub answerStats {
 # add to the standard 'status' answer our own data (remote host and dir)
 sub answerStatus {
 	my ( $req ) = @_;
-	my $answer = $commonCommands->{status}( $daemon, $req, $commands );
+	my $answer = Mods::Daemon::commonCommands()->{status}( $daemon, $req, $commands );
 	$answer .= "monitoredHost: $daemon->{monitored}{host}".EOL;
 	$answer .= "monitoredExecReportsDir: $daemon->{dyn}{remoteExecReportsDir} )".EOL;
 	return $answer;

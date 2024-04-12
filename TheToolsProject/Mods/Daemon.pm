@@ -50,7 +50,7 @@ use constant {
 # auto-flush on socket
 $| = 1;
 
-our $commonCommands = {
+our $CommonCommands = {
 	help => \&do_help,
 	status => \&do_status,
 	terminate => \&do_terminate
@@ -81,6 +81,13 @@ sub _topic {
 	$topic .= "/$name";
 	$topic .= "/status";
 	return $topic;
+}
+
+# ------------------------------------------------------------------------------------------------
+# returns common commands
+# (useful when the daeon wants override a standard answer)
+sub commonCommands {
+	return $CommonCommands;
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -127,8 +134,8 @@ sub daemonCommand {
 	if( $commands->{$req->{command}} ){
 		$answer = $commands->{$req->{command}}( $req );
 	# else ty to execute a standard command
-	} elsif( $commonCommands->{$req->{command}} ){
-		$answer = $commonCommands->{$req->{command}}( $daemon, $req, $commands );
+	} elsif( $CommonCommands->{$req->{command}} ){
+		$answer = $CommonCommands->{$req->{command}}( $daemon, $req, $commands );
 	# else the command is just unknowned
 	} else {
 		$answer = "unknowned command '$req->{command}'";
@@ -185,7 +192,7 @@ sub do_help {
 	foreach my $k ( keys %{$commands} ){
 		$hash->{$k} = 1;
 	}
-	foreach my $k ( keys %{$commonCommands} ){
+	foreach my $k ( keys %{$CommonCommands} ){
 		$hash->{$k} = 1;
 	}
 	my $answer = join( ', ', sort keys %{$hash} ).EOL;
