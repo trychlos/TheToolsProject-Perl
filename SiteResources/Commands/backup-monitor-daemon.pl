@@ -73,6 +73,7 @@ my $opt_remote = $defaults->{remote};
 
 my $commands = {
 	stats => \&answerStats,
+	status => \&answerStatus,
 };
 
 my $TTPVars = Mods::Daemon::init();
@@ -105,7 +106,16 @@ sub answerStats {
 		my $last = @{$stats->{restored}}[$executed-1];
 		$answer .= "last was from $last->{reportSourceFileName} to $last->{localSynced} at $stats->{now}".EOL;
 	}
-	$answer .= "OK".EOL;
+	return $answer;
+}
+
+# -------------------------------------------------------------------------------------------------
+# add to the standard 'status' answer our own data (remote host and dir)
+sub answerStatus {
+	my ( $req ) = @_;
+	my $answer = $commonCommands->{status}( $daemon, $req, $commands );
+	$answer .= "monitoredHost: $daemon->{monitored}{host}".EOL;
+	$answer .= "monitoredExecReportsDir: $daemon->{dyn}{remoteExecReportsDir} )".EOL;
 	return $answer;
 }
 
