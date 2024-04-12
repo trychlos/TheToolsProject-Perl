@@ -44,7 +44,7 @@
 				"status": {
 					"commands": [
 						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
-						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
+						"services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url https://tom17.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
 						"http.pl get -nocolored -url https://inlingua17.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
 						"http.pl get -nocolored -url https://tom17.backup.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
@@ -106,7 +106,7 @@
 				"status": {
 					"commands": [
 						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
-						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
+						"services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url https://tom21.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
 						"http.pl get -nocolored -url https://inlingua21.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
 						"http.pl get -nocolored -url https://tom21.backup.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
@@ -168,7 +168,7 @@
 				"status": {
 					"commands": [
 						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
-						"ssh inlingua-user@<HOST> services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
+						"services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
 						"http.pl get -nocolored -url https://tom59.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
 						"http.pl get -nocolored -url https://inlingua31.archive.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
 						"http.pl get -nocolored -url https://inlingua33.archive.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
