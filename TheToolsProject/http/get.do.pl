@@ -6,6 +6,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --url=<url>             the URL to be requested [${url}]
 # @(-) --header=<header>       output the received (case insensitive) header [${header}]
+# @(-) --[no]publishHeader     publish the found header content [${publishHeader}]
 # @(-) --accept=<code>         consider the return code as OK, regex, may be specified several times or as a comma-separated list [${accept}]
 # @(-) --[no]response          print the received response to stdout [${response}]
 # @(-) --[no]mqtt              publish MQTT telemetry [${mqtt}]
@@ -35,6 +36,7 @@ my $defaults = {
 	dummy => 'no',
 	url => '',
 	header => '',
+	publishHeader => 'no',
 	response => 'no',
 	accept => '200',
 	mqtt => 'no',
@@ -44,6 +46,7 @@ my $defaults = {
 
 my $opt_url = $defaults->{url};
 my $opt_header = $defaults->{header};
+my $opt_publishHeader = false;
 my $opt_response = false;
 my $opt_ignore = false;
 my $opt_accept = [ $defaults->{accept} ];
@@ -98,7 +101,7 @@ sub doGet {
 		}
 		$other_labels .= " -label proto=$proto";
 		$other_labels .= " -label path=$path";
-		if( $opt_header ){
+		if( $opt_header && $opt_publishHeader ){
 			my $header_label = $opt_header;
 			$header_label =~ s/[^a-zA-Z0-9_]//g;
 			$other_labels .= " -label $header_label=$header" if $header;
@@ -153,6 +156,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"url=s"				=> \$opt_url,
 	"header=s"			=> \$opt_header,
+	"publishHeader!"	=> \$opt_publishHeader,
 	"response!"			=> \$opt_response,
 	"ignore!"			=> \$opt_ignore,
 	"accept=s@"			=> \$opt_accept,
@@ -174,6 +178,7 @@ msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" 
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found url='$opt_url'" );
 msgVerbose( "found header='$opt_header'" );
+msgVerbose( "found publishHeader='".( $opt_publishHeader ? 'true':'false' )."'" );
 msgVerbose( "found response='".( $opt_response ? 'true':'false' )."'" );
 msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
 msgVerbose( "found accept='".join( ',', @{$opt_accept} )."'" );
@@ -184,6 +189,12 @@ msgVerbose( "found labels='".join( ',', @labels )."'" );
 
 # url is mandatory
 msgErr( "url is required, but is not specified" ) if !$opt_url;
+
+# requesting the header publication without any header has no sense
+if( $opt_publishHeader ){
+	msgWarn( "asking to publish a header without providing it has no sense, will be ignored" ) if !$opt_header;
+	msgWarn( "asking to publish a header without publishing any telemetry it has no sense, will be ignored" ) if !$opt_mqtt && !$opt_http;
+}
 
 if( !ttpErrs()){
 	doGet() if $opt_url;
