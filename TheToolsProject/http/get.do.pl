@@ -64,6 +64,7 @@ sub doGet {
 	my $response = $ua->request( $req );
 	my $res = $response->is_success;
 	my $status = $response->code;
+	my $header = undef;
 	msgVerbose( "receiving HTTP status='$status', success='".( $res ? 'true' : 'false' )."'" );
 	if( $res ){
 		msgLog( "content='".$response->decoded_content."'" );
@@ -80,7 +81,13 @@ sub doGet {
 			$res = true;
 		}
 	}
-
+	# set and print the header if asked for
+	if( $res ){
+		if( $opt_header ){
+			$header = $response->header( $opt_header );
+			print "  $opt_header: $header".EOL;
+		}
+	}
 	# and send the telemetry if opt-ed in
 	if( $opt_mqtt || $opt_http ){
 		my ( $proto, $path ) = split( /:\/\//, $opt_url );
@@ -91,6 +98,11 @@ sub doGet {
 		}
 		$other_labels .= " -label proto=$proto";
 		$other_labels .= " -label path=$path";
+		if( $opt_header ){
+			my $header_label = $opt_header;
+			$header_label =~ s/[^a-zA-Z0-9_]//g;
+			$other_labels .= " -label $header_label=$header" if $header;
+		}
 		msgVerbose( "added labels '$other_labels'" );
 		if( $opt_mqtt ){
 			# topic is HOST/telemetry/service/SERVICE/proto/PROTO/path/PATH/url_status
@@ -105,10 +117,6 @@ sub doGet {
 		}
 	}
 	if( $res ){
-		if( $opt_header ){
-			my $header = $response->header( $opt_header );
-			print "  $opt_header: $header".EOL;
-		}
 		if( $opt_response ){
 			print Dumper( $response );
 		}

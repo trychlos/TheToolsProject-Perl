@@ -56,7 +56,7 @@ sub httpPublish {
 		my $name = "$prefix$metric";
 		$name =~ s/\./_/g;
 		# content
-		# contrarily to what is said in the doc, seems that push gateway requires the TYPE line
+		# if type is not specified, it will be set as 'untyped' and cannot be changed later - so better to set it here
 		my $withType = true;
 		$withType = ( $options->{type} eq 'yes' ) if exists $options->{type} && ( $options->{type} eq 'yes' || $options->{type} eq 'no' );
 		my $str = $withType ? "# TYPE $name gauge\n" : "";
