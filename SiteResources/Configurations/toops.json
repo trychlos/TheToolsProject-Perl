@@ -169,7 +169,7 @@
 				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
 			},
 			"withHttp_comments": [
-				"Actually a Prometheus gateway which should be locally installed on each machine"
+				"Actually a Prometheus gateway which is installed besides of the Prometheus server"
 			],
 			"withHttp": {
 				"enabled": true,
