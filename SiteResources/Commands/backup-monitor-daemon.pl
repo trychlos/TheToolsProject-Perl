@@ -115,7 +115,7 @@ sub answerStatus {
 	my ( $req ) = @_;
 	my $answer = Mods::Daemon::commonCommands()->{status}( $daemon, $req, $commands );
 	$answer .= "monitoredHost: $daemon->{monitored}{host}".EOL;
-	$answer .= "monitoredExecReportsDir: $daemon->{dyn}{remoteExecReportsDir} )".EOL;
+	$answer .= "monitoredExecReportsDir: $daemon->{dyn}{remoteExecReportsDir}".EOL;
 	return $answer;
 }
 
