@@ -22,6 +22,7 @@
 use Data::Dumper;
 use HTTP::Request;
 use LWP::UserAgent;
+use Time::Piece;
 use URI::Escape;
 
 use Mods::Constants qw( :all );
@@ -84,6 +85,8 @@ sub doGet {
 			$res = true;
 		}
 	}
+	# test
+	#$res = false;
 	# set and print the header if asked for
 	if( $res ){
 		if( $opt_header ){
@@ -101,10 +104,10 @@ sub doGet {
 		}
 		$other_labels .= " -label proto=$proto";
 		$other_labels .= " -label path=$path";
-		if( $opt_header && $opt_publishHeader ){
+		if( $opt_header && $header && $opt_publishHeader ){
 			my $header_label = $opt_header;
 			$header_label =~ s/[^a-zA-Z0-9_]//g;
-			$other_labels .= " -label $header_label=$header" if $header;
+			$other_labels .= " -label $header_label=$header";
 		}
 		msgVerbose( "added labels '$other_labels'" );
 		if( $opt_mqtt ){
@@ -113,9 +116,9 @@ sub doGet {
 			`$command`;
 		}
 		if( $opt_http ){
-			# even escaped, it is impossible to send the full url to the telemetry
+			# even escaped, it is impossible to send the full url to the telemetry (unless encoding it as base64)
 			#my $escaped = uri_escape( $opt_url );
-			$command = "telemetry.pl publish -metric ttp_url_status $other_labels -value=$value -nomqtt -http";
+			$command = "telemetry.pl publish -metric ttp_url_status $other_labels -value=".localtime->epoch." -nomqtt -http";
 			`$command`;
 		}
 	}
