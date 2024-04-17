@@ -118,7 +118,7 @@ sub doGet {
 		if( $opt_http ){
 			# even escaped, it is impossible to send the full url to the telemetry (unless encoding it as base64)
 			#my $escaped = uri_escape( $opt_url );
-			$command = "telemetry.pl publish -metric ttp_url_status $other_labels -value=".localtime->epoch." -nomqtt -http";
+			$command = "telemetry.pl publish -metric ttp_url_status $other_labels -value=".localtime->epoch." -nomqtt -http -httpOption type=counter";
 			`$command`;
 		}
 	}

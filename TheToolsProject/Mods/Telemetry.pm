@@ -57,9 +57,8 @@ sub httpPublish {
 		$name =~ s/\./_/g;
 		# content
 		# if type is not specified, it will be set as 'untyped' and cannot be changed later - so better to set it here
-		my $withType = true;
-		$withType = ( $options->{type} eq 'yes' ) if exists $options->{type} && ( $options->{type} eq 'yes' || $options->{type} eq 'no' );
-		my $str = $withType ? "# TYPE $name gauge\n" : "";
+		my $type = $options->{type} || "gauge";
+		my $str = "# TYPE $name $type\n";
 		my $qualifier = "";
 		$qualifier = uri_unescape( $options->{label} ) if exists $options->{label};
 		$str .= "$name$qualifier $value\n";
