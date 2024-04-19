@@ -5,7 +5,6 @@
 	],
 	"Services": {
 		"Tom17": {
-			"instance": "MSSQLSERVER",
 			"databases": [
 				"inlingua17a"
 			],
@@ -67,7 +66,6 @@
 			}
 		},
 		"Tom21": {
-			"instance": "MSSQLSERVER",
 			"databases": [
 				"inlingua21"
 			],
@@ -129,7 +127,6 @@
 			}
 		},
 		"Tom59": {
-			"instance": "MSSQLSERVER",
 			"databases": [
 				"TOM59331"
 			],
@@ -226,17 +223,14 @@
 			}
 		}
 	},
-	"DBMSInstancesComments": [
-	],
-	"DBMSInstances": {
-		"MSSQLSERVER": {
-			"package": "Mods::SqlServer",
-			"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL15.MSSQLSERVER\\MSSQL\\DATA"
-		}
-	},
 	"DBMS": {
 		"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]",
-		"archivesRoot": "\\[eval:File::Spec->catdir( '\\ftpback-rbx7-618.ovh.net', 'ns3153065.ip-51-91-25.eu', '<HOST>', 'SQLBackups' )]"
+		"archivesRoot": "\\[eval:File::Spec->catdir( '\\ftpback-rbx7-618.ovh.net', 'ns3153065.ip-51-91-25.eu', '<HOST>', 'SQLBackups' )]",
+		"byInstance": {
+			"MSSQLSERVER": {
+				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL15.MSSQLSERVER\\MSSQL\\DATA"
+			}
+		}
 	},
 	"Environment": {
 		"type": "X"

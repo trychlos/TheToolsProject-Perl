@@ -162,7 +162,7 @@ if( $opt_service ){
 }
 
 $opt_instance = $defaults->{instance} if !$opt_instance;
-my $instance = Mods::Dbms::checkInstanceOpt( $opt_instance );
+my $instance = Mods::Dbms::checkInstanceName( $opt_instance );
 
 if( scalar @{$databases} ){
 	foreach my $db ( @{$databases} ){

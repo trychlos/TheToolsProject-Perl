@@ -212,7 +212,7 @@ if( $opt_service ){
 }
 
 $opt_instance = $defaults->{instance} if !$opt_instance;
-my $instance = Mods::Dbms::checkInstanceOpt( $opt_instance );
+my $instance = Mods::Dbms::checkInstanceName( $opt_instance );
 
 # if a database has been specified (or found), check that it exists
 if( scalar @databases ){

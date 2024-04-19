@@ -4,27 +4,24 @@
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
-# @(-) --[no]dbms              list defined DBMS instances [${dbms}]
-# @(-) --[no]services          list defined services [${services}]
-# @(-) --[no]hidden            also display hidden services [${hidden}]
-# @(-) --[no]workloads         list used workloads [${workloads}]
-# @(-) --workload=<name>       display the detailed tasks for the named workload [${workload}]
-# @(-) --[no]commands          display only the commands for the named workload [${commands}]
-# @(-) --service=<name>        display informations about the named service [${service}]
-# @(-) --[no]databases         display the list of databases defined in the service [${databases}]
-# @(-) --[no]instance          display the relevant DBMS instance for this service [${instance}]
+# @(-) --[no]services          list services defined on this machine [${services}]
+# @(-) --[no]workloads         list workloads used on this machine [${workloads}]
+# @(-) --[no]hidden            also display hidden services or workloads on hidden services [${hidden}]
 # @(-) --[no]environment       display the environment to which this machine is attached [${environment}]
-# @(-) --type=<name>           request a specified environment [${type}]
-# @(-) --[no]machines          display the machines which provide this service, maybe for a given environment [${machines}]
+# @(-) --service=<name>        display informations about the named service [${service}]
+# @(-) --[no]machines          list all the machines which define the named service [${machines}]
+# @(-) --type=<type>           restrict list to the machines attached to the specified environment [${type}]
+# @(-) --workload=<name>       display informations about the named workload [${workload}]
+# @(-) --[no]details           list the tasks details [${details}]
+# @(-) --[no]commands          only list the commands for the named workload [${commands}]
 #
-# @(@) Usage:
-# @(@)   services.pl list -dbms                                     list DBMS instances defined on the current machine
+# @(@) with:
 # @(@)   services.pl list -services [-hidden]                       list services defined on the current machine, plus maybe the hidden ones
-# @(@)   services.pl list -service <name> -instance [-databases]    list the DBMS instance(s) defined for the named service, plus maybe the defined databases
-# @(@)   services.pl list -service <name> -machines [-type <env>]   list the machines where the named service is defined, maybe for the typed environment
 # @(@)   services.pl list -workloads [-hidden]                      list workloads defined on the current machine, plus maybe the hidden ones
+# @(@)   services.pl list -environment                              display the environnement of the current machine
+# @(@)   services.pl list -service <name> -machines [-type <env>]   list the machines where the named service is defined, maybe for the typed environment
 # @(@)   services.pl list -workload <name> -commands [-hidden]      list the commands attached to the named workload, plus maybe the hidden ones
-# @(@)   services.pl list -environment                              list the environnement of the current machine
+# @(@)   services.pl list -workload <name> -details [-hidden]       list the tasks details of the named workload, plus maybe the hidden ones
 #
 # @(@) Displayed lists are sorted in ASCII order, i.e. in [0-9A-Za-z] order.
 #
@@ -44,29 +41,25 @@ my $defaults = {
 	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
-	dbms => 'no',
 	services => 'no',
 	hidden => 'no',
 	workloads => 'no',
 	workload => '',
 	commands => 'no',
+	details => 'no',
 	service => '',
-	databases => 'no',
-	instance => 'no',
 	environment => 'no',
 	type => '',
 	machines => 'no'
 };
 
-my $opt_dbms = false;
 my $opt_services = false;
 my $opt_hidden = false;
 my $opt_workloads = false;
 my $opt_workload = $defaults->{workload};
 my $opt_commands = false;
+my $opt_details = false;
 my $opt_service = $defaults->{service};
-my $opt_databases = false;
-my $opt_instance = false;
 my $opt_environment = false;
 my $opt_type = $defaults->{type};
 my $opt_machines = false;
@@ -75,18 +68,7 @@ my $opt_machines = false;
 my $hostConfig = Mods::Toops::getHostConfig();
 
 # -------------------------------------------------------------------------------------------------
-# list the defined DBMS instances (which may be not all the running instances)
-sub listDbms {
-	msgOut( "displaying DBMS instances defined on $hostConfig->{name}..." );
-	my @list = Mods::Services::getDefinedDBMSInstances( $hostConfig );
-	foreach my $it ( @list ){
-		print " $it".EOL;
-	}
-	msgOut( scalar @list." found defined DBMS instance(s)" );
-}
-
-# -------------------------------------------------------------------------------------------------
-# display the environment for this machine
+# display the environment for this machine (may be 0 or 1)
 sub listEnvironment {
 	msgOut( "displaying environment for '$hostConfig->{name}' machine..." );
 	my $env = $hostConfig->{Environment}{type};
@@ -94,7 +76,7 @@ sub listEnvironment {
 	if( !$env ){
 		msgOut( "no environment registered with this machine" );
 	} else {
-		print "+ environment: $env".EOL; 
+		print " $env".EOL; 
 		$count += 1;
 	}
 	msgOut("$count found defined environment" );
@@ -102,7 +84,7 @@ sub listEnvironment {
 
 # -------------------------------------------------------------------------------------------------
 # display the machines which provides the service, maybe in a specified environment type
-sub listMachines {
+sub listServiceMachines {
 	if( $opt_type ){
 		msgOut( "displaying machines which provide '$opt_service' service in '$opt_type' environment..." );
 	} else {
@@ -123,41 +105,6 @@ sub listMachines {
 }
 
 # -------------------------------------------------------------------------------------------------
-# list the databases registered with a service
-sub listServiceDatabases {
-	msgOut( "displaying databases registered with on '$hostConfig->{name}\\$opt_service' service..." );
-	my $instance = $hostConfig->{Services}{$opt_service}{instance};
-	my $databases = $hostConfig->{Services}{$opt_service}{databases};
-	my $count = 0;
-	if( !$instance ){
-		msgOut( "no instance registered with this service (databases may be present, but are ignored)" );
-	} else {
-		print "+ instance: $instance".EOL; 
-		foreach my $db ( @{$databases} ){
-			print "  databases:".EOL if !$count;
-			print "  - $db".EOL;
-			$count += 1;
-		}
-	}
-	msgOut("$count found defined databases(s)" );
-}
-
-# -------------------------------------------------------------------------------------------------
-# display the DBMS instance for a service
-sub listServiceInstance {
-	msgOut( "displaying instance registered on '$hostConfig->{name}\\$opt_service' service..." );
-	my $instance = $hostConfig->{Services}{$opt_service}{instance};
-	my $count = 0;
-	if( !$instance ){
-		msgOut( "no instance registered with this service (databases may be present, but are ignored)" );
-	} else {
-		print "+ instance: $instance".EOL; 
-		$count += 1;
-	}
-	msgOut("$count found defined instance" );
-}
-
-# -------------------------------------------------------------------------------------------------
 # list all the defined services on this host
 # note: this is  design decision that this sort of display at the beginning and at the end of the verb
 # execution must be done in the verb script.
@@ -173,7 +120,7 @@ sub listServices {
 }
 
 # -------------------------------------------------------------------------------------------------
-# list all the workloads used on this host with names sorted in ascii order
+# list all the workloads used by a service on this host with names sorted in ascii order
 sub listWorkloads {
 	msgOut( "displaying workloads used on $hostConfig->{name}..." );
 	my @list = Mods::Services::getUsedWorkloads( $hostConfig, { hidden => $opt_hidden });
@@ -185,7 +132,7 @@ sub listWorkloads {
 
 # -------------------------------------------------------------------------------------------------
 # list all (but only) the commands in this workload
-# the commands are listed in the order if their service name
+# the commands are listed in the order of their service name
 sub listWorkloadCommands {
 	msgOut( "displaying workload commands defined in $hostConfig->{name}\\$opt_workload..." );
 	my @list = Mods::Services::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
@@ -279,15 +226,13 @@ if( !GetOptions(
 	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
-	"dbms!"				=> \$opt_dbms,
 	"services!"			=> \$opt_services,
 	"hidden!"			=> \$opt_hidden,
 	"workloads!"		=> \$opt_workloads, 
 	"workload=s"		=> \$opt_workload,
-	"commands!"			=> \$opt_commands, 
+	"commands!"			=> \$opt_commands,
+	"details!"			=> \$opt_details,
 	"service=s"			=> \$opt_service,
-	"databases!"		=> \$opt_databases,
-	"instance!"			=> \$opt_instance,
 	"environment!"		=> \$opt_environment,
 	"type=s"			=> \$opt_type,
 	"machines!"			=> \$opt_machines )){
@@ -304,36 +249,34 @@ if( Mods::Toops::wantsHelp()){
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-msgVerbose( "found dbms='".( $opt_dbms ? 'true':'false' )."'" );
 msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 msgVerbose( "found hidden='".( $opt_hidden ? 'true':'false' )."'" );
 msgVerbose( "found workloads='".( $opt_workloads ? 'true':'false' )."'" );
 msgVerbose( "found workload='$opt_workload'" );
 msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
+msgVerbose( "found details='".( $opt_details ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
-msgVerbose( "found databases='".( $opt_databases ? 'true':'false' )."'" );
-msgVerbose( "found instance='".( $opt_instance ? 'true':'false' )."'" );
 msgVerbose( "found environment='".( $opt_environment ? 'true':'false' )."'" );
 msgVerbose( "found type='$opt_type'" );
 msgVerbose( "found machines='".( $opt_machines ? 'true':'false' )."'" );
 
-if( $opt_service && !$opt_databases && !$opt_instance && !$opt_machines ){
-	msgErr( "a service is specified, but without any requested information" );
+if( $opt_service && !$opt_machines ){
+	msgWarn( "a service is named, but without any requested information" );
 }
 if( $opt_machines && !$opt_service ){
-	msgErr( "request a machines list without having specified a service" );
+	msgWarn( "request a machines list without having specified a service" );
+}
+if( $opt_workload && !$opt_commands && !$opt_details ){
+	msgWarn( "a workload is named, but without any requested information" );
 }
 
 if( !ttpErrs()){
-	listDbms() if $opt_dbms;
 	listEnvironment() if $opt_environment;
-	listMachines() if $opt_machines && $opt_service;
-	listServiceDatabases() if $opt_service && $opt_databases;
-	listServiceInstance() if $opt_service && $opt_instance;
+	listServiceMachines() if $opt_service && $opt_machines;
 	listServices() if $opt_services;
-	listWorkloads() if $opt_workloads;
-	listWorkloadDetails() if $opt_workload && !$opt_commands;
 	listWorkloadCommands() if $opt_workload && $opt_commands;
+	listWorkloadDetails() if $opt_workload && $opt_details;
+	listWorkloads() if $opt_workloads;
 }
 
 ttpExit();

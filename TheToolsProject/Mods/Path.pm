@@ -329,6 +329,24 @@ sub removeTrailingSeparator {
 }
 
 # ------------------------------------------------------------------------------------------------
+# (I):
+# - the service name
+# (O):
+# returns the full pathname of the service JSON configuration file
+sub serviceConfigurationPath {
+	my ( $service ) = @_;
+	return File::Spec->catfile( servicesConfigurationsDir(), "$service.json" );
+}
+
+# ------------------------------------------------------------------------------------------------
+# (O):
+# returns the dir which contains services configuration files
+# at the moment, a non-configurable subdirectory of TTP_CONFDIR
+sub servicesConfigurationsDir {
+	return File::Spec->catdir( siteConfigurationsDir(), "services" );
+}
+
+# ------------------------------------------------------------------------------------------------
 sub siteConfigurationsDir {
 	msgErr( "TTP_CONFDIR is not found in your environment, but is required" ) if !$ENV{TTP_CONFDIR};
 	return $ENV{TTP_CONFDIR};

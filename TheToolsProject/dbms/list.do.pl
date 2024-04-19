@@ -92,7 +92,7 @@ msgVerbose( "found database='$opt_database'" );
 msgVerbose( "found listtables='".( $opt_listtables ? 'true':'false' )."'" );
 
 # instance is mandatory
-Mods::Dbms::checkInstanceOpt( $opt_instance );
+Mods::Dbms::checkInstanceName( $opt_instance );
 
 # check that the database exists if it is specified
 Mods::Dbms::checkDatabaseExists( $opt_instance, $opt_database ) if $opt_instance && $opt_database;

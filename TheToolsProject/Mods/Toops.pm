@@ -496,6 +496,7 @@ sub getDefaultTempDir {
 
 # -------------------------------------------------------------------------------------------------
 # returns the list of defined hosts, reading the hosts configuration directory
+# do not return the hosts whose configuration file is disabled
 sub getDefinedHosts {
 	my @hosts = ();
 	my $dir = Mods::Path::hostsConfigurationsDir();
@@ -506,7 +507,8 @@ sub getDefinedHosts {
 		foreach my $entry ( @entries ){
 			if( $entry ne '.' && $entry ne '..' ){
 				$entry =~ s/\.[^.]+$//;
-				push( @hosts, $entry );
+				my $hash = hostConfigRead( $entry, { ignoreDisabled => true });
+				push( @hosts, $entry ) if defined $hash;
 			}
 		}
 	}
@@ -776,6 +778,8 @@ sub hostConfigMacrosRec {
 # read the host configuration without evaluation
 # (I):
 # - the hostname
+# - an optional options hash with following keys:
+#   > ignoreDisabled, defaulting to false
 # (O):
 # - returns the found data
 #   with a new 'name' key which contains this same hostname
@@ -783,13 +787,21 @@ sub hostConfigMacrosRec {
 # Manage macros:
 # - HOST
 sub hostConfigRead {
-	my ( $host ) = @_;
+	my ( $host, $opts ) = @_;
+	$opts //= {};
 	my $result = undef;
 	if( !$host ){
 		msgErr( "Toops::hostConfigRead() hostname expected" );
 	} else {
 		$result = jsonRead( Mods::Path::hostConfigurationPath( $host ));
-		$result->{name} = $host;
+		if( exists( $result->{enabled} ) && !$result->{enabled} ){
+			my $ignoreDisabled = false;
+			$ignoreDisabled = $opts->{ignoreDisabled} if exists $opts->{ignoreDisabled};
+			msgErr( "Host configuration file is disabled, aborting" ) if !$ignoreDisabled;
+			$result = undef;
+		} else {
+			$result->{name} = $host;
+		}
 	}
 	$result = hostConfigMacrosRec( $result, { host => $host }) if defined $result;
 	return $result;
@@ -866,8 +878,13 @@ sub jsonAppend {
 # Do not evaluate here, just read the file data
 # (I):
 # - the full path to the to-be-loaded-and-interpreted json file
+# - an optional options hash with following keys:
+#   > ignoreIfNotExist: defaulting to false
+# (O):
+# returns the read hash, or undef
 sub jsonRead {
-	my ( $conf ) = @_;
+	my ( $conf, $opts ) = @_;
+	$opts //= {};
 	msgVerbose( "jsonRead() conf='$conf'" );
 	my $result = undef;
 	if( $conf && -r $conf ){
@@ -879,7 +896,9 @@ sub jsonRead {
 		my $json = JSON->new;
 		$result = $json->decode( $content );
 	} elsif( $conf ){
-		msgErr( "jsonRead() $conf: not found or not readable" );
+		my $ignoreIfNotExist = false;
+		$ignoreIfNotExist = $opts->{ignoreIfNotExist} if exists $opts->{ignoreIfNotExist};
+		msgErr( "jsonRead() $conf: not found or not readable" ) if !$ignoreIfNotExist;
 	} else {
 		msgErr( "jsonRead() expects a JSON path to be read" );
 	}

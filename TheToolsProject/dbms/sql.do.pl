@@ -137,7 +137,7 @@ msgVerbose( "found tabular='".( $opt_tabular ? 'true':'false' )."'" );
 msgVerbose( "found multiple='".( $opt_multiple ? 'true':'false' )."'" );
 
 # instance is mandatory
-Mods::Dbms::checkInstanceOpt( $opt_instance );
+Mods::Dbms::checkInstanceName( $opt_instance );
 # either -stdin or -script or -command options must be specified and only one
 my $count = 0;
 $count += 1 if $opt_stdin;

@@ -224,17 +224,15 @@
 			}
 		}
 	},
-	"DBMSInstancesComments": [
-	],
-	"DBMSInstances": {
-		"PROD": {
-			"package": "Mods::SqlServer",
-			"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL16.PROD\\MSSQL\\DATA"
-		}
-	},
 	"DBMS": {
 		"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]",
-		"archivesRoot": "\\[eval:File::Spec->catdir( '\\ftpback-rbx7-618.ovh.net', 'ns3153065.ip-51-91-25.eu', '<HOST>', 'SQLBackups' )]"
+		"archivesRoot": "\\[eval:File::Spec->catdir( '\\ftpback-rbx7-618.ovh.net', 'ns3153065.ip-51-91-25.eu', '<HOST>', 'SQLBackups' )]",
+		"byInstance": {
+			"PROD": {
+				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL16.PROD\\MSSQL\\DATA",
+				"package": "Mods::SqlServer"
+			}
+		}
 	},
 	"Environment": {
 		"type": "X",

@@ -1,8 +1,15 @@
 # Copyright (@) 2023-2024 PWI Consulting
 #
 # Manage services: an indirection level wanted to banalize instances and other resources between environments.
-# E.g. given WS22-DEV-1.json and WS22-PROD-1.json configuration files, we are able to write, test and DEPLOY common scripts without any modification.
-# In other words, the code must be the same. Inly implementation details vary, all these details being in json configuration.
+# E.g. given WS22DEV1.json and WS22PROD1.json configuration files, we are able to write, test and DEPLOY common scripts without any modification.
+# In other words, the code must be the same. Only implementation details may vary, all these details being in json configurations.
+#
+# As of 2024-04-19, the service configuration can be written:
+# - in a <service>.json configuration file
+# - in a <hostname>.json configuration file, overriding the service-level items.
+# Notes:
+# - Service configuration file is optional, and may not exists for a service: the service may be entirely defined in hosts configuration files.
+# - Even if the host doesn't want override any service key, it still MUST define the service in the "Services" object of its own configuration file.
 
 package Mods::Services;
 
@@ -10,6 +17,7 @@ use strict;
 use warnings;
 
 use Data::Dumper;
+use Hash::Merge qw( merge );
 
 use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
@@ -70,7 +78,7 @@ sub checkServiceOpt {
 # - host configuration
 # - reference to a sub to be called on each enumerated service with:
 #   > the service name
-#   > the full service definition
+#   > the full service definition, i.e. the service level if it exists, maybe overriden by the host level
 #   > the options object
 # - optional options hash with the following keys:
 #   > hidden: whether to also return hidden services, defaulting to false
@@ -87,23 +95,11 @@ sub enumerateServices {
 		my $isHidden = false;
 		$isHidden = $config->{Services}{$service}{hidden} if exists $config->{Services}{$service}{hidden};
 		if( !$isHidden || $useHiddens ){
-			$callback->( $service, $config->{Services}{$service}, $opts );
+			$callback->( $service, serviceConfig( $config, $service ), $opts );
 			$count += 1;
 		}
 	}
 	return $count;
-}
-
-# -------------------------------------------------------------------------------------------------
-# returns the (sorted) list if defined DBMS instance's names
-# (E):
-# - host configuration
-# (S):
-# - an ascii-sorted [0-9A-Za-z] array of strings
-sub getDefinedDBMSInstances {
-	my ( $config ) = @_;
-	my @list = keys %{$config->{DBMSInstances}};
-	return sort @list;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -131,12 +127,12 @@ sub _getDefinedServices_cb {
 # returns the worktasks defined for the specified workload in the order:
 #  - specified by "order" key of the work task 
 #  - defaulting to the service names
-# (E):
+# (I):
 # - host configuration
 # - wanted workload name
 # - optional options hash with the following keys:
 #   > hidden: whether to also scan for hidden services, defaulting to false
-# (S):
+# (O):
 # - an array of task objects in the above canonical order
 sub getDefinedWorktasks {
 	my ( $config, $workload, $opts ) = @_;
@@ -147,11 +143,12 @@ sub getDefinedWorktasks {
 	# build here the to be sorted array and a hash which will be used to build the result
 	my @list = ();
 	foreach my $service ( @services ){
+		my $serviceConfig = serviceConfig( $config, $service );
 		my $isHidden = false;
-		$isHidden = $config->{Services}{$service}{hidden} if exists $config->{Services}{$service}{hidden};
+		$isHidden = $serviceConfig->{hidden} if exists $serviceConfig->{hidden};
 		if( !$isHidden || $displayHiddens ){
-			if( exists( $config->{Services}{$service}{workloads}{$workload} )){
-				my @tasks = @{$config->{Services}{$service}{workloads}{$workload}};
+			if( exists( $serviceConfig->{workloads}{$workload} )){
+				my @tasks = @{$serviceConfig->{workloads}{$workload}};
 				foreach my $t ( @tasks ){
 					$t->{service} = $service;
 				}
@@ -169,12 +166,12 @@ sub _taskOrder {
 }
 
 # -------------------------------------------------------------------------------------------------
-# returns the used workloads, i.e. the workloads to which at least one item is candidate to.
-# (E):
+# returns the used workloads, i.e. the workloads to which at least one service of the machine is candidate to.
+# (I):
 # - host configuration
 # - optional options hash with the following keys:
 #   > hidden: whether to also scan for hidden services, defaulting to false
-# (S):
+# (O):
 # - an ascii-sorted [0-9A-Za-z] array of strings
 sub getUsedWorkloads {
 	my ( $config, $opts ) = @_;
@@ -192,6 +189,57 @@ sub _getUsedWorkloads_cb {
 			$opts->{usedWorkloads}{$workload} = 1;
 		}
 	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# Compute and return the full service configuration hash
+# (I):
+# - host configuration
+# - service name
+# (O):
+# - a hash with full service configuration, or undef if the service is not defined in the host
+sub serviceConfig {
+	my ( $hostConfig, $serviceName ) = @_;
+	my $result = undef;
+	if( exists( $hostConfig->{Services}{$serviceName} )){
+		my $serviceHash = Mods::Toops::jsonRead( Mods::Path::serviceConfigurationPath( $serviceName ), { ignoreIfNotExist => true });
+		$serviceHash = serviceConfigMacrosRec( $serviceHash, { service => $serviceName }) if defined $serviceHash;
+		my $hostHash = serviceConfigMacrosRec( $hostConfig->{Services}{$serviceName}, { service => $serviceName });
+		$result = merge( $hostHash, $serviceHash || {} );
+	}
+	#print Dumper( $result );
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Substitute the macros in a service configuration file
+# (I):
+# - the raw JSON hash
+# - an options hash with following keys:
+#   > service: the service name being treated
+# (O):
+# - the same with substituted macros:
+#   > SERVICE
+sub serviceConfigMacrosRec {
+	my ( $hash, $opts ) = @_;
+	my $ref = ref( $hash );
+	if( $ref eq 'HASH' ){
+		foreach my $key ( keys %{$hash} ){
+			$hash->{$key} = serviceConfigMacrosRec( $hash->{$key}, $opts );
+		}
+	} elsif( $ref eq 'ARRAY' ){
+		my @array = ();
+		foreach my $it ( @{$hash} ){
+			push( @array, serviceConfigMacrosRec( $it, $opts ));
+		}
+		$hash = \@array;
+	} elsif( !$ref ){
+		my $service = $opts->{service};
+		$hash =~ s/<SERVICE>/$service/g;
+	} else {
+		msgVerbose( "Service::serviceConfigMacrosRec() unmanaged ref: '$ref'" );
+	}
+	return $hash;
 }
 
 1;

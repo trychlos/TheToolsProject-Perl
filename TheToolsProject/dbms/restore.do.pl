@@ -133,7 +133,7 @@ msgVerbose( "found full='$opt_full'" );
 msgVerbose( "found diff='$opt_diff'" );
 msgVerbose( "found verifyonly='".( $opt_verifyonly ? 'true':'false' )."'" );
 
-my $instance = Mods::Dbms::checkInstanceOpt( $opt_instance );
+my $instance = Mods::Dbms::checkInstanceName( $opt_instance );
 
 msgErr( "'--database' option is mandatory, but is not specified" ) if !$opt_database && !$opt_verifyonly;
 msgErr( "'--full' option is mandatory, but is not specified" ) if !$opt_full;

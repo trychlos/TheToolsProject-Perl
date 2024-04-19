@@ -5,11 +5,9 @@ Toops for Windows:
 	5.36 is the last version managed by Win32::SqlServer provided binaries - so stay stuck to this version unless you are willing to install from sources
 - install additionnal modules
 	> Win32::SqlServer https://www.sommarskog.se/MSSQL/index.html
-- set the HOST_ENV value of your machine
 - install and configure Toops for your site:
 	> set the PERL5LIB global environment variable to address the Toops directory
 	> set a TTP_CONFDIR global environment variable to address the directory which contains your site configuration
-	> (optional) set a TTP_ROOT global environment variable in PATH-style like to address several Toops trees
 	> update the PATH to address all your Toops/bin directories
 	> install CPAN packages
 	  Data::UUID
@@ -31,53 +29,6 @@ Install in TTP_CONFDIR/ as <hostname>.json:
 Windows Note:
 	We do not know at the moment how to ssh into a remote host to exec a remote script.
 	We so get stuck in our machine.
-
-TTPVars:
-	Toops						TheToolsProject internals
-		json					the original (un-evaluated) content read from file json configuration files
-			toops
-			site
-			host
-	config						dynamically re-evaluated toops.json content
-		toops
-			siteRoot
-			logsDir
-			...
-		host					dynamically re-evaluated host configuration
-			name
-			Services
-			DBMSInstances
-			...
-			name: <hostname>
-	run
-		exitCode
-		help
-		verbose
-		logsDir
-		logsMain
-		
-		# when run as a command.pl verb
-		command
-			path
-			args
-			basename
-			directory
-			name
-			verbsDir
-			started
-		verb
-			name
-			args
-			path
-		<command>
-			instance
-				name
-				data: $hostConfig->{DBMSInstances}{$instance}
-			name
-		
-		# when run by a daemon
-		daemon
-			name
 
 # when writing and using new commands or verbs
 # --------------------------------------------

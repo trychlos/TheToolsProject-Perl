@@ -17,7 +17,6 @@ use Mods::Constants qw( :all );
 use Mods::Message qw( :all );
 use Mods::Path;
 use Mods::Toops;
-#use Mods::SqlServer;
 
 # ------------------------------------------------------------------------------------------------
 # parms is a hash ref with keys:
@@ -55,16 +54,16 @@ sub backupDatabase {
 
 # -------------------------------------------------------------------------------------------------
 # returns the DBMS object passed to underlying packages
-# which gives dbms:
-# - config
-#   > DBMSInstances
-#   > ...
-# - instance
-#   > name
-#   > data -> $hostConfig->{DBMSInstances}{<name>}
-# - \exitCode
+# <DBMS>
+#  - instance: has been set at checkInstanceName() time
+#    > name: instance name
+#    > package: package name
+#  - config
+#    > <hostConfiguration>
+#  - \exitCode
 sub _buildDbms {
 	my $TTPVars = Mods::Toops::TTPVars();
+	# dbms is a special object created by TTP for the command
 	my $dbms = $TTPVars->{dbms};
 	$dbms->{config} = Mods::Toops::getHostConfig();
 	$dbms->{exitCode} = \$TTPVars->{run}{exitCode};
@@ -93,60 +92,74 @@ sub checkDatabaseExists {
 # check that the provided instance name is valid on this machine
 # - may be none if there is one and only one instance on the machine (though this emit a warning about future evolutions)
 # - must be referenced in the json configuration file for the host
-# (E):
+# (I):
 # - the candidate instance name
-# - options, which may have:
-#   > mandatory: true|false, defaulting to true
-#   > single: true|false, whether to search for a single defined instance if none is provided, defaulting to true
-# returns the found and checked instance, or undef in case of an error
-# if found, set up instance -> { name, data } in TTPVars
-sub checkInstanceOpt {
+# (O):
+# returns the validated instance name, or undef in case of an error
+# this is not a garanty that this instance is rightly set and configured, and we cannot check that here, as we do not know what the caller is going to do
+# if found, set up dbms -> instance -> { name, package } in TTPVars
+#
+# A default instance can be defined at site-level 'toops.json' configuration file. This default can be overriden for a particular service.
+# At the host level, we only provide informations *about* instances, without defining their use. But we can suppose that this implies that instances are valid.
+# The precedence order is site <overriden_by> service <overriden_by> host.
+# But here, we do not manage service as we want check a '--instance' option by the fact
+sub checkInstanceName {
 	my ( $name, $opts ) = @_;
 	$opts //= {};
-	msgVerbose( "Dbms::checkInstanceOpt() entering with name='".( $name || '(undef)' )."'" );
-	my $config = Mods::Toops::getHostConfig();
+	msgVerbose( "Dbms::checkInstanceName() entering with name='".( $name || '(undef)' )."'" );
 	my $instance = undef;
-	if( $config->{DBMSInstances} ){
-		if( $name ){
-			if( exists( $config->{DBMSInstances}{$name} )){
-				msgVerbose( "found instance='$name'" );
+	my $TTPVars = Mods::Toops::TTPVars();
+	if( $name ){
+		# search for the name if host configuration
+		if( exists( $config->{DBMS}{byInstance}{$name} )){
+			msgVerbose( "found instance='$name' in host configuration" );
+			$instance = $name;
+		}
+		# if not found, do we have a default instance in the site configuration file ?
+		if( !defined( $instance )){
+			if( exists( $TTPVars->{config}{toops}{DBMS}{instance} ) && $name eq $TTPVars->{config}{toops}{DBMS}{instance} ){
+				msgVerbose( "found instance='$name' in site configuration" );
 				$instance = $name;
-			} else {
-				msgErr( "Dbms::checkInstanceOpt() instance '$name' not defined in host configuration" );
-			}
-		} else {
-			my $single = true;
-			$single = $opts->{single} if exists $opts->{single};
-			if( $single ){
-				my $count = scalar keys( %{$config->{DBMSInstances}} );
-				if( $count == 1 ){
-					$instance = ( keys %{$config->{DBMSInstances}} )[0];
-					msgVerbose( "Dbms::checkInstanceOpt() '--instance' option not specified, executing on lonely defined '$instance'" );
-					msgWarn( "you are relying on a single instance definition; be warned that this facility may change in the future" );
-				} else {
-					my $mandatory = true;
-					$mandatory = $opts->{mandatory} if exists $opts->{mandatory};
-					if( $mandatory ){
-						msgErr( "'--instance' option is mandatory, none found (and there is none or too many DBMS instances)" );
-					} else {
-						msgVerbose( "'--instance' option is optional, has not been specified" );
-					}
-				}
-			} else {
-				msgVerbose( "'--instance' option is not specified, and 'single' is false, returning none" );
 			}
 		}
+		# if a name is specified, but not found, this is an error
+		if( !defined( $instance )){
+			msgErr( "instance='$name' is unknown by both host and site configurations" );
+		}
 	} else {
-		msgErr( "no 'DBMSInstances' key defined in host configuration" );
+		# if the host defines only one instance, return it with a warning
+		my @instances = keys( %{$config->{DBMS}{byInstance}} ) || ();
+		if( scalar @instances == 1 ){
+			$instance = keys( %{$config->{DBMS}{byInstance}} )[0];
+			msgVerbose( "Dbms::checkInstanceName() '--instance' option not specified, executing on the only defined '$instance' instance name" );
+			msgWarn( "you are relying on a single instance definition; be warned that this facility may change in the future" );
+		}
+		# if not found, do we have a default instance in the site configuration file ?
+		if( !defined( $instance )){
+			if( exists( $TTPVars->{config}{toops}{DBMS}{instance} )){
+				$instance = $TTPVars->{config}{toops}{DBMS}{instance};
+				msgVerbose( "eventually relying on site-level default instance='$instance'" );
+			}
+		}
+		# if not found at all not found, this is an error
+		if( !defined( $instance )){
+			msgErr( "'--instance' option is not specified and no default can be found" );
+		}
 	}
+	# if we have found a candidate instance, at least check that we can identify a package
+	my $package = ttpVar([ 'DBMS', 'byInstance', $instance, 'package' ]);
+	if( !$package ){
+		msgErr( "unable to identify a package to address the '$instance' instance" );
+		$instance = undef;
+	}
+	# if we have an instance and a package, then set the data
 	if( $instance ){
-		my $TTPVars = Mods::Toops::TTPVars();
 		$TTPVars->{dbms}{instance} = {
 			name => $instance,
-			data => $config->{DBMSInstances}{$instance}
+			package => $package
 		};
 	}
-	msgVerbose( "Dbms::checkInstanceOpt() returning with instance='".( $instance || '(undef)' )."'" );
+	msgVerbose( "Dbms::checkInstanceName() returning with instance='".( $instance || '(undef)' )."'" );
 	return $instance;
 }
 
@@ -155,17 +168,18 @@ sub checkInstanceOpt {
 # making sure the output directory exists
 # As of 2024 -1-31, default output filename is <host>-<instance>-<database>-<date>-<time>-<mode>.backup
 # As of 2024 -2- 2, the backupDir is expected to be daily-ised, ie to contain a date part
-# parms is a hash ref with keys:
-# - instance: mandatory
-# - database: mandatory
-# - mode: defaulting to 'full'
+# (I):
+# - dbms, the DBMS object from _buildDbms()
+# - parms is a hash ref with keys:
+#   > instance name: mandatory
+#   > database name: mandatory
+#   > mode: defaulting to 'full'
 sub computeDefaultBackupFilename {
 	my ( $dbms, $parms ) = @_;
 	msgVerbose( "Dbms::computeDefaultBackupFilename() entering" );
 	my $output = undef;
 	my $config = Mods::Toops::getHostConfig();
 	msgErr( "Dbms::computeDefaultBackupFilename() instance is mandatory, but is not specified" ) if !$parms->{instance};
-	msgErr( "Dbms::computeDefaultBackupFilename() instance is specified, but is not defined in host configuration" ) if !exists $config->{DBMSInstances}{$parms->{instance}};
 	msgErr( "Dbms::computeDefaultBackupFilename() database is mandatory, but is not specified" ) if !$parms->{database};
 	my $mode = 'full';
 	$mode = $parms->{mode} if exists $parms->{mode};
@@ -293,7 +307,7 @@ sub execSqlCommand {
 
 # -------------------------------------------------------------------------------------------------
 # returns the list of tables in the databases
-# the working-on instance has been set by checkInstanceOpt() function
+# the working-on instance has been set by checkInstanceName() function
 sub getDatabaseTables {
 	my ( $database ) = @_;
 	my $result = Mods::Dbms::toPackage( 'apiGetDatabaseTables', undef, $database );
@@ -302,7 +316,7 @@ sub getDatabaseTables {
 
 # -------------------------------------------------------------------------------------------------
 # returns the list of instance live databases
-# the working-on instance has been set by checkInstanceOpt() function
+# the working-on instance has been set by checkInstanceName() function
 sub getLiveDatabases {
 	my ( $dbms ) = @_;
 	my $result = Mods::Dbms::toPackage( 'apiGetInstanceDatabases', $dbms );
@@ -402,32 +416,6 @@ sub restoreDatabase {
 }
 
 # -------------------------------------------------------------------------------------------------
-# check that the provided instance name is valid on this machine
-# - may be none if there is one and only one instance on the machine (though this emit a warning about future evolutions)
-# - must be referenced in the json configuration file for the host
-# opts may have:
-# - mandatory: true|false, defaulting to true
-# returns the found and checked instance, or undef in case of an error
-sub setInstanceByName {
-	my $name = shift;
-	msgVerbose( "Dbms::setInstanceByName() entering with name='".( $name || '(undef)' )."'" );
-	my $config = Mods::Toops::getHostConfig();
-	my $instance = undef;
-	if( $config->{DBMSInstances} && $name && exists( $config->{DBMSInstances}{$name} )){
-		$instance = $name;
-		my $TTPVars = Mods::Toops::TTPVars();
-		$TTPVars->{dbms}{instance} = {
-			name => $name,
-			data => $config->{DBMSInstances}{$name}
-		};
-	} else {
-		msgErr( "no 'DBMSInstances' key, or name is undefined or is not defined in host configuration" );
-	}
-	msgVerbose( "Dbms::setInstanceByName() returning with found='".( $instance || '(undef)' )."'" );
-	return $instance;
-}
-
-# -------------------------------------------------------------------------------------------------
 # address a function in the package which deserves the named instance
 #  and returns the result which is expected to be a hash with (at least) a 'ok' key, or undef
 sub toPackage {
@@ -437,7 +425,7 @@ sub toPackage {
 	if( !Mods::Toops::ttpErrs()){
 		msgVerbose( "Dbms::toPackage() entering with fname='".( $fname || '(undef)' )."'" );
 		$dbms = Mods::Dbms::_buildDbms() if !$dbms;
-		my $package = $dbms->{config}{DBMSInstances}{$dbms->{instance}{name}}{package};
+		my $package = $dbms->{instance}{package};
 		msgVerbose( "Dbms::toPackage() package='".( $package || '(undef)' )."'" );
 		if( $package ){
 			Module::Load::load( $package );
