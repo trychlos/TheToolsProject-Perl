@@ -207,7 +207,7 @@ sub fromCommand {
 sub hostConfigurationPath {
 	my ( $host ) = @_;
 	$host = Mods::Toops::ttpHost() if !$host;
-	return File::Spec->catdir( hostsConfigurationsDir(), "$host.json" );
+	return File::Spec->catfile( hostsConfigurationsDir(), "$host.json" );
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -341,7 +341,7 @@ sub siteRoot {
 
 # ------------------------------------------------------------------------------------------------
 sub toopsConfigurationPath {
-	return File::Spec->catdir( siteConfigurationsDir(), "toops.json" );
+	return File::Spec->catfile( siteConfigurationsDir(), "toops.json" );
 }
 
 # -------------------------------------------------------------------------------------------------

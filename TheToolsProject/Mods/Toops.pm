@@ -773,11 +773,11 @@ sub hostConfigMacrosRec {
 }
 
 # -------------------------------------------------------------------------------------------------
-# read the host configuration without evaluation but checks that we have the correct top key
+# read the host configuration without evaluation
 # (I):
 # - the hostname
 # (O):
-# - returns the data under the toplevel key (which is expected to be the hostname)
+# - returns the found data
 #   with a new 'name' key which contains this same hostname
 # or undef in case of an error
 # Manage macros:
@@ -788,16 +788,8 @@ sub hostConfigRead {
 	if( !$host ){
 		msgErr( "Toops::hostConfigRead() hostname expected" );
 	} else {
-		my $hash = jsonRead( Mods::Path::hostConfigurationPath( $host ));
-		if( $hash ){
-			my $topkey = ( keys %{$hash} )[0];
-			if( $topkey ne $host ){
-				msgErr( "Toops::hostConfigRead() expected toplevel key '$host', found '$topkey'" ) ;
-			} else {
-				$result = $hash->{$topkey};
-				$result->{name} = $host;
-			}
-		}
+		$result = jsonRead( Mods::Path::hostConfigurationPath( $host ));
+		$result->{name} = $host;
 	}
 	$result = hostConfigMacrosRec( $result, { host => $host }) if defined $result;
 	return $result;
@@ -819,9 +811,10 @@ sub init {
 		print STDERR "Exiting with code 1\n";
 		exit( 1 );
 	}
-	my $raw = hostConfigRead( ttpHost());
+	my $host = ttpHost();
+	my $raw = hostConfigRead( $host );
 	if( !defined $raw ){
-		print STDERR "Unable to read this host configuration file\n";
+		print STDERR "Unable to read the '$host' host configuration file\n";
 		print STDERR "Exiting with code 1\n";
 		exit( 1 );
 	}
