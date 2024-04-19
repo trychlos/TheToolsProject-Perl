@@ -5,9 +5,9 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]backupsRoot       display the root (non daily) of the DBMS backup path [${backupsRoot}]
-# @(-) --[no]backupsDir       display the root (non daily) of the DBMS backup path [${backupsDir}]
+# @(-) --[no]backupsDir        display the root (non daily) of the DBMS backup path [${backupsDir}]
 # @(-) --[no]archivesRoot      display the root (non daily) of the DBMS archive path [${archivesRoot}]
-# @(-) --[no]archivesDir      display the root (non daily) of the DBMS archive path [${archivesDir}]
+# @(-) --[no]archivesDir       display the root (non daily) of the DBMS archive path [${archivesDir}]
 #
 # Copyright (@) 2023-2024 PWI Consulting
 

@@ -20,6 +20,7 @@ use Data::Dumper;
 use Mods::Constants qw( :all );
 use Mods::Dbms;
 use Mods::Message qw( :all );
+use Mods::Services;
 use Mods::Telemetry;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -197,15 +198,21 @@ msgVerbose( "found limit='$opt_limit'" );
 # depending of the measurement option, may have a service or an instance plus maybe a database
 # must have -service or -instance + -database
 if( $opt_service ){
+	my $serviceConfig = undef;
 	if( $opt_instance || $opt_database ){
 		msgErr( "'--service' option is exclusive of '--instance' and '--database' options" );
-	} elsif( !exists( $hostConfig->{Services}{$opt_service} )){
-		msgErr( "service='$opt_service' not defined in host configuration" );
 	} else {
-		$opt_instance = $hostConfig->{Services}{$opt_service}{instance} if exists $hostConfig->{Services}{$opt_service}{instance};
-		msgVerbose( "setting instance='$opt_instance'" );
-		@databases = @{$hostConfig->{Services}{$opt_service}{databases}} if exists $hostConfig->{Services}{$opt_service}{databases};
-		msgVerbose( "setting databases='".join( ', ', @databases )."'" );
+		$serviceConfig = Mods::Services::serviceConfig( $hostConfig, $opt_service );
+		if( $serviceConfig ){
+			$opt_instance = Mods::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
+			if( $opt_instance ){
+				msgVerbose( "setting instance='$opt_instance'" );
+				@databases = @{$serviceConfig->{DBMS}{databases}} if exists $serviceConfig->{DBMS}{databases};
+				msgVerbose( "setting databases='".join( ',', @databases )."'" );
+			}
+		} else {
+			msgErr( "service='$opt_service' not defined in host configuration" );
+		}
 	}
 } else {
 	push( @databases, $opt_database ) if $opt_database;
@@ -223,13 +230,13 @@ if( scalar @databases ){
 		}
 	}
 } else {
-	msgWarn( "no database found nor specified, exiting gracefully" );
+	msgWarn( "no database found nor specified, exiting" );
 	ttpExit();
 }
 
 # if no option is given, have a warning message
 if( !$opt_dbsize && !$opt_tabcount ){
-	msgWarn( "no measure has been requested, exiting gracefully" );
+	msgWarn( "no measure has been requested, exiting" );
 
 } elsif( !ttpErrs()){
 	doDbSize() if $opt_dbsize;

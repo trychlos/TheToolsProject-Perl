@@ -25,6 +25,7 @@ use Time::Piece;
 use Mods::Constants qw( :all );
 use Mods::Dbms;
 use Mods::Message qw( :all );
+use Mods::Services;
 
 my $TTPVars = Mods::Toops::TTPVars();
 
@@ -147,15 +148,21 @@ msgVerbose( "found output='$opt_output'" );
 
 # must have -service or -instance + -database
 if( $opt_service ){
+	my $serviceConfig = undef;
 	if( $opt_instance || $opt_database ){
 		msgErr( "'--service' option is exclusive of '--instance' and '--database' options" );
-	} elsif( !exists( $hostConfig->{Services}{$opt_service} )){
-		msgErr( "service='$opt_service' not defined in host configuration" );
 	} else {
-		$opt_instance = $hostConfig->{Services}{$opt_service}{instance} if exists $hostConfig->{Services}{$opt_service}{instance};
-		msgVerbose( "setting instance='$opt_instance'" );
-		$databases = $hostConfig->{Services}{$opt_service}{databases} if exists $hostConfig->{Services}{$opt_service}{databases};
-		msgVerbose( "setting databases='".join( ', ', @{$databases} )."'" );
+		$serviceConfig = Mods::Services::serviceConfig( $hostConfig, $opt_service );
+		if( $serviceConfig ){
+			$opt_instance = Mods::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
+			if( $opt_instance ){
+				msgVerbose( "setting instance='$opt_instance'" );
+				$databases = $serviceConfig->{DBMS}{databases} if exists  $serviceConfig->{DBMS}{databases};
+				msgVerbose( "setting databases='".join( ', ', @{$databases} )."'" );
+			}
+		} else {
+			msgErr( "service='$opt_service' not defined in host configuration" );
+		}
 	}
 } else {
 	push( @{$databases}, $opt_database ) if $opt_database;
@@ -172,7 +179,7 @@ if( scalar @{$databases} ){
 		}
 	}
 } else {
-	msgErr( "'--database' option is required (or '--service'), but is not specified" );
+	msgErr( "'--database' option is required (or '--service'), but is not specified" ) if !$opt_service;
 }
 
 my $count = 0;

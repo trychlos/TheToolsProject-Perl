@@ -25,16 +25,13 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	service => '',
-	host => '',
+	host => Mods::Toops::ttpHost(),
 	key => ''
 };
 
 my $opt_service = $defaults->{service};
 my $opt_host = $defaults->{host};
-my $opt_key = $defaults->{key};
-
-# the list of keys
-my @keys = ();
+my $opt_keys = [];
 
 # -------------------------------------------------------------------------------------------------
 # execute the commands registered for the service
@@ -42,29 +39,38 @@ my @keys = ();
 # - HOST
 # - SERVICE
 sub executeCommands {
-	msgOut( "executing '$opt_service [".join( ',', @keys )."]' commands from '$opt_host' host..." );
+	msgOut( "executing '$opt_service [".join( ',', @{$opt_keys} )."]' commands from '$opt_host' host..." );
 	my $cmdCount = 0;
 	my $host = $opt_host || ttpHost();
-	my $config = Mods::Toops::getHostConfig( $host );
-	my $hash = ttpVar( \@keys, { config => $config->{Services}{$opt_service} });
-	if( $hash && ref( $hash ) eq 'HASH' ){
-		my $commands = $hash->{commands};
-		if( $commands && ref( $commands ) eq 'ARRAY' && scalar @{$commands} > 0 ){
-			foreach my $cmd ( @{$commands} ){
-				$cmdCount += 1;
-				$cmd =~ s/<HOST>/$host/g;
-				$cmd =~ s/<SERVICE>/$opt_service/g;
-				msgOut( "  $cmd" );
-				my $stdout = `$cmd`;
-				my $rc = $?;
-				msgLog( "stdout='$stdout'" );
-				msgLog( "got rc=$rc" );
+	my $hostConfig = Mods::Toops::getHostConfig( $host );
+	my $serviceConfig = Mods::Services::serviceConfig( $hostConfig, $opt_service );
+	if( $serviceConfig ){
+		my $hash = ttpVar( $opt_keys, { config => $serviceConfig });
+		if( $hash && ref( $hash ) eq 'HASH' ){
+			my $commands = $hash->{commands};
+			if( $commands && ref( $commands ) eq 'ARRAY' && scalar @{$commands} > 0 ){
+				foreach my $cmd ( @{$commands} ){
+					$cmdCount += 1;
+					$cmd =~ s/<HOST>/$host/g;
+					$cmd =~ s/<SERVICE>/$opt_service/g;
+					if( $TTPVars->{run}{dummy} ){
+						msgDummy( $cmd );
+					} else {
+						msgOut( "+ $cmd" );
+						my $stdout = `$cmd`;
+						my $rc = $?;
+						msgLog( "stdout='$stdout'" );
+						msgLog( "got rc=$rc" );
+					}
+				}
+			} else {
+				msgWarn( "serviceConfig->[".join( ',', @{$opt_keys} )."] is not defined, or not an array, or is empty" );
 			}
 		} else {
-			msgWarn( "hostConfig->{Services}{$opt_service}[".join( ', ', @keys )."] is not defined, or not an array, or is empty" );
+			msgWarn( "serviceConfig->[".join( ',', @{$opt_keys} )."] is not defined (or not a hash)" );
 		}
 	} else {
-		msgWarn( "hostConfig->{Services}{$opt_service}[".join( ', ', @keys )."] is not defined (or not a hash)" );
+		msgErr( "unable to find '$opt_service' service configuration on '$opt_host'" );
 	}
 	msgOut( "$cmdCount executed command(s)" );
 }
@@ -80,7 +86,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"service=s"			=> \$opt_service,
 	"host=s"			=> \$opt_host,
-	"key=s@"			=> \$opt_key )){
+	"key=s@"			=> \$opt_keys )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		ttpExit( 1 );
@@ -96,14 +102,14 @@ msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" 
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
 msgVerbose( "found host='$opt_host'" );
-@keys = split( /,/, join( ',', @{$opt_key} ));
-msgVerbose( "found keys='".join( ',', @keys )."'" );
+msgVerbose( "found keys='".join( ',', @{$opt_keys} )."'" );
 
 msgErr( "'--service' service name is required, but not found" ) if !$opt_service;
-msgErr( "at least a key is required, but none found" ) if !scalar( @keys );
+msgErr( "'--host' host name is required, but not found" ) if !$opt_host;
+msgErr( "at least a key is required, but none found" ) if !scalar( @{$opt_keys} );
 
 if( !ttpErrs()){
-	executeCommands() if $opt_service && scalar( @keys );
+	executeCommands() if $opt_service && scalar( @{$opt_keys} );
 }
 
 ttpExit();

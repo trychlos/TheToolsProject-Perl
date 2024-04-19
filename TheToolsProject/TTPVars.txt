@@ -21,6 +21,9 @@ TTPVars
  |   |   +- ...
  |   |
  |   +- host
+ |       |
+ |       +- name
+ |       +- ...
  |
  +- evaluating              While evaulating another host configuration
  |   |

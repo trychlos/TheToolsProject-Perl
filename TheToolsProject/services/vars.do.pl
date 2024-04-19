@@ -28,31 +28,36 @@ my $defaults = {
 };
 
 my $opt_service = $defaults->{service};
-my $opt_key = $defaults->{key};
-
-# list of keys
-my @keys = ();
+my $opt_keys = [];
 
 # -------------------------------------------------------------------------------------------------
 sub displayVar {
-	msgOut( "displaying '".join( ', ', @keys )."' variable..." );
+	msgOut( "displaying '".join( ',', @{$opt_keys} )."' variable..." );
+	#print Dumper( $opt_keys );
 	my $hostConfig = Mods::Toops::getHostConfig();
-	my @initialKeys = @keys;
-	my $serviceConfig = $hostConfig->{Services}{$opt_service};
-	my $found = false;
+	my @initialKeys = @{$opt_keys};
+	my $serviceConfig = Mods::Services::serviceConfig( $hostConfig, $opt_service );
+	my $last = undef;
 	my $hash = $serviceConfig;
-	my $last = pop( @keys );
-	my $count = 0;
-	foreach my $key ( @keys ){
-		if( ref( $hash ) eq 'HASH' && exists $hash->{$key} ){
-			$hash = $hash->{$key};
-		} elsif( !exists( $hash->{$key} )){
-			msgErr( "'$key' key doesn't exist" );
-			last;
-		} else {
-			msgErr( "not a hash to address '$key' key" );
-			last;
+	if( $serviceConfig ){
+		my $found = false;
+		$last = pop( @{$opt_keys} );
+		msgVerbose( "last='$last'" );
+		my $count = 0;
+		foreach my $key ( @{$opt_keys} ){
+			msgVerbose( "key='$key'" );
+			if( ref( $hash ) eq 'HASH' && exists $hash->{$key} ){
+				$hash = $hash->{$key};
+			} elsif( !exists( $hash->{$key} )){
+				msgErr( "'$key' key doesn't exist" );
+				last;
+			} else {
+				msgErr( "not a hash to address '$key' key" );
+				last;
+			}
 		}
+	} else {
+		msgErr( "unable to find '$opt_service' service configuration on this host" );
 	}
 	if( !ttpErrs()){
 		if( exists( $hash->{$last} )){
@@ -88,7 +93,7 @@ if( !GetOptions(
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"service=s"			=> \$opt_service,
-	"key=s@"			=> \$opt_key )){
+	"key=s@"			=> \$opt_keys )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
 		ttpExit( 1 );
@@ -103,14 +108,13 @@ msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" 
 msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
-@keys = split( /,/, join( ',', @{$opt_key} ));
-msgVerbose( "found keys='".join( ',', @keys )."'" );
+msgVerbose( "found keys='".join( ',', @{$opt_keys} )."'" );
 
 msgErr( "a service is required, but not found" ) if !$opt_service;
-msgErr( "at least a key is required, but none found" ) if !scalar( @keys );
+msgErr( "at least a key is required, but none found" ) if !scalar( @{$opt_keys} );
 
 if( !ttpErrs()){
-	displayVar() if $opt_service && scalar( @keys );
+	displayVar() if $opt_service && scalar( @{$opt_keys} );
 }
 
 ttpExit();

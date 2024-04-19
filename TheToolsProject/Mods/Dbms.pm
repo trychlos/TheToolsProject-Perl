@@ -94,6 +94,8 @@ sub checkDatabaseExists {
 # - must be referenced in the json configuration file for the host
 # (I):
 # - the candidate instance name
+# - an optional options hash with following keys:
+#   > serviceConfig: a full service configuration (service definition, maybe overriden by the host configuration)
 # (O):
 # returns the validated instance name, or undef in case of an error
 # this is not a garanty that this instance is rightly set and configured, and we cannot check that here, as we do not know what the caller is going to do
@@ -109,6 +111,7 @@ sub checkInstanceName {
 	msgVerbose( "Dbms::checkInstanceName() entering with name='".( $name || '(undef)' )."'" );
 	my $instance = undef;
 	my $TTPVars = Mods::Toops::TTPVars();
+	my $config = Mods::Toops::getHostConfig();
 	if( $name ){
 		# search for the name if host configuration
 		if( exists( $config->{DBMS}{byInstance}{$name} )){
@@ -127,12 +130,20 @@ sub checkInstanceName {
 			msgErr( "instance='$name' is unknown by both host and site configurations" );
 		}
 	} else {
+		# if a service configuration is provided, take the instance from here
+		my $serviceConfig = $opts->{serviceConfig} if exists $opts->{serviceConfig};
+		if( $serviceConfig && exists $serviceConfig->{DBMS}{instance} ){
+			$instance = $serviceConfig->{DBMS}{instance};
+			msgVerbose( "found instance='$instance' in provided service configuration" );
+		}
 		# if the host defines only one instance, return it with a warning
-		my @instances = keys( %{$config->{DBMS}{byInstance}} ) || ();
-		if( scalar @instances == 1 ){
-			$instance = keys( %{$config->{DBMS}{byInstance}} )[0];
-			msgVerbose( "Dbms::checkInstanceName() '--instance' option not specified, executing on the only defined '$instance' instance name" );
-			msgWarn( "you are relying on a single instance definition; be warned that this facility may change in the future" );
+		if( !defined $instance ){
+			my @instances = keys( %{$config->{DBMS}{byInstance}} ) || ();
+			if( scalar @instances == 1 ){
+				$instance = $instances[0];
+				msgVerbose( "Dbms::checkInstanceName() '--instance' option not specified, executing on the only defined '$instance' instance name" );
+				msgWarn( "you are relying on a single instance definition; be warned that this facility may change in the future" );
+			}
 		}
 		# if not found, do we have a default instance in the site configuration file ?
 		if( !defined( $instance )){
@@ -147,7 +158,7 @@ sub checkInstanceName {
 		}
 	}
 	# if we have found a candidate instance, at least check that we can identify a package
-	my $package = ttpVar([ 'DBMS', 'byInstance', $instance, 'package' ]);
+	my $package = Mods::Toops::ttpVar([ 'DBMS', 'byInstance', $instance, 'package' ]);
 	if( !$package ){
 		msgErr( "unable to identify a package to address the '$instance' instance" );
 		$instance = undef;

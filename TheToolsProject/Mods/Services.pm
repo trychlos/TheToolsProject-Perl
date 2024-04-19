@@ -203,9 +203,13 @@ sub serviceConfig {
 	my $result = undef;
 	if( exists( $hostConfig->{Services}{$serviceName} )){
 		my $serviceHash = Mods::Toops::jsonRead( Mods::Path::serviceConfigurationPath( $serviceName ), { ignoreIfNotExist => true });
-		$serviceHash = serviceConfigMacrosRec( $serviceHash, { service => $serviceName }) if defined $serviceHash;
+		if( defined $serviceHash ){
+			$serviceHash = serviceConfigMacrosRec( $serviceHash, { service => $serviceName });
+			$serviceHash = Mods::Toops::hostConfigMacrosRec( $serviceHash, { host => $hostConfig->{name} });
+		}
 		my $hostHash = serviceConfigMacrosRec( $hostConfig->{Services}{$serviceName}, { service => $serviceName });
 		$result = merge( $hostHash, $serviceHash || {} );
+		$result->{name} = $serviceName;
 	}
 	#print Dumper( $result );
 	return $result;

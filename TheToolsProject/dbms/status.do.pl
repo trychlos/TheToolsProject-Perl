@@ -18,6 +18,7 @@ use URI::Escape;
 use Mods::Constants qw( :all );
 use Mods::Dbms;
 use Mods::Message qw( :all );
+use Mods::Services;
 use Mods::Telemetry;
 
 my $TTPVars = Mods::Toops::TTPVars();
@@ -48,10 +49,21 @@ my $opt_http = false;
 sub doState {
 	msgOut( "get database(s) state for '$opt_service'..." );
 	my $hostConfig = Mods::Toops::getHostConfig();
-	my $instance = $hostConfig->{Services}{$opt_service}{instance} if exists $hostConfig->{Services}{$opt_service}{instance};
-	msgVerbose( "found instance='$instance'" );
-	my @databases = @{$hostConfig->{Services}{$opt_service}{databases}} if exists $hostConfig->{Services}{$opt_service}{databases};
-	msgVerbose( "found databases='".join( ', ', @databases )."'" );
+	my $serviceConfig = Mods::Services::serviceConfig( $hostConfig, $opt_service );
+	my $instance = undef;
+	my @databases = undef;
+	if( $serviceConfig ){
+		$instance = Mods::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
+		msgVerbose( "found instance='".( $instance || 'undef' )."'" );
+		if( $instance ){
+			@databases = @{$serviceConfig->{DBMS}{databases}} if exists $serviceConfig->{DBMS}{databases};
+			msgVerbose( "found databases='".( scalar @databases ? join( ',', @databases ) : 'none' )."'" );
+		} else {
+			msgErr( "unable to find a suitable DBMS instance for '$opt_service' service" );
+		}
+	} else {
+		msgErr( "unable to find '$opt_service' service configuration for '$hostConfig->{name}' host" );
+	}
 	if( $instance && scalar @databases ){
 		my $list = [];
 		my $code = 0;
@@ -102,8 +114,6 @@ sub doState {
 		} else {
 			msgOut( "done" );
 		}
-	} else {
-		msgWarn( "instance not found or no registered database" );
 	}
 }
 
