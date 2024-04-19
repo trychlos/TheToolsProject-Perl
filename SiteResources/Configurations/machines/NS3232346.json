@@ -34,8 +34,8 @@
 					{
 						"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 						"commands": [
-							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -ignore -wait",
-							"daemon.pl start -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -- -remote WS22PROD1"
+							"daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -ignore -wait",
+							"daemon.pl start -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -- -remote WS22PROD1"
 						]
 					}
 				]
@@ -60,8 +60,8 @@
 				},
 				"to_live": {
 					"commands": [
-						"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -ignore -wait",
-						"ssh inlingua-adm@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom17.backup /Disable"
+						"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -ignore -wait",
+						"ssh inlingua-adm@<HOST> [eval:File::Spec->catfile( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom17.backup /Disable"
 					]
 				}
 			}
@@ -96,8 +96,8 @@
 					{
 						"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 						"commands": [
-							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -ignore -wait",
-							"daemon.pl start -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -- -remote WS22PROD1"
+							"daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -ignore -wait",
+							"daemon.pl start -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -- -remote WS22PROD1"
 						]
 					}
 				]
@@ -122,8 +122,8 @@
 				},
 				"to_live": {
 					"commands": [
-						"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -ignore -wait",
-						"ssh inlingua-adm@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom21.backup /Disable"
+						"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -ignore -wait",
+						"ssh inlingua-adm@<HOST> [eval:File::Spec->catfile( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom21.backup /Disable"
 					]
 				}
 			}
@@ -158,8 +158,8 @@
 					{
 						"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
 						"commands": [
-							"daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -ignore -wait",
-							"daemon.pl start -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -- -remote WS22PROD1"
+							"daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -ignore -wait",
+							"daemon.pl start -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -- -remote WS22PROD1"
 						]
 					}
 				]
@@ -186,8 +186,8 @@
 				},
 				"to_live": {
 					"commands": [
-						"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -ignore -wait",
-						"ssh inlingua-adm@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom59.backup /Disable"
+						"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -ignore -wait",
+						"ssh inlingua-adm@<HOST> [eval:File::Spec->catfile( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom59.backup /Disable"
 					]
 				}
 			}
@@ -219,7 +219,7 @@
 					{
 						"label": "Advertize at startup",
 						"commands": [
-							"call [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'startup.cmd' )]"
+							"call [eval:File::Spec->catfile( $TTPVars->{config}{site}{commandsDir}, 'startup.cmd' )]"
 						]
 					}
 				]

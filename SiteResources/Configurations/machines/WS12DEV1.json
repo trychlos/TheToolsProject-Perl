@@ -91,8 +91,8 @@
 				},
 				"to_live": {
 					"commands": [
-						"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'canal33-backup-monitor-daemon.json' )] -ignore -wait",
-						"ssh inlingua-adm@<HOST> [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom17.backup.startup /Disable",
+						"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'canal33-backup-monitor-daemon.json' )] -ignore -wait",
+						"ssh inlingua-adm@<HOST> [eval:File::Spec->catfile( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom17.backup.startup /Disable",
 						"ssh inlingua-adm@<HOST> sc config start= auto Canal33Ftp",
 						"ssh inlingua-adm@<HOST> sc start Canal33Ftp",
 						"ssh inlingua-adm@<HOST> sc config start= auto Canal33Svc",
@@ -120,7 +120,7 @@
 					{
 						"label": "Advertize at startup",
 						"commands": [
-							"call [eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'startup.cmd' )]"
+							"call [eval:File::Spec->catfile( $TTPVars->{config}{site}{commandsDir}, 'startup.cmd' )]"
 						]
 					}
 				],
@@ -132,7 +132,7 @@
 							"ttp.pl list -nocolored -services"
 						],
 						"commands": [
-							"daemon.pl start -nocolored -json [eval:File::Spec->catdir( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -- -remote NS3232346"
+							"daemon.pl start -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -- -remote NS3232346"
 						]
 					}
 				]
