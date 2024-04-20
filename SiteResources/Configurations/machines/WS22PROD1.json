@@ -3,7 +3,9 @@
 	],
 	"Services": {
 		"Tom17": {
-			"instance": "PROD",
+			"DBMS": {
+				"instance": "PROD"
+			},
 			"status": {
 				"x_get_live": "http.pl get -nocolored -url https://tom17.blingua.fr -header X-Sent-By -accept ...",
 				"after": {
@@ -12,34 +14,33 @@
 						"ssh inlingua-user@<HOST> daemon.pl status -bname tom17-backup-monitor-daemon.json -http -- -metric ttp_service_daemon -label service=<SERVICE> -label role=backup -label environment=X"
 					]
 				}
+			},
+			"workloads": {
+				"tom17.backup": [
+					{
+						"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
+						"commands": [
+							"daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -ignore -wait",
+							"daemon.pl start -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -- -remote NS3232346"
+						]
+					}
+				]
 			}
 		},
 		"Tom21": {
-			"instance": "PROD",
-			"databases": [
-				"inlingua21"
-			],
+			"DBMS": {
+				"instance": "PROD"
+			},
+			"status": {
+				"x_get_live": "http.pl get -nocolored -url https://tom21.blingua.fr -header X-Sent-By -accept ...",
+				"after": {
+					"commands": [
+						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"ssh inlingua-user@<HOST> daemon.pl status -bname tom21-backup-monitor-daemon.json -http -- -metric ttp_service_daemon -label service=<SERVICE> -label role=backup -label environment=X"
+					]
+				}
+			},
 			"workloads": {
-				"tom21.live.morning": [
-					{
-						"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom21",
-						"commands": [
-							"dbms.pl backup -nocolored -service Tom21 -full",
-							"dbms.pl telemetry -nocolored -service Tom21 -dbsize",
-							"dbms.pl telemetry -nocolored -service Tom21 -tabcount"
-						]
-					}
-				],
-				"tom21.live.every.2h": [
-					{
-						"label": "(Production Live) Sauvegarde différentielle sur la base de données Tom21",
-						"commands": [
-							"dbms.pl backup -nocolored -service Tom21 -diff"
-						]
-					}
-				],
-				"tom21.live.evening": [
-				],
 				"tom21.backup": [
 					{
 						"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
@@ -49,59 +50,22 @@
 						]
 					}
 				]
-			},
-			"status": {
-				"commands": [
-					"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
-					"services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
-					"http.pl get -nocolored -url https://tom21.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
-					"http.pl get -nocolored -url https://inlingua21.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
-					"http.pl get -nocolored -url https://tom21.backup.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
-					"ssh inlingua-user@<HOST> daemon.pl status -bname tom21-backup-monitor-daemon.json -http -- -metric ttp_service_daemon -label service=<SERVICE> -label role=backup -label environment=X"
-				],
-				"get_live": "http.pl get -nocolored -url https://tom21.blingua.fr -header X-Sent-By -accept ..."
-			},
-			"switch_comments": [
-				"These commands have to be run when we want switch the status of a machine, from live to backup, or from backup to live",
-				"They have to be run via 'SiteResources\\Commands\\extern_service_switch.pl' script."
-			],
-			"switch": {
-				"to_backup": {
-				},
-				"to_live": {
-					"commands": [
-						"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom21-backup-monitor-daemon.json' )] -ignore -wait",
-						"ssh inlingua-adm@<HOST> [eval:File::Spec->catfile( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom21.backup /Disable"
-					]
-				}
 			}
 		},
 		"Tom59": {
-			"instance": "PROD",
-			"databases": [
-				"TOM59331"
-			],
+			"DBMS": {
+				"instance": "PROD"
+			},
+			"status": {
+				"x_get_live": "http.pl get -nocolored -url https://tom59.blingua.fr -header X-Sent-By -accept ...",
+				"after": {
+					"commands": [
+						"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
+						"ssh inlingua-user@<HOST> daemon.pl status -bname tom59-backup-monitor-daemon.json -http -- -metric ttp_service_daemon -label service=<SERVICE> -label role=backup -label environment=X"
+					]
+				}
+			},
 			"workloads": {
-				"tom59.live.morning": [
-					{
-						"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom59",
-						"commands": [
-							"dbms.pl backup -nocolored -service Tom59 -full",
-							"dbms.pl telemetry -nocolored -service Tom59 -dbsize",
-							"dbms.pl telemetry -nocolored -service Tom59 -tabcount"
-						]
-					}
-				],
-				"tom59.live.every.2h": [
-					{
-						"label": "(Production Live) Sauvegarde différentielle sur la base de données Tom59",
-						"commands": [
-							"dbms.pl backup -nocolored -service Tom59 -diff"
-						]
-					}
-				],
-				"tom59.live.evening": [
-				],
 				"tom59.backup": [
 					{
 						"label": "(PRODUCTION BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
@@ -111,33 +75,6 @@
 						]
 					}
 				]
-			},
-			"status": {
-				"commands": [
-					"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
-					"services.pl live -nocolored -service <SERVICE> -environment X -next -mqtt -http",
-					"http.pl get -nocolored -url https://tom59.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
-					"http.pl get -nocolored -url https://inlingua31.archive.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
-					"http.pl get -nocolored -url https://inlingua33.archive.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
-					"http.pl get -nocolored -url https://inlingua59.archive.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
-					"http.pl get -nocolored -url https://tom59.backup.blingua.fr -label service=<SERVICE> -accept [1-3].. -mqtt -http",
-					"ssh inlingua-user@<HOST> daemon.pl status -bname tom59-backup-monitor-daemon.json -http -- -metric ttp_service_daemon -label service=<SERVICE> -label role=backup -label environment=X"
-				],
-				"get_live": "http.pl get -nocolored -url https://tom59.blingua.fr -header X-Sent-By -accept ..."
-			},
-			"switch_comments": [
-				"These commands have to be run when we want switch the status of a machine, from live to backup, or from backup to live",
-				"They have to be run via 'SiteResources\\Commands\\extern_service_switch.pl' script."
-			],
-			"switch": {
-				"to_backup": {
-				},
-				"to_live": {
-					"commands": [
-						"ssh inlingua-user@<HOST> daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -ignore -wait",
-						"ssh inlingua-adm@<HOST> [eval:File::Spec->catfile( $TTPVars->{config}{site}{commandsDir}, 'scheduled_set_status.cmd' )] \\Inlingua\\tom59.backup /Disable"
-					]
-				}
 			}
 		},
 		"Technical.Services": {

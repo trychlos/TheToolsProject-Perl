@@ -1,6 +1,5 @@
 {
 	"DBMS": {
-		"instance": "MSSQLSERVER",
 		"databases": [
 			"inlingua17a"
 		]
@@ -27,9 +26,9 @@
 			{
 				"label": "(Production Live) Sauvegarde quotidienne de la base de données Tom17",
 				"commands": [
-					"dbms.pl backup -nocolored -service Tom17 -full",
-					"dbms.pl telemetry -nocolored -service Tom17 -dbsize",
-					"dbms.pl telemetry -nocolored -service Tom17 -tabcount"
+					"dbms.pl backup -nocolored -service <SERVICE> -full",
+					"dbms.pl telemetry -nocolored -service <SERVICE> -dbsize",
+					"dbms.pl telemetry -nocolored -service <SERVICE> -tabcount"
 				]
 			}
 		],
@@ -37,20 +36,13 @@
 			{
 				"label": "(Production Live) Sauvegarde différentielle sur la base de données Tom17",
 				"commands": [
-					"dbms.pl backup -nocolored -service Tom17 -diff"
+					"dbms.pl backup -nocolored -service <SERVICE> -diff"
 				]
 			}
 		],
 		"tom17.live.evening": [
 		],
 		"tom17.backup": [
-			{
-				"label": "(PROD BACKUP) Surveillance, transfert et restauration des sauvegardes de la production",
-				"commands": [
-					"daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -ignore -wait",
-					"daemon.pl start -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -- -remote WS22PROD1"
-				]
-			}
 		]
 	}
 }

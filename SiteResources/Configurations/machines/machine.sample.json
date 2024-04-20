@@ -42,11 +42,11 @@
 	],
 	"Services": {
 		"Canal33": {
-			"instance": "DEV",
-			"databases": [
-				"Canal33"
-			],
-			"workloads": {
+			"DBMS": {
+				"instance": "DEV",
+				"databases": [
+					"Canal33"
+				],
 			},
 			"monitor": {
 				"ovh": {
@@ -56,6 +56,8 @@
 				"switch": {
 					"scheduled": "\\Inlingua\\tom17.backup.startup"
 				}
+			},
+			"workloads": {
 			}
 		},
 		"Dom.2008": {
