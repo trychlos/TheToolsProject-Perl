@@ -197,7 +197,7 @@ sub _getUsedWorkloads_cb {
 # - host configuration
 # - service name
 # (O):
-# - a hash with full service configuration, or undef if the service is not defined in the host
+# - a hash with full evaluated service configuration, or undef if the service is not defined in the host
 sub serviceConfig {
 	my ( $hostConfig, $serviceName ) = @_;
 	my $result = undef;
@@ -206,6 +206,7 @@ sub serviceConfig {
 		if( defined $serviceHash ){
 			$serviceHash = serviceConfigMacrosRec( $serviceHash, { service => $serviceName });
 			$serviceHash = Mods::Toops::hostConfigMacrosRec( $serviceHash, { host => $hostConfig->{name} });
+			$serviceHash = Mods::Toops::evaluate( $serviceHash );
 		}
 		my $hostHash = serviceConfigMacrosRec( $hostConfig->{Services}{$serviceName}, { service => $serviceName });
 		$result = merge( $hostHash, $serviceHash || {} );
