@@ -149,16 +149,20 @@ msgVerbose( "found output='$opt_output'" );
 # must have -service or -instance + -database
 if( $opt_service ){
 	my $serviceConfig = undef;
-	if( $opt_instance || $opt_database ){
-		msgErr( "'--service' option is exclusive of '--instance' and '--database' options" );
+	if( $opt_instance ){
+		msgErr( "'--service' option is exclusive of '--instance' option" );
 	} else {
 		$serviceConfig = Mods::Services::serviceConfig( $hostConfig, $opt_service );
 		if( $serviceConfig ){
 			$opt_instance = Mods::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
 			if( $opt_instance ){
 				msgVerbose( "setting instance='$opt_instance'" );
-				$databases = $serviceConfig->{DBMS}{databases} if exists  $serviceConfig->{DBMS}{databases};
-				msgVerbose( "setting databases='".join( ', ', @{$databases} )."'" );
+				if( $opt_database ){
+					push( @{$databases}, $opt_database );
+				} else {
+					$databases = $serviceConfig->{DBMS}{databases} if exists  $serviceConfig->{DBMS}{databases};
+					msgVerbose( "setting databases='".join( ', ', @{$databases} )."'" );
+				}
 			}
 		} else {
 			msgErr( "service='$opt_service' not defined in host configuration" );
