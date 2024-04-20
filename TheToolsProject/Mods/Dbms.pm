@@ -130,28 +130,7 @@ sub checkInstanceName {
 			msgErr( "instance='$name' is unknown by both host and site configurations" );
 		}
 	} else {
-		# if a service configuration is provided, take the instance from here
-		my $serviceConfig = $opts->{serviceConfig} if exists $opts->{serviceConfig};
-		if( $serviceConfig && exists $serviceConfig->{DBMS}{instance} ){
-			$instance = $serviceConfig->{DBMS}{instance};
-			msgVerbose( "found instance='$instance' in provided service configuration" );
-		}
-		# if the host defines only one instance, return it with a warning
-		if( !defined $instance ){
-			my @instances = keys( %{$config->{DBMS}{byInstance}} ) || ();
-			if( scalar @instances == 1 ){
-				$instance = $instances[0];
-				msgVerbose( "Dbms::checkInstanceName() '--instance' option not specified, executing on the only defined '$instance' instance name" );
-				msgWarn( "you are relying on a single instance definition; be warned that this facility may change in the future" );
-			}
-		}
-		# if not found, do we have a default instance in the site configuration file ?
-		if( !defined( $instance )){
-			if( exists( $TTPVars->{config}{toops}{DBMS}{instance} )){
-				$instance = $TTPVars->{config}{toops}{DBMS}{instance};
-				msgVerbose( "eventually relying on site-level default instance='$instance'" );
-			}
-		}
+		$instance = _searchValue( $config, $opts->{serviceConfig}, [ 'DBMS', 'instance' ]);
 		# if not found at all not found, this is an error
 		if( !defined( $instance )){
 			msgErr( "'--instance' option is not specified and no default can be found" );
@@ -424,6 +403,49 @@ sub restoreDatabase {
 		msgErr( "Dbms::restoreDatabase() $parms->{instance}\\$parms->{database} NOT OK" );
 	}
 	return $result && $result->{ok};
+}
+
+# ------------------------------------------------------------------------------------------------
+# Search for a value according to the rules of precedence:
+# - the host configuration through a 'Service.<service>.DBMS.instance' key in the service section
+# - the host configuration through a 'DBMS.instance' key (acts as a default for all services in this host)
+# - the service configuration as a 'DBMS.instance' key (acts as a default for all hosts which define this service)
+# - the site configuration as a 'DBMS.instance' key (acts as a default for all services and hosts)
+# First (non empty) found wins, which doesn't imply that the found instance exists and is valid.
+# (I):
+# - the host configuration
+# - the service configuration
+# - the search value as a ref to an array of successive keys, e.g. [ 'DBMS', 'instance' ] for the rules example
+# (O):
+# - the searched value or undef if none has been found
+sub _searchValue {
+	my ( $hostConfig, $serviceConfig, $keys ) = @_;
+	my $result = undef;
+	# search in the service section of the host configuration
+	if( !defined( $result )){
+		my @serviceKeys = @{$keys};
+		unshift( @serviceKeys, "Services", $serviceConfig->{name} );
+		$result = Mods::Toops::varSearch( \@serviceKeys, $hostConfig );
+		msgVerbose( "'$result' found with (".join( ',', @serviceKeys ).") in service section of host configuration" ) if defined $result;
+	}
+	# search at the host level
+	if( !defined( $result )){
+		$result = Mods::Toops::varSearch( $keys, $hostConfig );
+		msgVerbose( "'$result' found with (".join( ',', @{$keys} ).") in global section of host configuration" ) if defined $result;
+	}
+	# search in the service configuration
+	if( !defined( $result )){
+		$result = Mods::Toops::varSearch( $keys, $serviceConfig );
+		msgVerbose( "'$result' found with (".join( ',', @{$keys} ).") in service configuration" ) if defined $result;
+	}
+	# search in the site configuration
+	if( !defined( $result )){
+		my $TTPVars = Mods::Toops::TTPVars();
+		$result = Mods::Toops::varSearch( $keys, $TTPVars->{config}{toops} );
+		msgVerbose( "'$result' found with (".join( ',', @{$keys} ).") in site configuration" ) if defined $result;
+	}
+	msgVerbose( "(".join( ',', @{$keys} ).") not found" ) if !defined $result;
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------

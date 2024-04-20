@@ -1,11 +1,21 @@
 {
+	"DBMS_comments": [
+	],
+	"DBMS": {
+		"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]",
+		"archivesRoot": "\\[eval:File::Spec->catdir( '\\ftpback-rbx7-618.ovh.net', 'ns3153065.ip-51-91-25.eu', '<HOST>', 'SQLBackups' )]",
+		"byInstance": {
+			"PROD": {
+				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL16.PROD\\MSSQL\\DATA",
+				"package": "Mods::SqlServer"
+			}
+		},
+		"instance": "PROD"
+	},
 	"ServicesComments": [
 	],
 	"Services": {
 		"Tom17": {
-			"DBMS": {
-				"instance": "PROD"
-			},
 			"status": {
 				"x_get_live": "http.pl get -nocolored -url https://tom17.blingua.fr -header X-Sent-By -accept ...",
 				"after": {
@@ -28,9 +38,6 @@
 			}
 		},
 		"Tom21": {
-			"DBMS": {
-				"instance": "PROD"
-			},
 			"status": {
 				"x_get_live": "http.pl get -nocolored -url https://tom21.blingua.fr -header X-Sent-By -accept ...",
 				"after": {
@@ -53,9 +60,6 @@
 			}
 		},
 		"Tom59": {
-			"DBMS": {
-				"instance": "PROD"
-			},
 			"status": {
 				"x_get_live": "http.pl get -nocolored -url https://tom59.blingua.fr -header X-Sent-By -accept ...",
 				"after": {
@@ -108,16 +112,6 @@
 						]
 					}
 				]
-			}
-		}
-	},
-	"DBMS": {
-		"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]",
-		"archivesRoot": "\\[eval:File::Spec->catdir( '\\ftpback-rbx7-618.ovh.net', 'ns3153065.ip-51-91-25.eu', '<HOST>', 'SQLBackups' )]",
-		"byInstance": {
-			"PROD": {
-				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL16.PROD\\MSSQL\\DATA",
-				"package": "Mods::SqlServer"
 			}
 		}
 	},

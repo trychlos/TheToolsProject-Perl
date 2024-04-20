@@ -1,4 +1,15 @@
 {
+	"DBMS_comments": [
+	],
+	"DBMS": {
+		"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]",
+		"archivesRoot": "\\[eval:File::Spec->catdir( '\\ftpback-rbx7-618.ovh.net', 'ns3153065.ip-51-91-25.eu', '<HOST>', 'SQLBackups' )]",
+		"byInstance": {
+			"MSSQLSERVER": {
+				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL15.MSSQLSERVER\\MSSQL\\DATA"
+			}
+		}
+	},
 	"ServicesComments": [
 		"SQL Server message 1844, Severity 16, State 1, Server NS3232346",
 		"L'instruction BACKUP DATABASE WITH COMPRESSION n'est pas prise en charge sur Web Edition (64-bit)."
@@ -100,15 +111,6 @@
 						]
 					}
 				]
-			}
-		}
-	},
-	"DBMS": {
-		"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]",
-		"archivesRoot": "\\[eval:File::Spec->catdir( '\\ftpback-rbx7-618.ovh.net', 'ns3153065.ip-51-91-25.eu', '<HOST>', 'SQLBackups' )]",
-		"byInstance": {
-			"MSSQLSERVER": {
-				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL15.MSSQLSERVER\\MSSQL\\DATA"
 			}
 		}
 	},

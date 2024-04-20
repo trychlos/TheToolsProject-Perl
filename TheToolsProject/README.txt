@@ -47,3 +47,35 @@ Topics tree
 
   retained
 	<emitter_host> / daemon / <daemon_name> / status				where daemon_name is the base name of the json file, without the extension
+
+Data
+====
+DBMS
+	instance
+		The instance identifies the DBMS instance (by the fact) into which we will find databases and other objects.
+		The instance can be specified, either explicitly in the command-line, or via the service name.
+		When explicit, the instance name is not checked, but see package below.
+		When a service is instead specified, then the instance comes from in the order of precedence:
+		- the host configuration through a 'Service.<service>.DBMS.instance' key in the service section
+		- the host configuration through a 'DBMS.instance' key (acts as a default for all services in this host)
+		- the service configuration as a 'DBMS.instance' key (acts as a default for all hosts which define this service)
+		- the site configuration as a 'DBMS.instance' key (acts as a default for all services and hosts)
+		First (non empty) found wins, which doesn't imply that the found instance exists and is valid.
+	database
+		One of the main objects in a DBMS, most often the place where all application datas are stored.
+		The database can be specified, either explicitly in the command-line, or via the service name.
+		When explicit, the database name is not checked unless the command wants to make it exists in the addressed instance.
+		When a service is instead specified, then the involved databases come from in the order of precedence:
+		- the host configuration through a 'Service.<service>.DBMS.databases' key in the service section
+		- the host configuration through a 'DBMS.databases' key (acts as a default for all services in this host)
+		- the service configuration as a 'DBMS.databases' key (acts as a default for all hosts which define this service)
+		- the site configuration as a 'DBMS.databases' key (acts as a default for all services and hosts)
+		First (non empty) found wins, which doesn't imply that the found databases exist and are valid.
+	package
+		In Toops, each DBMS is accessed via a specialized, dynamically loaded, Perl package. The package is addressed through the instance name.
+		Package is identified in order of precedence by:
+		- the host configuration through a 'Service.<service>.DBMS.byInstance.<instance>.package' key in the service section
+		- the host configuration through a 'DBMS.byInstance.<instance>.package' key (acts as a default for all services in this host)
+		- the service configuration as a 'DBMS.byInstance.<instance>.package' key (acts as a default for all hosts which define this service)
+		- the site configuration as a 'DBMS.byInstance.<instance>.package' key (acts as a default for all services and hosts)
+		First (non empty) found wins, which doesn't imply that the found package exists and is valid.

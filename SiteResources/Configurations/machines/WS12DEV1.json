@@ -6,6 +6,21 @@
 	],
 	"daemons": [
 	],
+
+	"DBMS_comments": [
+	],
+	"DBMS": {
+		"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]",
+		"archivesRoot": "\\[eval:File::Spec->catdir( '\\ftpback-rbx7-618.ovh.net', 'ns3153065.ip-51-91-25.eu', '<HOST>', 'SQLBackups' )]",
+		"byInstance": {
+			"DEV": {
+				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL11.DEV\\MSSQL\\DATA",
+				"package": "Mods::SqlServer"
+			}
+		},
+		"instance": "DEV"
+	},
+
 	"ServicesComments": [
 		"These are the services defined on this host as objects where the top key if the name of the service. At least this top key should be specified, even if with an empty properties object.",
 		"Values may be:",
@@ -29,10 +44,11 @@
 	],
 	"Services": {
 		"Canal33": {
-			"instance": "DEV",
-			"databases": [
-				"Canal33"
-			],
+			"DBMS": {
+				"databases": [
+					"Canal33"
+				]
+			},
 			"workloads": {
 			},
 			"monitor": {
@@ -46,9 +62,6 @@
 			}
 		},
 		"Dom.2008": {
-			"DBMS": {
-				"instance": "DEV"
-			},
 			"status": {
 				"live_comments": [
 					"A command which let us determine where is the live production. This is a single command as we manage a single live production",
@@ -97,16 +110,6 @@
 						]
 					}
 				]
-			}
-		}
-	},
-	"DBMS": {
-		"archivesDir": "[eval:File::Spec->catdir( Mods::Path::dbmsArchivesRoot(), localtime->strftime( '%y%m%d' ))]",
-		"archivesRoot": "\\[eval:File::Spec->catdir( '\\ftpback-rbx7-618.ovh.net', 'ns3153065.ip-51-91-25.eu', '<HOST>', 'SQLBackups' )]",
-		"byInstance": {
-			"DEV": {
-				"dataPath": "C:\\Program Files\\Microsoft SQL Server\\MSSQL11.DEV\\MSSQL\\DATA",
-				"package": "Mods::SqlServer"
 			}
 		}
 	},
