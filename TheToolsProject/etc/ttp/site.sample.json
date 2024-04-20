@@ -1,0 +1,193 @@
+{
+	"comments": [
+		"site.sample.json",
+		"The 'site.json' site configuration file is the first file loaded by each command. It defines global TTP behavior.",
+		"It is searched for as (hardcoded) 'etc/ttp/site.json' in each path of TTP_ROOTS environment variable. The first found wins."
+	],
+
+	"site_comments": [
+		"We can define here some variables at the site level.",
+		"These variables are free to the site integrator and NOT considered by TheToolsProject, though they can be used in below Toops JSON dynamic evaluations."
+	],
+	"site": {
+		"commandsDir": "[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'SiteResources', 'Commands' )]",
+		"daemonsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'daemons' )]",
+		"workloadSummary_comments": [
+			"manage macros: SUBJECT, OPTIONS"
+		],
+		"workloadSummary": {
+			"command": "smtp.pl send -subject \"<SUBJECT>\" -to inlingua-adm@trychlos.org <OPTIONS>"
+		}
+	},
+
+	"toops_comments": [
+		"The global Toops configuration for your site",
+		"In Windows environment, take care of doubling your backslashes",
+		"May make use - in values only - of parameters between square brackets as [eval:...]",
+		"At the moment, there is only one type of parameters:",
+		"- those specified by 'eval:' indicate some code to be evaluated at run time.",
+		"  'eval' may be prefixed with an underscore in order to delay the eval (e.g. if it refers to another dynamic variable which needs to be resolved first).",
+		"Remind that the directory where lies this 'toops.json' must be adressed by the TTP_CONFDIR variable.",
+		"Also note that every variable here may be overriden on a per-host basis."
+	],
+	"toops": {
+		"alerts_comments": [
+			"enabled=true|false here only specifies defaults, as each medium can be individually selected in ttp.pl alert verb",
+			"when sending an email, whether use a text content or file, or a html content or file, or both is up to the verb, so just replace OPTIONS macro"
+		],
+		"alerts": {
+			"withFile_comments": [
+				"manage macros: DATA"
+			],
+			"withFile": {
+				"enabled": true,
+				"dropDir": "[eval:File::Spec->catdir( TTP::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Alerts' )]",
+				"command": "ttp.pl writejson -file [eval:File::Spec->catfile( TTP::Path::alertsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'.json' )] -data \"<DATA>\""
+			},
+			"withMqtt_comments": [
+				"manage macros: SUBJECT, DATA, OPTIONS"
+			],
+			"withMqtt": {
+				"enabled": true,
+				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
+			},
+			"withSmtp_comments": [
+				"manage macros: SUBJECT, OPTIONS"
+			],
+			"withSmtp" : {
+				"enabled": true,
+				"command": "smtp.pl send -to alerts@trychlos.org,inlingua-adm@trychlos.org -subject <SUBJECT> <OPTIONS>"
+			},
+			"withSms_comments": [
+				"manage macros: OPTIONS"
+			],
+			"withSms" : {
+				"enabled": true,
+				"command": "smtp.pl send -to forwarder@trychlos.org -subject \"SMSTO: +33607797792\" <OPTIONS>"
+			}
+		},
+		"copyDir_comments": [
+			"manage macros: SOURCE, TARGET"
+		],
+		"copyDir": {
+			"byOS": {
+				"MSWin32": {
+					"command": "robocopy <SOURCE> <TARGET> /E /TS /FP /NP /BYTES"
+				}
+			}
+		},
+		"copyFile_comments": [
+			"manage macros: SOURCE, TARGET, FILE"
+		],
+		"copyFile": {
+			"byOS": {
+				"MSWin32": {
+					"command": "robocopy <SOURCE> <TARGET> <FILE> /TS /FP /NP /BYTES"
+				}
+			}
+		},
+		"credentialsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'credentials' )]",
+		"DBMS": {
+			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), ttpHost() )]",
+			"backupsRoot": "[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'dailySQLBackups' )]",
+			"instance": "MSSQLSERVER",
+			"byInstance": {
+				"MSSQLSERVER": {
+					"package": "TTP::SqlServer"
+				}
+			}
+		},
+		"deployments": {
+			"sourceDirs": [
+				"[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'SiteResources' )]",
+				"[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'TheToolsProject' )]"
+			],
+			"excludes": [
+			],
+			"before": {
+				"removeTree": true
+			},
+			"after": [
+			],
+			"pullReference": "WS12DEV1",
+			"byOS": {
+				"MSWin32": {
+					"command": "robocopy <SOURCE> <TARGET> /MIR"
+				}
+			}
+		},
+		"executionReports": {
+			"withFile_comments": [
+				"manage macros: DATA"
+			],
+			"withFile": {
+				"enabled": true,
+				"dropDir": "[eval:File::Spec->catdir( TTP::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'execReports' )]",
+				"command": "ttp.pl writejson -file [eval:File::Spec->catfile( TTP::Path::execReportsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'-'.ttpRandom().'.json' )] -data \"<DATA>\""
+			},
+			"withMqtt_comments": [
+				"manage macros: SUBJECT, DATA, OPTIONS"
+			],
+			"withMqtt": {
+				"enabled": true,
+				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
+			}
+		},
+		"logsRoot": "[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'dailyLogs' )]",
+		"logsDir": "[eval:File::Spec->catdir( TTP::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Toops' )]",
+		"Message": {
+			"msgDummy": {
+				"withColor": true,
+				"withLog": true
+			},
+			"msgErr": {
+				"withColor": true,
+				"withLog": true
+			},
+			"msgOut": {
+				"withColor": true,
+				"withLog": true
+			},
+			"msgVerbose": {
+				"withColor": true,
+				"withLog": true
+			},
+			"msgWarn": {
+				"withColor": true,
+				"withLog": true
+			}
+		},
+		"moveDir_comments": [
+			"manage macros: SOURCE, TARGET"
+		],
+		"moveDir": {
+			"byOS": {
+				"MSWin32": {
+					"command": "robocopy <SOURCE> <TARGET> /E /MOVE /TS /FP /NP /BYTES"
+				}
+			}
+		},
+		"MQTTGateway": {
+			"broker": "10.122.1.15"
+		},
+		"siteRoot": "C:\\INLINGUA",
+		"SMTPGateway": {
+			"host": "mail.trychlos.org",
+			"port": 465,
+			"mailfrom": "No Reply <no-reply@blingua.fr>"
+		},
+		"Telemetry": {
+			"withMqtt": {
+				"enabled": true,
+				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
+			},
+			"withHttp_comments": [
+				"Actually a Prometheus gateway which is installed besides of the Prometheus server"
+			],
+			"withHttp": {
+				"enabled": true,
+				"url": "http://10.122.1.15:9091/metrics/job/telemetry/host/[eval:ttpHost()]"
+			}
+		}
+	}
+}
