@@ -15,16 +15,9 @@
 		"commands": [
 			"http.pl get -nocolored -url https://tom17.blingua.fr -accept [1-3].. -mqtt -http -- -metric ttp_url_status -label service=<SERVICE> -label environment=X",
 			"http.pl get -nocolored -url https://inlingua17.blingua.fr -accept [1-3].. -mqtt -http -- -metric ttp_url_status -label service=<SERVICE> -label environment=X",
-			"http.pl get -nocolored -url https://tom17.backup.blingua.fr -accept [1-3].. -mqtt -http -- -metric ttp_url_status -label service=<SERVICE> -label environment=X"
-		],
-		"byHost": {
-			"after": {
-				"commands": [
-					"ssh inlingua-user@<HOST> dbms.pl status -nocolored -service <SERVICE> -state -mqtt -http",
-					"ssh inlingua-user@<HOST> daemon.pl status -bname tom17-backup-monitor-daemon.json -http -- -metric ttp_service_daemon -label service=<SERVICE> -label role=backup -label environment=X"
-				]
-			}
-		}
+			"http.pl get -nocolored -url https://tom17.backup.blingua.fr -accept [1-3].. -mqtt -http -- -metric ttp_url_status -label service=<SERVICE> -label environment=X",
+			"daemon.pl stop -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom17-backup-monitor-daemon.json' )] -ignore -wait"
+		]
 	},
 	"switch_comments": [
 		"These commands have to be run when we want switch the status of a machine, from live to backup, or from backup to live",

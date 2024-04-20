@@ -3,19 +3,22 @@
 		"A machine JSON configuration file.",
 		"Define here the machine configuration, maybe its role(s), the run services and their configuration."
 	],
+
 	"enabled_comments": [
 		"Whether this machine configuration file should be examined when scanning all machine configuration files.",
+		"This let us have this 'machine.sample.json' in the machines/ directory",
 		"Hardcoded default is 'true'"
 	],
 	"enabled": false,
 
 	"daemons_comments": [
-		"On top of this host configuration, the daemons which will dictate the host behavior, and mainly whether is it a backup production host or not.",
+		"The daemons which will dictate the host behavior, and mainly whether is it a backup production host or not.",
 		"- ...",
 		""
 	],
 	"daemons": [
 	],
+
 	"ServicesComments": [
 		"These are the services defined on this host as objects where the top key if the name of the service. At least this top key should be specified, even if with an empty properties object.",
 		"Values may be:",
@@ -59,12 +62,34 @@
 			"DBMS": {
 				"instance": "DEV"
 			},
+			"status_comments": [
+				"The commands to be executed to get a full status of the service.",
+				"These commands are typically executed every <n> minutes to provide telemetry to a status dashboard, maybe from some external machine",
+				"While the service can only define a 'commands' array, we can define at this host-level:",
+				"- 'before' and 'after' keys define commands to be executed respectively before and after the commands defined at the service level",
+				"- 'replace' defines commands to be executed as a service-level commands replacement",
+				"- when defined here, 'commands' array is just inserted before the service-level commands (same than 'before' though a bit less explicit)."
+			],
 			"status": {
 				"live_comments": [
 					"A command which let us determine where is the live production. This is a single command as we manage a single live production",
 					"Only useful when about to switch a machine status to or from live or backup"
 				],
-				"get_live": "http.pl get -nocolored -url http://ip.test.blingua.net -header X-Sent-By -accept ..."
+				"get_live": "http.pl get -nocolored -url http://ip.test.blingua.net -header X-Sent-By -accept ...",
+				"before": {
+					"commands": [
+					]
+				},
+				"commands":[
+				],
+				"replace": {
+					"commands": [
+					]
+				},
+				"after": {
+					"commands": [
+					]
+				}
 			}
 		},
 		"Technical Workloads": {
@@ -133,6 +158,7 @@
 		],
 		"type": "D"
 	},
+
 	"remoteShare_comments": [
 	],
 	"remoteShare": "\\\\10.122.1.14\\C"
