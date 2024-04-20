@@ -155,7 +155,8 @@ sub msgDummy {
 	if( $TTPVars->{run}{dummy} ){
 		_printMsg({
 			msg => shift,
-			level => DUMMY
+			level => DUMMY,
+			withPrefix => false
 		});
 	}
 	return true;
@@ -291,6 +292,7 @@ sub msgWarn {
 # - level: the requested message level, defaulting to INFO
 # - handle, the output handle, defaulting to STDOUT
 # - withConsole: whether to output to the console, defaulting to true
+# - withPrefix: whether to output the "[command.pl verb]" prefix, defaulting to true
 sub _printMsg {
 	my ( $args ) = @_;
 	$args //= {};
@@ -299,6 +301,7 @@ sub _printMsg {
 	my $TTPVars = Mods::Toops::TTPVars();
 	# have a prefix ?
 	my $withPrefix = true;
+	$withPrefix = $args->{withPrefix} if exists $args->{withPrefix};
 	$line .= _msgPrefix() if $withPrefix;
 	# have a level marker ?
 	my $level = INFO;
