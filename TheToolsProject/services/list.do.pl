@@ -30,11 +30,11 @@
 
 use Data::Dumper;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Services;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Services;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -65,7 +65,7 @@ my $opt_type = $defaults->{type};
 my $opt_machines = false;
 
 # the host configuration
-my $hostConfig = Mods::Toops::getHostConfig();
+my $hostConfig = TTP::Toops::getHostConfig();
 
 # -------------------------------------------------------------------------------------------------
 # display the environment for this machine (may be 0 or 1)
@@ -91,11 +91,11 @@ sub listServiceMachines {
 		msgOut( "displaying machines which provide '$opt_service' service..." );
 	}
 	my $count = 0;
-	my @hosts = Mods::Toops::getDefinedHosts();
+	my @hosts = TTP::Toops::getDefinedHosts();
 	msgVerbose( "found ".scalar @hosts." host(s)" );
 	foreach my $host ( @hosts ){
 		msgVerbose( "examining '$host'" );
-		my $hostConfig = Mods::Toops::getHostConfig( $host );
+		my $hostConfig = TTP::Toops::getHostConfig( $host );
 		if(( !$opt_type || $hostConfig->{Environment}{type} eq $opt_type ) && exists( $hostConfig->{Services}{$opt_service} )){
 			print "  $hostConfig->{Environment}{type}: $host".EOL;
 			$count += 1;
@@ -112,7 +112,7 @@ sub listServiceMachines {
 # this code is so duplicated..
 sub listServices {
 	msgOut( "displaying services defined on $hostConfig->{name}..." );
-	my @list = Mods::Services::getDefinedServices( $hostConfig, { hidden => $opt_hidden });
+	my @list = TTP::Services::getDefinedServices( $hostConfig, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
@@ -123,7 +123,7 @@ sub listServices {
 # list all the workloads used by a service on this host with names sorted in ascii order
 sub listWorkloads {
 	msgOut( "displaying workloads used on $hostConfig->{name}..." );
-	my @list = Mods::Services::getUsedWorkloads( $hostConfig, { hidden => $opt_hidden });
+	my @list = TTP::Services::getUsedWorkloads( $hostConfig, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
@@ -135,7 +135,7 @@ sub listWorkloads {
 # the commands are listed in the order of their service name
 sub listWorkloadCommands {
 	msgOut( "displaying workload commands defined in $hostConfig->{name}\\$opt_workload..." );
-	my @list = Mods::Services::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
+	my @list = TTP::Services::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
 	my $count = 0;
 	foreach my $it ( @list ){
 		if( exists( $it->{commands} )){
@@ -153,7 +153,7 @@ sub listWorkloadCommands {
 # They are displayed in the order of their service name
 sub listWorkloadDetails {
 	msgOut( "displaying detailed workload tasks defined in $hostConfig->{name}\\$opt_workload..." );
-	my @list = Mods::Services::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
+	my @list = TTP::Services::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		printWorkloadTask( $it );
 	}
@@ -241,8 +241,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

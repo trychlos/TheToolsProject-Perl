@@ -14,11 +14,11 @@
 
 use Data::Dumper;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::MQTT;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::MQTT;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -38,7 +38,7 @@ my $opt_payload = undef;
 sub doPublish {
 	msgOut( "publishing '$opt_topic [$opt_payload]'..." );
 
-	my $mqtt = Mods::MQTT::connect();
+	my $mqtt = TTP::MQTT::connect();
 	if( $mqtt ){
 		$opt_payload //= "";
 		if( $opt_retain ){
@@ -46,7 +46,7 @@ sub doPublish {
 		} else {
 			$mqtt->publish( $opt_topic, $opt_payload );
 		}
-		Mods::MQTT::disconnect( $mqtt );
+		TTP::MQTT::disconnect( $mqtt );
 	}
 
 	my $result = true;
@@ -75,8 +75,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

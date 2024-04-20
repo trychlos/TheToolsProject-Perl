@@ -25,10 +25,10 @@ use LWP::UserAgent;
 use Time::Piece;
 use URI::Escape;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -171,8 +171,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

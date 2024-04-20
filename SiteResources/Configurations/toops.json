@@ -4,7 +4,7 @@
 		"These variables are free to the site integrator and NOT considered by TheToolsProject, though they can be used in below Toops JSON dynamic evaluations."
 	],
 	"site": {
-		"commandsDir": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'SiteResources', 'Commands' )]",
+		"commandsDir": "[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'SiteResources', 'Commands' )]",
 		"daemonsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'daemons' )]",
 		"workloadSummary_comments": [
 			"manage macros: SUBJECT, OPTIONS"
@@ -34,8 +34,8 @@
 			],
 			"withFile": {
 				"enabled": true,
-				"dropDir": "[eval:File::Spec->catdir( Mods::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Alerts' )]",
-				"command": "ttp.pl writejson -file [eval:File::Spec->catfile( Mods::Path::alertsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'.json' )] -data \"<DATA>\""
+				"dropDir": "[eval:File::Spec->catdir( TTP::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Alerts' )]",
+				"command": "ttp.pl writejson -file [eval:File::Spec->catfile( TTP::Path::alertsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'.json' )] -data \"<DATA>\""
 			},
 			"withMqtt_comments": [
 				"manage macros: SUBJECT, DATA, OPTIONS"
@@ -82,18 +82,18 @@
 		"credentialsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'credentials' )]",
 		"DBMS": {
 			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), ttpHost() )]",
-			"backupsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'dailySQLBackups' )]",
+			"backupsRoot": "[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'dailySQLBackups' )]",
 			"instance": "MSSQLSERVER",
 			"byInstance": {
 				"MSSQLSERVER": {
-					"package": "Mods::SqlServer"
+					"package": "TTP::SqlServer"
 				}
 			}
 		},
 		"deployments": {
 			"sourceDirs": [
-				"[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'SiteResources' )]",
-				"[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'TheToolsProject' )]"
+				"[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'SiteResources' )]",
+				"[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'TheToolsProject' )]"
 			],
 			"excludes": [
 			],
@@ -115,8 +115,8 @@
 			],
 			"withFile": {
 				"enabled": true,
-				"dropDir": "[eval:File::Spec->catdir( Mods::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'execReports' )]",
-				"command": "ttp.pl writejson -file [eval:File::Spec->catfile( Mods::Path::execReportsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'-'.ttpRandom().'.json' )] -data \"<DATA>\""
+				"dropDir": "[eval:File::Spec->catdir( TTP::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'execReports' )]",
+				"command": "ttp.pl writejson -file [eval:File::Spec->catfile( TTP::Path::execReportsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'-'.ttpRandom().'.json' )] -data \"<DATA>\""
 			},
 			"withMqtt_comments": [
 				"manage macros: SUBJECT, DATA, OPTIONS"
@@ -126,8 +126,8 @@
 				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
 			}
 		},
-		"logsRoot": "[eval:File::Spec->catdir( Mods::Path::siteRoot(), 'dailyLogs' )]",
-		"logsDir": "[eval:File::Spec->catdir( Mods::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Toops' )]",
+		"logsRoot": "[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'dailyLogs' )]",
+		"logsDir": "[eval:File::Spec->catdir( TTP::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Toops' )]",
 		"Message": {
 			"msgDummy": {
 				"withColor": true,

@@ -19,12 +19,12 @@ use JSON;
 use Path::Tiny;
 use Time::Moment;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Path;
-use Mods::SMTP;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Path;
+use TTP::SMTP;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -58,9 +58,9 @@ sub doJsonAlert {
 	msgOut( "creating a new '$opt_level' json alert..." );
 	my $command = ttpVar([ 'alerts', 'withFile', 'command' ]);
 	if( $command ){
-		my $dir = Mods::Path::alertsDir();
+		my $dir = TTP::Path::alertsDir();
 		if( $dir ){
-			Mods::Path::makeDirExist( $dir );
+			TTP::Path::makeDirExist( $dir );
 			my $data = {
 				emitter => $opt_emitter,
 				level => $opt_level,
@@ -147,7 +147,7 @@ An alert has been raised:
 - message is '$opt_message'
 Best regards.
 ";
-		my $textfname = Mods::Toops::getTempFileName();
+		my $textfname = TTP::Toops::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $text );
 		$command =~ s/<OPTIONS>/-textfname $textfname/;
@@ -156,7 +156,7 @@ Best regards.
 		print `$command -nocolored $dummy $verbose`;
 		$res = ( $? == 0 );
 	} else {
-		Mods::Toops::msgWarn( "unable to get a command for alerts by SMS" );
+		TTP::Toops::msgWarn( "unable to get a command for alerts by SMS" );
 	}
 	if( $res ){
 		msgOut( "success" );
@@ -185,7 +185,7 @@ An alert has been raised:
 - message is '$opt_message'
 Best regards.
 ";
-		my $textfname = Mods::Toops::getTempFileName();
+		my $textfname = TTP::Toops::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $text );
 		$command =~ s/<SUBJECT>/$subject/;
@@ -225,8 +225,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -246,7 +246,7 @@ msgErr( "emitter is empty, but shouldn't" ) if !$opt_emitter;
 msgErr( "message is empty, but shouldn't" ) if !$opt_message;
 msgErr( "level is empty, but shouldn't" ) if !$opt_level;
 #level must be known
-msgErr( "level='$opt_level' is unknown" ) if $opt_level && !Mods::Message::isKnownLevel( $opt_level );
+msgErr( "level='$opt_level' is unknown" ) if $opt_level && !TTP::Message::isKnownLevel( $opt_level );
 
 # at least one of json or mqtt media must be specified
 if( !$opt_json && !$opt_mqtt && !$opt_smtp && !$opt_sms ){

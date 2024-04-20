@@ -24,12 +24,12 @@ use File::Basename;
 use File::Spec;
 use Getopt::Long;
 
-use Mods::Toops;
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
+use TTP::Toops;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
 
 # TTP initialization
-my $TTPVars = Mods::Toops::initExtern();
+my $TTPVars = TTP::Toops::initExtern();
 
 my $defaults = {
 	help => 'no',
@@ -235,12 +235,12 @@ if( !GetOptions(
 	"force!"			=> \$opt_force )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		TTP::Toops::ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpExtern( $defaults );
-	Mods::Toops::ttpExit();
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpExtern( $defaults );
+	TTP::Toops::ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -263,8 +263,8 @@ if( !$opt_live && !$opt_backup ){
 	msgWarn( "neither '--live' nor '--backup' options are specified, will not do anything" );
 }
 
-if( !Mods::Toops::ttpErrs()){
+if( !TTP::Toops::ttpErrs()){
 	doSwitch() if $opt_live or $opt_backup;
 }
 
-Mods::Toops::ttpExit();
+TTP::Toops::ttpExit();

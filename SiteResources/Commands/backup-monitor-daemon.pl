@@ -53,11 +53,11 @@ use File::stat;
 use Getopt::Long;
 use Time::Piece;
 
-use Mods::Toops;
-use Mods::Constants qw( :all );
-use Mods::Daemon;
-use Mods::Message qw( :all );
-use Mods::Path;
+use TTP::Toops;
+use TTP::Constants qw( :all );
+use TTP::Daemon;
+use TTP::Message qw( :all );
+use TTP::Path;
 
 my $defaults = {
 	help => 'no',
@@ -76,7 +76,7 @@ my $commands = {
 	status => \&answerStatus,
 };
 
-my $TTPVars = Mods::Daemon::init();
+my $TTPVars = TTP::Daemon::init();
 my $daemon = undef;
 
 # scanning for new elements
@@ -113,7 +113,7 @@ sub answerStats {
 # add to the standard 'status' answer our own data (remote host and dir)
 sub answerStatus {
 	my ( $req ) = @_;
-	my $answer = Mods::Daemon::commonCommands()->{status}( $daemon, $req, $commands );
+	my $answer = TTP::Daemon::commonCommands()->{status}( $daemon, $req, $commands );
 	$answer .= "monitoredHost: $daemon->{monitored}{host}".EOL;
 	$answer .= "monitoredExecReportsDir: $daemon->{dyn}{remoteExecReportsDir}".EOL;
 	return $answer;
@@ -127,12 +127,12 @@ sub answerStatus {
 #   > REMOTEHOST
 sub computeDynamics {
 	# remote host configuration
-	$daemon->{monitored}{config} = Mods::Toops::evaluate( $daemon->{monitored}{raw} );
+	$daemon->{monitored}{config} = TTP::Toops::evaluate( $daemon->{monitored}{raw} );
 	# daemon configuration is reevaluated by Daemon::daemonListen() on each listenInterval
 	# we still have to substitute macros
 	$daemon->{config} = computeMacrosRec( $daemon->{config} );
 	# monitored dir is the (maybe daily) remote host execReportsDir
-	my $dir = Mods::Path::execReportsDir({ config => $daemon->{monitored}{config} });
+	my $dir = TTP::Path::execReportsDir({ config => $daemon->{monitored}{config} });
 	my( $ler_vol, $ler_dirs, $ler_file ) = File::Spec->splitpath( $dir );
 	$daemon->{dyn}{remoteExecReportsDir} = File::Spec->catpath( $daemon->{monitored}{config}{remoteShare}, $ler_dirs, $ler_file );
 }
@@ -163,7 +163,7 @@ sub computeMacrosRec {
 # -------------------------------------------------------------------------------------------------
 sub _execReport {
 	my ( $report ) = @_;
-	Mods::Toops::execReportAppend( $report );
+	TTP::Toops::execReportAppend( $report );
 	push( @{$stats->{restored}}, $report );
 }
 
@@ -265,7 +265,7 @@ sub remoteSearchLastFull {
 	# sort in reverse name order (the most recent first)
 	my @sorted = reverse sort @{$_remote};
 	foreach my $json ( @sorted ){
-		my $remote = Mods::Toops::jsonRead( $json );
+		my $remote = TTP::Toops::jsonRead( $json );
 		if( $remote->{instance} eq $report->{instance} && $remote->{database} eq $report->{database} && $remote->{mode} eq 'full' && !$remote->{dummy} ){
 			$res = syncedPath( $remote->{output} );
 		}
@@ -292,10 +292,10 @@ sub syncedPath {
 	my $remoteSource = File::Spec->catpath( $daemon->{monitored}{config}{remoteShare}, $rl_dirs, $rl_file );
 	msgVerbose( "remoteSource='$remoteSource'" );
 	# local target
-	my $localTarget = Mods::Path::withTrailingSeparator( $daemon->{config}{localDir} );
+	my $localTarget = TTP::Path::withTrailingSeparator( $daemon->{config}{localDir} );
 	msgVerbose( "localTarget='$localTarget'" );
-	Mods::Path::makeDirExist( $daemon->{config}{localDir} );
-	my $res = Mods::Toops::copyFile( $remoteSource, $localTarget );
+	TTP::Path::makeDirExist( $daemon->{config}{localDir} );
+	my $res = TTP::Toops::copyFile( $remoteSource, $localTarget );
 	if( $res ){
 		msgVerbose( "successfully copied '$remoteSource' to '$localTarget'" );
 		$localTarget = File::Spec->catpath( $localTarget, $rl_file );
@@ -316,7 +316,7 @@ sub doWithNew {
 	foreach my $report ( @newFiles ){
 		$stats->{count} += 1;
 		msgVerbose( "new report '$report'" );
-		my $data = Mods::Toops::jsonRead( $report );
+		my $data = TTP::Toops::jsonRead( $report );
 		if( exists( $data->{command} ) && $data->{command} eq "dbms.pl" && exists( $data->{verb} ) && $data->{verb} eq "backup" && ( !exists( $data->{dummy} ) || !$data->{dummy} )){
 
 			my $instance = $data->{instance};
@@ -341,7 +341,7 @@ sub doWithNew {
 			my $result = locallySyncedBackups( $data );
 			if( $result ){
 				# restore instance if the instance defined for this service in this host
-				my $hostConfig = Mods::Toops::getHostConfig();
+				my $hostConfig = TTP::Toops::getHostConfig();
 				my $restoreInstance = $hostConfig->{Services}{$daemon->{config}{monitoredService}}{instance};
 				my $command = "dbms.pl restore -nocolored -instance $restoreInstance -database $database ";
 				$command .= " -full $result->{full}";
@@ -413,12 +413,12 @@ if( !GetOptions(
 	"remote=s"			=> \$opt_remote )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		TTP::Toops::ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpExtern( $defaults );
-	Mods::Toops::ttpExit();
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpExtern( $defaults );
+	TTP::Toops::ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -430,21 +430,21 @@ msgVerbose( "found remote='$opt_remote'" );
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 msgErr( "'--remote' option is mandatory, not specified" ) if !$opt_remote;
 
-if( !Mods::Toops::ttpErrs()){
-	$daemon = Mods::Daemon::run( $opt_json );
+if( !TTP::Toops::ttpErrs()){
+	$daemon = TTP::Daemon::run( $opt_json );
 }
 
 # deeply check arguments
 # - monitored host must have a json configuration file
 # - the daemon configuration must have monitoredService and localDir keys
-if( !Mods::Toops::ttpErrs()){
+if( !TTP::Toops::ttpErrs()){
 	$opt_remote = uc $opt_remote;
 	$daemon->{monitored}{host} = $opt_remote;
-	$daemon->{monitored}{raw} = Mods::Toops::getHostConfig( $daemon->{monitored}{host}, { withEvaluate => false });
-	$daemon->{monitored}{config} = Mods::Toops::evaluate( $daemon->{monitored}{raw} );
+	$daemon->{monitored}{raw} = TTP::Toops::getHostConfig( $daemon->{monitored}{host}, { withEvaluate => false });
+	$daemon->{monitored}{config} = TTP::Toops::evaluate( $daemon->{monitored}{raw} );
 }
 # stop here if we do not have any configuration for the remote host 
-if( !Mods::Toops::ttpErrs()){
+if( !TTP::Toops::ttpErrs()){
 	if( $daemon->{monitored}{config} && ref( $daemon->{monitored}{config} ) eq 'HASH' ){
 		# daemon: monitoredService
 		# set TTPVars->{run}{verb}{name} to improve logs
@@ -472,14 +472,14 @@ if( !Mods::Toops::ttpErrs()){
 		msgErr( "remote share must be specified in remote host '$daemon->{monitored}{host}' configuration, not found" );
 	}
 }
-if( Mods::Toops::ttpErrs()){
-	Mods::Toops::ttpExit();
+if( TTP::Toops::ttpErrs()){
+	TTP::Toops::ttpExit();
 }
 
 my $scanInterval = 10;
 $scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
 
-my $sleepTime = Mods::Daemon::getSleepTime(
+my $sleepTime = TTP::Daemon::getSleepTime(
 	$daemon->{listenInterval},
 	$scanInterval
 );
@@ -488,7 +488,7 @@ msgVerbose( "sleepTime='$sleepTime'" );
 msgVerbose( "scanInterval='$scanInterval'" );
 
 while( !$daemon->{terminating} ){
-	my $res = Mods::Daemon::daemonListen( $daemon, $commands );
+	my $res = TTP::Daemon::daemonListen( $daemon, $commands );
 	my $now = localtime->epoch;
 	#print "now=$now lastScanTime=$lastScanTime now-lastScanTime=".( $now - $lastScanTime)." scanInterval=$scanInterval".EOL;
 	if( $now - $lastScanTime >= $scanInterval ){
@@ -498,4 +498,4 @@ while( !$daemon->{terminating} ){
 	sleep( $sleepTime );
 }
 
-Mods::Daemon::terminate( $daemon );
+TTP::Daemon::terminate( $daemon );

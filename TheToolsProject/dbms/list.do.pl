@@ -13,12 +13,12 @@
 
 use Data::Dumper;
 
-use Mods::Constants qw( :all );
-use Mods::Dbms;
-use Mods::Message qw( :all );
-use Mods::Services;
+use TTP::Constants qw( :all );
+use TTP::Dbms;
+use TTP::Message qw( :all );
+use TTP::Services;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -39,9 +39,9 @@ my $opt_listtables = false;
 # -------------------------------------------------------------------------------------------------
 # list the databases
 sub listDatabases {
-	my $hostConfig = Mods::Toops::getHostConfig();
+	my $hostConfig = TTP::Toops::getHostConfig();
 	msgOut( "displaying databases in '$hostConfig->{name}\\$opt_instance'..." );
-	my $list = Mods::Dbms::getLiveDatabases();
+	my $list = TTP::Dbms::getLiveDatabases();
 	foreach my $db ( @{$list} ){
 		print " $db".EOL;
 	}
@@ -51,9 +51,9 @@ sub listDatabases {
 # -------------------------------------------------------------------------------------------------
 # list the tables
 sub listTables {
-	my $hostConfig = Mods::Toops::getHostConfig();
+	my $hostConfig = TTP::Toops::getHostConfig();
 	msgOut( "displaying tables in '$hostConfig->{name}\\$opt_instance\\$opt_database'..." );
-	my $list = Mods::Dbms::getDatabaseTables( $opt_database );
+	my $list = TTP::Dbms::getDatabaseTables( $opt_database );
 	foreach my $it ( @{$list} ){
 		print " $it".EOL;
 	}
@@ -78,8 +78,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -92,10 +92,10 @@ msgVerbose( "found database='$opt_database'" );
 msgVerbose( "found listtables='".( $opt_listtables ? 'true':'false' )."'" );
 
 # instance is mandatory
-Mods::Dbms::checkInstanceName( $opt_instance );
+TTP::Dbms::checkInstanceName( $opt_instance );
 
 # check that the database exists if it is specified
-Mods::Dbms::checkDatabaseExists( $opt_instance, $opt_database ) if $opt_instance && $opt_database;
+TTP::Dbms::checkDatabaseExists( $opt_instance, $opt_database ) if $opt_instance && $opt_database;
 
 if( !ttpErrs()){
 	listDatabases() if $opt_listdb;

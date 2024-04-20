@@ -18,12 +18,12 @@
 use Data::Dumper;
 use File::Spec;
 
-use Mods::Constants qw( :all );
-use Mods::Daemon;
-use Mods::Message qw( :all );
-use Mods::Path;
+use TTP::Constants qw( :all );
+use TTP::Daemon;
+use TTP::Message qw( :all );
+use TTP::Path;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -90,8 +90,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -115,11 +115,11 @@ if( $count == 0 ){
 }
 #if a bname is specified, build the full filename
 if( $opt_bname ){
-	$opt_json = File::Spec->catdir( Mods::Path::daemonsConfigurationsDir(), $opt_bname );
+	$opt_json = File::Spec->catdir( TTP::Path::daemonsConfigurationsDir(), $opt_bname );
 }
 #if a json is specified, must have a listeningPort
 if( $opt_json ){
-	my $daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
+	my $daemonConfig = TTP::Daemon::getConfigByPath( $opt_json );
 	# must have a listening port
 	msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
 }

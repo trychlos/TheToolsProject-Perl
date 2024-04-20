@@ -17,11 +17,11 @@ use Data::Dumper;
 use File::Copy::Recursive qw( dircopy );
 use File::Spec;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Path;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Path;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -58,7 +58,7 @@ sub doPull {
 			if( $command ){
 				$asked += 1;
 				msgVerbose( "source='$srcPath' target='$pullDir'" );
-				my $cmdres = Mods::Toops::commandByOs({
+				my $cmdres = TTP::Toops::commandByOs({
 					command => $command,
 					macros => {
 						SOURCE => $srcPath,
@@ -77,13 +77,13 @@ sub doPull {
 						my $pull_path = File::Spec->catdir( $srcPath, $it );
 						my $dst_path = File::Spec->catdir( $pullDir, $it );
 						msgOut( "  resetting from '$pull_path' into '$dst_path'" );
-						msgDummy( "Mods::Toops::removeTree( $dst_path )" );
-						if( !Mods::Toops::wantsDummy()){
-							$result = Mods::Toops::removeTree( $dst_path );
+						msgDummy( "TTP::Toops::removeTree( $dst_path )" );
+						if( !TTP::Toops::wantsDummy()){
+							$result = TTP::Toops::removeTree( $dst_path );
 						}
 						if( $result ){
 							msgDummy( "dircopy( $pull_path, $dst_path )" );
-							if( !Mods::Toops::wantsDummy()){
+							if( !TTP::Toops::wantsDummy()){
 								$result = dircopy( $pull_path, $dst_path );
 								msgVerbose( "dircopy() result=$result" );
 							}
@@ -124,8 +124,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -136,7 +136,7 @@ msgVerbose( "found fromhost='$opt_fromhost'" );
 
 # a pull host must be defined in command-line and have a json configuration file
 msgErr( "'--fromhost' value is required, but not specified" ) if !$opt_fromhost;
-my $config = Mods::Toops::getHostConfig( $opt_fromhost );
+my $config = TTP::Toops::getHostConfig( $opt_fromhost );
 
 if( !ttpErrs()){
 	doPull( $config );

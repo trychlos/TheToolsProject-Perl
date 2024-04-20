@@ -18,12 +18,12 @@ use Data::Dumper;
 use URI::Escape;
 use Time::Piece;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Ovh;
-use Mods::Services;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Ovh;
+use TTP::Services;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -63,7 +63,7 @@ sub doSwitchIP {
 		$res = true;
 	} else {
 		msgVerbose( "current routed server is '$current'" );
-		my $api = Mods::Ovh::connect();
+		my $api = TTP::Ovh::connect();
 		if( $api ){
 			# we need the IP block
 			$out = ttpFilter( `ovh.pl ipget -ip $opt_ip -address -nocolored $verbose $dummy` );
@@ -72,11 +72,11 @@ sub doSwitchIP {
 			msgVerbose( "IP address is '$ip'" );
 			# check that the requested target server is willing to accept this IP - answer is empty if ok
 			my $url = "/dedicated/server/$opt_to/ipCanBeMovedTo?ip=".uri_escape( $ip );
-			my $answer = Mods::Ovh::getAnswerByPath( $api, $url );
+			my $answer = TTP::Ovh::getAnswerByPath( $api, $url );
 			# ask for the move
 			if( $answer->status() == 200 && !$answer->content()){
 				$url = "/dedicated/server/$opt_to/ipMove";
-				$answer = Mods::Ovh::postByPath( $api, $url, { ip => $ip });
+				$answer = TTP::Ovh::postByPath( $api, $url, { ip => $ip });
 				if( $answer->status() == 200 ){
 					if( $opt_wait ){
 						my $start = localtime->epoch;
@@ -131,10 +131,10 @@ sub doSwitchIP {
 						$res = true;
 					}
 				} else {
-					Mods::Toops::msgErr( "an error occurred when requesting the move: ".$answer->error());
+					TTP::Toops::msgErr( "an error occurred when requesting the move: ".$answer->error());
 				}
 			} else {
-				Mods::Toops::msgErr( "the target server is not willing to get the '$opt_ip' address service" );
+				TTP::Toops::msgErr( "the target server is not willing to get the '$opt_ip' address service" );
 			}
 		}
 	}
@@ -165,8 +165,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

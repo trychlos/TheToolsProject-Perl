@@ -15,11 +15,11 @@ use Data::Dumper;
 use File::Path qw( remove_tree );
 use File::Find;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Path;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Path;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -102,8 +102,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -122,7 +122,7 @@ $count += 1 if $opt_dircmd;
 msgErr( "one of '--dirpath' and '--dircmd' options must be specified" ) if $count != 1;
 
 # if we have a source cmd, get the path and make it exist to be sure to have something to publish
-$opt_dirpath = Mods::Path::fromCommand( $opt_dircmd, { makeExist => true }) if $opt_dircmd;
+$opt_dirpath = TTP::Path::fromCommand( $opt_dircmd, { makeExist => true }) if $opt_dircmd;
 
 if( !ttpErrs()){
 	doComputeSize();

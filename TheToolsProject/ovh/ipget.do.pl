@@ -14,12 +14,12 @@
 
 use Data::Dumper;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Ovh;
-use Mods::Services;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Ovh;
+use TTP::Services;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -58,9 +58,9 @@ sub doGetIP {
 		}
 	}
 	if( $opt_ip ){
-		my $api = Mods::Ovh::connect();
+		my $api = TTP::Ovh::connect();
 		if( $api ){
-			my $result = Mods::Ovh::getContentByPath( $api, "/ip/service/$opt_ip" );
+			my $result = TTP::Ovh::getContentByPath( $api, "/ip/service/$opt_ip" );
 			print "  routedTo: $result->{routedTo}{serviceName}".EOL if $opt_routed;
 			print "  address: $result->{ip}".EOL if $opt_address;
 			$res = true;
@@ -91,8 +91,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -109,7 +109,7 @@ if( $opt_service ){
 	if( $opt_ip ){
 		msgErr( "only one of '--service' or '--ip' must be specified, both found" );
 	} else {
-		Mods::Services::checkServiceOpt( $opt_service );
+		TTP::Services::checkServiceOpt( $opt_service );
 	}
 } elsif( !$opt_ip ){
 	msgErr( "either '--service' or '--ip' must be specified, none found" );

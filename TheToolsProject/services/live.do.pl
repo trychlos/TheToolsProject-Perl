@@ -18,11 +18,11 @@
 
 use Data::Dumper;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Services;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Services;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -68,7 +68,7 @@ sub getLive {
 	my @nexts = ();
 	foreach my $host ( @hosts ){
 		msgVerbose( "examining '$host'" );
-		my $hostConfig = Mods::Toops::getHostConfig( $host );
+		my $hostConfig = TTP::Toops::getHostConfig( $host );
 		if( exists( $hostConfig->{Services}{$opt_service}{status}{get_live} )){
 			$command = $hostConfig->{Services}{$opt_service}{status}{get_live};
 			if( $command ){
@@ -155,8 +155,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

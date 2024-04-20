@@ -24,11 +24,11 @@ use File::Find;
 use Getopt::Long;
 use Time::Piece;
 
-use Mods::Toops;
-use Mods::Constants qw( :all );
-use Mods::Daemon;
-use Mods::Message qw( :all );
-use Mods::Path;
+use TTP::Toops;
+use TTP::Constants qw( :all );
+use TTP::Daemon;
+use TTP::Message qw( :all );
+use TTP::Path;
 
 my $defaults = {
 	help => 'no',
@@ -44,7 +44,7 @@ my $commands = {
 	#help => \&help,
 };
 
-my $TTPVars = Mods::Daemon::init();
+my $TTPVars = TTP::Daemon::init();
 my $daemon = undef;
 
 # scanning for new elements
@@ -60,7 +60,7 @@ sub doWithNew {
 	my ( @newFiles ) = @_;
 	foreach my $file ( @newFiles ){
 		msgVerbose( "new alert '$file'" );
-		my $data = Mods::Toops::jsonRead( $file );
+		my $data = TTP::Toops::jsonRead( $file );
 	}
 }
 
@@ -114,12 +114,12 @@ if( !GetOptions(
 	"json=s"			=> \$opt_json )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		TTP::Toops::ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpExtern( $defaults );
-	Mods::Toops::ttpExit();
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpExtern( $defaults );
+	TTP::Toops::ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -129,26 +129,26 @@ msgVerbose( "found json='$opt_json'" );
 
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 
-if( !Mods::Toops::ttpErrs()){
-	$daemon = Mods::Daemon::run( $opt_json );
+if( !TTP::Toops::ttpErrs()){
+	$daemon = TTP::Daemon::run( $opt_json );
 }
 # more deeply check arguments
 # - the daemon configuration must have monitoredDir key
-if( !Mods::Toops::ttpErrs()){
+if( !TTP::Toops::ttpErrs()){
 	if( exists( $daemon->{config}{monitoredDir} )){
 		msgVerbose( "monitored dir '$daemon->{config}{monitoredDir}' successfully found in daemon configuration file" );
 	} else {
 		msgErr( "'monitoredDir' must be specified in daemon configuration, not found" );
 	}
 }
-if( Mods::Toops::ttpErrs()){
-	Mods::Toops::ttpExit();
+if( TTP::Toops::ttpErrs()){
+	TTP::Toops::ttpExit();
 }
 
 my $scanInterval = 10;
 $scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
 
-my $sleepTime = Mods::Daemon::getSleepTime(
+my $sleepTime = TTP::Daemon::getSleepTime(
 	$daemon->{listenInterval},
 	$scanInterval
 );
@@ -157,7 +157,7 @@ msgVerbose( "sleepTime='$sleepTime'" );
 msgVerbose( "scanInterval='$scanInterval'" );
 
 while( !$daemon->{terminating} ){
-	my $res = Mods::Daemon::daemonListen( $daemon, $commands );
+	my $res = TTP::Daemon::daemonListen( $daemon, $commands );
 	my $now = localtime->epoch;
 	if( $now - $lastScanTime >= $scanInterval ){
 		works();
@@ -166,4 +166,4 @@ while( !$daemon->{terminating} ){
 	sleep( $sleepTime );
 }
 
-Mods::Daemon::terminate( $daemon );
+TTP::Daemon::terminate( $daemon );

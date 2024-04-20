@@ -15,11 +15,11 @@
 use Data::Dumper;
 use File::Spec;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Path;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Path;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -46,7 +46,7 @@ sub doCopyDirs {
 	my $count = 0;
 	my $res = false;
 	if( -d $opt_sourcepath ){
-		$res = Mods::Toops::copyDir( $opt_sourcepath, $opt_targetpath );
+		$res = TTP::Toops::copyDir( $opt_sourcepath, $opt_targetpath );
 		$count += 1 if $res;
 	} else {
 		msgOut( "'$opt_sourcepath' doesn't exist: nothing to copy" );
@@ -78,8 +78,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -106,10 +106,10 @@ msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if
 
 # if we have a source cmd, get the path
 # no need to make dir exist: if not exist, just nothing to copy
-$opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd ) if $opt_sourcecmd;
+$opt_sourcepath = TTP::Path::fromCommand( $opt_sourcecmd ) if $opt_sourcecmd;
 
 # if we have a target cmd, get the path
-$opt_targetpath = Mods::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
+$opt_targetpath = TTP::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
 
 # --dirs option must be specified at the moment
 msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;

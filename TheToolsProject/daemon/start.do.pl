@@ -16,11 +16,11 @@ use Data::Dumper;
 use File::Spec;
 use Proc::Background;
 
-use Mods::Constants qw( :all );
-use Mods::Daemon;
-use Mods::Message qw( :all );
+use TTP::Constants qw( :all );
+use TTP::Daemon;
+use TTP::Message qw( :all );
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -63,8 +63,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -74,7 +74,7 @@ msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 
 # the json is mandatory
-$daemonConfig = Mods::Daemon::getConfigByPath( $opt_json );
+$daemonConfig = TTP::Daemon::getConfigByPath( $opt_json );
 msgLog([ "got daemonConfig:", Dumper( $daemonConfig )]);
 
 # must have a listening port

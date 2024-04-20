@@ -14,11 +14,11 @@ use Data::Dumper;
 use File::Path qw( remove_tree );
 use File::Spec;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Path;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Path;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -113,8 +113,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -133,7 +133,7 @@ msgErr( "one of '--dirpath' and '--dircmd' options must be specified" ) if $coun
 
 # if we have a source cmd, get the path
 # no need to make it exist: if not exist, there is just nothing to purge
-$opt_dirpath = Mods::Path::fromCommand( $opt_dircmd ) if $opt_dircmd;
+$opt_dirpath = TTP::Path::fromCommand( $opt_dircmd ) if $opt_dircmd;
 
 if( !ttpErrs()){
 	doPurgeDirs();

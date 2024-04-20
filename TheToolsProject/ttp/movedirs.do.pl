@@ -16,11 +16,11 @@
 use Data::Dumper;
 use File::Spec;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Path;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Path;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -85,12 +85,12 @@ sub doMoveDirs {
 				}
 			}
 			# and move the rest, making sure the initial path at least exists
-			Mods::Path::makeDirExist( $opt_targetpath );
+			TTP::Path::makeDirExist( $opt_targetpath );
 			foreach my $it ( @list ){
 				my $source = _sourcePath( $it );
 				my $target = _targetPath( $it );
 				msgOut( " moving '$source' to '$target'" );
-				my $res = Mods::Toops::moveDir( $source, $target );
+				my $res = TTP::Toops::moveDir( $source, $target );
 				if( $res ){
 					$count += 1;
 				} else {
@@ -134,8 +134,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -163,10 +163,10 @@ msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if
 
 # if we have a source cmd, get the path and check it exists
 # no need to make the dir exist: if not exist, then there is just nothing to move
-$opt_sourcepath = Mods::Path::fromCommand( $opt_sourcecmd ) if $opt_sourcecmd;
+$opt_sourcepath = TTP::Path::fromCommand( $opt_sourcecmd ) if $opt_sourcecmd;
 
 # if we have a target cmd, get the path
-$opt_targetpath = Mods::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
+$opt_targetpath = TTP::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
 
 # --dirs option must be specified at the moment
 msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;

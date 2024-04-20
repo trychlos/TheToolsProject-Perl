@@ -13,10 +13,10 @@
 use Data::Dumper;
 use JSON;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -41,9 +41,9 @@ sub doWriteJson {
 	my $json = JSON->new;
 	my $data = $json->decode( $opt_data );
 	if( $opt_append ){
-		$res = Mods::Toops::jsonAppend( $data, $opt_file );
+		$res = TTP::Toops::jsonAppend( $data, $opt_file );
 	} else {
-		$res = Mods::Toops::jsonWrite( $data, $opt_file );
+		$res = TTP::Toops::jsonWrite( $data, $opt_file );
 	}
 	if( $res ){
 		msgOut( "success" );
@@ -69,8 +69,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

@@ -11,11 +11,11 @@
 
 use Data::Dumper;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Ovh;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Ovh;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -31,25 +31,25 @@ my $opt_services = false;
 # list all the subscribed services
 sub listServices {
 	msgOut( "displaying subscribed services..." );
-	my $api = Mods::Ovh::connect();
+	my $api = TTP::Ovh::connect();
 	if( $api ){
 		# full identity
-		#my $list = Mods::Ovh::get( $api, "/me" );
+		#my $list = TTP::Ovh::get( $api, "/me" );
 		#print "me".EOL.Dumper( $list );
 
 		# three dedicated servers at that time
-		#my $list = Mods::Ovh::get( $api, "/dedicated/server" );
+		#my $list = TTP::Ovh::get( $api, "/dedicated/server" );
 		#print "dedicated/server".EOL.Dumper( $list );
 
 		# all used ipv4+ipv6 addresses
-		#my $list = Mods::Ovh::get( $api, "/ip" );
+		#my $list = TTP::Ovh::get( $api, "/ip" );
 		#print "ip".EOL.Dumper( $list );
 
 		# a list of services ids
 		my $count = 0;
 		my @missingDisplayName = ();
 		my @routeUrl = ();
-		my $services = Mods::Ovh::getServices( $api );
+		my $services = TTP::Ovh::getServices( $api );
 		foreach my $key ( keys %{$services} ){
 			my $first = true;
 			if( $services->{$key}{resource}{displayName} ){
@@ -97,8 +97,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

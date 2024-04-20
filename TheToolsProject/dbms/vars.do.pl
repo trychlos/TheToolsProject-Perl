@@ -14,12 +14,12 @@
 use Data::Dumper;
 use File::Spec;
 
-use Mods::Constants qw( :all );
-use Mods::Path;
-use Mods::Message qw( :all );
-use Mods::Services;
+use TTP::Constants qw( :all );
+use TTP::Path;
+use TTP::Message qw( :all );
+use TTP::Services;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -40,7 +40,7 @@ my $opt_archivesDir = false;
 # -------------------------------------------------------------------------------------------------
 # list archivesDir value - e.g. '\\ftpback-rbx7-618.ovh.net\ns3153065.ip-51-91-25.eu\WS12DEV1\SQLBackups\240101'
 sub listArchivesdir {
-	my $dir = Mods::Path::dbmsArchivesDir();
+	my $dir = TTP::Path::dbmsArchivesDir();
 	my $str = "archivesDir: ".( defined $dir ? $dir : "" );
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
@@ -49,7 +49,7 @@ sub listArchivesdir {
 # -------------------------------------------------------------------------------------------------
 # list archivesRoot value - e.g. '\\ftpback-rbx7-618.ovh.net\ns3153065.ip-51-91-25.eu\WS12DEV1\SQLBackups'
 sub listArchivesroot {
-	my $dir = Mods::Path::dbmsArchivesRoot();
+	my $dir = TTP::Path::dbmsArchivesRoot();
 	my $str = "archivesRoot: ".( defined $dir ? $dir : "" );
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
@@ -58,7 +58,7 @@ sub listArchivesroot {
 # -------------------------------------------------------------------------------------------------
 # list backupsDir value - e.g. 'C:\INLINGUA\SQLBackups\240101\WS12DEV1'
 sub listBackupsdir {
-	my $dir = Mods::Path::dbmsBackupsDir();
+	my $dir = TTP::Path::dbmsBackupsDir();
 	my $str = "backupsDir: $dir";
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
@@ -67,7 +67,7 @@ sub listBackupsdir {
 # -------------------------------------------------------------------------------------------------
 # list backupsRoot value - e.g. 'C:\INLINGUA\SQLBackups'
 sub listBackupsroot {
-	my $dir = Mods::Path::dbmsBackupsRoot();
+	my $dir = TTP::Path::dbmsBackupsRoot();
 	my $str = "backupsRoot: $dir";
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
@@ -91,8 +91,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

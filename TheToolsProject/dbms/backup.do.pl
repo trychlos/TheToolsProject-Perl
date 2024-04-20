@@ -22,12 +22,12 @@
 use File::Spec;
 use Time::Piece;
 
-use Mods::Constants qw( :all );
-use Mods::Dbms;
-use Mods::Message qw( :all );
-use Mods::Services;
+use TTP::Constants qw( :all );
+use TTP::Dbms;
+use TTP::Message qw( :all );
+use TTP::Services;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -52,7 +52,7 @@ my $opt_compress = false;
 my $opt_output = '';
 
 # this host configuration
-my $hostConfig = Mods::Toops::getHostConfig();
+my $hostConfig = TTP::Toops::getHostConfig();
 
 # list of databases to be backuped
 my $databases = [];
@@ -65,7 +65,7 @@ sub doBackup {
 	my $asked = 0;
 	foreach my $db ( @{$databases} ){
 		msgOut( "backuping database '$hostConfig->{name}\\$opt_instance\\$db'" );
-		my $res = Mods::Dbms::backupDatabase({
+		my $res = TTP::Dbms::backupDatabase({
 			instance => $opt_instance,
 			database => $db,
 			output => $opt_output,
@@ -80,7 +80,7 @@ sub doBackup {
 			output => ( $res->{status} ? $res->{output} : "" ),
 			compress => $opt_compress
 		};
-		Mods::Toops::executionReport({
+		TTP::Toops::executionReport({
 			file => {
 				data => $data
 			},
@@ -130,8 +130,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -152,9 +152,9 @@ if( $opt_service ){
 	if( $opt_instance ){
 		msgErr( "'--service' option is exclusive of '--instance' option" );
 	} else {
-		$serviceConfig = Mods::Services::serviceConfig( $hostConfig, $opt_service );
+		$serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
 		if( $serviceConfig ){
-			$opt_instance = Mods::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
+			$opt_instance = TTP::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
 			if( $opt_instance ){
 				msgVerbose( "setting instance='$opt_instance'" );
 				if( $opt_database ){
@@ -173,11 +173,11 @@ if( $opt_service ){
 }
 
 $opt_instance = $defaults->{instance} if !$opt_instance;
-my $instance = Mods::Dbms::checkInstanceName( $opt_instance );
+my $instance = TTP::Dbms::checkInstanceName( $opt_instance );
 
 if( scalar @{$databases} ){
 	foreach my $db ( @{$databases} ){
-		my $exists = Mods::Dbms::checkDatabaseExists( $opt_instance, $db );
+		my $exists = TTP::Dbms::checkDatabaseExists( $opt_instance, $db );
 		if( !$exists ){
 			msgErr( "database '$db' doesn't exist" );
 		}

@@ -13,5 +13,5 @@
 	"listeningPort": 14392,
 
 	"monitoredService": "Tom17",
-	"localDir": "[eval:File::Spec->catdir( Mods::Path::dbmsBackupsRoot(), localtime->strftime( '%y%m%d' ), '<REMOTEHOST>' )]"
+	"localDir": "[eval:File::Spec->catdir( TTP::Path::dbmsBackupsRoot(), localtime->strftime( '%y%m%d' ), '<REMOTEHOST>' )]"
 }

@@ -12,11 +12,11 @@
 use Data::Dumper;
 use Time::Piece;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::MQTT;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::MQTT;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -41,7 +41,7 @@ my $count = 0;
 sub doGetRetained {
 	msgOut( "getting the retained messages..." );
 
-	$mqtt = Mods::MQTT::connect();
+	$mqtt = TTP::MQTT::connect();
 	if( $mqtt ){
 		$mqtt->subscribe( '#' => \&doWork );
 		while( $loop ){
@@ -54,7 +54,7 @@ sub doGetRetained {
 			}
 		}
 	}
-	Mods::MQTT::disconnect( $mqtt );
+	TTP::MQTT::disconnect( $mqtt );
 	my $result = true;
 	if( $result ){
 		msgOut( "success: $count got messages" );
@@ -92,8 +92,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

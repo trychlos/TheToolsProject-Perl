@@ -17,13 +17,13 @@
 
 use Data::Dumper;
 
-use Mods::Constants qw( :all );
-use Mods::Dbms;
-use Mods::Message qw( :all );
-use Mods::Services;
-use Mods::Telemetry;
+use TTP::Constants qw( :all );
+use TTP::Dbms;
+use TTP::Message qw( :all );
+use TTP::Services;
+use TTP::Telemetry;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -46,7 +46,7 @@ my $opt_tabcout = false;
 my $opt_limit = $defaults->{limit};
 
 # this host configuration
-my $hostConfig = Mods::Toops::getHostConfig();
+my $hostConfig = TTP::Toops::getHostConfig();
 
 # list of databases to be measured (or none, depending of the option)
 my @databases = ();
@@ -112,7 +112,7 @@ sub doDbSize {
 		last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 		msgOut( "  database '$db'" );
 		# sp_spaceused provides two results sets, where each one only contains one data row
-		my $resultSets = Mods::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple -nocolored $dummy $verbose` ));
+		my $resultSets = TTP::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple -nocolored $dummy $verbose` ));
 		my $set = _interpretDbResultSet( $resultSets );
 		foreach my $key ( keys %{$set} ){
 			`telemetry.pl publish -metric $key -value $set->{$key} -label instance=$opt_instance -label database=$db -httpPrefix ttp_dbms_database_size_ -mqttPrefix dbsize/ -nocolored $dummy $verbose`;
@@ -144,7 +144,7 @@ sub doTablesCount {
 			foreach my $tab ( @{$tables} ){
 				last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 				msgOut( "  table '$tab'" );
-				my $resultSet = Mods::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular -nocolored $dummy $verbose` ));
+				my $resultSet = TTP::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular -nocolored $dummy $verbose` ));
 				my $set = $resultSet->[0];
 				$set->{rows_count} = 0 if !defined $set->{rows_count};
 				foreach my $key ( keys %{$set} ){
@@ -180,8 +180,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -202,9 +202,9 @@ if( $opt_service ){
 	if( $opt_instance || $opt_database ){
 		msgErr( "'--service' option is exclusive of '--instance' and '--database' options" );
 	} else {
-		$serviceConfig = Mods::Services::serviceConfig( $hostConfig, $opt_service );
+		$serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
 		if( $serviceConfig ){
-			$opt_instance = Mods::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
+			$opt_instance = TTP::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
 			if( $opt_instance ){
 				msgVerbose( "setting instance='$opt_instance'" );
 				@databases = @{$serviceConfig->{DBMS}{databases}} if exists $serviceConfig->{DBMS}{databases};
@@ -219,12 +219,12 @@ if( $opt_service ){
 }
 
 $opt_instance = $defaults->{instance} if !$opt_instance;
-my $instance = Mods::Dbms::checkInstanceName( $opt_instance );
+my $instance = TTP::Dbms::checkInstanceName( $opt_instance );
 
 # if a database has been specified (or found), check that it exists
 if( scalar @databases ){
 	foreach my $db ( @databases ){
-		my $exists = Mods::Dbms::checkDatabaseExists( $opt_instance, $db );
+		my $exists = TTP::Dbms::checkDatabaseExists( $opt_instance, $db );
 		if( !$exists ){
 			msgErr( "database '$db' doesn't exist" );
 		}

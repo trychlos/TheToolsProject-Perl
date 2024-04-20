@@ -26,12 +26,12 @@ use File::Spec;
 use Getopt::Long;
 use Time::Piece;
 
-use Mods::Toops;
-use Mods::Constants qw( :all );
-use Mods::Daemon;
-use Mods::Message qw( :all );
-use Mods::MQTT;
-use Mods::Path;
+use TTP::Toops;
+use TTP::Constants qw( :all );
+use TTP::Daemon;
+use TTP::Message qw( :all );
+use TTP::MQTT;
+use TTP::Path;
 
 my $defaults = {
 	help => 'no',
@@ -51,13 +51,13 @@ my $commands = {
 	#help => \&help,
 };
 
-my $TTPVars = Mods::Daemon::init();
+my $TTPVars = TTP::Daemon::init();
 my $daemon = undef;
 
 # specific to this daemon
 my $mqtt;
 my $kept = {};
-my $logFile = File::Spec->catdir( Mods::Path::logsDailyDir(), 'mqtt-daemon.log' );
+my $logFile = File::Spec->catdir( TTP::Path::logsDailyDir(), 'mqtt-daemon.log' );
 
 # -------------------------------------------------------------------------------------------------
 # some kept data are anwered to some configured commands
@@ -143,12 +143,12 @@ if( !GetOptions(
 	"sys!"				=> \$opt_sys )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		Mods::Toops::ttpExit( 1 );
+		TTP::Toops::ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpExtern( $defaults );
-	Mods::Toops::ttpExit();
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpExtern( $defaults );
+	TTP::Toops::ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -160,28 +160,28 @@ msgVerbose( "found sys='".( defined $opt_sys ? ( $opt_sys ? 'true':'false' ) : '
 
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 
-if( !Mods::Toops::ttpErrs()){
-	$daemon = Mods::Daemon::run( $opt_json );
+if( !TTP::Toops::ttpErrs()){
+	$daemon = TTP::Daemon::run( $opt_json );
 }
-if( !Mods::Toops::ttpErrs()){
-	$mqtt = Mods::MQTT::connect();
+if( !TTP::Toops::ttpErrs()){
+	$mqtt = TTP::MQTT::connect();
 }
-if( !Mods::Toops::ttpErrs()){
+if( !TTP::Toops::ttpErrs()){
 	$mqtt->subscribe( '#' => \&works, '$SYS/#' => \&works );
 	setCommands();
 }
-if( Mods::Toops::ttpErrs()){
-	Mods::Toops::ttpExit();
+if( TTP::Toops::ttpErrs()){
+	TTP::Toops::ttpExit();
 }
 
 my $lastScanTime;
 
 while( !$daemon->{terminating} ){
-	my $res = Mods::Daemon::daemonListen( $daemon, $commands );
+	my $res = TTP::Daemon::daemonListen( $daemon, $commands );
 	my $now = localtime->epoch;
 	$lastScanTime = $now;
 	$mqtt->tick( $daemon->{listenInterval} ) if $mqtt;
 }
 
-Mods::MQTT::disconnect( $mqtt );
-Mods::Daemon::terminate( $daemon );
+TTP::MQTT::disconnect( $mqtt );
+TTP::Daemon::terminate( $daemon );

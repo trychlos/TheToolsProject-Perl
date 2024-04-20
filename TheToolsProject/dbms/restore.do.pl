@@ -16,11 +16,11 @@
 #
 # Copyright (@) 2023-2024 PWI Consulting
 
-use Mods::Constants qw( :all );
-use Mods::Dbms;
-use Mods::Message qw( :all );
+use TTP::Constants qw( :all );
+use TTP::Dbms;
+use TTP::Message qw( :all );
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -45,13 +45,13 @@ my $fname = undef;
 # -------------------------------------------------------------------------------------------------
 # restore the provided backup file
 sub doRestore {
-	my $hostConfig = Mods::Toops::getHostConfig();
+	my $hostConfig = TTP::Toops::getHostConfig();
 	if( $opt_verifyonly ){
 		msgOut( "verifying the restorability of '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
 	} else {
 		msgOut( "restoring database '$hostConfig->{name}\\$opt_instance\\$opt_database' from '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
 	}
-	my $res = Mods::Dbms::restoreDatabase({
+	my $res = TTP::Dbms::restoreDatabase({
 		instance => $opt_instance,
 		database => $opt_database,
 		full => $opt_full,
@@ -74,7 +74,7 @@ sub doRestore {
 			msgVerbose( "emptying '/diff' MQTT message as restored from a full backup" );
 			`mqtt.pl publish -topic $TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$opt_database/diff -payload "" -retain -nocolored`;
 		}
-		Mods::Toops::executionReport({
+		TTP::Toops::executionReport({
 			file => {
 				data => $data
 			},
@@ -119,8 +119,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
@@ -133,7 +133,7 @@ msgVerbose( "found full='$opt_full'" );
 msgVerbose( "found diff='$opt_diff'" );
 msgVerbose( "found verifyonly='".( $opt_verifyonly ? 'true':'false' )."'" );
 
-my $instance = Mods::Dbms::checkInstanceName( $opt_instance );
+my $instance = TTP::Dbms::checkInstanceName( $opt_instance );
 
 msgErr( "'--database' option is mandatory, but is not specified" ) if !$opt_database && !$opt_verifyonly;
 msgErr( "'--full' option is mandatory, but is not specified" ) if !$opt_full;

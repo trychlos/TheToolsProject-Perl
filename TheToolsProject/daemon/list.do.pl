@@ -12,11 +12,11 @@ use Data::Dumper;
 use File::Spec;
 use Proc::Background;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Path;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Path;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -32,11 +32,11 @@ my $opt_json = false;
 # display available JSON configuration files
 sub doListJSON {
 	msgOut( "displaying available JSON configuration files..." );
-	my $json_path = Mods::Path::daemonsConfigurationsDir();
+	my $json_path = TTP::Path::daemonsConfigurationsDir();
 	opendir( my $dh, $json_path ) or msgErr( "opendir $json_path: $!" );
 	if( !ttpErrs()){
 		my $count = 0;
-		my $sufixed_path = Mods::Path::withTrailingSeparator( $json_path );
+		my $sufixed_path = TTP::Path::withTrailingSeparator( $json_path );
 		while( readdir( $dh )){
 			if( $_ ne '.' && $_ ne '..' ){
 				my $json = File::Spec->catpath( $sufixed_path, $_ );
@@ -64,8 +64,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

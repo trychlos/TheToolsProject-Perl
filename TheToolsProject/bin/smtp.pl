@@ -7,6 +7,6 @@
 use strict;
 use warnings;
 
-use Mods::Toops;
+use TTP::Toops;
 
-Mods::Toops::run();
+TTP::Toops::run();

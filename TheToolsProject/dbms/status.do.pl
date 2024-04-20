@@ -15,13 +15,13 @@ use Data::Dumper;
 use Scalar::Util qw( looks_like_number );
 use URI::Escape;
 
-use Mods::Constants qw( :all );
-use Mods::Dbms;
-use Mods::Message qw( :all );
-use Mods::Services;
-use Mods::Telemetry;
+use TTP::Constants qw( :all );
+use TTP::Dbms;
+use TTP::Message qw( :all );
+use TTP::Services;
+use TTP::Telemetry;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -48,12 +48,12 @@ my $opt_http = false;
 # - to HTTP, 10 numerical payloads, only one having a one value
 sub doState {
 	msgOut( "get database(s) state for '$opt_service'..." );
-	my $hostConfig = Mods::Toops::getHostConfig();
-	my $serviceConfig = Mods::Services::serviceConfig( $hostConfig, $opt_service );
+	my $hostConfig = TTP::Toops::getHostConfig();
+	my $serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
 	my $instance = undef;
 	my @databases = undef;
 	if( $serviceConfig ){
-		$instance = Mods::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
+		$instance = TTP::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
 		msgVerbose( "found instance='".( $instance || 'undef' )."'" );
 		if( $instance ){
 			@databases = @{$serviceConfig->{DBMS}{databases}} if exists $serviceConfig->{DBMS}{databases};
@@ -71,7 +71,7 @@ sub doState {
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
 		foreach my $db ( @databases ){
 			msgOut( "  database '$db'" );
-			my $result = Mods::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose` ));
+			my $result = TTP::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose` ));
 			my $row = @{$result}[0];
 			# due to the differences between the two publications contents, publish separately
 			# -> stdout
@@ -135,8 +135,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

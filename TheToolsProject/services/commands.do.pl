@@ -13,11 +13,11 @@
 
 use Data::Dumper;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Services;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Services;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -25,7 +25,7 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	service => '',
-	host => Mods::Toops::ttpHost(),
+	host => TTP::Toops::ttpHost(),
 	key => ''
 };
 
@@ -42,8 +42,8 @@ sub executeCommands {
 	msgOut( "executing '$opt_service [".join( ',', @{$opt_keys} )."]' commands from '$opt_host' host..." );
 	my $cmdCount = 0;
 	my $host = $opt_host || ttpHost();
-	my $hostConfig = Mods::Toops::getHostConfig( $host );
-	my $serviceConfig = Mods::Services::serviceConfig( $hostConfig, $opt_service );
+	my $hostConfig = TTP::Toops::getHostConfig( $host );
+	my $serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
 	if( $serviceConfig ){
 		my $hash = ttpVar( $opt_keys, { config => $serviceConfig });
 		if( $hash && ref( $hash ) eq 'HASH' ){
@@ -92,8 +92,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

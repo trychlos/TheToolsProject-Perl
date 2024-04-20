@@ -11,11 +11,11 @@
 
 use Data::Dumper;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Services;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Services;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -33,9 +33,9 @@ my $opt_services = false;
 # list the available commands (same than services.pl list -services)
 sub listCommands {
 	msgOut( "displaying available commands..." );
-	my @commands = Mods::Toops::getAvailableCommands();
+	my @commands = TTP::Toops::getAvailableCommands();
 	foreach my $it ( @commands ){
-		Mods::Toops::helpCommandOneline( $it, { prefix => ' ' });
+		TTP::Toops::helpCommandOneline( $it, { prefix => ' ' });
 	}
 	msgOut( scalar @commands." found command(s)" );
 }
@@ -47,9 +47,9 @@ sub listCommands {
 # in this particular case of listing services, which is handled both as services.pl list and as ttp.pl list,
 # this code is so duplicated..
 sub listServices {
-	my $hostConfig = Mods::Toops::getHostConfig();
+	my $hostConfig = TTP::Toops::getHostConfig();
 	msgOut( "displaying services defined on $hostConfig->{name}..." );
-	my @list = Mods::Services::getDefinedServices( $hostConfig );
+	my @list = TTP::Services::getDefinedServices( $hostConfig );
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
@@ -72,8 +72,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

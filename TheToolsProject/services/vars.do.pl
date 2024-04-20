@@ -12,11 +12,11 @@
 
 use Data::Dumper;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Services;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Services;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -34,9 +34,9 @@ my $opt_keys = [];
 sub displayVar {
 	msgOut( "displaying '".join( ',', @{$opt_keys} )."' variable..." );
 	#print Dumper( $opt_keys );
-	my $hostConfig = Mods::Toops::getHostConfig();
+	my $hostConfig = TTP::Toops::getHostConfig();
 	my @initialKeys = @{$opt_keys};
-	my $serviceConfig = Mods::Services::serviceConfig( $hostConfig, $opt_service );
+	my $serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
 	my $last = undef;
 	my $hash = $serviceConfig;
 	if( $serviceConfig ){
@@ -99,8 +99,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 

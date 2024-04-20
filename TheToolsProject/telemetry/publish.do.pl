@@ -18,11 +18,11 @@
 
 use Data::Dumper;
 
-use Mods::Constants qw( :all );
-use Mods::Message qw( :all );
-use Mods::Telemetry;
+use TTP::Constants qw( :all );
+use TTP::Message qw( :all );
+use TTP::Telemetry;
 
-my $TTPVars = Mods::Toops::TTPVars();
+my $TTPVars = TTP::Toops::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -61,7 +61,7 @@ my @mqttOptions = ();
 # this requires a telemetry gateway, which is handle by the Telemetry package
 sub doHttpPublish {
 	msgOut( "publishing '$opt_metric' metric to HTTP gateway..." );
-	my $res = Mods::Telemetry::httpPublish( $opt_metric, $opt_value, \@labels, { httpPrefix => $opt_httpPrefix, httpOptions => \@httpOptions });
+	my $res = TTP::Telemetry::httpPublish( $opt_metric, $opt_value, \@labels, { httpPrefix => $opt_httpPrefix, httpOptions => \@httpOptions });
 	if( $res ){
 		msgOut( "success" );
 	} else {
@@ -73,7 +73,7 @@ sub doHttpPublish {
 # send the metric
 sub doMqttPublish {
 	msgOut( "publishing '$opt_metric' metric to MQTT bus..." );
-	my $res = Mods::Telemetry::mqttPublish( $opt_metric, $opt_value, \@labels, { mqttPrefix => $opt_mqttPrefix, mqttOptions => \@mqttOptions });
+	my $res = TTP::Telemetry::mqttPublish( $opt_metric, $opt_value, \@labels, { mqttPrefix => $opt_mqttPrefix, mqttOptions => \@mqttOptions });
 	if( $res ){
 		msgOut( "success" );
 	} else {
@@ -104,8 +104,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( Mods::Toops::wantsHelp()){
-	Mods::Toops::helpVerb( $defaults );
+if( TTP::Toops::wantsHelp()){
+	TTP::Toops::helpVerb( $defaults );
 	ttpExit();
 }
 
