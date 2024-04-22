@@ -20,7 +20,7 @@ use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Path;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -90,7 +90,7 @@ sub doMoveDirs {
 				my $source = _sourcePath( $it );
 				my $target = _targetPath( $it );
 				msgOut( " moving '$source' to '$target'" );
-				my $res = TTP::Toops::moveDir( $source, $target );
+				my $res = TTP::moveDir( $source, $target );
 				if( $res ){
 					$count += 1;
 				} else {
@@ -134,8 +134,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

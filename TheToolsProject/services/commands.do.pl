@@ -17,7 +17,7 @@ use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Services;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -25,7 +25,7 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	service => '',
-	host => TTP::Toops::ttpHost(),
+	host => TTP::ttpHost(),
 	key => ''
 };
 
@@ -42,7 +42,7 @@ sub executeCommands {
 	msgOut( "executing '$opt_service [".join( ',', @{$opt_keys} )."]' commands from '$opt_host' host..." );
 	my $cmdCount = 0;
 	my $host = $opt_host || ttpHost();
-	my $hostConfig = TTP::Toops::getHostConfig( $host );
+	my $hostConfig = TTP::getHostConfig( $host );
 	my $serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
 	if( $serviceConfig ){
 		my $hash = ttpVar( $opt_keys, { config => $serviceConfig });
@@ -92,8 +92,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

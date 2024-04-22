@@ -18,7 +18,7 @@ use TTP::Dbms;
 use TTP::Message qw( :all );
 use TTP::Services;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -39,7 +39,7 @@ my $opt_listtables = false;
 # -------------------------------------------------------------------------------------------------
 # list the databases
 sub listDatabases {
-	my $hostConfig = TTP::Toops::getHostConfig();
+	my $hostConfig = TTP::getHostConfig();
 	msgOut( "displaying databases in '$hostConfig->{name}\\$opt_instance'..." );
 	my $list = TTP::Dbms::getLiveDatabases();
 	foreach my $db ( @{$list} ){
@@ -51,7 +51,7 @@ sub listDatabases {
 # -------------------------------------------------------------------------------------------------
 # list the tables
 sub listTables {
-	my $hostConfig = TTP::Toops::getHostConfig();
+	my $hostConfig = TTP::getHostConfig();
 	msgOut( "displaying tables in '$hostConfig->{name}\\$opt_instance\\$opt_database'..." );
 	my $list = TTP::Dbms::getDatabaseTables( $opt_database );
 	foreach my $it ( @{$list} ){
@@ -78,8 +78,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

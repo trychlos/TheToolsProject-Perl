@@ -34,7 +34,7 @@ use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Services;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -65,7 +65,7 @@ my $opt_type = $defaults->{type};
 my $opt_machines = false;
 
 # the host configuration
-my $hostConfig = TTP::Toops::getHostConfig();
+my $hostConfig = TTP::getHostConfig();
 
 # -------------------------------------------------------------------------------------------------
 # display the environment for this machine (may be 0 or 1)
@@ -91,11 +91,11 @@ sub listServiceMachines {
 		msgOut( "displaying machines which provide '$opt_service' service..." );
 	}
 	my $count = 0;
-	my @hosts = TTP::Toops::getDefinedHosts();
+	my @hosts = TTP::getDefinedHosts();
 	msgVerbose( "found ".scalar @hosts." host(s)" );
 	foreach my $host ( @hosts ){
 		msgVerbose( "examining '$host'" );
-		my $hostConfig = TTP::Toops::getHostConfig( $host );
+		my $hostConfig = TTP::getHostConfig( $host );
 		if(( !$opt_type || $hostConfig->{Environment}{type} eq $opt_type ) && exists( $hostConfig->{Services}{$opt_service} )){
 			print "  $hostConfig->{Environment}{type}: $host".EOL;
 			$count += 1;
@@ -241,8 +241,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

@@ -14,7 +14,7 @@ use URI::Escape;
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
-use TTP::Toops;
+use TTP;
 
 # -------------------------------------------------------------------------------------------------
 # publish the provided results sets to HTTP gateway
@@ -33,7 +33,7 @@ sub httpPublish {
 	my ( $metric, $value, $labels, $opts ) = @_;
 	$opts //= {};
 	my $count = 0;
-	my $url = TTP::Toops::ttpVar([ 'Telemetry', 'withHttp', 'url' ]);
+	my $url = TTP::ttpVar([ 'Telemetry', 'withHttp', 'url' ]);
 	if( $url ){
 		foreach my $it ( @{$labels} ){
 			my @words = split( /=/, $it );
@@ -90,9 +90,9 @@ sub mqttPublish {
 	my ( $metric, $value, $labels, $opts ) = @_;
 	$opts //= {};
 	my $count = 0;
-	my $command = TTP::Toops::ttpVar([ 'Telemetry', 'withMqtt', 'command' ]);
+	my $command = TTP::ttpVar([ 'Telemetry', 'withMqtt', 'command' ]);
 	if( $command ){
-		my $topic = TTP::Toops::ttpHost();
+		my $topic = TTP::ttpHost();
 		$topic .= "/telemetry";
 		foreach my $it ( @{$labels} ){
 			my @words = split( /=/, $it );
@@ -104,7 +104,7 @@ sub mqttPublish {
 		$command =~ s/<SUBJECT>/$topic/;
 		$command =~ s/<DATA>/$value/;
 		$command =~ s/<OPTIONS>//;
-		my $TTPVars = TTP::Toops::TTPVars();
+		my $TTPVars = TTP::TTPVars();
 		my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
 		my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
 		print `$command -nocolored $dummy $verbose`;

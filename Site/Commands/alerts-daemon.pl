@@ -24,7 +24,7 @@ use File::Find;
 use Getopt::Long;
 use Time::Piece;
 
-use TTP::Toops;
+use TTP;
 use TTP::Constants qw( :all );
 use TTP::Daemon;
 use TTP::Message qw( :all );
@@ -60,7 +60,7 @@ sub doWithNew {
 	my ( @newFiles ) = @_;
 	foreach my $file ( @newFiles ){
 		msgVerbose( "new alert '$file'" );
-		my $data = TTP::Toops::jsonRead( $file );
+		my $data = TTP::jsonRead( $file );
 	}
 }
 
@@ -114,12 +114,12 @@ if( !GetOptions(
 	"json=s"			=> \$opt_json )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		TTP::Toops::ttpExit( 1 );
+		TTP::ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpExtern( $defaults );
-	TTP::Toops::ttpExit();
+if( TTP::wantsHelp()){
+	TTP::helpExtern( $defaults );
+	TTP::ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -129,20 +129,20 @@ msgVerbose( "found json='$opt_json'" );
 
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 
-if( !TTP::Toops::ttpErrs()){
+if( !TTP::ttpErrs()){
 	$daemon = TTP::Daemon::run( $opt_json );
 }
 # more deeply check arguments
 # - the daemon configuration must have monitoredDir key
-if( !TTP::Toops::ttpErrs()){
+if( !TTP::ttpErrs()){
 	if( exists( $daemon->{config}{monitoredDir} )){
 		msgVerbose( "monitored dir '$daemon->{config}{monitoredDir}' successfully found in daemon configuration file" );
 	} else {
 		msgErr( "'monitoredDir' must be specified in daemon configuration, not found" );
 	}
 }
-if( TTP::Toops::ttpErrs()){
-	TTP::Toops::ttpExit();
+if( TTP::ttpErrs()){
+	TTP::ttpExit();
 }
 
 my $scanInterval = 10;

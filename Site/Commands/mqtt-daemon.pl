@@ -26,7 +26,7 @@ use File::Spec;
 use Getopt::Long;
 use Time::Piece;
 
-use TTP::Toops;
+use TTP;
 use TTP::Constants qw( :all );
 use TTP::Daemon;
 use TTP::Message qw( :all );
@@ -143,12 +143,12 @@ if( !GetOptions(
 	"sys!"				=> \$opt_sys )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		TTP::Toops::ttpExit( 1 );
+		TTP::ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpExtern( $defaults );
-	TTP::Toops::ttpExit();
+if( TTP::wantsHelp()){
+	TTP::helpExtern( $defaults );
+	TTP::ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -160,18 +160,18 @@ msgVerbose( "found sys='".( defined $opt_sys ? ( $opt_sys ? 'true':'false' ) : '
 
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 
-if( !TTP::Toops::ttpErrs()){
+if( !TTP::ttpErrs()){
 	$daemon = TTP::Daemon::run( $opt_json );
 }
-if( !TTP::Toops::ttpErrs()){
+if( !TTP::ttpErrs()){
 	$mqtt = TTP::MQTT::connect();
 }
-if( !TTP::Toops::ttpErrs()){
+if( !TTP::ttpErrs()){
 	$mqtt->subscribe( '#' => \&works, '$SYS/#' => \&works );
 	setCommands();
 }
-if( TTP::Toops::ttpErrs()){
-	TTP::Toops::ttpExit();
+if( TTP::ttpErrs()){
+	TTP::ttpExit();
 }
 
 my $lastScanTime;

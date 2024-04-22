@@ -16,7 +16,7 @@ use JSON;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -41,9 +41,9 @@ sub doWriteJson {
 	my $json = JSON->new;
 	my $data = $json->decode( $opt_data );
 	if( $opt_append ){
-		$res = TTP::Toops::jsonAppend( $data, $opt_file );
+		$res = TTP::jsonAppend( $data, $opt_file );
 	} else {
-		$res = TTP::Toops::jsonWrite( $data, $opt_file );
+		$res = TTP::jsonWrite( $data, $opt_file );
 	}
 	if( $res ){
 		msgOut( "success" );
@@ -69,8 +69,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

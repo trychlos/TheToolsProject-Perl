@@ -22,7 +22,7 @@ use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Services;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -68,7 +68,7 @@ sub getLive {
 	my @nexts = ();
 	foreach my $host ( @hosts ){
 		msgVerbose( "examining '$host'" );
-		my $hostConfig = TTP::Toops::getHostConfig( $host );
+		my $hostConfig = TTP::getHostConfig( $host );
 		if( exists( $hostConfig->{Services}{$opt_service}{status}{get_live} )){
 			$command = $hostConfig->{Services}{$opt_service}{status}{get_live};
 			if( $command ){
@@ -155,8 +155,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

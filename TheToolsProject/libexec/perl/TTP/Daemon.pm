@@ -36,7 +36,7 @@ use Time::Piece;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::MQTT;
-use TTP::Toops;
+use TTP;
 
 use constant {
 	BUFSIZE => 4096,
@@ -69,14 +69,14 @@ sub _lastwill {
 
 # ------------------------------------------------------------------------------------------------
 sub _running {
-	my $TTPVars = TTP::Toops::TTPVars();
+	my $TTPVars = TTP::TTPVars();
 	return "running since $TTPVars->{run}{command}{started}";
 }
 
 # ------------------------------------------------------------------------------------------------
 sub _topic {
 	my ( $name ) = @_;
-	my $topic = TTP::Toops::ttpHost();
+	my $topic = TTP::ttpHost();
 	$topic .= "/daemon";
 	$topic .= "/$name";
 	$topic .= "/status";
@@ -158,7 +158,7 @@ sub daemonListen {
 	# -> the daemon config
 	$daemon->{config} = getEvaluatedConfig( $daemon->{raw} );
 	# -> toops+site and execution host configurations
-	TTP::Toops::ttpEvaluate();
+	TTP::ttpEvaluate();
 	my $client = $daemon->{socket}->accept();
 	my $result = undef;
 	my $data = "";
@@ -231,7 +231,7 @@ sub do_terminate {
 sub getConfigByPath {
 	my ( $json ) = @_;
 	my $result = getRawConfigByPath( $json );
-	$result = TTP::Toops::evaluate( $result ) if $result;
+	$result = TTP::evaluate( $result ) if $result;
 	return $result;
 }
 
@@ -244,7 +244,7 @@ sub getConfigByPath {
 sub getEvaluatedConfig {
 	my ( $config ) = @_;
 	my $evaluated = $config;
-	$evaluated = TTP::Toops::evaluate( $evaluated );
+	$evaluated = TTP::evaluate( $evaluated );
 	return $evaluated;
 }
 
@@ -257,7 +257,7 @@ sub getEvaluatedConfig {
 sub getRawConfigByPath {
 	my ( $json ) = @_;
 	msgVerbose( "Daemon::getRawConfigByPath() json='$json'" );
-	my $result = TTP::Toops::jsonRead( $json );
+	my $result = TTP::jsonRead( $json );
 	my $ref = ref( $result );
 	if( $ref ne 'HASH' ){
 		msgErr( "Daemon::getRawConfigByPath() expected a hash, found a ".( $ref || 'scalar' ));
@@ -292,8 +292,8 @@ sub init {
 	$opts //= {};
 
 	# init TTP
-	TTP::Toops::init();
-	my $TTPVars = TTP::Toops::TTPVars();
+	TTP::init();
+	my $TTPVars = TTP::TTPVars();
 
 	# initialize TTPVars data to have a pretty log
 	my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
@@ -355,13 +355,13 @@ sub run {
 			$advertizeInterval = $config->{advertizeInterval};
 		}
 	}
-	if( !TTP::Toops::ttpErrs()){
+	if( !TTP::ttpErrs()){
 		msgVerbose( "listeningPort='$config->{listeningPort}' listenInterval='$listenInterval' advertizeInterval='$advertizeInterval'" );
 	}
 
 	# create a listening socket
 	my $socket = undef;
-	if( !TTP::Toops::ttpErrs()){
+	if( !TTP::ttpErrs()){
 		$socket = new IO::Socket::INET(
 			LocalHost => '0.0.0.0',
 			LocalPort => $config->{listeningPort},
@@ -376,13 +376,13 @@ sub run {
 
 	# connect to MQTT communication bus if the host is configured for
 	my $mqtt = undef;
-	if( !TTP::Toops::ttpErrs()){
+	if( !TTP::ttpErrs()){
 		$mqtt = TTP::MQTT::connect({
 			will => _lastwill( $jfile )
 		});
 	}
-	if( !TTP::Toops::ttpErrs()){
-		$SIG{INT} = sub { $socket->close(); TTP::Toops::ttpExit(); };
+	if( !TTP::ttpErrs()){
+		$SIG{INT} = sub { $socket->close(); TTP::ttpExit(); };
 		$daemon = {
 			json => $json,
 			raw => $raw,
@@ -412,7 +412,7 @@ sub terminate {
 	msgLog( "terminating" );
 
 	# and quit the program
-	TTP::Toops::ttpExit();
+	TTP::ttpExit();
 }
 
 1;

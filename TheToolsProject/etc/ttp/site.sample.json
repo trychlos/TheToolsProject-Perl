@@ -2,15 +2,26 @@
 	"comments": [
 		"site.sample.json",
 		"The 'site.json' site configuration file is the first file loaded by each command. It defines global TTP behavior.",
-		"It is searched for as (hardcoded) 'etc/ttp/site.json' in each path of TTP_ROOTS environment variable. The first found wins."
+		"It is searched for among (hardcoded) 'etc/ttp/site.json', 'etc/site.json', 'etc/ttp/toops.json' or 'etc/toops.json' in each path of TTP_ROOTS environment variable.",
+		"The first found wins.",
+		"",
+		"This is the global TTP configuration for your site",
+		"In Windows environment, take care of doubling your backslashes",
+		"May make use - in values only - of parameters between square brackets as [eval:...]",
+		"At the moment, there is only one type of parameters:",
+		"- those specified by '[eval:...]' indicate some code to be evaluated at run time.",
+		"  'eval' may be prefixed with an underscore in order to delay the eval (e.g. if it refers to another dynamic variable which needs to be resolved first).",
+		"",
+		"Note 1: unless otherwise specified, variables here may be overriden on a per-host basis."
+		"Note 2: Site integrator may use this same configuration file (and is encouraged to) to set his own site-level variables.",
+		"These variables are free to the site integrator and NOT considered by TheToolsProject, though they can be used in below TTP JSON dynamic evaluations."
 	],
 
 	"site_comments": [
 		"We can define here some variables at the site level.",
-		"These variables are free to the site integrator and NOT considered by TheToolsProject, though they can be used in below Toops JSON dynamic evaluations."
 	],
 	"site": {
-		"commandsDir": "[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'SiteResources', 'Commands' )]",
+		"commandsDir": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'SiteResources', 'Commands' )]",
 		"daemonsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'daemons' )]",
 		"workloadSummary_comments": [
 			"manage macros: SUBJECT, OPTIONS"
@@ -20,17 +31,14 @@
 		}
 	},
 
-	"toops_comments": [
-		"The global Toops configuration for your site",
-		"In Windows environment, take care of doubling your backslashes",
-		"May make use - in values only - of parameters between square brackets as [eval:...]",
-		"At the moment, there is only one type of parameters:",
-		"- those specified by 'eval:' indicate some code to be evaluated at run time.",
-		"  'eval' may be prefixed with an underscore in order to delay the eval (e.g. if it refers to another dynamic variable which needs to be resolved first).",
-		"Remind that the directory where lies this 'toops.json' must be adressed by the TTP_CONFDIR variable.",
-		"Also note that every variable here may be overriden on a per-host basis."
-	],
-	"toops": {
+	"TTP": {
+
+		"privateDirs": [
+			"etc/private",
+			"private",
+			"etc/credentials",
+			"credentials"
+		],
 		"alerts_comments": [
 			"enabled=true|false here only specifies defaults, as each medium can be individually selected in ttp.pl alert verb",
 			"when sending an email, whether use a text content or file, or a html content or file, or both is up to the verb, so just replace OPTIONS macro"
@@ -41,7 +49,7 @@
 			],
 			"withFile": {
 				"enabled": true,
-				"dropDir": "[eval:File::Spec->catdir( TTP::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Alerts' )]",
+				"dropDir": "[eval:File::Spec->catdir( TTP::logsRoot(), localtime->strftime( '%y%m%d' ), 'Alerts' )]",
 				"command": "ttp.pl writejson -file [eval:File::Spec->catfile( TTP::Path::alertsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'.json' )] -data \"<DATA>\""
 			},
 			"withMqtt_comments": [
@@ -89,7 +97,7 @@
 		"credentialsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'credentials' )]",
 		"DBMS": {
 			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), ttpHost() )]",
-			"backupsRoot": "[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'dailySQLBackups' )]",
+			"backupsRoot": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'dailySQLBackups' )]",
 			"instance": "MSSQLSERVER",
 			"byInstance": {
 				"MSSQLSERVER": {
@@ -99,8 +107,8 @@
 		},
 		"deployments": {
 			"sourceDirs": [
-				"[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'SiteResources' )]",
-				"[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'TheToolsProject' )]"
+				"[eval:File::Spec->catdir( TTP::nodeRoot(), 'SiteResources' )]",
+				"[eval:File::Spec->catdir( TTP::nodeRoot(), 'TheToolsProject' )]"
 			],
 			"excludes": [
 			],
@@ -122,7 +130,7 @@
 			],
 			"withFile": {
 				"enabled": true,
-				"dropDir": "[eval:File::Spec->catdir( TTP::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'execReports' )]",
+				"dropDir": "[eval:File::Spec->catdir( TTP::logsRoot(), localtime->strftime( '%y%m%d' ), 'execReports' )]",
 				"command": "ttp.pl writejson -file [eval:File::Spec->catfile( TTP::Path::execReportsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'-'.ttpRandom().'.json' )] -data \"<DATA>\""
 			},
 			"withMqtt_comments": [
@@ -133,8 +141,29 @@
 				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
 			}
 		},
-		"logsRoot": "[eval:File::Spec->catdir( TTP::Path::siteRoot(), 'dailyLogs' )]",
-		"logsDir": "[eval:File::Spec->catdir( TTP::Path::logsRootDir({ makeDirExist => false }), localtime->strftime( '%y%m%d' ), 'Toops' )]",
+
+		"logsDaily_comments": [
+			"The (per-node overridable) daily root of the logs tree",
+			"Rationale: having a per-day or per-week or per-month logs tree is the easiest way in order to periodically purge the logs.",
+			"This is not mandatry at all, and the default is to stick to the 'logsRoot' value",
+			"The 'logsDaily' directory can be got by the user via the 'ttp.pl vars --logsDaily' command"
+		],
+		"logsDaily": "[eval:File::Spec->catdir( TTP::logsRoot(), localtime->strftime( '%y%m%d' ))]",
+
+		"logsRoot_comments": [
+			"The (per-node overridable) root directory of the logs tree",
+			"Hardcoded default is C:\\Temp or /tmp depending of the running OS",
+			"The 'logsRoot' directory can be got by the user via the 'ttp.pl vars --logsRoot' command"
+		],
+		"logsRoot": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'dailyLogs' )]",
+
+		"logsCommands_comments": [
+			"The daily directory where TTP writes the logs for comamnds and verbs",
+			"Defaults to the 'logsDaily' value",
+			"The 'logsCommands' directory can be got by the user via the 'ttp.pl vars --logsCommands' command"
+		]
+		"logsCommands": "[eval:File::Spec->catdir( TTP::logsDaily(), 'TTP' )]",
+
 		"Message": {
 			"msgDummy": {
 				"withColor": true,
@@ -170,7 +199,27 @@
 		"MQTTGateway": {
 			"broker": "10.122.1.15"
 		},
-		"siteRoot": "C:\\INLINGUA",
+
+		"nodesDirs_comments": [
+			"The directories where are written the nodes JSON configuration files.",
+			"We can here define several subdirectories of TTP_ROOTS tree, which let distinct nodes have distinct directories (even if we ourselves advise against this type of architecture).",
+			"This is obviously not overridable on a per-node basis (due to the well-known chicken and eggs problem).",
+			"Below the hardcoded default values"
+		],
+		"nodesDirs": [
+			"etc/nodes",
+			"nodes",
+			"etc/machines",
+			"machines"
+		],
+		"nodeRoot_comments": [
+			"Historical reminder: in the logical machine paradigm, the root tree is located under the dynamically mounted filesystem, and this is one of its main prooperties."
+			"Because Perl cannot implement this paradigm, we have to define it explicitly.",
+			"This is a per-node overridable value, which defaults to C:\\Temp or /tmp depending of the running OS",
+			"The 'nodeRoot' directory can be got by the user via the 'ttp.pl vars --nodeRoot' command"
+		],
+		"nodeRoot": "C:\\Temp|/tmp",
+
 		"SMTPGateway": {
 			"host": "mail.trychlos.org",
 			"port": 465,

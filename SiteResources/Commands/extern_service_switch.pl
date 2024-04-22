@@ -24,12 +24,12 @@ use File::Basename;
 use File::Spec;
 use Getopt::Long;
 
-use TTP::Toops;
+use TTP;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 
 # TTP initialization
-my $TTPVars = TTP::Toops::initExtern();
+my $TTPVars = TTP::initExtern();
 
 my $defaults = {
 	help => 'no',
@@ -235,12 +235,12 @@ if( !GetOptions(
 	"force!"			=> \$opt_force )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		TTP::Toops::ttpExit( 1 );
+		TTP::ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpExtern( $defaults );
-	TTP::Toops::ttpExit();
+if( TTP::wantsHelp()){
+	TTP::helpExtern( $defaults );
+	TTP::ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -263,8 +263,8 @@ if( !$opt_live && !$opt_backup ){
 	msgWarn( "neither '--live' nor '--backup' options are specified, will not do anything" );
 }
 
-if( !TTP::Toops::ttpErrs()){
+if( !TTP::ttpErrs()){
 	doSwitch() if $opt_live or $opt_backup;
 }
 
-TTP::Toops::ttpExit();
+TTP::ttpExit();

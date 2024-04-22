@@ -27,7 +27,7 @@ use TTP::Dbms;
 use TTP::Message qw( :all );
 use TTP::Services;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -52,7 +52,7 @@ my $opt_compress = false;
 my $opt_output = '';
 
 # this host configuration
-my $hostConfig = TTP::Toops::getHostConfig();
+my $hostConfig = TTP::getHostConfig();
 
 # list of databases to be backuped
 my $databases = [];
@@ -80,7 +80,7 @@ sub doBackup {
 			output => ( $res->{status} ? $res->{output} : "" ),
 			compress => $opt_compress
 		};
-		TTP::Toops::executionReport({
+		TTP::executionReport({
 			file => {
 				data => $data
 			},
@@ -130,8 +130,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

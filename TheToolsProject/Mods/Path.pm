@@ -38,7 +38,7 @@ use Time::Piece;
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
-use TTP::Toops;
+use TTP;
 
 # ------------------------------------------------------------------------------------------------
 # (I):
@@ -50,7 +50,7 @@ use TTP::Toops;
 sub alertsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = TTP::Toops::ttpVar([ 'alerts', 'withFile', 'dropDir' ], $opts );
+	my $dir = TTP::ttpVar([ 'alerts', 'withFile', 'dropDir' ], $opts );
 	if( defined $dir && length $dir ){
 		my $makeDirExist = true;
 		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
@@ -67,7 +67,7 @@ sub alertsDir {
 sub credentialsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = TTP::Toops::ttpVar([ 'credentialsDir' ], $opts );
+	my $dir = TTP::ttpVar([ 'credentialsDir' ], $opts );
 	if( !defined $dir || !length $dir ){
 		msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
 	}
@@ -87,7 +87,7 @@ sub daemonsConfigurationsDir {
 # the current DBMS archives directory, making sure the dir exists
 # the dir can be defined in toops.json, or overriden in host configuration
 sub dbmsArchivesDir {
-	my $dir = TTP::Toops::ttpVar([ 'DBMS', 'archivesDir' ]);
+	my $dir = TTP::ttpVar([ 'DBMS', 'archivesDir' ]);
 	if( !defined $dir || !length $dir ){
 		msgWarn( "'archivesDir' is not defined in toops.json nor in host configuration" );
 	}
@@ -99,7 +99,7 @@ sub dbmsArchivesDir {
 # the current DBMS archives root tree, making sure the dir exists
 # the dir can be defined in toops.json, or overriden in host configuration
 sub dbmsArchivesRoot {
-	my $dir = TTP::Toops::ttpVar([ 'DBMS', 'archivesRoot' ]);
+	my $dir = TTP::ttpVar([ 'DBMS', 'archivesRoot' ]);
 	if( !defined $dir || !length $dir ){
 		msgWarn( "'archivesRoot' is not defined in toops.json nor in host configuration" );
 	}
@@ -116,7 +116,7 @@ sub dbmsArchivesRoot {
 sub dbmsBackupsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = TTP::Toops::ttpVar( [ 'DBMS', 'backupsDir' ], $opts );
+	my $dir = TTP::ttpVar( [ 'DBMS', 'backupsDir' ], $opts );
 	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {
@@ -130,7 +130,7 @@ sub dbmsBackupsDir {
 # the root the the DBMS backups directories, making sure the dir exists
 # the root can be defined in toops.json, or overriden in host configuration
 sub dbmsBackupsRoot {
-	my $dir = TTP::Toops::ttpVar([ 'DBMS', 'backupsRoot' ]);
+	my $dir = TTP::ttpVar([ 'DBMS', 'backupsRoot' ]);
 	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {
@@ -149,7 +149,7 @@ sub dbmsBackupsRoot {
 sub execReportsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = TTP::Toops::ttpVar([ 'executionReports', 'withFile', 'dropDir' ], $opts );
+	my $dir = TTP::ttpVar([ 'executionReports', 'withFile', 'dropDir' ], $opts );
 	if( defined $dir && length $dir ){
 		my $makeDirExist = true;
 		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
@@ -173,11 +173,11 @@ sub fromCommand {
 	$opts //= {};
 	msgErr( "Path::fromCommand() command is not specified" ) if !$cmd;
 	my $path = undef;
-	if( !TTP::Toops::ttpErrs()){
+	if( !TTP::ttpErrs()){
 		$path = `$cmd`;
 		msgErr( "Path::fromCommand() command doesn't output anything" ) if !$path;
 	}
-	if( !TTP::Toops::ttpErrs()){
+	if( !TTP::ttpErrs()){
 		my @words = split( /\s+/, $path );
 		if( scalar @words < 2 ){
 			msgErr( "Path::fromCommand() expect at least two words" );
@@ -186,7 +186,7 @@ sub fromCommand {
 			msgErr( "Path::fromCommand() found an empty path" ) if !$path;
 		}
 	}
-	if( !TTP::Toops::ttpErrs()){
+	if( !TTP::ttpErrs()){
 		my $makeExist = false;
 		$makeExist = $opts->{makeExist} if exists $opts->{makeExist};
 		if( $makeExist ){
@@ -194,7 +194,7 @@ sub fromCommand {
 			$path = undef if !$rc;
 		}
 	}
-	$path = undef if TTP::Toops::ttpErrs();
+	$path = undef if TTP::ttpErrs();
 	return $path;
 }
 
@@ -206,7 +206,7 @@ sub fromCommand {
 # returns the full path of the host configuration file
 sub hostConfigurationPath {
 	my ( $host ) = @_;
-	$host = TTP::Toops::ttpHost() if !$host;
+	$host = TTP::ttpHost() if !$host;
 	return File::Spec->catfile( hostsConfigurationsDir(), "$host.json" );
 }
 
@@ -231,7 +231,7 @@ sub hostsConfigurationsDir {
 sub logsDailyDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = TTP::Toops::ttpVar([ 'logsDir' ]);
+	my $dir = TTP::ttpVar([ 'logsDir' ]);
 	if( !$dir ){
 		$dir = File::Spec->catdir( logsRootDir( $opts ), 'Toops', 'logs' );
 	}
@@ -256,7 +256,7 @@ sub logsRootDir {
 	my ( $opts ) = @_;
 	$opts //= {};
 	my $dir;
-	my $TTPVars = TTP::Toops::TTPVars();
+	my $TTPVars = TTP::TTPVars();
 	if( exists( $TTPVars->{config}{host}{logsRoot} )){
 		$dir = $TTPVars->{config}{host}{logsRoot};
 	} elsif( exists( $TTPVars->{config}{toops}{logsRoot} )){
@@ -289,7 +289,7 @@ sub makeDirExist {
 		my $error;
 		$result = true;
 		make_path( $dir, {
-			verbose => TTP::Toops::TTPVars()->{run}{verbose},
+			verbose => TTP::TTPVars()->{run}{verbose},
 			error => \$error
 		});
 		# https://perldoc.perl.org/File::Path#make_path%28-%24dir1%2C-%24dir2%2C-....-%29
@@ -354,7 +354,7 @@ sub siteConfigurationsDir {
 
 # ------------------------------------------------------------------------------------------------
 sub siteRoot {
-	return TTP::Toops::ttpVar([ 'siteRoot' ]);
+	return TTP::ttpVar([ 'siteRoot' ]);
 }
 
 # ------------------------------------------------------------------------------------------------

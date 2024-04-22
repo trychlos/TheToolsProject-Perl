@@ -23,7 +23,7 @@ use TTP::Message qw( :all );
 use TTP::Services;
 use TTP::Telemetry;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -46,7 +46,7 @@ my $opt_tabcout = false;
 my $opt_limit = $defaults->{limit};
 
 # this host configuration
-my $hostConfig = TTP::Toops::getHostConfig();
+my $hostConfig = TTP::getHostConfig();
 
 # list of databases to be measured (or none, depending of the option)
 my @databases = ();
@@ -180,8 +180,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

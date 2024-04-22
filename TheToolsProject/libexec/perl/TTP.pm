@@ -1,6 +1,6 @@
 # Copyright (@) 2023-2024 PWI Consulting
 
-package TTP::Toops;
+package TTP;
 
 use strict;
 use warnings;
@@ -17,32 +17,52 @@ use Getopt::Long;
 use JSON;
 use Path::Tiny qw( path );
 use Scalar::Util qw( looks_like_number );
-use Sys::Hostname qw( hostname );
 use Test::Deep;
 use Time::Moment;
 use Time::Piece;
 use Try::Tiny;
 
 use TTP::Constants qw( :all );
+use TTP::EP;
 use TTP::Message qw( :all );
-use TTP::Telemetry;
 use TTP::Path;
+use TTP::Site;
+use TTP::Telemetry;
 
 # autoflush STDOUT
 $| = 1;
 
 # store here our Toops variables
+my $Const = {
+	# defaults which depend of the host OS provided by 'Config' package
+	byOS => {
+		darwin => {
+			tempDir => '/tmp'
+		},
+		linux => {
+			tempDir => '/tmp'
+		},
+		MSWin32 => {
+			tempDir => 'C:\\Temp'
+		}
+	}
+};
+
+# store here our Toops variables
 our $TTPVars = {
 	Toops => {
-		# defaults which depend of the host OS
-		defaults => {
+		# defaults which depend of the host OS provided by 'Config' package
+		byOS => {
 			darwin => {
+				pathSeparator => ':',
 				tempDir => '/tmp'
 			},
 			linux => {
+				pathSeparator => ':',
 				tempDir => '/tmp'
 			},
 			MSWin32 => {
+				pathSeparator => ';',
 				tempDir => 'C:\\Temp'
 			}
 		},
@@ -52,8 +72,10 @@ our $TTPVars = {
 		ReservedWords => [
 			'bin',
 			'config',
-			'dyn',
+			'evaluating',
+			'libexec',
 			'Mods',
+			'raw',
 			'run',
 			'Toops'
 		],
@@ -68,7 +90,7 @@ our $TTPVars = {
 		commentPostUsage => '^# @\(@\) ',
 		commentUsage => '^# @\(-\) ',
 		verbSufix => '.do.pl',
-		verbSed => '\.do\.pl'
+		verbSed => '\.do\.pl',
 	},
 	# a key reserved for the storage of toops+site+host raw json configuration files
 	raw => undef,
@@ -82,27 +104,8 @@ our $TTPVars = {
 	}
 };
 
-# -------------------------------------------------------------------------------------------------
-# Check the top keys of the provided (raw) hash, making sure only allowed keys are here
-# or, maybe, keys derived from allowed keys (e.g. allow 'site_comments' if 'site' is allowed)
-# (I):
-# - hash ref to be checked
-# - array ref of allowed keys
-# (O):
-# - a ref to the array of unallowed keys
-sub checkConfigKeys {
-	my ( $hash, $keys ) = @_;
-	my $others = [];
-	foreach my $key ( keys %{$hash} ){
-		my $allowed = false;
-		foreach my $it ( @{$keys} ){
-			$allowed = true if $key =~ m/^$it$/;
-			$allowed = true if $key =~ m/^$it[-_\.]/;
-		}
-		push( @{$others}, $key ) if !$allowed;
-	}
-	return $others;
-}
+# the global TTP object context
+my $ttp = undef;
 
 # -------------------------------------------------------------------------------------------------
 # Execute a command dependant of the running OS.
@@ -236,6 +239,32 @@ sub copyFile {
 		}
 	}
 	msgVerbose( "Toops::copyFile() returns result=$result" );
+	return $result;
+}
+
+# ------------------------------------------------------------------------------------------------
+# Search for a directory specification in the configuration
+# For compatibility reasons, we accept that the directory can be specified:
+# - either at the root of the node configuration
+# - or at the root of the site specification
+# - or as a subkey of the 'toops' object in the site specification
+# - or as a subkey of the 'TTP' object in the site specification
+# (I):
+# - the specification of the searched directory as a scalar string
+# - an optional default value
+# (O):
+# - returns the found directory or undef
+
+sub dir {
+	my ( $specs, $defaultValue ) = @_;
+	my $result = undef;
+	my $ref = ref( $specs );
+	if( $ref ){
+		msgErr( "dir() expects a scalar, found '$ref'" );
+	} else {
+		$result = $ttp->var([[ '', 'toops', 'TTP' ], $specs ]);
+		$result = $defaultValue if !defined $result;
+	}
 	return $result;
 }
 
@@ -491,7 +520,7 @@ sub getAvailableCommands {
 # -------------------------------------------------------------------------------------------------
 # returns the default temp directory for the running OS
 sub getDefaultTempDir {
-	return $TTPVars->{Toops}{defaults}{$Config{osname}}{tempDir};
+	return $TTPVars->{Toops}{byOS}{$Config{osname}}{tempDir};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -617,9 +646,9 @@ sub grepFileByRegex {
 sub helpCommand {
 	msgVerbose( "helpCommand()" );
 	# display the command one-line help
-	TTP::Toops::helpCommandOneline( $TTPVars->{run}{command}{path} );
+	TTP::helpCommandOneline( $TTPVars->{run}{command}{path} );
 	# display each verb one-line help
-	my @verbs = TTP::Toops::getVerbs();
+	my @verbs = TTP::getVerbs();
 	my $verbsHelp = {};
 	foreach my $it ( @verbs ){
 		my @fullHelp = grepFileByRegex( $it, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
@@ -665,7 +694,7 @@ sub helpExtern {
 		print " $it".EOL;
 	}
 	# usage
-	@help = TTP::Toops::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
+	@help = TTP::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
 	if( scalar @help ){
 		print "   Usage: $TTPVars->{run}{command}{basename} [options]".EOL;
 		print "   where available options are:".EOL;
@@ -675,7 +704,7 @@ sub helpExtern {
 		}
 	}
 	# post-usage
-	@help = TTP::Toops::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
+	@help = TTP::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
 	foreach my $it ( @help ){
 		print " $it".EOL;
 	}
@@ -697,7 +726,7 @@ sub helpVerb {
 	my ( $defaults, $opts ) = @_;
 	$opts //= {};
 	# display the command one-line help
-	TTP::Toops::helpCommandOneline( $TTPVars->{run}{command}{path} );
+	TTP::helpCommandOneline( $TTPVars->{run}{command}{path} );
 	# verb pre-usage
 	my @verbHelp = grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
 	my $verbInline = '';
@@ -712,7 +741,7 @@ sub helpVerb {
 	if( $opts->{usage} ){
 		@verbHelp = @{$opts->{usage}->()};
 	} else {
-		@verbHelp = TTP::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
+		@verbHelp = TTP::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
 	}
 	if( scalar @verbHelp ){
 		print "    Usage: $TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} [options]".EOL;
@@ -723,7 +752,7 @@ sub helpVerb {
 		}
 	}
 	# verb post-usage
-	@verbHelp = TTP::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
+	@verbHelp = TTP::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
 	if( scalar @verbHelp ){
 		foreach my $line ( @verbHelp ){
 			print "    $line".EOL;
@@ -808,40 +837,12 @@ sub hostConfigRead {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Initialize TheToolsProject
-# - reading the toops+site and host configuration files and interpreting them before first use
-# - initialize the logs internal variables
-sub init {
-	$TTPVars->{raw} = jsonRead( TTP::Path::toopsConfigurationPath());
-	# make sure the toops+site configuration doesn't have any other key
-	# immediately aborting if this is the case
-	# accepting anyway 'toops' and 'site'-derived keys (like 'site_comments' for example)
-	my $others = checkConfigKeys( $TTPVars->{raw}, [ 'site', 'toops' ] );
-	if( scalar @{$others} ){
-		print STDERR "Invalid key(s) found in toops.json configuration file: ".join( ', ', @{$others} )."\n";
-		print STDERR "Remind that site own keys should be inside 'site' hierarchy while TTP global configuration must be inside 'toops' hierarchy\n";
-		print STDERR "Exiting with code 1\n";
-		exit( 1 );
-	}
-	my $host = ttpHost();
-	my $raw = hostConfigRead( $host );
-	if( !defined $raw ){
-		print STDERR "Unable to read the '$host' host configuration file\n";
-		print STDERR "Exiting with code 1\n";
-		exit( 1 );
-	}
-	$TTPVars->{raw}{host} = $raw;
-	ttpEvaluate();
-	msgLog( "executing $0 ".join( ' ', @ARGV ));
-}
-
-# -------------------------------------------------------------------------------------------------
 # Initialize an external script (i.e. a script which is not part of TTP, but would like take advantage of it)
 # (I):
 # (O):
 # - TTPVars hash ref
 sub initExtern {
-	init();
+	_bootstrap();
 	my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
 	$TTPVars->{run}{command}{path} = $0;
 	$TTPVars->{run}{command}{started} = Time::Moment->now;
@@ -926,6 +927,39 @@ sub jsonWrite {
 	return (( looks_like_number( $res ) && $res == 1 ) || ( ref( $res ) eq 'Path::Tiny' && scalar( @{$res} ) > 0 )) ? true : false;
 }
 
+# ------------------------------------------------------------------------------------------------
+# (I):
+# - none
+# (O):
+# - returns the 'logsCommands' directory
+
+sub logsCommands {
+	my $result = dir( 'logsCommands' ) || logsDaily();
+	return $result;
+}
+
+# ------------------------------------------------------------------------------------------------
+# (I):
+# - none
+# (O):
+# - returns the 'logsDaily' directory
+
+sub logsDaily {
+	my $result = dir( 'logsDaily' ) || logsRoot();
+	return $result;
+}
+
+# ------------------------------------------------------------------------------------------------
+# (I):
+# - none
+# (O):
+# - returns the 'logsRoot' directory
+
+sub logsRoot {
+	my $result = dir( 'logsRoot' ) || $Const->{byOS}{$Config{osname}}{tempDir};
+	return $result;
+}
+
 # -------------------------------------------------------------------------------------------------
 # (recursively) move a directory and its content from a source to a target
 # this is a design decision to make this recursive copy file by file in order to have full logs
@@ -952,6 +986,18 @@ sub moveDir {
 		$result = copyDir( $source, $target ) && removeTree( $source );
 	}
 	msgVerbose( "Toops::moveDir() result=$result" );
+	return $result;
+}
+
+# ------------------------------------------------------------------------------------------------
+# (I):
+# - none
+# (O):
+# - returns the 'nodeRoot' directory specified in the site configuration to act as a replacement
+#   as there is no logical machine in this Perl version
+
+sub nodeRoot {
+	my $result = dir( 'nodeRoot' ) || $Const->{byOS}{$Config{osname}}{tempDir};
 	return $result;
 }
 
@@ -997,7 +1043,11 @@ sub removeTree {
 # Expects $0 be the full path name to the command script (this is the case in Windows+Strawberry)
 # and @ARGV the command-line arguments
 sub run {
-	init();
+	$ttp = TTP::EP->new();
+	$ttp->bootstrap();
+	#print Dumper( $ttp->site()->get() );
+	#print Dumper( TTP::var( 'logsRoot' ));
+
 	try {
 		$TTPVars->{run}{command}{path} = $0;
 		$TTPVars->{run}{command}{started} = Time::Moment->now;
@@ -1064,10 +1114,10 @@ sub searchRecArray {
 		my $type = ref( $it );
 		if( $type eq 'ARRAY' ){
 			push( @{$recData->{path}}, '' );
-			TTP::Toops::searchRecArray( $it, $searched, $opts, $recData );
+			TTP::searchRecArray( $it, $searched, $opts, $recData );
 		} elsif( $type eq 'HASH' ){
 			push( @{$recData->{path}}, '' );
-			TTP::Toops::searchRecHash( $it, $searched, $opts, $recData );
+			TTP::searchRecHash( $it, $searched, $opts, $recData );
 		}
 	}
 	return $recData;
@@ -1096,10 +1146,10 @@ sub searchRecHash {
 			my $type = ref( $ref );
 			if( $type eq 'ARRAY' ){
 				push( @{$recData->{path}}, $key );
-				TTP::Toops::searchRecArray( $ref, $searched, $opts, $recData );
+				TTP::searchRecArray( $ref, $searched, $opts, $recData );
 			} elsif( $type eq 'HASH' ){
 				push( @{$recData->{path}}, $key );
-				TTP::Toops::searchRecHash( $ref, $searched, $opts, $recData );
+				TTP::searchRecHash( $ref, $searched, $opts, $recData );
 			}
 		}
 	}
@@ -1116,8 +1166,16 @@ sub stackTrace {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Returns to the caller access the Entry Point object of TheToolsProject
+
+sub ttp() {
+	return $ttp;
+}
+
+# -------------------------------------------------------------------------------------------------
 # is there any error ?
 #  exit code may be seen as an error counter as it is incremented by Message::msgErr()
+
 sub ttpErrs {
 	return $TTPVars->{run}{exitCode};
 }
@@ -1173,18 +1231,6 @@ sub ttpFilter {
 }
 
 # -------------------------------------------------------------------------------------------------
-# returns the hostname
-# (O):
-# - the short hostname
-#   > as-is in *nix environments (including Darwin)
-#   > in uppercase on Windows
-sub ttpHost {
-	my $name = hostname;
-	$name = uc $name if $Config{osname} eq 'MSWin32';
-	return $name;
-}
-
-# -------------------------------------------------------------------------------------------------
 # returns a random identifier
 sub ttpRandom {
 	my $ug = new Data::UUID;
@@ -1221,6 +1267,20 @@ sub ttpVar {
 # Used by verbs to access our global variables
 sub TTPVars {
 	return $TTPVars;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns a variable value
+# This function is callable as 'TTP::var()' and is so one the preferred way of accessing
+# configurations values in configuration files
+# (I):
+# - a scalar, or an array of scalars which are to be successively searched, or an array of arrays
+#   of scalars, these later being to be successively tested.
+# (O):
+# - the found value or undef
+
+sub var {
+	return $ttp->var( @_ );
 }
 
 # -------------------------------------------------------------------------------------------------

@@ -19,7 +19,7 @@ use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Path;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -48,7 +48,7 @@ sub doPublish {
 		msgOut( "  to $dir" );
 		msgVerbose( "from $srcdir" );
 		msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
-		if( !TTP::Toops::wantsDummy()){
+		if( !TTP::wantsDummy()){
 			my $removeTree = ttpVar([ 'deployments', 'before', 'removeTree' ]);
 			$removeTree = true if !defined $removeTree;
 			if( $removeTree ){
@@ -99,8 +99,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

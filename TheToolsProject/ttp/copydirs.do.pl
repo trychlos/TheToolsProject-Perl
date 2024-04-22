@@ -19,7 +19,7 @@ use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Path;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -46,7 +46,7 @@ sub doCopyDirs {
 	my $count = 0;
 	my $res = false;
 	if( -d $opt_sourcepath ){
-		$res = TTP::Toops::copyDir( $opt_sourcepath, $opt_targetpath );
+		$res = TTP::copyDir( $opt_sourcepath, $opt_targetpath );
 		$count += 1 if $res;
 	} else {
 		msgOut( "'$opt_sourcepath' doesn't exist: nothing to copy" );
@@ -78,8 +78,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

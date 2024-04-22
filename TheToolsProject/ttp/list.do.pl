@@ -15,7 +15,7 @@ use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Services;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -33,9 +33,9 @@ my $opt_services = false;
 # list the available commands (same than services.pl list -services)
 sub listCommands {
 	msgOut( "displaying available commands..." );
-	my @commands = TTP::Toops::getAvailableCommands();
+	my @commands = TTP::getAvailableCommands();
 	foreach my $it ( @commands ){
-		TTP::Toops::helpCommandOneline( $it, { prefix => ' ' });
+		TTP::helpCommandOneline( $it, { prefix => ' ' });
 	}
 	msgOut( scalar @commands." found command(s)" );
 }
@@ -47,7 +47,7 @@ sub listCommands {
 # in this particular case of listing services, which is handled both as services.pl list and as ttp.pl list,
 # this code is so duplicated..
 sub listServices {
-	my $hostConfig = TTP::Toops::getHostConfig();
+	my $hostConfig = TTP::getHostConfig();
 	msgOut( "displaying services defined on $hostConfig->{name}..." );
 	my @list = TTP::Services::getDefinedServices( $hostConfig );
 	foreach my $it ( @list ){
@@ -72,8 +72,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

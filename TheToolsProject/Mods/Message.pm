@@ -28,7 +28,7 @@ use Term::ANSIColor;
 use if $Config{osname} eq "MSWin32", "Win32::Console::ANSI";
 
 use TTP::Constants qw( :all );
-use TTP::Toops;
+use TTP;
 
 Sub::Exporter::setup_exporter({
 	exports => [ qw(
@@ -151,7 +151,7 @@ sub isKnownLevel {
 # (I):
 # - the message to be printed (usually the command to be run in dummy mode)
 sub msgDummy {
-	my $TTPVars = TTP::Toops::TTPVars();
+	my $TTPVars = TTP::TTPVars();
 	if( $TTPVars->{run}{dummy} ){
 		_printMsg({
 			msg => shift,
@@ -170,14 +170,14 @@ sub msgDummy {
 # - increments the exit code
 sub msgErr {
 	# let have a stack trace
-	#TTP::Toops::stackTrace();
+	#TTP::stackTrace();
 	# and send the message
 	_printMsg({
 		msg => shift,
 		level => ERR,
 		handle => \*STDERR
 	});
-	my $TTPVars = TTP::Toops::TTPVars();
+	my $TTPVars = TTP::TTPVars();
 	$TTPVars->{run}{exitCode} += 1;
 }
 
@@ -201,7 +201,7 @@ sub msgLog {
 		_msgLogAppend( _msgPrefix().$msg, $opts );
 	} else {
 		msgWarn( "Message::msgLog() unmanaged type '$ref' for '$msg'" );
-		TTP::Toops::stackTrace();
+		TTP::stackTrace();
 	}
 }
 
@@ -218,11 +218,11 @@ sub msgLog {
 sub _msgLogAppend {
 	my ( $msg, $opts ) = @_;
 	$opts //= {};
-	my $TTPVars = TTP::Toops::TTPVars();
+	my $TTPVars = TTP::TTPVars();
 	my $logFile = $TTPVars->{run}{logsMain};
 	$logFile = $opts->{logFile} if $opts->{logFile};
 	if( $logFile ){
-		my $host = TTP::Toops::ttpHost();
+		my $host = TTP::ttpHost();
 		my $username = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME} || 'unknown'; #getpwuid( $< );
 		my $line = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%5N' )." $host $$ $username $msg";
 		path( $logFile )->append_utf8( $line.EOL );
@@ -243,7 +243,7 @@ sub msgOut {
 # Compute the message prefix, including a trailing space
 sub _msgPrefix {
 	my $prefix = '';
-	my $TTPVars = TTP::Toops::TTPVars();
+	my $TTPVars = TTP::TTPVars();
 	if( $TTPVars->{run}{command}{basename} ){
 		$prefix = "[$TTPVars->{run}{command}{basename}";
 		$prefix .= ' '.$TTPVars->{run}{verb}{name} if $TTPVars->{run}{verb}{name};
@@ -264,7 +264,7 @@ sub msgVerbose {
 	my $msg = shift;
 	# be verbose to console ?
 	my $verbose = false;
-	my $TTPVars = TTP::Toops::TTPVars();
+	my $TTPVars = TTP::TTPVars();
 	$verbose = $TTPVars->{run}{verbose} if exists( $TTPVars->{run}{verbose} );
 	_printMsg({
 		msg => $msg,
@@ -278,7 +278,7 @@ sub msgVerbose {
 # (E):
 # - the single warning message
 sub msgWarn {
-	#TTP::Toops::stackTrace();
+	#TTP::stackTrace();
 	_printMsg({
 		msg => shift,
 		level => WARN
@@ -298,7 +298,7 @@ sub _printMsg {
 	$args //= {};
 	my $line = '';
 	my $var = undef;
-	my $TTPVars = TTP::Toops::TTPVars();
+	my $TTPVars = TTP::TTPVars();
 	# have a prefix ?
 	my $withPrefix = true;
 	$withPrefix = $args->{withPrefix} if exists $args->{withPrefix};
@@ -310,7 +310,7 @@ sub _printMsg {
 	$line .= $args->{msg} if exists $args->{msg};
 	# writes in log ?
 	my $withLog = true;
-	$var = TTP::Toops::ttpVar([ 'Message',  $Definitions->{$level}{key}, 'withLog' ]) if exists $Definitions->{$level}{key};
+	$var = TTP::ttpVar([ 'Message',  $Definitions->{$level}{key}, 'withLog' ]) if exists $Definitions->{$level}{key};
 	$withLog = $var if defined $var;
 	TTP::Message::_msgLogAppend( $line ) if $withLog;
 	# output to the console ?
@@ -321,7 +321,7 @@ sub _printMsg {
 		# global runtime option is only considered if not disabled in toops/host configuration
 		my $withColor = true;
 		$var = undef;
-		$var = TTP::Toops::ttpVar([ 'Message',  $Definitions->{$level}{key}, 'withColor' ]) if exists $Definitions->{$level}{key};
+		$var = TTP::ttpVar([ 'Message',  $Definitions->{$level}{key}, 'withColor' ]) if exists $Definitions->{$level}{key};
 		$withColor = $var if defined $var;
 		$withColor = $TTPVars->{run}{colored} if $withColor;
 		my $colorstart = $withColor && exists( $Definitions->{$level}{color} ) ? color( $Definitions->{$level}{color} ) : '';

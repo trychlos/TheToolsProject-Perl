@@ -4,9 +4,10 @@
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
-# @(-) --[no]siteRoot          display the site-defined root path [${siteRoot}]
-# @(-) --[no]logsRoot          display the Toops logs Root (not daily) [${logsRoot}]
-# @(-) --[no]logsDir           display the current Toops logs directory [${logsDir}]
+# @(-) --[no]nodeRoot          display the site-defined root path [${nodeRoot}]
+# @(-) --[no]logsRoot          display the TTP logs root (not daily) [${logsRoot}]
+# @(-) --[no]logsDaily         display the TTP daily root [${logsDaily}]
+# @(-) --[no]logsCommands      display the current Toops logs directory [${logsCommands}]
 # @(-) --[no]alertsDir         display the 'alerts' file directory [${alertsDir}]
 # @(-) --key=<name[,...]>      the key which addresses the desired value, may be specified several times or as a comma-separated list [${key}]
 #
@@ -19,23 +20,25 @@ use TTP::Message qw( :all );
 use TTP::Path;
 use TTP::Services;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
-	siteRoot => 'no',
+	nodeRoot => 'no',
 	logsRoot => 'no',
-	logsDir => 'no',
+	logsDaily => 'no',
+	logsCommands => 'no',
 	alertsDir => 'no',
 	key => ''
 };
 
-my $opt_siteRoot = false;
-my $opt_logsDir = false;
+my $opt_nodeRoot = false;
+my $opt_logsCommands = false;
 my $opt_logsRoot = false;
+my $opt_logsDaily = false;
 my $opt_alertsDir = false;
 
 # list of keys
@@ -56,9 +59,17 @@ sub listByKeys {
 }
 
 # -------------------------------------------------------------------------------------------------
-# list logsDir value - e.g. 'C:\INLINGUA\Logs\240201\Toops'
-sub listLogsdir {
-	my $str = "logsDir: ".TTP::Path::logsDailyDir();
+# list logsDaily value - e.g. 'C:\INLINGUA\Logs\240201'
+sub listLogsdaily {
+	my $str = "logsDaily: ".TTP::logsDaily();
+	msgVerbose( "returning '$str'" );
+	print " $str".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
+# list logsCommands value - e.g. 'C:\INLINGUA\Logs\240201\Toops'
+sub listLogscommands {
+	my $str = "logsCommands: ".TTP::logsCommands();
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
@@ -66,15 +77,15 @@ sub listLogsdir {
 # -------------------------------------------------------------------------------------------------
 # list logsRoot value - e.g. 'C:\INLINGUA\Logs'
 sub listLogsroot {
-	my $str = "logsRoot: ".TTP::Path::logsRootDir();
+	my $str = "logsRoot: ".TTP::logsRoot();
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
-# list siteRoot value - e.g. 'C:\INLINGUA'
-sub listSiteroot {
-	my $str = "siteRoot: ".TTP::Path::siteRoot();
+# list nodeRoot value - e.g. 'C:\INLINGUA'
+sub listNoderoot {
+	my $str = "nodeRoot: ".TTP::nodeRoot();
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
@@ -88,9 +99,10 @@ if( !GetOptions(
 	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
-	"siteRoot!"			=> \$opt_siteRoot,
+	"nodeRoot!"			=> \$opt_nodeRoot,
 	"logsRoot!"			=> \$opt_logsRoot,
-	"logsDir!"			=> \$opt_logsDir,
+	"logsDaily!"		=> \$opt_logsDaily,
+	"logsCommands!"		=> \$opt_logsCommands,
 	"alertsDir!"		=> \$opt_alertsDir,
 	"key=s@"			=> \$opt_key )){
 
@@ -98,26 +110,28 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-msgVerbose( "found siteRoot='".( $opt_siteRoot ? 'true':'false' )."'" );
+msgVerbose( "found nodeRoot='".( $opt_nodeRoot ? 'true':'false' )."'" );
 msgVerbose( "found logsRoot='".( $opt_logsRoot ? 'true':'false' )."'" );
-msgVerbose( "found logsDir='".( $opt_logsDir ? 'true':'false' )."'" );
+msgVerbose( "found logsDaily='".( $opt_logsDaily ? 'true':'false' )."'" );
+msgVerbose( "found logsCommands='".( $opt_logsCommands ? 'true':'false' )."'" );
 msgVerbose( "found alertsDir='".( $opt_alertsDir ? 'true':'false' )."'" );
 @keys = split( /,/, join( ',', @{$opt_key} ));
 msgVerbose( "found keys='".join( ',', @keys )."'" );
 
 if( !ttpErrs()){
-	listSiteroot() if $opt_siteRoot;
-	listLogsroot() if $opt_logsRoot;
-	listLogsdir() if $opt_logsDir;
 	listAlertsdir() if $opt_alertsDir;
+	listLogsdaily() if $opt_logsDaily;
+	listLogscommands() if $opt_logsCommands;
+	listLogsroot() if $opt_logsRoot;
+	listNoderoot() if $opt_nodeRoot;
 	listByKeys() if scalar @keys;
 }
 

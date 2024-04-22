@@ -1,6 +1,6 @@
 # Copyright (@) 2023-2024 PWI Consulting
 
-package TTP::Toops;
+package TTP;
 
 use strict;
 use warnings;
@@ -617,9 +617,9 @@ sub grepFileByRegex {
 sub helpCommand {
 	msgVerbose( "helpCommand()" );
 	# display the command one-line help
-	TTP::Toops::helpCommandOneline( $TTPVars->{run}{command}{path} );
+	TTP::helpCommandOneline( $TTPVars->{run}{command}{path} );
 	# display each verb one-line help
-	my @verbs = TTP::Toops::getVerbs();
+	my @verbs = TTP::getVerbs();
 	my $verbsHelp = {};
 	foreach my $it ( @verbs ){
 		my @fullHelp = grepFileByRegex( $it, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
@@ -665,7 +665,7 @@ sub helpExtern {
 		print " $it".EOL;
 	}
 	# usage
-	@help = TTP::Toops::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
+	@help = TTP::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
 	if( scalar @help ){
 		print "   Usage: $TTPVars->{run}{command}{basename} [options]".EOL;
 		print "   where available options are:".EOL;
@@ -675,7 +675,7 @@ sub helpExtern {
 		}
 	}
 	# post-usage
-	@help = TTP::Toops::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
+	@help = TTP::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
 	foreach my $it ( @help ){
 		print " $it".EOL;
 	}
@@ -697,7 +697,7 @@ sub helpVerb {
 	my ( $defaults, $opts ) = @_;
 	$opts //= {};
 	# display the command one-line help
-	TTP::Toops::helpCommandOneline( $TTPVars->{run}{command}{path} );
+	TTP::helpCommandOneline( $TTPVars->{run}{command}{path} );
 	# verb pre-usage
 	my @verbHelp = grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
 	my $verbInline = '';
@@ -712,7 +712,7 @@ sub helpVerb {
 	if( $opts->{usage} ){
 		@verbHelp = @{$opts->{usage}->()};
 	} else {
-		@verbHelp = TTP::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
+		@verbHelp = TTP::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
 	}
 	if( scalar @verbHelp ){
 		print "    Usage: $TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} [options]".EOL;
@@ -723,7 +723,7 @@ sub helpVerb {
 		}
 	}
 	# verb post-usage
-	@verbHelp = TTP::Toops::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
+	@verbHelp = TTP::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
 	if( scalar @verbHelp ){
 		foreach my $line ( @verbHelp ){
 			print "    $line".EOL;
@@ -1064,10 +1064,10 @@ sub searchRecArray {
 		my $type = ref( $it );
 		if( $type eq 'ARRAY' ){
 			push( @{$recData->{path}}, '' );
-			TTP::Toops::searchRecArray( $it, $searched, $opts, $recData );
+			TTP::searchRecArray( $it, $searched, $opts, $recData );
 		} elsif( $type eq 'HASH' ){
 			push( @{$recData->{path}}, '' );
-			TTP::Toops::searchRecHash( $it, $searched, $opts, $recData );
+			TTP::searchRecHash( $it, $searched, $opts, $recData );
 		}
 	}
 	return $recData;
@@ -1096,10 +1096,10 @@ sub searchRecHash {
 			my $type = ref( $ref );
 			if( $type eq 'ARRAY' ){
 				push( @{$recData->{path}}, $key );
-				TTP::Toops::searchRecArray( $ref, $searched, $opts, $recData );
+				TTP::searchRecArray( $ref, $searched, $opts, $recData );
 			} elsif( $type eq 'HASH' ){
 				push( @{$recData->{path}}, $key );
-				TTP::Toops::searchRecHash( $ref, $searched, $opts, $recData );
+				TTP::searchRecHash( $ref, $searched, $opts, $recData );
 			}
 		}
 	}

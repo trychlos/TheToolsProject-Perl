@@ -13,7 +13,7 @@ use Net::MQTT::Simple;
 use TTP::Constants qw( :all );
 use TTP::Credentials;
 use TTP::Message qw( :all );
-use TTP::Toops;
+use TTP;
 
 $ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;
 
@@ -34,7 +34,7 @@ sub connect {
 	my ( $args ) = @_;
 	my $mqtt = undef;
 
-	my $broker = TTP::Toops::ttpVar([ 'MQTTGateway', 'broker' ]);
+	my $broker = TTP::ttpVar([ 'MQTTGateway', 'broker' ]);
 	$broker = $args->{broker} if $args->{broker};
 	msgErr( "MQTT::connect() broker is not configured nor provided as an argument" ) if !$broker;
 
@@ -89,7 +89,7 @@ sub disconnect {
 		$handle->disconnect();
 	} else {
 		msgErr( "MQTT::disconnect() undefined connection handle" );
-		TTP::Toops::stackTrace();
+		TTP::stackTrace();
 	}
 }
 

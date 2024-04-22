@@ -21,7 +21,7 @@ use TTP::Message qw( :all );
 use TTP::Services;
 use TTP::Telemetry;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -48,7 +48,7 @@ my $opt_http = false;
 # - to HTTP, 10 numerical payloads, only one having a one value
 sub doState {
 	msgOut( "get database(s) state for '$opt_service'..." );
-	my $hostConfig = TTP::Toops::getHostConfig();
+	my $hostConfig = TTP::getHostConfig();
 	my $serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
 	my $instance = undef;
 	my @databases = undef;
@@ -135,8 +135,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

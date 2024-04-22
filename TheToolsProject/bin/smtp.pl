@@ -23,6 +23,6 @@
 use strict;
 use warnings;
 
-use TTP::Toops;
+use TTP;
 
-TTP::Toops::run();
+TTP::run();

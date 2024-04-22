@@ -16,7 +16,7 @@ use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Services;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -34,7 +34,7 @@ my $opt_keys = [];
 sub displayVar {
 	msgOut( "displaying '".join( ',', @{$opt_keys} )."' variable..." );
 	#print Dumper( $opt_keys );
-	my $hostConfig = TTP::Toops::getHostConfig();
+	my $hostConfig = TTP::getHostConfig();
 	my @initialKeys = @{$opt_keys};
 	my $serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
 	my $last = undef;
@@ -99,8 +99,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

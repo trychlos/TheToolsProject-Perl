@@ -20,7 +20,7 @@ use TTP::Constants qw( :all );
 use TTP::Dbms;
 use TTP::Message qw( :all );
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -45,7 +45,7 @@ my $fname = undef;
 # -------------------------------------------------------------------------------------------------
 # restore the provided backup file
 sub doRestore {
-	my $hostConfig = TTP::Toops::getHostConfig();
+	my $hostConfig = TTP::getHostConfig();
 	if( $opt_verifyonly ){
 		msgOut( "verifying the restorability of '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
 	} else {
@@ -74,7 +74,7 @@ sub doRestore {
 			msgVerbose( "emptying '/diff' MQTT message as restored from a full backup" );
 			`mqtt.pl publish -topic $TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$opt_database/diff -payload "" -retain -nocolored`;
 		}
-		TTP::Toops::executionReport({
+		TTP::executionReport({
 			file => {
 				data => $data
 			},
@@ -119,8 +119,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

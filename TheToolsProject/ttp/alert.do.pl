@@ -24,7 +24,7 @@ use TTP::Message qw( :all );
 use TTP::Path;
 use TTP::SMTP;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -147,7 +147,7 @@ An alert has been raised:
 - message is '$opt_message'
 Best regards.
 ";
-		my $textfname = TTP::Toops::getTempFileName();
+		my $textfname = TTP::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $text );
 		$command =~ s/<OPTIONS>/-textfname $textfname/;
@@ -156,7 +156,7 @@ Best regards.
 		print `$command -nocolored $dummy $verbose`;
 		$res = ( $? == 0 );
 	} else {
-		TTP::Toops::msgWarn( "unable to get a command for alerts by SMS" );
+		TTP::msgWarn( "unable to get a command for alerts by SMS" );
 	}
 	if( $res ){
 		msgOut( "success" );
@@ -185,7 +185,7 @@ An alert has been raised:
 - message is '$opt_message'
 Best regards.
 ";
-		my $textfname = TTP::Toops::getTempFileName();
+		my $textfname = TTP::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $text );
 		$command =~ s/<SUBJECT>/$subject/;
@@ -225,8 +225,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

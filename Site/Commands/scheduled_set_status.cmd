@@ -44,7 +44,7 @@
 	exit /b
 
 :setLogFile
-	for /f "tokens=2" %%a in ('ttp.pl vars -logsDir -nocolored') do @set _logsdir=%%a
+	for /f "tokens=2" %%a in ('ttp.pl vars -logsCommands -nocolored') do @set _logsdir=%%a
 	set _time=%TIME: =0%
 	set LOGFILE=%_logsdir%\\%1.log
 	exit /b

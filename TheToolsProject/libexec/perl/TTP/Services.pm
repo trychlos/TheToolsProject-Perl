@@ -21,7 +21,7 @@ use Hash::Merge qw( merge );
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
-use TTP::Toops;
+use TTP;
 
 # -------------------------------------------------------------------------------------------------
 # check that the provided service name is valid on this machine
@@ -39,12 +39,12 @@ sub checkServiceOpt {
 	msgVerbose( "checkServiceOpt() entering with name='".( $name || '(undef)' )."'" );
 	my $service = undef;
 	if( $name ){
-		my $config = TTP::Toops::getHostConfig();
+		my $config = TTP::getHostConfig();
 		if( $config->{Services} ){
 			if( exists( $config->{Services}{$name} )){
 				msgVerbose( "found service='$name'" );
 				$service = $name;
-				my $TTPVars = TTP::Toops::TTPVars();
+				my $TTPVars = TTP::TTPVars();
 				$TTPVars->{$TTPVars->{run}{command}{name}}{service} = {
 					name => $service,
 					data => $config->{Services}{$name}
@@ -202,11 +202,11 @@ sub serviceConfig {
 	my ( $hostConfig, $serviceName ) = @_;
 	my $result = undef;
 	if( exists( $hostConfig->{Services}{$serviceName} )){
-		my $serviceHash = TTP::Toops::jsonRead( TTP::Path::serviceConfigurationPath( $serviceName ), { ignoreIfNotExist => true });
+		my $serviceHash = TTP::jsonRead( TTP::Path::serviceConfigurationPath( $serviceName ), { ignoreIfNotExist => true });
 		if( defined $serviceHash ){
 			$serviceHash = serviceConfigMacrosRec( $serviceHash, { service => $serviceName });
-			$serviceHash = TTP::Toops::hostConfigMacrosRec( $serviceHash, { host => $hostConfig->{name} });
-			$serviceHash = TTP::Toops::evaluate( $serviceHash );
+			$serviceHash = TTP::hostConfigMacrosRec( $serviceHash, { host => $hostConfig->{name} });
+			$serviceHash = TTP::evaluate( $serviceHash );
 		}
 		my $hostHash = serviceConfigMacrosRec( $hostConfig->{Services}{$serviceName}, { service => $serviceName });
 		$result = merge( $hostHash, $serviceHash || {} );

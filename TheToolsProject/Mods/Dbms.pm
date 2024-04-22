@@ -16,7 +16,7 @@ use Time::Piece;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Path;
-use TTP::Toops;
+use TTP;
 
 # ------------------------------------------------------------------------------------------------
 # parms is a hash ref with keys:
@@ -35,7 +35,7 @@ sub backupDatabase {
 	msgErr( "Dbms::backupDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
 	msgErr( "Dbms::backupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
 	msgErr( "Dbms::backupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
-	if( !TTP::Toops::ttpErrs()){
+	if( !TTP::ttpErrs()){
 		if( !$parms->{output} ){
 			$parms->{output} = TTP::Dbms::computeDefaultBackupFilename( $dbms, $parms );
 		}
@@ -62,10 +62,10 @@ sub backupDatabase {
 #    > <hostConfiguration>
 #  - \exitCode
 sub _buildDbms {
-	my $TTPVars = TTP::Toops::TTPVars();
+	my $TTPVars = TTP::TTPVars();
 	# dbms is a special object created by TTP for the command
 	my $dbms = $TTPVars->{dbms};
-	$dbms->{config} = TTP::Toops::getHostConfig();
+	$dbms->{config} = TTP::getHostConfig();
 	$dbms->{exitCode} = \$TTPVars->{run}{exitCode};
 	return $dbms;
 }
@@ -79,7 +79,7 @@ sub checkDatabaseExists {
 	msgVerbose( "Dbms::checkDatabaseExists() entering with instance='".( $instance || '(undef)' )."', database='".( $database || '(undef)' )."'" );
 	msgErr( "Dbms::checkDatabaseExists() instance is mandatory, but is not specified" ) if !$instance;
 	msgErr( "Dbms::checkDatabaseExists() database is mandatory, but is not specified" ) if !$database;
-	if( !TTP::Toops::ttpErrs()){
+	if( !TTP::ttpErrs()){
 		my $dbms = TTP::Dbms::_buildDbms();
 		my $list = TTP::Dbms::getLiveDatabases( $dbms );
 		$exists = true if grep( /$database/i, @{$list} );
@@ -110,8 +110,8 @@ sub checkInstanceName {
 	$opts //= {};
 	msgVerbose( "Dbms::checkInstanceName() entering with name='".( $name || '(undef)' )."'" );
 	my $instance = undef;
-	my $TTPVars = TTP::Toops::TTPVars();
-	my $config = TTP::Toops::getHostConfig();
+	my $TTPVars = TTP::TTPVars();
+	my $config = TTP::getHostConfig();
 	if( $name ){
 		# search for the name if host configuration
 		if( exists( $config->{DBMS}{byInstance}{$name} )){
@@ -137,7 +137,7 @@ sub checkInstanceName {
 		}
 	}
 	# if we have found a candidate instance, at least check that we can identify a package
-	my $package = TTP::Toops::ttpVar([ 'DBMS', 'byInstance', $instance, 'package' ]);
+	my $package = TTP::ttpVar([ 'DBMS', 'byInstance', $instance, 'package' ]);
 	if( !$package ){
 		msgErr( "unable to identify a package to address the '$instance' instance" );
 		$instance = undef;
@@ -168,7 +168,7 @@ sub computeDefaultBackupFilename {
 	my ( $dbms, $parms ) = @_;
 	msgVerbose( "Dbms::computeDefaultBackupFilename() entering" );
 	my $output = undef;
-	my $config = TTP::Toops::getHostConfig();
+	my $config = TTP::getHostConfig();
 	msgErr( "Dbms::computeDefaultBackupFilename() instance is mandatory, but is not specified" ) if !$parms->{instance};
 	msgErr( "Dbms::computeDefaultBackupFilename() database is mandatory, but is not specified" ) if !$parms->{database};
 	my $mode = 'full';
@@ -178,7 +178,7 @@ sub computeDefaultBackupFilename {
 	my $backupDir = TTP::Path::dbmsBackupsDir();
 	if( !$backupDir ){
 		msgWarn( "Dbms::computeDefaultBackupFilename() instance='$parms->{instance}' backupDir is not specified, set to default temp directory" );
-		$backupDir = TTP::Toops::getDefaultTempDir();
+		$backupDir = TTP::getDefaultTempDir();
 	}
 	# compute the filename
 	my $fname = $dbms->{config}{name}.'-'.$parms->{instance}.'-'.$parms->{database}.'-'.localtime->strftime( '%y%m%d' ).'-'.localtime->strftime( '%H%M%S' ).'-'.$mode.'.backup';
@@ -375,7 +375,7 @@ sub hashFromTabular {
 # pad the provided string until the specified length
 sub pad {
 	my( $str, $length, $pad ) = @_;
-	return TTP::Toops::pad( $str, $length, $pad );
+	return TTP::pad( $str, $length, $pad );
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -394,7 +394,7 @@ sub restoreDatabase {
 	msgErr( "Dbms::restoreDatabase() database is mandatory, but is not specified" ) if !$parms->{database} && !$parms->{verifyonly};
 	msgErr( "Dbms::restoreDatabase() full backup is mandatory, but is not specified" ) if !$parms->{full};
 	msgErr( "Dbms::restoreDatabase() $parms->{diff}: file not found or not readable" ) if $parms->{diff} && ! -f $parms->{diff};
-	if( !TTP::Toops::ttpErrs()){
+	if( !TTP::ttpErrs()){
 		$result = TTP::Dbms::toPackage( 'apiRestoreDatabase', $dbms, $parms );
 	}
 	if( $result && $result->{ok} ){
@@ -425,23 +425,23 @@ sub _searchValue {
 	if( !defined( $result )){
 		my @serviceKeys = @{$keys};
 		unshift( @serviceKeys, "Services", $serviceConfig->{name} );
-		$result = TTP::Toops::varSearch( \@serviceKeys, $hostConfig );
+		$result = TTP::varSearch( \@serviceKeys, $hostConfig );
 		msgVerbose( "'$result' found with (".join( ',', @serviceKeys ).") in service section of host configuration" ) if defined $result;
 	}
 	# search at the host level
 	if( !defined( $result )){
-		$result = TTP::Toops::varSearch( $keys, $hostConfig );
+		$result = TTP::varSearch( $keys, $hostConfig );
 		msgVerbose( "'$result' found with (".join( ',', @{$keys} ).") in global section of host configuration" ) if defined $result;
 	}
 	# search in the service configuration
 	if( !defined( $result )){
-		$result = TTP::Toops::varSearch( $keys, $serviceConfig );
+		$result = TTP::varSearch( $keys, $serviceConfig );
 		msgVerbose( "'$result' found with (".join( ',', @{$keys} ).") in service configuration" ) if defined $result;
 	}
 	# search in the site configuration
 	if( !defined( $result )){
-		my $TTPVars = TTP::Toops::TTPVars();
-		$result = TTP::Toops::varSearch( $keys, $TTPVars->{config}{toops} );
+		my $TTPVars = TTP::TTPVars();
+		$result = TTP::varSearch( $keys, $TTPVars->{config}{toops} );
 		msgVerbose( "'$result' found with (".join( ',', @{$keys} ).") in site configuration" ) if defined $result;
 	}
 	msgVerbose( "(".join( ',', @{$keys} ).") not found" ) if !defined $result;
@@ -455,7 +455,7 @@ sub toPackage {
 	my ( $fname, $dbms, $parms ) = @_;
 	my $result = undef;
 	msgErr( "Dbms::toPackage() function name must be specified" ) if !$fname;
-	if( !TTP::Toops::ttpErrs()){
+	if( !TTP::ttpErrs()){
 		msgVerbose( "Dbms::toPackage() entering with fname='".( $fname || '(undef)' )."'" );
 		$dbms = TTP::Dbms::_buildDbms() if !$dbms;
 		my $package = $dbms->{instance}{package};

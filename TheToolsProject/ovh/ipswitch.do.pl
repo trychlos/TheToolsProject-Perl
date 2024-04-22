@@ -23,7 +23,7 @@ use TTP::Message qw( :all );
 use TTP::Ovh;
 use TTP::Services;
 
-my $TTPVars = TTP::Toops::TTPVars();
+my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -131,10 +131,10 @@ sub doSwitchIP {
 						$res = true;
 					}
 				} else {
-					TTP::Toops::msgErr( "an error occurred when requesting the move: ".$answer->error());
+					TTP::msgErr( "an error occurred when requesting the move: ".$answer->error());
 				}
 			} else {
-				TTP::Toops::msgErr( "the target server is not willing to get the '$opt_ip' address service" );
+				TTP::msgErr( "the target server is not willing to get the '$opt_ip' address service" );
 			}
 		}
 	}
@@ -165,8 +165,8 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpVerb( $defaults );
+if( TTP::wantsHelp()){
+	TTP::helpVerb( $defaults );
 	ttpExit();
 }
 

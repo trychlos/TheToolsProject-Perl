@@ -22,7 +22,7 @@ use Try::Tiny;
 use TTP::Constants qw( :all );
 use TTP::Credentials;
 use TTP::Message qw( :all );
-use TTP::Toops;
+use TTP;
 
 # ------------------------------------------------------------------------------------------------
 # send a mail through the addressed SMTP gateway
@@ -44,12 +44,12 @@ sub send {
 	msgErr( "Mail::send() expect a content, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{text} && !$msg->{html};
 	msgErr( "Mail::send() expect at least one target email address, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{to};
 	my $gateway = undef;
-	if( !TTP::Toops::ttpErrs()){
-		$gateway = TTP::Toops::ttpVar([ 'SMTPGateway' ]);
+	if( !TTP::ttpErrs()){
+		$gateway = TTP::ttpVar([ 'SMTPGateway' ]);
 		msgErr( "Mail::send() expect smtp gateway, not found" ) if !$gateway;
 		msgErr( "Mail::send() password is mandatory if a username is specified" ) if $gateway && $gateway->{username} && !$gateway->{password};
 	}
-	if( !TTP::Toops::ttpErrs()){
+	if( !TTP::ttpErrs()){
 		my $sender = 'me@localhost';
 		$sender = $gateway->{mailfrom} if exists $gateway->{mailfrom};
 		$sender = $msg->{from} if exists $msg->{from};
@@ -79,7 +79,7 @@ sub send {
 		$opts->{sasl_username} = $username if $username;
 		$opts->{sasl_password} = $password if $username;
 
-		$opts->{helo} = $gateway->{helo} || TTP::Toops::ttpHost();
+		$opts->{helo} = $gateway->{helo} || TTP::ttpHost();
 		$opts->{ssl} = $gateway->{security} if $gateway->{security};
 		if( $gateway->{port} && !$gateway->{security} ){
 			$opts->{ssl} = 'ssl' if $gateway->{port} == 465;

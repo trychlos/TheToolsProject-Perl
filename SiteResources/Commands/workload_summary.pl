@@ -23,12 +23,12 @@ use Data::Dumper;
 use Getopt::Long;
 use Path::Tiny;
 
-use TTP::Toops;
+use TTP;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 
 # TTP initialization
-my $TTPVars = TTP::Toops::initExtern();
+my $TTPVars = TTP::initExtern();
 
 my $defaults = {
 	help => 'no',
@@ -53,7 +53,7 @@ my $opt_count = $defaults->{count};
 # -------------------------------------------------------------------------------------------------
 # pad the provided string until the specified length
 sub _pad {
-	return TTP::Toops::pad( @_ );
+	return TTP::pad( @_ );
 }
 
 =pod
@@ -118,8 +118,8 @@ sub printSummary {
 	# must manage SUBJECT and OPTIONS macros
 	my $command = $TTPVars->{config}{site}{workloadSummary}{command};
 	if( $command ){
-		my $host = TTP::Toops::ttpHost();
-		my $textfname = TTP::Toops::getTempFileName();
+		my $host = TTP::ttpHost();
+		my $textfname = TTP::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );
 		my $subject = sprintf( "[%s\@%s] workload summary", $opt_workload, $host );
@@ -154,12 +154,12 @@ if( !GetOptions(
 	"count=i"			=> \$opt_count	)){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		TTP::Toops::ttpExit( 1 );
+		TTP::ttpExit( 1 );
 }
 
-if( TTP::Toops::wantsHelp()){
-	TTP::Toops::helpExtern( $defaults );
-	TTP::Toops::ttpExit();
+if( TTP::wantsHelp()){
+	TTP::helpExtern( $defaults );
+	TTP::ttpExit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -172,8 +172,8 @@ msgVerbose( "found end='$opt_end'" );
 msgVerbose( "found rc='$opt_rc'" );
 msgVerbose( "found count='$opt_count'" );
 
-if( !TTP::Toops::ttpErrs()){
+if( !TTP::ttpErrs()){
 	printSummary();
 }
 
-TTP::Toops::ttpExit();
+TTP::ttpExit();
