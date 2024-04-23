@@ -12,8 +12,8 @@
 # @(-) --keep=s                count of to-be-kept directories in the source [${keep}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
-# Copyright (©) 2003-2023 Pierre Wieser (see AUTHORS)
-# Copyright (©) 2024 PWI Consulting
+# Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
+# Copyright (©) 2023-2024 PWI Consulting
 #
 # The Tools Project is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
