@@ -20,7 +20,7 @@
 
 package TTP::Node;
 
-use base qw( TTP::JSONable );
+use base qw( TTP::Base );
 our $VERSION = '1.00';
 
 use strict;
@@ -29,7 +29,10 @@ use warnings;
 use Carp;
 use Config;
 use Data::Dumper;
+use Role::Tiny::With;
 use Sys::Hostname qw( hostname );
+
+with 'TTP::Findable', 'TTP::JSONable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
@@ -93,20 +96,19 @@ sub new {
 	my ( $class, $ttp, $args ) = @_;
 	$class = ref( $class ) || $class;
 	$args //= {};
-	#print Dumper( @_ );
+	my $self = $class->SUPER::new( $ttp );
+	bless $self, $class;
 
 	# of which node are we talking about ?
 	my $node = $args->{node} || _hostname();
 
 	# allowed nodesDirs can be configured at site-level
-	my $dirs = TTP::var( 'nodesDirs' ) || $Const->{dirs};
-	#print Dumper( $dirs );
+	my $dirs = $ttp->var( 'nodesDirs' ) || $Const->{dirs};
+	my $success = $self->jsonLoad({ spec => [ $dirs, "$node.json" ] });
 
-	my $self = $class->SUPER::new( $ttp, { spec => [ $dirs, "$node.json" ] });
-	bless $self, $class;
-
-	if( !$self->success()){
-		msgErr( "Unable to find a valid execution node for '$node' in ".Dumper( $dirs ));
+	# unable to find and load the node configuration file ? this is an unrecoverable error
+	if( !$success ){
+		msgErr( "Unable to find a valid execution node for '$node' in [".join( ',', @{$dirs} )."]" );
 		msgErr( "Exiting with code 1" );
 		exit( 1 );
 	}

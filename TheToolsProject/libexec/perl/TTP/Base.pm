@@ -16,7 +16,11 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 #
-# The base class for all TTP classes
+# The base class for all TTP classes.
+#
+# The TTP EntryPoint ref is available both:
+# - as a global variable created in TTP.pm and available everywhere via 'vars::global' package
+# - and stored as a reference in this base class, so available through $object->ttp().
 
 package TTP::Base;
 
@@ -32,12 +36,14 @@ use Data::Dumper;
 
 # -------------------------------------------------------------------------------------------------
 # A placeholder so that roles can come after or before this function which is called at instanciation time
+# 'ttp' is already set, so that the roles not only get the 'ttp' in the arguments list, but can also
+# call $self->ttp() 
 # (I]:
 # - the TTP EntryPoint ref
 # (O):
 # - this same object
 
-sub _initBase {
+sub _newBase {
 	my ( $self, $ttp ) = @_;
 	return $self;
 }
@@ -71,11 +77,12 @@ sub new {
 	$args //= {};
 	my $self = {};
 	bless $self, $class;
-	
-	$self->_initBase( $ttp );
 
 	# keep the TTP EP ref
 	$self->{_ttp} = $ttp;
+
+	# let the role insert their own code at that time
+	$self->_newBase( $ttp );
 
 	return $self;
 }

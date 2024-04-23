@@ -93,10 +93,10 @@ sub listNoderoot {
 # =================================================================================================
 
 if( !GetOptions(
-	"help!"				=> $running->helpRef(),
-	"verbose!"			=> $running->verboseRef(),
-	"colored!"			=> $running->coloredRef(),
-	"dummy!"			=> $running->dummyRef(),
+	"help!"				=> \$ttp->{run}{help},
+	"verbose!"			=> \$ttp->{run}{verbose},
+	"colored!"			=> \$ttp->{run}{colored},
+	"dummy!"			=> \$ttp->{run}{dummy},
 	"nodeRoot!"			=> \$opt_nodeRoot,
 	"logsRoot!"			=> \$opt_logsRoot,
 	"logsDaily!"		=> \$opt_logsDaily,

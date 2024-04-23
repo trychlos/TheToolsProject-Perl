@@ -154,13 +154,13 @@ sub var {
 	} else {
 		# search in node if it is defined
 		my $object = $self->node();
-		$found = $self->var( $keys, $object->get()) if !defined( $found ) && defined( $object );
+		$found = $self->var( $keys, $object->jsonData()) if !defined( $found ) && defined( $object );
 		#print  __PACKAGE__."::var() after node found='".( defined $found ? $found : '(undef)' )."'".EOL;
 		# or search in the site for all known historical keys
 		$object = $self->site();
 		my @newKeys = ref $keys eq 'ARRAY' ? @{$keys} : ( $keys );
 		unshift( @newKeys, [ '', 'toops', 'TTP' ] );
-		$found = $self->var( \@newKeys, $object->get()) if !defined( $found ) && defined( $object );
+		$found = $self->var( \@newKeys, $object->jsonData()) if !defined( $found ) && defined( $object );
 		#print  __PACKAGE__."::var() after site found='".( defined $found ? $found : '(undef)' )."'".EOL;
 	}
 	return $found;

@@ -20,7 +20,7 @@
 
 package TTP::Site;
 
-use base qw( TTP::JSONable );
+use base qw( TTP::Base );
 our $VERSION = '1.00';
 
 use strict;
@@ -28,6 +28,9 @@ use warnings;
 
 use Carp;
 use Data::Dumper;
+use Role::Tiny::With;
+
+with 'TTP::Findable', 'TTP::JSONable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
@@ -41,7 +44,7 @@ my $Const = {
 		'^toops$',
 		'^TTP$'
 	],
-	# hardcoded subpath to find the global site.json
+	# hardcoded subpaths to find the global site.json
 	# even if this not too sexy in Win32, this is a standard and a common usage on Unix/Darwin platforms
 	site => [
 		'etc/ttp/site.json',
@@ -85,21 +88,9 @@ sub _checkTopKeys {
 # - disallowed keys as an array ref, maybe empty
 
 sub disallowed {
-	my ( $self, $args ) = @_;
+	my ( $self ) = @_;
+
 	return $self->{_disallowed};
-}
-
-# -------------------------------------------------------------------------------------------------
-# Says if the site configuration has been successfully loaded, evaluated and checked
-# Not the same as JSONable->loaded() because this later only says if raw data has been successfully loaded 
-# (I]:
-# - none
-# (O):
-# - true|false
-
-sub success {
-	my ( $self, $args ) = @_;
-	return $self->{_success};
 }
 
 ### Class methods
@@ -115,15 +106,16 @@ sub new {
 	my ( $class, $ttp, $args ) = @_;
 	$class = ref( $class ) || $class;
 	$args //= {};
-
-	# set the site ending path list before trying to load and evaluate the JSON configuration file
-	#  specs here is a ref to an array of arrays which have to be successively tested
-	$args->{spec} = [ $Const->{site} ];
-	my $self = $class->SUPER::new( $ttp, $args );
+	my $self = $class->SUPER::new( $ttp );
 	bless $self, $class;
 
+	# try to load and evaluate the JSON configuration file with the list of allowed ending paths
+	#  specs here is a ref to an array of arrays which have to be successively tested (so an array
+	#  inside of an array)
+	my $success = $self->jsonLoad({ spec => [ $Const->{site} ] });
+
 	# unable to find and load a site configuration file ? this is an unrecoverable error
-	if( !$self->SUPER::success()){
+	if( !$success ){
 		msgErr( "Unable to find the site configuration file among [".( join( ',', @{TTP::Site->spec()}))."]" );
 		msgErr( "Please make sure that the file exists in one of the TTP_ROOTS paths" );
 		msgErr( "Exiting with code 1" );
@@ -132,34 +124,15 @@ sub new {
 
 	# check the top keys of the site file
 	# found a not allowed key ? this is still an unrecoverable error
-	$self->{_success} = false;
-	$self->{_disallowed} = [];
-	if( $self->TTP::JSONable::success()){
-		$self->{_disallowed} = $self->_checkTopKeys( $self->get(), $Const->{keys } );
-		if( scalar @{$self->{_disallowed}} ){
-			msgErr( "Invalid key(s) found in site configuration file: [".join( ', ', @{$self->disallowed()} )."]" );
-			msgErr( "Remind that site own keys should be inside 'site' hierarchy while TTP global configuration must be inside 'toops' hierarchy" );
-			msgErr( "Exiting with code 1" );
-			exit( 1 );
-		} else {
-			$self->{_success} = true;
-		}
+	$self->{_disallowed} = $self->_checkTopKeys( $self->jsonData(), $Const->{keys } );
+	if( scalar @{$self->{_disallowed}} ){
+		msgErr( "Invalid key(s) found in site configuration file: [".join( ', ', @{$self->disallowed()} )."]" );
+		msgErr( "Remind that site own keys should be inside 'site' hierarchy while TTP global configuration must be inside 'toops' hierarchy" );
+		msgErr( "Exiting with code 1" );
+		exit( 1 );
 	}
 
 	return $self;
-}
-
-# -------------------------------------------------------------------------------------------------
-# Class method
-# (I]:
-# - none
-# (O):
-# - Returns the Const->{site} specification as an array ref
-
-sub spec {
-	my ( $class, $args ) = @_;
-	$class = ref( $class ) || $class;
-	return $Const->{site};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -172,6 +145,20 @@ sub DESTROY {
 	my $self = shift;
 	$self->SUPER::DESTROY();
 	return;
+}
+
+### Global functions
+
+# -------------------------------------------------------------------------------------------------
+# Publish the site specifications
+# Can be called both as 'TTP::Site->spec()' or as 'TTP::Site::spec()'
+# (I]:
+# - none
+# (O):
+# - Returns the Const->{site} specification as an array ref
+
+sub spec {
+	return $Const->{site};
 }
 
 1;

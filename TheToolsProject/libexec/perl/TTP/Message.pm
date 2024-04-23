@@ -313,11 +313,10 @@ sub _printMsg {
 		# global runtime option is only considered if not disabled in toops/host configuration
 		my $withColor = true;
 		$configured = undef;
-		$ttp->{debug} = true;
 		$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'withColor' ]) if exists $Const->{$level}{key};
 		#print __PACKAGE__."::_printMsg() configured='".( defined $configured ? $configured : '(undef)' )."'".EOL if $level eq "VERBOSE";
 		$withColor = $configured if defined $configured;
-		$withColor = $running->colored() if $running && $withColor;
+		$withColor = $running->colored() if $running && $running->coloredSet();
 		my $colorstart = '';
 		my $colorend = '';
 		if( $withColor ){

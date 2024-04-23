@@ -16,10 +16,11 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 #
-# The base class common to classes which are JSON-configurable
+# A role for classes which have a JSON configuration file.
 #
 # Note: JSON configuration files are allowed to embed some dynamically evaluated Perl code.
-# As the evaluation is executed here, this module must 'use' all needed Perl packages.
+# As the evaluation is executed here, this module may have to 'use' the needed Perl packages
+# which are not yet in the running context.
 
 package TTP::JSONable;
 
@@ -33,16 +34,18 @@ use Carp;
 use Config;
 use Data::Dumper;
 use JSON;
-use Role::Tiny::With;
 use Test::Deep;
 use Time::Piece;
-
-with 'TTP::Findable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 
 ### Private methods
+### https://metacpan.org/pod/Role::Tiny
+### All subs created after importing Role::Tiny will be considered methods to be composed.
+use Role::Tiny;
+
+requires qw( _newBase );
 
 # -------------------------------------------------------------------------------------------------
 # recursively interpret the provided data for variables and computings
@@ -141,7 +144,7 @@ sub _evaluatePrint {
 # (O):
 # returns the read hash, or undef (most probably in case of a JSON syntax error)
 
-sub _read {
+sub _readRaw {
 	my ( $self, $path ) = @_;
 	msgVerbose( __PACKAGE__."::_read() path='$path'" );
 	my $result = undef;
@@ -152,12 +155,12 @@ sub _read {
 		   <$fh>
 		};
 		my $json = JSON->new;
-		# may croak on error
+		# may croak on error, intercepted below
 		eval { $result = $json->decode( $content ) };
 		if( $@ ){
 			msgWarn( __PACKAGE__."::_read() $path: $@" );
 		} else {
-			$self->{_loaded} = true;
+			$self->{_jsonable}{loaded} = true;
 		}
 	}
 	return $result;
@@ -174,8 +177,8 @@ sub _read {
 
 sub evaluate {
 	my ( $self, $args ) = @_;
-	$self->{_evaluated} = $self->{_raw};
-	$self->{_evaluated} = $self->_evaluate( $self->{_raw} );
+	$self->{_jsonable}{evaluated} = $self->{_jsonable}{raw};
+	$self->{_jsonable}{evaluated} = $self->_evaluate( $self->{_jsonable}{raw} );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -185,10 +188,45 @@ sub evaluate {
 # (O):
 # - the evaluated data
 
-sub get {
+sub jsonData {
 	my ( $self, $args ) = @_;
 
-	return $self->{_evaluated};
+	return $self->{_jsonable}{evaluated};
+}
+
+# -------------------------------------------------------------------------------------------------
+# Load the specified JSON configuration file
+# (I]:
+# - an argument object with following keys:
+#   > spec: the specification to be searched for in TTP_ROOTS tree, as a scalar or as an array ref
+#     or as an array of array refs
+#   or:
+#   > path: the absolute exact path to be loaded
+# (O):
+# - true if a file or the specified file has been found and successfully loaded
+# 
+
+sub jsonLoad {
+	my ( $self, $args ) = @_;
+	$args //= {};
+
+	# keep the passed-in args
+	$self->{_jsonable}{spec} = $args->{spec} if $args->{spec};
+	$self->{_jsonable}{path} = $args->{path} if $args->{path};
+
+	# if a path is specified, the we want this one absolutely
+	if( $self->{_jsonable}{path} ){
+		$self->{_jsonable}{json} = $self->{_jsonable}{path};
+	# else find the first suitable file in TTP_ROOTS and keep its path
+	} else {
+		$self->{_jsonable}{json} = $self->find( $args ) if $args->{spec};
+	}
+
+	# load the raw JSON data
+	$self->{_jsonable}{loaded} = false;
+	$self->{_jsonable}{raw} = $self->_readRaw( $self->{_jsonable}{json} ) if $self->{_jsonable}{json};
+
+	return $self->{_jsonable}{loaded};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -198,61 +236,25 @@ sub get {
 # (O):
 # - true|false
 
-sub success {
-	my ( $self, $args ) = @_;
-	return $self->{_loaded};
-}
+sub jsonSuccess {
+	my ( $self ) = @_;
 
-### Class methods
-
-# -------------------------------------------------------------------------------------------------
-# Constructor
-# (I]:
-# - the TTP EP entry point
-# - an argument object with following keys:
-#   > spec: the specification to be searched for in TTP_ROOTS tree, as a scalar or as an array ref
-#   or:
-#   > path: the exact path to be loaded
-# (O):
-# - this object
-
-sub new {
-	my ( $class, $ttp, $args ) = @_;
-	$class = ref( $class ) || $class;
-	my $self = $class->SUPER::new( $ttp, $args );
-	bless $self, $class;
-
-	$args //= {};
-	# keep the passed-in args
-	$self->{_spec} = $args->{spec} if $args->{spec};
-	$self->{_path} = $args->{path} if $args->{path};
-
-	# if a path is specified, the we want this one absolutely
-	if( $self->{_path} ){
-		$self->{_json} = $self->{_path};
-	# else find the first suitable file in TTP_ROOTS and keep its path
-	} else {
-		$self->{_json} = $self->find( $args ) if $self->{_spec};
-	}
-
-	# load the raw JSON data
-	$self->{_loaded} = false;
-	$self->{_raw} = $self->_read( $self->{_json} ) if $self->{_json};
-
-	return $self;
+	return $self->{_jsonable}{loaded};
 }
 
 # -------------------------------------------------------------------------------------------------
-# Destructor
-# (I]:
-# - instance
+# JSONable initialization
+# Initialization of a command or of an external script
+# (I):
+# - the TTP EntryPoint ref
 # (O):
+# -none
 
-sub DESTROY {
-	my $self = shift;
-	$self->SUPER::DESTROY();
-	return;
-}
+after _newBase => sub {
+	my ( $self, $ttp ) = @_;
+
+	$self->{_jsonable} //= {};
+};
 
 1;
 

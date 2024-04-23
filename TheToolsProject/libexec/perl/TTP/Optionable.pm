@@ -16,16 +16,25 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 #
-# A role to be composed by both commands+verbs and external commands.
-# Take care of initializing to-be-logged words
+# The options management of commands+verbs and external scripts.
+#
+# 'help', 'colored', 'dummy' and 'verbose' option flags are set into ttp->{run} hash both for
+# historical reasons and for the ease of handlings.
+# They are all initiallized to false at Optionable instanciation time.
+#
+# 'help' is automatically set when there the command-line only contains the command, or the command
+# and the verb. After that, this is managed by GetOptions().
+#
+# 'colored' is message-evel dependant (see Message.pm), and defaults to be ignored for msgLog(),
+# false for msgOut(), true in all other cases.
+#
+# After their initialization here, 'dummy' and 'verbose' flags only depend of GetOptions().
 
-package TTP::Runnable;
+package TTP::Optionable;
 our $VERSION = '1.00';
 
 use Carp;
 use Data::Dumper;
-use File::Spec;
-use Time::Moment;
 use vars::global qw( $ttp );
 
 use TTP::Constants qw( :all );
@@ -45,11 +54,12 @@ requires qw( _newBase );
 # (I):
 # - none
 # (O):
-# - returns the computed basename of the runnable (e.g. 'ttp.pl')
+# - whether the output should be colored: true|false
 
-sub runnableBasename {
+sub colored {
 	my ( $self ) = @_;
-	return $self->{_runnable}{basename};
+
+	return $ttp->{run}{colored} > 0;
 };
 
 # -------------------------------------------------------------------------------------------------
@@ -57,26 +67,12 @@ sub runnableBasename {
 # (I):
 # - none
 # (O):
-# - returns the current count of errors
+# - whether the --colored option has been specified in the command-line
 
-sub runnableErrs {
-	my ( $self ) = @_;
-	return $self->{_runnable}{errs};
-};
-
-# -------------------------------------------------------------------------------------------------
-# Increment the errors count
-# (I):
-# - none
-# (O):
-# - returns the current count of errors
-
-sub runnableIncErr {
+sub coloredSet {
 	my ( $self ) = @_;
 
-	$self->{_runnable}{errs} += 1;
-
-	return $self->{_runnable}{errs};
+	return $ttp->{run}{colored} != -1;
 };
 
 # -------------------------------------------------------------------------------------------------
@@ -84,11 +80,12 @@ sub runnableIncErr {
 # (I):
 # - none
 # (O):
-# -returns the computed name (without extension) of the runnable (e.g. 'ttp')
+# - whether the run is dummy: true|false
 
-sub runnableName {
+sub dummy {
 	my ( $self ) = @_;
-	return $self->{_runnable}{namewoext};
+
+	return $ttp->{run}{dummy};
 };
 
 # -------------------------------------------------------------------------------------------------
@@ -96,63 +93,76 @@ sub runnableName {
 # (I):
 # - none
 # (O):
-# -returns the qualifier
+# - whether the help should be displayed: true|false
 
-sub runnableQualifier {
+sub help {
 	my ( $self ) = @_;
-	return $self->{_runnable}{qualifier};
+
+	return $ttp->{run}{help};
 };
 
 # -------------------------------------------------------------------------------------------------
 # Setter
+# Set whether we want display embedded help
 # (I):
-# - the qualifier, which is the verb for a command
+# - whether to display the help as true|false
 # (O):
-# -this same object
+# -this object
 
-sub runnableSetQualifier {
-	my ( $self, $qualifier ) = @_;
+sub setHelp {
+	my ( $self, $haveHelp ) = @_;
 
-	$self->{_runnable}{qualifier} = $qualifier;
-
+	$ttp->{run}{help} = $haveHelp ? true : false;
+	
 	return $self;
 };
 
 # -------------------------------------------------------------------------------------------------
-# Runnable initialization
+# Getter
+# (I):
+# - none
+# (O):
+# - whether the run is verbose: true|false
+
+sub verbose {
+	my ( $self ) = @_;
+
+	return $ttp->{run}{verbose};
+};
+
+# -------------------------------------------------------------------------------------------------
+# Optionable initialization
 # Initialization of a command or of an external script
 # (I):
-# - the TTP EntryPoint ref
+# - none
 # (O):
 # -none
 
 after _newBase => sub {
 	my ( $self, $ttp ) = @_;
 
-	$self->{_runnable} //= {};
-	$self->{_runnable}{me} = $0;
-	$self->{_runnable}{argv} = @ARGV;
-	$self->{_runnable}{started} = Time::Moment->now;
-	$self->{_runnable}{errs} = 0;
+	$self->{_optionable} //= {};
 
-	my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
-	$self->{_runnable}{basename} = $file;
-	$file =~ s/\.[^.]+$//;
-	$self->{_runnable}{namewoext} = $file;
-
-	$ttp->setRunning( $self );
+	# set these standard options in ttp->{run} both for historical reasons and for easy handlings
+	$ttp->{run} //= {};
+	$ttp->{run}{help} = false;
+	$ttp->{run}{colored} = -1;
+	$ttp->{run}{dummy} = false;
+	$ttp->{run}{verbose} = false;
 };
 
 ### Global functions
-### These can be used as such from the verbs and extern scripts
 
-sub ttpErrs {
-	return $ttp->running()->runnableErrs();
-}
+# -------------------------------------------------------------------------------------------------
+# Interpret command-line options
+# (I):
+# - none
+# (O):
+# - whether the run is verbose: true|false
 
-sub ttpExit {
-	TTP::exit( @_ );
-}
+sub xGetOptions {
+	print "GetOptions".EOL;
+};
 
 1;
 
