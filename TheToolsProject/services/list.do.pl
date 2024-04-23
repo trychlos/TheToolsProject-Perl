@@ -32,7 +32,7 @@ use Data::Dumper;
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
-use TTP::Services;
+use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -112,7 +112,7 @@ sub listServiceMachines {
 # this code is so duplicated..
 sub listServices {
 	msgOut( "displaying services defined on $hostConfig->{name}..." );
-	my @list = TTP::Services::getDefinedServices( $hostConfig, { hidden => $opt_hidden });
+	my @list = TTP::Service::getDefinedServices( $hostConfig, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
@@ -123,7 +123,7 @@ sub listServices {
 # list all the workloads used by a service on this host with names sorted in ascii order
 sub listWorkloads {
 	msgOut( "displaying workloads used on $hostConfig->{name}..." );
-	my @list = TTP::Services::getUsedWorkloads( $hostConfig, { hidden => $opt_hidden });
+	my @list = TTP::Service::getUsedWorkloads( $hostConfig, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
@@ -135,7 +135,7 @@ sub listWorkloads {
 # the commands are listed in the order of their service name
 sub listWorkloadCommands {
 	msgOut( "displaying workload commands defined in $hostConfig->{name}\\$opt_workload..." );
-	my @list = TTP::Services::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
+	my @list = TTP::Service::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
 	my $count = 0;
 	foreach my $it ( @list ){
 		if( exists( $it->{commands} )){
@@ -153,7 +153,7 @@ sub listWorkloadCommands {
 # They are displayed in the order of their service name
 sub listWorkloadDetails {
 	msgOut( "displaying detailed workload tasks defined in $hostConfig->{name}\\$opt_workload..." );
-	my @list = TTP::Services::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
+	my @list = TTP::Service::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		printWorkloadTask( $it );
 	}
@@ -238,12 +238,12 @@ if( !GetOptions(
 	"machines!"			=> \$opt_machines )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -270,7 +270,7 @@ if( $opt_workload && !$opt_commands && !$opt_details ){
 	msgWarn( "a workload is named, but without any requested information" );
 }
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	listEnvironment() if $opt_environment;
 	listServiceMachines() if $opt_service && $opt_machines;
 	listServices() if $opt_services;
@@ -279,4 +279,4 @@ if( !ttpErrs()){
 	listWorkloads() if $opt_workloads;
 }
 
-ttpExit();
+TTP::exit();

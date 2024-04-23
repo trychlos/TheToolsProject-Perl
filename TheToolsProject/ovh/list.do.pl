@@ -94,12 +94,12 @@ if( !GetOptions(
 	"services!"			=> \$opt_services )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -107,8 +107,8 @@ msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" 
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	listServices() if $opt_services;
 }
 
-ttpExit();
+TTP::exit();

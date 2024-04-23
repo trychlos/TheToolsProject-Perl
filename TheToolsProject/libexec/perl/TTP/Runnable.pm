@@ -51,6 +51,7 @@ requires qw( _newBase );
 
 sub runnableBNameFull {
 	my ( $self ) = @_;
+
 	return $self->{_runnable}{basename};
 };
 
@@ -63,6 +64,7 @@ sub runnableBNameFull {
 
 sub runnableBNameShort {
 	my ( $self ) = @_;
+
 	return $self->{_runnable}{namewoext};
 };
 
@@ -75,6 +77,7 @@ sub runnableBNameShort {
 
 sub runnableErrs {
 	my ( $self ) = @_;
+
 	return $self->{_runnable}{errs};
 };
 
@@ -90,7 +93,7 @@ sub runnableIncErr {
 
 	$self->{_runnable}{errs} += 1;
 
-	return $self->{_runnable}{errs};
+	return $self->runnableErrs();
 };
 
 # -------------------------------------------------------------------------------------------------
@@ -161,14 +164,6 @@ after _newBase => sub {
 
 ### Global functions
 ### These can be used as such from the verbs and extern scripts
-
-sub ttpErrs {
-	return $ttp->running()->runnableErrs();
-}
-
-sub ttpExit {
-	TTP::exit( @_ );
-}
 
 1;
 

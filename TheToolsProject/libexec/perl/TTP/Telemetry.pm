@@ -33,7 +33,7 @@ sub httpPublish {
 	my ( $metric, $value, $labels, $opts ) = @_;
 	$opts //= {};
 	my $count = 0;
-	my $url = TTP::ttpVar([ 'Telemetry', 'withHttp', 'url' ]);
+	my $url = $ttp->var([ 'Telemetry', 'withHttp', 'url' ]);
 	if( $url ){
 		foreach my $it ( @{$labels} ){
 			my @words = split( /=/, $it );
@@ -90,9 +90,9 @@ sub mqttPublish {
 	my ( $metric, $value, $labels, $opts ) = @_;
 	$opts //= {};
 	my $count = 0;
-	my $command = TTP::ttpVar([ 'Telemetry', 'withMqtt', 'command' ]);
+	my $command = $ttp->var([ 'Telemetry', 'withMqtt', 'command' ]);
 	if( $command ){
-		my $topic = TTP::TTP::host();
+		my $topic = TTP::host();
 		$topic .= "/telemetry";
 		foreach my $it ( @{$labels} ){
 			my @words = split( /=/, $it );

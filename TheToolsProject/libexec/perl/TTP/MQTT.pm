@@ -34,7 +34,7 @@ sub connect {
 	my ( $args ) = @_;
 	my $mqtt = undef;
 
-	my $broker = TTP::ttpVar([ 'MQTTGateway', 'broker' ]);
+	my $broker = $ttp->var([ 'MQTTGateway', 'broker' ]);
 	$broker = $args->{broker} if $args->{broker};
 	msgErr( "MQTT::connect() broker is not configured nor provided as an argument" ) if !$broker;
 

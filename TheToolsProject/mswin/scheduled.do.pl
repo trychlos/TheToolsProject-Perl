@@ -96,12 +96,12 @@ if( !GetOptions(
 	"status!"			=> \$opt_status	)){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -114,9 +114,9 @@ msgVerbose( "found status='".( $opt_status ? 'true':'false' )."'" );
 # a task name is mandatory when asking for the status
 msgErr( "a task name is mandatory when asking for a status" ) if $opt_status && !$opt_task;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doListTasks() if $opt_list;
 	doTaskStatus() if $opt_status && $opt_task;
 }
 
-ttpExit();
+TTP::exit();

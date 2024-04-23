@@ -24,7 +24,7 @@ use Path::Tiny;
 use TTP::Constants qw( :all );
 use TTP::Dbms;
 use TTP::Message qw( :all );
-use TTP::Services;
+use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -118,12 +118,12 @@ if( !GetOptions(
 	"multiple!"			=> \$opt_multiple )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -151,10 +151,10 @@ if( $count != 1 ){
 	}
 }
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	execSqlStdin() if $opt_stdin;
 	execSqlScript() if $opt_script;
 	execSqlCommand() if $opt_command;
 }
 
-ttpExit();
+TTP::exit();

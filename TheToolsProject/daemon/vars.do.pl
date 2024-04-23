@@ -45,12 +45,12 @@ if( !GetOptions(
 	"confdir!"			=> \$opt_confdir )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -58,8 +58,8 @@ msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" 
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found confdir='".( $opt_confdir ? 'true':'false' )."'" );
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	listConfdir() if $opt_confdir;
 }
 
-ttpExit();
+TTP::exit();

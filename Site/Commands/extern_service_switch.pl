@@ -235,12 +235,12 @@ if( !GetOptions(
 	"force!"			=> \$opt_force )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		TTP::ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	TTP::helpExtern( $defaults );
-	TTP::ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -263,8 +263,8 @@ if( !$opt_live && !$opt_backup ){
 	msgWarn( "neither '--live' nor '--backup' options are specified, will not do anything" );
 }
 
-if( !TTP::ttpErrs()){
+if( !TTP::errs()){
 	doSwitch() if $opt_live or $opt_backup;
 }
 
-TTP::ttpExit();
+TTP::exit();

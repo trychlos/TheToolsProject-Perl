@@ -25,7 +25,7 @@ use Time::Piece;
 use TTP::Constants qw( :all );
 use TTP::Dbms;
 use TTP::Message qw( :all );
-use TTP::Services;
+use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -127,12 +127,12 @@ if( !GetOptions(
 	"output=s"			=> \$opt_output )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -152,7 +152,7 @@ if( $opt_service ){
 	if( $opt_instance ){
 		msgErr( "'--service' option is exclusive of '--instance' option" );
 	} else {
-		$serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
+		$serviceConfig = TTP::Service::serviceConfig( $hostConfig, $opt_service );
 		if( $serviceConfig ){
 			$opt_instance = TTP::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
 			if( $opt_instance ){
@@ -199,8 +199,8 @@ if( !$opt_output ){
 	msgErr( "cowardly refuse to backup several databases in a single output file" );
 }
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doBackup();
 }
 
-ttpExit();
+TTP::exit();

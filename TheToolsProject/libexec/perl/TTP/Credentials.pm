@@ -29,7 +29,7 @@ sub get {
 		msgErr( "Credentials::get() expects an array, found '".ref( $keys )."'" );
 	} else {
 		# first look in the Toops/host configurations
-		$res = TTP::ttpVar( $keys );
+		$res = $ttp->var( $keys );
 		# if not found, looks at credentials/toops.json
 		if( !defined( $res )){
 			my $fname = File::Spec->catdir( TTP::Path::credentialsDir(), "toops.json" );
@@ -46,7 +46,7 @@ sub get {
 		}
 		# if not found, looks at credentials/<host>.json
 		if( !defined( $res )){
-			my $host = TTP::TTP::host();
+			my $host = TTP::host();
 			my $fname = File::Spec->catdir( TTP::Path::credentialsDir(), "$host.json" );
 			my $data = TTP::evaluate( TTP::jsonRead( $fname ));
 			$res = $data;

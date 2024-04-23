@@ -65,18 +65,18 @@ sub doPublish {
 				msgErr( "error detected in dircopy(): $!" );
 			}
 		}
-		if( !ttpErrs()){
+		if( !TTP::errs()){
 			$done += 1;
 		}
 	}
-	if( $done == $asked && !ttpErrs() && $opt_tag ){
+	if( $done == $asked && !TTP::errs() && $opt_tag ){
 		msgOut( "tagging the git repository" );
 		my $now = localtime->strftime( '%Y%m%d_%H%M%S' );
 		my $message = "$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name}";
 		print `git tag -am "$message" $now`;
 	}
 	my $str = "$done/$asked subdirs copied";
-	if( $done == $asked && !ttpErrs()){
+	if( $done == $asked && !TTP::errs()){
 		msgOut( "success ($str)" );
 	} else {
 		msgErr( "NOT OK ($str)" );
@@ -96,12 +96,12 @@ if( !GetOptions(
 	"tag!"				=> \$opt_tag )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -158,8 +158,8 @@ if( $opt_check ){
 	msgWarn( "no check is made as '--check' option has been set to false" );
 }
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doPublish();
 }
 
-ttpExit();
+TTP::exit();

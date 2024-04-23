@@ -54,15 +54,20 @@ sub bootstrap {
 
 	# first identify, load, evaluate the site configuration - exit if error
 	my $site = TTP::Site->new( $self );
+	#print __PACKAGE__."::bootstrap() site allocated".EOL;
 	$self->{_site} = $site;
-	#print "EP::bootstrap() site allocated".EOL;
 	$site->evaluate();
+	#print __PACKAGE__."::bootstrap() site evaluated and set".EOL;
 
 	# identify current host (remind that there is no logical node in this Perl version)
 	my $node = TTP::Node->new( $self );
+	#print __PACKAGE__."::bootstrap() node allocated".EOL;
 	$self->{_node} = $node;
-	#print "EP::bootstrap() node allocated".EOL;
 	$node->evaluate();
+	#print __PACKAGE__."::bootstrap() node evaluated and set".EOL;
+
+	# reevaluate the site when the node is set
+	$site->evaluate();
 
 	return  $self;
 }
@@ -145,9 +150,12 @@ sub site {
 # (O):
 # - the evaluated value of this variable, which may be undef
 
+my $varDebug = false;
+
 sub var {
 	my ( $self, $keys, $base ) = @_;
-	#print __PACKAGE__."::var() entering with keys='$keys' base='".( defined $base ? $base : '(undef)' )."'".EOL;
+	#$varDebug = ( $keys eq 'logsRoot' || $keys eq 'nodeRoot' );
+	print __PACKAGE__."::var() entering with keys='$keys' base='".( defined $base ? $base : '(undef)' )."'".EOL if $varDebug;
 	my $found = undef;
 	if( defined( $base )){
 		$found = $self->_var_rec( $keys, $base );
@@ -155,13 +163,15 @@ sub var {
 		# search in node if it is defined
 		my $object = $self->node();
 		$found = $self->var( $keys, $object->jsonData()) if !defined( $found ) && defined( $object );
+		print  __PACKAGE__."::var() node is not set".EOL if $varDebug && !$object;
 		#print  __PACKAGE__."::var() after node found='".( defined $found ? $found : '(undef)' )."'".EOL;
 		# or search in the site for all known historical keys
 		$object = $self->site();
 		my @newKeys = ref $keys eq 'ARRAY' ? @{$keys} : ( $keys );
 		unshift( @newKeys, [ '', 'toops', 'TTP' ] );
 		$found = $self->var( \@newKeys, $object->jsonData()) if !defined( $found ) && defined( $object );
-		#print  __PACKAGE__."::var() after site found='".( defined $found ? $found : '(undef)' )."'".EOL;
+		print  __PACKAGE__."::var() site is not set".EOL if $varDebug && !$object;
+		print  __PACKAGE__."::var() after site found='".( defined $found ? $found : '(undef)' )."'".EOL if $varDebug && $object;
 	}
 	return $found;
 }
@@ -200,7 +210,7 @@ sub _var_rec {
 		$base = $keys ? $base->{$keys} : $base;
 		#print __PACKAGE__."::_var_rec() keys='$keys' found '".( defined $base ? $base : '(undef)' )."'".EOL;
 	}
-	#print __PACKAGE__."::_var_rec() returning '".( defined $base ? $base : '(undef)' )."'".EOL;
+	print __PACKAGE__."::_var_rec() returning '".( defined $base ? $base : '(undef)' )."'".EOL if $varDebug;
 	return $base;
 }
 

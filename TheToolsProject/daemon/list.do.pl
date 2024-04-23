@@ -34,7 +34,7 @@ sub doListJSON {
 	msgOut( "displaying available JSON configuration files..." );
 	my $json_path = TTP::Path::daemonsConfigurationsDir();
 	opendir( my $dh, $json_path ) or msgErr( "opendir $json_path: $!" );
-	if( !ttpErrs()){
+	if( !TTP::errs()){
 		my $count = 0;
 		my $sufixed_path = TTP::Path::withTrailingSeparator( $json_path );
 		while( readdir( $dh )){
@@ -61,12 +61,12 @@ if( !GetOptions(
 	"json!"				=> \$opt_json )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -76,8 +76,8 @@ msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
 
 msgWarn( "no action as '--json' option is not set" ) if !$opt_json;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doListJSON() if $opt_json;
 }
 
-ttpExit();
+TTP::exit();

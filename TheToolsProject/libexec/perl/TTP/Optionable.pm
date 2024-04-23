@@ -145,7 +145,7 @@ after _newBase => sub {
 before run => sub {
 	my ( $self ) = @_;
 
-	$ttp->{run}{help} = true if scalar @ARGV <= 2;
+	$ttp->{run}{help} = true if scalar @ARGV <= 1;
 };
 
 ### Global functions

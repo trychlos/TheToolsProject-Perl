@@ -1,4 +1,20 @@
-# Copyright (@) 2023-2024 PWI Consulting
+# The Tools Project: a Tools System and Paradigm for IT Production
+# Copyright (©) 2003-2023 Pierre Wieser (see AUTHORS)
+# Copyright (©) 2024 PWI Consulting
+#
+# The Tools Project is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# The Tools Project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with The Tools Project; see the file COPYING. If not,
+# see <http://www.gnu.org/licenses/>.
 
 package TTP;
 
@@ -42,6 +58,11 @@ my $Const = {
 		MSWin32 => {
 			tempDir => 'C:\\Temp'
 		}
+	},
+	# these constants are needed to 'ttp.pl list --commands'
+	command => {
+		dir => 'bin',
+		sufix => '*.pl'
 	}
 };
 
@@ -97,6 +118,13 @@ sub commandByOs {
 	}
 	msgVerbose( "Toops::commandByOs() result=$result->{result}" );
 	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns const needed by 'ttp.pl list --commands'
+
+sub commandConst {
+	return $Const->{command};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -180,6 +208,15 @@ sub copyFile {
 	}
 	msgVerbose( "Toops::copyFile() returns result=$result" );
 	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the current count of errors
+
+sub errs {
+	my $running = $ttp->running();
+	return $running->runnableErrs() if $running;
+	return 0;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -452,7 +489,7 @@ sub getDefinedHosts {
 	my @hosts = ();
 	my $dir = TTP::Path::hostsConfigurationsDir();
 	opendir my $dh, $dir or msgErr( "cannot open '$dir' directory: $!" );
-	if( !ttpErrs()){
+	if( !errs()){
 		my @entries = readdir $dh;
 		closedir $dh;
 		foreach my $entry ( @entries ){
@@ -836,10 +873,10 @@ sub moveDir {
 # - none
 # (O):
 # - returns the 'nodeRoot' directory specified in the site configuration to act as a replacement
-#   as there is no logical machine in this Perl version
+#   to the mounted filesystem as there is no logical machine in this Perl version
 
 sub nodeRoot {
-	my $result = $ttp->var( 'nodeRoot' ) || $Const->{byOS}{$Config{osname}}{tempDir};
+	my $result = $ttp->site() ? ( $ttp->var( 'nodeRoot' ) || $Const->{byOS}{$Config{osname}}{tempDir} ) : undef;
 	return $result;
 }
 
@@ -973,14 +1010,6 @@ sub tempDir {
 }
 
 # -------------------------------------------------------------------------------------------------
-# is there any error ?
-#  exit code may be seen as an error counter as it is incremented by Message::msgErr()
-
-sub ttpErrs {
-	return $TTPVars->{run}{exitCode};
-}
-
-# -------------------------------------------------------------------------------------------------
 # re-evaluate both toops and (execution) host configurations
 # Rationale: we could have decided to systematically reevaluate the configuration data at each use
 # with the benefit that the data is always up to date
@@ -1060,7 +1089,7 @@ sub TTPVars {
 # -------------------------------------------------------------------------------------------------
 # Returns a variable value
 # This function is callable as 'TTP::var()' and is so one the preferred way of accessing
-# configurations values in configuration files
+# configurations values from configuration files themselves as well as from external commands.
 # (I):
 # - a scalar, or an array of scalars which are to be successively searched, or an array of arrays
 #   of scalars, these later being to be successively tested.

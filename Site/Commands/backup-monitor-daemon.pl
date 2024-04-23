@@ -413,12 +413,12 @@ if( !GetOptions(
 	"remote=s"			=> \$opt_remote )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		TTP::ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	TTP::helpExtern( $defaults );
-	TTP::ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -430,21 +430,21 @@ msgVerbose( "found remote='$opt_remote'" );
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 msgErr( "'--remote' option is mandatory, not specified" ) if !$opt_remote;
 
-if( !TTP::ttpErrs()){
+if( !TTP::errs()){
 	$daemon = TTP::Daemon::run( $opt_json );
 }
 
 # deeply check arguments
 # - monitored host must have a json configuration file
 # - the daemon configuration must have monitoredService and localDir keys
-if( !TTP::ttpErrs()){
+if( !TTP::errs()){
 	$opt_remote = uc $opt_remote;
 	$daemon->{monitored}{host} = $opt_remote;
 	$daemon->{monitored}{raw} = TTP::getHostConfig( $daemon->{monitored}{host}, { withEvaluate => false });
 	$daemon->{monitored}{config} = TTP::evaluate( $daemon->{monitored}{raw} );
 }
 # stop here if we do not have any configuration for the remote host 
-if( !TTP::ttpErrs()){
+if( !TTP::errs()){
 	if( $daemon->{monitored}{config} && ref( $daemon->{monitored}{config} ) eq 'HASH' ){
 		# daemon: monitoredService
 		# set TTPVars->{run}{verb}{name} to improve logs
@@ -472,8 +472,8 @@ if( !TTP::ttpErrs()){
 		msgErr( "remote share must be specified in remote host '$daemon->{monitored}{host}' configuration, not found" );
 	}
 }
-if( TTP::ttpErrs()){
-	TTP::ttpExit();
+if( TTP::errs()){
+	TTP::exit();
 }
 
 my $scanInterval = 10;

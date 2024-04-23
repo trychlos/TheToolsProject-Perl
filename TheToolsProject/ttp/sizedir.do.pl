@@ -99,12 +99,12 @@ if( !GetOptions(
 	"http!"				=> \$opt_http )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -124,8 +124,8 @@ msgErr( "one of '--dirpath' and '--dircmd' options must be specified" ) if $coun
 # if we have a source cmd, get the path and make it exist to be sure to have something to publish
 $opt_dirpath = TTP::Path::fromCommand( $opt_dircmd, { makeExist => true }) if $opt_dircmd;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doComputeSize();
 }
 
-ttpExit();
+TTP::exit();

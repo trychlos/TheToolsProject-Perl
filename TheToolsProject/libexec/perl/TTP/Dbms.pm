@@ -35,7 +35,7 @@ sub backupDatabase {
 	msgErr( "Dbms::backupDatabase() instance is mandatory, but is not specified" ) if !$parms->{instance};
 	msgErr( "Dbms::backupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
 	msgErr( "Dbms::backupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
-	if( !TTP::ttpErrs()){
+	if( !TTP::errs()){
 		if( !$parms->{output} ){
 			$parms->{output} = TTP::Dbms::computeDefaultBackupFilename( $dbms, $parms );
 		}
@@ -79,7 +79,7 @@ sub checkDatabaseExists {
 	msgVerbose( "Dbms::checkDatabaseExists() entering with instance='".( $instance || '(undef)' )."', database='".( $database || '(undef)' )."'" );
 	msgErr( "Dbms::checkDatabaseExists() instance is mandatory, but is not specified" ) if !$instance;
 	msgErr( "Dbms::checkDatabaseExists() database is mandatory, but is not specified" ) if !$database;
-	if( !TTP::ttpErrs()){
+	if( !TTP::errs()){
 		my $dbms = TTP::Dbms::_buildDbms();
 		my $list = TTP::Dbms::getLiveDatabases( $dbms );
 		$exists = true if grep( /$database/i, @{$list} );
@@ -137,7 +137,7 @@ sub checkInstanceName {
 		}
 	}
 	# if we have found a candidate instance, at least check that we can identify a package
-	my $package = TTP::ttpVar([ 'DBMS', 'byInstance', $instance, 'package' ]);
+	my $package = $ttp->var([ 'DBMS', 'byInstance', $instance, 'package' ]);
 	if( !$package ){
 		msgErr( "unable to identify a package to address the '$instance' instance" );
 		$instance = undef;
@@ -394,7 +394,7 @@ sub restoreDatabase {
 	msgErr( "Dbms::restoreDatabase() database is mandatory, but is not specified" ) if !$parms->{database} && !$parms->{verifyonly};
 	msgErr( "Dbms::restoreDatabase() full backup is mandatory, but is not specified" ) if !$parms->{full};
 	msgErr( "Dbms::restoreDatabase() $parms->{diff}: file not found or not readable" ) if $parms->{diff} && ! -f $parms->{diff};
-	if( !TTP::ttpErrs()){
+	if( !TTP::errs()){
 		$result = TTP::Dbms::toPackage( 'apiRestoreDatabase', $dbms, $parms );
 	}
 	if( $result && $result->{ok} ){
@@ -455,7 +455,7 @@ sub toPackage {
 	my ( $fname, $dbms, $parms ) = @_;
 	my $result = undef;
 	msgErr( "Dbms::toPackage() function name must be specified" ) if !$fname;
-	if( !TTP::ttpErrs()){
+	if( !TTP::errs()){
 		msgVerbose( "Dbms::toPackage() entering with fname='".( $fname || '(undef)' )."'" );
 		$dbms = TTP::Dbms::_buildDbms() if !$dbms;
 		my $package = $dbms->{instance}{package};

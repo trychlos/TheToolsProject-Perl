@@ -17,7 +17,7 @@ use File::Spec;
 use TTP::Constants qw( :all );
 use TTP::Path;
 use TTP::Message qw( :all );
-use TTP::Services;
+use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -88,12 +88,12 @@ if( !GetOptions(
 	"archivesDir!"		=> \$opt_archivesDir )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -104,11 +104,11 @@ msgVerbose( "found backupsDir='".( $opt_backupsDir ? 'true':'false' )."'" );
 msgVerbose( "found archivesRoot='".( $opt_archivesRoot ? 'true':'false' )."'" );
 msgVerbose( "found archivesDir='".( $opt_archivesDir ? 'true':'false' )."'" );
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	listArchivesroot() if $opt_archivesRoot;
 	listArchivesdir() if $opt_archivesDir;
 	listBackupsroot() if $opt_backupsRoot;
 	listBackupsdir() if $opt_backupsDir;
 }
 
-ttpExit();
+TTP::exit();

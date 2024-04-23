@@ -18,7 +18,7 @@ use URI::Escape;
 use TTP::Constants qw( :all );
 use TTP::Dbms;
 use TTP::Message qw( :all );
-use TTP::Services;
+use TTP::Service;
 use TTP::Telemetry;
 
 my $TTPVars = TTP::TTPVars();
@@ -49,7 +49,7 @@ my $opt_http = false;
 sub doState {
 	msgOut( "get database(s) state for '$opt_service'..." );
 	my $hostConfig = TTP::getHostConfig();
-	my $serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
+	my $serviceConfig = TTP::Service::serviceConfig( $hostConfig, $opt_service );
 	my $instance = undef;
 	my @databases = undef;
 	if( $serviceConfig ){
@@ -132,12 +132,12 @@ if( !GetOptions(
 	"http!"				=> \$opt_http )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -154,8 +154,8 @@ msgErr( "a service is required, not specified" ) if !$opt_service;
 # if no option is given, have a warning message
 msgWarn( "no status has been requested, exiting gracefully" ) if !$opt_state;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doState() if $opt_state;
 }
 
-ttpExit();
+TTP::exit();

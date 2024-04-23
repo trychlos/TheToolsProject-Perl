@@ -97,12 +97,12 @@ if( !GetOptions(
 	"command=s"			=> \$opt_command )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -130,8 +130,8 @@ if( $opt_json ){
 # and a command too
 msgErr( "'--command' option is mandatory, but is not specified" ) if !$opt_command;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doSend();
 }
 
-ttpExit();
+TTP::exit();

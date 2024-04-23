@@ -20,7 +20,7 @@ use Data::Dumper;
 use TTP::Constants qw( :all );
 use TTP::Dbms;
 use TTP::Message qw( :all );
-use TTP::Services;
+use TTP::Service;
 use TTP::Telemetry;
 
 my $TTPVars = TTP::TTPVars();
@@ -177,12 +177,12 @@ if( !GetOptions(
 	"limit=i"			=> \$opt_limit )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -202,7 +202,7 @@ if( $opt_service ){
 	if( $opt_instance || $opt_database ){
 		msgErr( "'--service' option is exclusive of '--instance' and '--database' options" );
 	} else {
-		$serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
+		$serviceConfig = TTP::Service::serviceConfig( $hostConfig, $opt_service );
 		if( $serviceConfig ){
 			$opt_instance = TTP::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
 			if( $opt_instance ){
@@ -231,16 +231,16 @@ if( scalar @databases ){
 	}
 } else {
 	msgWarn( "no database found nor specified, exiting" );
-	ttpExit();
+	TTP::exit();
 }
 
 # if no option is given, have a warning message
 if( !$opt_dbsize && !$opt_tabcount ){
 	msgWarn( "no measure has been requested, exiting" );
 
-} elsif( !ttpErrs()){
+} elsif( !TTP::errs()){
 	doDbSize() if $opt_dbsize;
 	doTablesCount() if $opt_tabcount;
 }
 
-ttpExit();
+TTP::exit();

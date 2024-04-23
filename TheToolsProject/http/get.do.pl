@@ -168,12 +168,12 @@ if( !GetOptions(
 	"label=s@"			=> \$opt_label )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -199,8 +199,8 @@ if( $opt_publishHeader ){
 	msgWarn( "asking to publish a header without publishing any telemetry it has no sense, will be ignored" ) if !$opt_mqtt && !$opt_http;
 }
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doGet() if $opt_url;
 }
 
-ttpExit();
+TTP::exit();

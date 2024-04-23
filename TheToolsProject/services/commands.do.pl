@@ -15,7 +15,7 @@ use Data::Dumper;
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
-use TTP::Services;
+use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -25,7 +25,7 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	service => '',
-	host => TTP::TTP::host(),
+	host => TTP::host(),
 	key => ''
 };
 
@@ -43,7 +43,7 @@ sub executeCommands {
 	my $cmdCount = 0;
 	my $host = $opt_host || TTP::host();
 	my $hostConfig = TTP::getHostConfig( $host );
-	my $serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
+	my $serviceConfig = TTP::Service::serviceConfig( $hostConfig, $opt_service );
 	if( $serviceConfig ){
 		my $hash = ttpVar( $opt_keys, { config => $serviceConfig });
 		if( $hash && ref( $hash ) eq 'HASH' ){
@@ -89,12 +89,12 @@ if( !GetOptions(
 	"key=s@"			=> \$opt_keys )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -108,8 +108,8 @@ msgErr( "'--service' service name is required, but not found" ) if !$opt_service
 msgErr( "'--host' host name is required, but not found" ) if !$opt_host;
 msgErr( "at least a key is required, but none found" ) if !scalar( @{$opt_keys} );
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	executeCommands() if $opt_service && scalar( @{$opt_keys} );
 }
 
-ttpExit();
+TTP::exit();

@@ -44,12 +44,12 @@ sub send {
 	msgErr( "Mail::send() expect a content, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{text} && !$msg->{html};
 	msgErr( "Mail::send() expect at least one target email address, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{to};
 	my $gateway = undef;
-	if( !TTP::ttpErrs()){
-		$gateway = TTP::ttpVar([ 'SMTPGateway' ]);
+	if( !TTP::errs()){
+		$gateway = $ttp->var([ 'SMTPGateway' ]);
 		msgErr( "Mail::send() expect smtp gateway, not found" ) if !$gateway;
 		msgErr( "Mail::send() password is mandatory if a username is specified" ) if $gateway && $gateway->{username} && !$gateway->{password};
 	}
-	if( !TTP::ttpErrs()){
+	if( !TTP::errs()){
 		my $sender = 'me@localhost';
 		$sender = $gateway->{mailfrom} if exists $gateway->{mailfrom};
 		$sender = $msg->{from} if exists $msg->{from};
@@ -79,7 +79,7 @@ sub send {
 		$opts->{sasl_username} = $username if $username;
 		$opts->{sasl_password} = $password if $username;
 
-		$opts->{helo} = $gateway->{helo} || TTP::TTP::host();
+		$opts->{helo} = $gateway->{helo} || TTP::host();
 		$opts->{ssl} = $gateway->{security} if $gateway->{security};
 		if( $gateway->{port} && !$gateway->{security} ){
 			$opts->{ssl} = 'ssl' if $gateway->{port} == 465;

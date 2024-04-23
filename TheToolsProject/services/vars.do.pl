@@ -14,7 +14,7 @@ use Data::Dumper;
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
-use TTP::Services;
+use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -36,7 +36,7 @@ sub displayVar {
 	#print Dumper( $opt_keys );
 	my $hostConfig = TTP::getHostConfig();
 	my @initialKeys = @{$opt_keys};
-	my $serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
+	my $serviceConfig = TTP::Service::serviceConfig( $hostConfig, $opt_service );
 	my $last = undef;
 	my $hash = $serviceConfig;
 	if( $serviceConfig ){
@@ -59,7 +59,7 @@ sub displayVar {
 	} else {
 		msgErr( "unable to find '$opt_service' service configuration on this host" );
 	}
-	if( !ttpErrs()){
+	if( !TTP::errs()){
 		if( exists( $hash->{$last} )){
 			if( !ref( $hash->{$last} )){
 				print "  ".join( ',', @initialKeys ).": $hash->{$last}".EOL;
@@ -76,7 +76,7 @@ sub displayVar {
 			msgWarn( "'$last' key doesn't exist" );
 		}
 	}
-	if( !ttpErrs()){
+	if( !TTP::errs()){
 		msgOut( "$count displayed value(s)" );
 	} else {
 		msgErr( "NOT OK" );
@@ -96,12 +96,12 @@ if( !GetOptions(
 	"key=s@"			=> \$opt_keys )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -113,8 +113,8 @@ msgVerbose( "found keys='".join( ',', @{$opt_keys} )."'" );
 msgErr( "a service is required, but not found" ) if !$opt_service;
 msgErr( "at least a key is required, but none found" ) if !scalar( @{$opt_keys} );
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	displayVar() if $opt_service && scalar( @{$opt_keys} );
 }
 
-ttpExit();
+TTP::exit();

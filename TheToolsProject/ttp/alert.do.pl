@@ -222,12 +222,12 @@ if( !GetOptions(
 	"sms!"				=> \$opt_sms )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -253,7 +253,7 @@ if( !$opt_json && !$opt_mqtt && !$opt_smtp && !$opt_sms ){
 	msgErr( "at least one of '--json', '--mqtt', '--smtp' or '--sms' options must be specified" ) if !$opt_emitter;
 }
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	$opt_level = uc $opt_level;
 	doJsonAlert() if $opt_json;
 	doMqttAlert() if $opt_mqtt;
@@ -261,4 +261,4 @@ if( !ttpErrs()){
 	doSmsAlert() if $opt_sms;
 }
 
-ttpExit();
+TTP::exit();

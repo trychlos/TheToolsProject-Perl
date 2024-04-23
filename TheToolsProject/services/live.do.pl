@@ -20,7 +20,7 @@ use Data::Dumper;
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
-use TTP::Services;
+use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -152,12 +152,12 @@ if( !GetOptions(
 	"http!"				=> \$opt_http )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -171,8 +171,8 @@ msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 msgErr( "'--service' service name must be specified, but is not found" ) if !$opt_service;
 msgErr( "'--environment' environment type must be specified, but is not found" ) if !$opt_environment;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	getLive();
 }
 
-ttpExit();
+TTP::exit();

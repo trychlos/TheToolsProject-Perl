@@ -35,10 +35,11 @@ use Data::Dumper;
 use File::Path qw( make_path );
 use File::Spec;
 use Time::Piece;
+use vars::global qw( $ttp );
 
+use TTP;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
-use TTP;
 
 # ------------------------------------------------------------------------------------------------
 # (I):
@@ -50,7 +51,7 @@ use TTP;
 sub alertsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = TTP::ttpVar([ 'alerts', 'withFile', 'dropDir' ], $opts );
+	my $dir = $ttp->var([ 'alerts', 'withFile', 'dropDir' ], $opts );
 	if( defined $dir && length $dir ){
 		my $makeDirExist = true;
 		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
@@ -67,7 +68,7 @@ sub alertsDir {
 sub credentialsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = TTP::ttpVar([ 'credentialsDir' ], $opts );
+	my $dir = $ttp->var([ 'credentialsDir' ], $opts );
 	if( !defined $dir || !length $dir ){
 		msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
 	}
@@ -87,7 +88,7 @@ sub daemonsConfigurationsDir {
 # the current DBMS archives directory, making sure the dir exists
 # the dir can be defined in toops.json, or overriden in host configuration
 sub dbmsArchivesDir {
-	my $dir = TTP::ttpVar([ 'DBMS', 'archivesDir' ]);
+	my $dir = $ttp->var([ 'DBMS', 'archivesDir' ]);
 	if( !defined $dir || !length $dir ){
 		msgWarn( "'archivesDir' is not defined in toops.json nor in host configuration" );
 	}
@@ -99,7 +100,7 @@ sub dbmsArchivesDir {
 # the current DBMS archives root tree, making sure the dir exists
 # the dir can be defined in toops.json, or overriden in host configuration
 sub dbmsArchivesRoot {
-	my $dir = TTP::ttpVar([ 'DBMS', 'archivesRoot' ]);
+	my $dir = $ttp->var([ 'DBMS', 'archivesRoot' ]);
 	if( !defined $dir || !length $dir ){
 		msgWarn( "'archivesRoot' is not defined in toops.json nor in host configuration" );
 	}
@@ -116,7 +117,7 @@ sub dbmsArchivesRoot {
 sub dbmsBackupsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = TTP::ttpVar( [ 'DBMS', 'backupsDir' ], $opts );
+	my $dir = $ttp->var( [ 'DBMS', 'backupsDir' ], $opts );
 	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {
@@ -130,7 +131,7 @@ sub dbmsBackupsDir {
 # the root the the DBMS backups directories, making sure the dir exists
 # the root can be defined in toops.json, or overriden in host configuration
 sub dbmsBackupsRoot {
-	my $dir = TTP::ttpVar([ 'DBMS', 'backupsRoot' ]);
+	my $dir = $ttp->var([ 'DBMS', 'backupsRoot' ]);
 	if( defined $dir && length $dir ){
 		makeDirExist( $dir );
 	} else {
@@ -149,7 +150,7 @@ sub dbmsBackupsRoot {
 sub execReportsDir {
 	my ( $opts ) = @_;
 	$opts //= {};
-	my $dir = TTP::ttpVar([ 'executionReports', 'withFile', 'dropDir' ], $opts );
+	my $dir = $ttp->var([ 'executionReports', 'withFile', 'dropDir' ], $opts );
 	if( defined $dir && length $dir ){
 		my $makeDirExist = true;
 		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
@@ -173,11 +174,11 @@ sub fromCommand {
 	$opts //= {};
 	msgErr( "Path::fromCommand() command is not specified" ) if !$cmd;
 	my $path = undef;
-	if( !TTP::ttpErrs()){
+	if( !TTP::errs()){
 		$path = `$cmd`;
 		msgErr( "Path::fromCommand() command doesn't output anything" ) if !$path;
 	}
-	if( !TTP::ttpErrs()){
+	if( !TTP::errs()){
 		my @words = split( /\s+/, $path );
 		if( scalar @words < 2 ){
 			msgErr( "Path::fromCommand() expect at least two words" );
@@ -186,7 +187,7 @@ sub fromCommand {
 			msgErr( "Path::fromCommand() found an empty path" ) if !$path;
 		}
 	}
-	if( !TTP::ttpErrs()){
+	if( !TTP::errs()){
 		my $makeExist = false;
 		$makeExist = $opts->{makeExist} if exists $opts->{makeExist};
 		if( $makeExist ){
@@ -194,7 +195,7 @@ sub fromCommand {
 			$path = undef if !$rc;
 		}
 	}
-	$path = undef if TTP::ttpErrs();
+	$path = undef if TTP::errs();
 	return $path;
 }
 
@@ -206,7 +207,7 @@ sub fromCommand {
 # returns the full path of the host configuration file
 sub hostConfigurationPath {
 	my ( $host ) = @_;
-	$host = TTP::TTP::host() if !$host;
+	$host = TTP::host() if !$host;
 	return File::Spec->catfile( hostsConfigurationsDir(), "$host.json" );
 }
 
@@ -307,7 +308,7 @@ sub siteConfigurationsDir {
 
 # ------------------------------------------------------------------------------------------------
 sub siteRoot {
-	return TTP::ttpVar([ 'siteRoot' ]);
+	return $ttp->var([ 'siteRoot' ]);
 }
 
 # ------------------------------------------------------------------------------------------------

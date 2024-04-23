@@ -66,12 +66,12 @@ if( !GetOptions(
 	"append!"			=> \$opt_append )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -85,8 +85,8 @@ msgVerbose( "found append='".( defined $opt_append ? ( $opt_append ? 'true':'fal
 msgErr( "file is mandatory, not specified" ) if !$opt_file;
 msgErr( "data is mandatory, not specified" ) if !$opt_data;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doWriteJson();
 }
 
-ttpExit();
+TTP::exit();

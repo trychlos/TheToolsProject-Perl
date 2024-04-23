@@ -75,12 +75,12 @@ if( !GetOptions(
 	"dirs!"				=> \$opt_dirs )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -114,8 +114,8 @@ $opt_targetpath = TTP::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
 # --dirs option must be specified at the moment
 msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doCopyDirs();
 }
 
-ttpExit();
+TTP::exit();

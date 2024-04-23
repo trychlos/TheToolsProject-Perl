@@ -41,7 +41,7 @@ sub doStart {
 	my $json_path = File::Spec->rel2abs( $opt_json );
 	msgOut( "starting the daemon from '$opt_json'..." );
 	msgErr( "$program_path: not found or not readable" ) if ! -r $program_path;
-	if( !ttpErrs()){
+	if( !TTP::errs()){
 		#print Dumper( @ARGV );
 		my $proc = Proc::Background->new( "perl $program_path -json $json_path ".join( ' ', @ARGV )) or msgErr( "unable to start '$program_path'" );
 		msgOut( "success" ) if $proc;
@@ -60,12 +60,12 @@ if( !GetOptions(
 	"json=s"			=> \$opt_json )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -82,8 +82,8 @@ msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) 
 # must have something to run
 msgErr( "daemon configuration must define an 'execPath' value, not found" ) if !$daemonConfig->{execPath};
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doStart();
 }
 
-ttpExit();
+TTP::exit();

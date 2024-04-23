@@ -68,7 +68,7 @@ sub doPull {
 				$done += 1 if $cmdres->{result};
 			} else {
 				opendir( FD, "$srcPath" ) or msgErr( "unable to open directory $srcPath: $!" );
-				if( !ttpErrs()){
+				if( !TTP::errs()){
 					$result = true;
 					while( my $it = readdir( FD )){
 						next if $it eq "." or $it eq "..";
@@ -102,7 +102,7 @@ sub doPull {
 		msgErr( "remoteShare is not specified in '$opt_fromhost' host configuration" );
 	}
 	my $str = "$done/$asked subdirs copied";
-	if( $done == $asked && !ttpErrs()){
+	if( $done == $asked && !TTP::errs()){
 		msgOut( "success ($str)" );
 	} else {
 		msgErr( "NOT OK ($str)" );
@@ -121,12 +121,12 @@ if( !GetOptions(
 	"fromhost=s"		=> \$opt_fromhost )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -138,8 +138,8 @@ msgVerbose( "found fromhost='$opt_fromhost'" );
 msgErr( "'--fromhost' value is required, but not specified" ) if !$opt_fromhost;
 my $config = TTP::getHostConfig( $opt_fromhost );
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doPull( $config );
 }
 
-ttpExit();
+TTP::exit();

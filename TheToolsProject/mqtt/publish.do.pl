@@ -72,12 +72,12 @@ if( !GetOptions(
 	"retain!"			=> \$opt_retain	)){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -91,8 +91,8 @@ msgVerbose( "found retain='".( $opt_retain ? 'true':'false' )."'" );
 msgErr( "topic is required, but is not specified" ) if !$opt_topic;
 msgWarn( "payload is empty, but shouldn't" ) if !defined $opt_payload;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doPublish();
 }
 
-ttpExit();
+TTP::exit();

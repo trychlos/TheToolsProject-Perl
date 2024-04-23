@@ -82,24 +82,6 @@ sub _getVerbs {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Display the command one-liner help
-# (I):
-# - the full path to the command
-# - an optional options hash with following keys:
-#   > prefix: the line prefix, defaulting to ''
-
-sub _helpCommandOneline {
-	my ( $self, $command_path, $opts ) = @_;
-
-	$opts //= {};
-	my $prefix = '';
-	$prefix = $opts->{prefix} if exists( $opts->{prefix} );
-	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $command_path );
-	my @commandHelp = TTP::grepFileByRegex( $command_path, $Const->{commentPre} );
-	print "$prefix$bname: $commandHelp[0]".EOL;
-}
-
-# -------------------------------------------------------------------------------------------------
 # command initialization
 # (I]:
 # - none
@@ -113,7 +95,7 @@ sub _init {
 	my $command = $self->runnableBNameShort();
 	if( grep( /^$command$/, @{$Const->{reservedWords}} )){
 		msgErr( "command '$command' is a Toops reserved word. Aborting." );
-		ttpExit();
+		TTP::exit();
 	}
 
 	return $self;
@@ -140,6 +122,7 @@ sub command {
 # Display the command help as:
 # - a one-liner from the command itself
 # - and the one-liner help of each available verb
+# Verbs are displayed as an ASCII-sorted (i.e. in [0-9A-Za-z] order) list
 # (I]:
 # - none
 # (O):
@@ -150,7 +133,7 @@ sub commandHelp {
 
 	msgVerbose( "helpCommand()" );
 	# display the command one-line help
-	$self->_helpCommandOneline( $self->runnablePath());
+	helpOneline( $self->runnablePath());
 	# display each verb one-line help
 	my @verbs = $self->_getVerbs();
 	my $verbsHelp = {};
@@ -204,14 +187,14 @@ sub run {
 			}
 		} else {
 			$self->commandHelp();
-			ttpExit();
+			TTP::exit();
 		}
 	} catch {
 		msgVerbose( "catching exit" );
-		ttpExit();
+		TTP::exit();
 	};
 
-	ttpExit();
+	TTP::exit();
 	return $self;
 }
 
@@ -247,7 +230,7 @@ sub verbHelp {
 
 	msgVerbose( "helpVerb()" );
 	# display the command one-line help
-	$self->_helpCommandOneline( $self->runnablePath());
+	helpOneline( $self->runnablePath());
 	# verb pre-usage
 	my @verbHelp = TTP::grepFileByRegex( $self->{_verb}{path}, $Const->{commentPre}, { warnIfSeveral => false });
 	my $verbInline = '';
@@ -311,6 +294,25 @@ sub DESTROY {
 	my $self = shift;
 	$self->SUPER::DESTROY();
 	return;
+}
+
+### Global functions
+
+# -------------------------------------------------------------------------------------------------
+# Display the command one-liner help
+# (I):
+# - the full path to the command
+# - an optional options hash with following keys:
+#   > prefix: the line prefix, defaulting to ''
+
+sub helpOneline {
+	my ( $command_path, $opts ) = @_;
+	$opts //= {};
+	my $prefix = '';
+	$prefix = $opts->{prefix} if exists( $opts->{prefix} );
+	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $command_path );
+	my @commandHelp = TTP::grepFileByRegex( $command_path, $Const->{commentPre} );
+	print "$prefix$bname: $commandHelp[0]".EOL;
 }
 
 1;

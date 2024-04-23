@@ -23,8 +23,6 @@
 # which are not yet in the running context.
 
 package TTP::JSONable;
-
-use base qw( TTP::Base );
 our $VERSION = '1.00';
 
 use strict;
@@ -33,6 +31,7 @@ use warnings;
 use Carp;
 use Config;
 use Data::Dumper;
+use File::Spec;
 use JSON;
 use Test::Deep;
 use Time::Piece;
@@ -71,15 +70,15 @@ sub _evaluate {
 sub _evaluateRec {
 	my ( $self, $value ) = @_;
 	my $result = '';
-	my $type = ref( $value );
-	if( !$type ){
+	my $ref = ref( $value );
+	if( !$ref ){
 		$result = $self->_evaluateScalar( $value );
-	} elsif( $type eq 'ARRAY' ){
+	} elsif( $ref eq 'ARRAY' ){
 		$result = [];
 		foreach my $it ( @{$value} ){
 			push( @{$result}, $self->_evaluateRec( $it ));
 		}
-	} elsif( $type eq 'HASH' ){
+	} elsif( $ref eq 'HASH' ){
 		$result = {};
 		foreach my $key ( keys %{$value} ){
 			$result->{$key} = $self->_evaluateRec( $value->{$key} );
@@ -92,10 +91,10 @@ sub _evaluateRec {
 
 sub _evaluateScalar {
 	my ( $self, $value ) = @_;
-	my $type = ref( $value );
+	my $ref = ref( $value );
 	my $evaluate = true;
-	if( $type ){
-		msgErr( __PACKAGE__."::_evaluateScalar() scalar expected, but '$type' found" );
+	if( $ref ){
+		msgErr( __PACKAGE__."::_evaluateScalar() scalar expected, but '$ref' found" );
 		$evaluate = false;
 	}
 	my $result = $value || '';
@@ -132,7 +131,7 @@ sub _evaluatePrint {
 	# to emit a warning ?
 	#msgWarn( "something is wrong with '$value' as evaluation result is undefined" ) if !defined $result;
 	$result = $result || '(undef)';
-	#print "value='$value' result='$result'".EOL;
+	#print __PACKAGE__."::_evaluatePrint() value='$value' result='$result'".EOL;
 	return $result;
 }
 

@@ -143,12 +143,12 @@ if( !GetOptions(
 	"sys!"				=> \$opt_sys )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		TTP::ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	TTP::helpExtern( $defaults );
-	TTP::ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -160,18 +160,18 @@ msgVerbose( "found sys='".( defined $opt_sys ? ( $opt_sys ? 'true':'false' ) : '
 
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 
-if( !TTP::ttpErrs()){
+if( !TTP::errs()){
 	$daemon = TTP::Daemon::run( $opt_json );
 }
-if( !TTP::ttpErrs()){
+if( !TTP::errs()){
 	$mqtt = TTP::MQTT::connect();
 }
-if( !TTP::ttpErrs()){
+if( !TTP::errs()){
 	$mqtt->subscribe( '#' => \&works, '$SYS/#' => \&works );
 	setCommands();
 }
-if( TTP::ttpErrs()){
-	TTP::ttpExit();
+if( TTP::errs()){
+	TTP::exit();
 }
 
 my $lastScanTime;

@@ -21,7 +21,7 @@ use Time::Piece;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Ovh;
-use TTP::Services;
+use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -162,12 +162,12 @@ if( !GetOptions(
 	"timeout=i"			=> \$opt_timeout )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -186,8 +186,8 @@ msgErr( "waiting for an URL doesn't have sense without an expected sender" ) if 
 msgErr( "specifying an expected sender doesn't have sense if we do not wait for and URL" ) if $opt_wait && $opt_sender && !$opt_url;
 msgErr( "specifying an expected sender or an URL doesn't have sense without waiting for them" ) if ( $opt_sender || $opt_url ) && !$opt_wait;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doSwitchIP();
 }
 
-ttpExit();
+TTP::exit();

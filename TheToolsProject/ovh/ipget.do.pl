@@ -17,7 +17,7 @@ use Data::Dumper;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Ovh;
-use TTP::Services;
+use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -88,12 +88,12 @@ if( !GetOptions(
 	"address!"			=> \$opt_address )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -109,7 +109,7 @@ if( $opt_service ){
 	if( $opt_ip ){
 		msgErr( "only one of '--service' or '--ip' must be specified, both found" );
 	} else {
-		TTP::Services::checkServiceOpt( $opt_service );
+		TTP::Service::checkServiceOpt( $opt_service );
 	}
 } elsif( !$opt_ip ){
 	msgErr( "either '--service' or '--ip' must be specified, none found" );
@@ -121,8 +121,8 @@ $count += 1 if $opt_routed;
 $count += 1 if $opt_address;
 msgErr( "either '--routed' or '--address' option must be specified" ) if !$count;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doGetIP();
 }
 
-ttpExit();
+TTP::exit();

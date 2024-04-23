@@ -1,19 +1,34 @@
 # @(#) list various TTP objects
 #
 # @(-) --[no]help              print this message, and exit [${help}]
-# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]commands          list the available commands [${commands}]
 # @(-) --[no]services          list the defined services on this host [${services}]
 #
-# Copyright (@) 2023-2024 PWI Consulting
+# The Tools Project: a Tools System and Paradigm for IT Production
+# Copyright (©) 2003-2023 Pierre Wieser (see AUTHORS)
+# Copyright (©) 2024 PWI Consulting
+#
+# The Tools Project is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# The Tools Project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with The Tools Project; see the file COPYING. If not,
+# see <http://www.gnu.org/licenses/>.
 
-use Data::Dumper;
+use Config;
 
-use TTP::Constants qw( :all );
-use TTP::Message qw( :all );
-use TTP::Services;
+use TTP::Command;
+use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -30,12 +45,18 @@ my $opt_commands = false;
 my $opt_services = false;
 
 # -------------------------------------------------------------------------------------------------
-# list the available commands (same than services.pl list -services)
+# list the available commands
 sub listCommands {
 	msgOut( "displaying available commands..." );
-	my @commands = TTP::getAvailableCommands();
+	my @commands = ();
+	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
+	my $const = TTP::commandConst();
+	foreach my $it ( @roots ){
+		my $dir = File::Spec->catdir( $it, $const->{dir} );
+		push @commands, glob( File::Spec->catdir( $dir, $const->{sufix} ));
+	}
 	foreach my $it ( @commands ){
-		TTP::helpCommandOneline( $it, { prefix => ' ' });
+		TTP::Command::helpOneline( $it, { prefix => ' ' });
 	}
 	msgOut( scalar @commands." found command(s)" );
 }
@@ -49,7 +70,7 @@ sub listCommands {
 sub listServices {
 	my $hostConfig = TTP::getHostConfig();
 	msgOut( "displaying services defined on $hostConfig->{name}..." );
-	my @list = TTP::Services::getDefinedServices( $hostConfig );
+	my @list = TTP::Service::getDefinedServices( $hostConfig );
 	foreach my $it ( @list ){
 		print " $it".EOL;
 	}
@@ -62,30 +83,30 @@ sub listServices {
 
 if( !GetOptions(
 	"help!"				=> \$TTPVars->{run}{help},
-	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"colored!"			=> \$TTPVars->{run}{colored},
 	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"commands!"			=> \$opt_commands,
 	"services!"			=> \$opt_services )){
 
-		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
 msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	listCommands() if $opt_commands;
 	listServices() if $opt_services;
 }
 
-ttpExit();
+TTP::exit();

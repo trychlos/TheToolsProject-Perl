@@ -118,7 +118,7 @@ sub printSummary {
 	# must manage SUBJECT and OPTIONS macros
 	my $command = $TTPVars->{config}{site}{workloadSummary}{command};
 	if( $command ){
-		my $host = TTP::TTP::host();
+		my $host = TTP::host();
 		my $textfname = TTP::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );
@@ -154,12 +154,12 @@ if( !GetOptions(
 	"count=i"			=> \$opt_count	)){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
-		TTP::ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	TTP::helpExtern( $defaults );
-	TTP::ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -172,8 +172,8 @@ msgVerbose( "found end='$opt_end'" );
 msgVerbose( "found rc='$opt_rc'" );
 msgVerbose( "found count='$opt_count'" );
 
-if( !TTP::ttpErrs()){
+if( !TTP::errs()){
 	printSummary();
 }
 
-TTP::ttpExit();
+TTP::exit();

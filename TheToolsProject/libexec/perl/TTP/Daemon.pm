@@ -76,7 +76,7 @@ sub _running {
 # ------------------------------------------------------------------------------------------------
 sub _topic {
 	my ( $name ) = @_;
-	my $topic = TTP::TTP::host();
+	my $topic = TTP::host();
 	$topic .= "/daemon";
 	$topic .= "/$name";
 	$topic .= "/status";
@@ -355,13 +355,13 @@ sub run {
 			$advertizeInterval = $config->{advertizeInterval};
 		}
 	}
-	if( !TTP::ttpErrs()){
+	if( !TTP::errs()){
 		msgVerbose( "listeningPort='$config->{listeningPort}' listenInterval='$listenInterval' advertizeInterval='$advertizeInterval'" );
 	}
 
 	# create a listening socket
 	my $socket = undef;
-	if( !TTP::ttpErrs()){
+	if( !TTP::errs()){
 		$socket = new IO::Socket::INET(
 			LocalHost => '0.0.0.0',
 			LocalPort => $config->{listeningPort},
@@ -376,13 +376,13 @@ sub run {
 
 	# connect to MQTT communication bus if the host is configured for
 	my $mqtt = undef;
-	if( !TTP::ttpErrs()){
+	if( !TTP::errs()){
 		$mqtt = TTP::MQTT::connect({
 			will => _lastwill( $jfile )
 		});
 	}
-	if( !TTP::ttpErrs()){
-		$SIG{INT} = sub { $socket->close(); TTP::ttpExit(); };
+	if( !TTP::errs()){
+		$SIG{INT} = sub { $socket->close(); TTP::exit(); };
 		$daemon = {
 			json => $json,
 			raw => $raw,
@@ -412,7 +412,7 @@ sub terminate {
 	msgLog( "terminating" );
 
 	# and quit the program
-	TTP::ttpExit();
+	TTP::exit();
 }
 
 1;

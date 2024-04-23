@@ -135,12 +135,12 @@ if( !GetOptions(
 	"sleep=i"			=> \$opt_sleep )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -174,8 +174,8 @@ if( $opt_port_set ){
 	msgErr( "when specified, addressed port must be regater than zero" ) if $opt_port <= 0;
 }
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doStop();
 }
 
-ttpExit();
+TTP::exit();

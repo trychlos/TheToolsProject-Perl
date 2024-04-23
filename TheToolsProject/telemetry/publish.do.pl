@@ -101,12 +101,12 @@ if( !GetOptions(
 	"mqttOption=s@"		=> \$opt_mqttOption	)){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -138,9 +138,9 @@ foreach my $label ( @labels ){
 }
 msgOut( "do not publish anything as neither '--mqtt' nor '--http' are set" ) if !$opt_mqtt && !$opt_http;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doMqttPublish() if $opt_mqtt;
 	doHttpPublish() if $opt_http;
 }
 
-ttpExit();
+TTP::exit();

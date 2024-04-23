@@ -137,12 +137,12 @@ if( !GetOptions(
 	"http!"				=> \$opt_http )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -156,8 +156,8 @@ msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 # a service name is mandatory when querying its status
 msgErr( "'--name' service name is mandatory when querying for a status" ) if $opt_state && !$opt_name;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doServiceState() if $opt_name && $opt_state;
 }
 
-ttpExit();
+TTP::exit();

@@ -33,13 +33,8 @@
 
 	"TTP": {
 
-		"privateDirs": [
-			"etc/private",
-			"private",
-			"etc/credentials",
-			"credentials"
-		],
 		"alerts_comments": [
+			"Configure here the alerts which can be sent via 'ttp.pl alert' to various external media."
 			"enabled=true|false here only specifies defaults, as each medium can be individually selected in ttp.pl alert verb",
 			"when sending an email, whether use a text content or file, or a html content or file, or both is up to the verb, so just replace OPTIONS macro"
 		],
@@ -142,6 +137,13 @@
 			}
 		},
 
+		"logsRoot_comments": [
+			"The (per-node overridable) root directory of the logs tree",
+			"Hardcoded default is C:\\Temp or /tmp depending of the running OS",
+			"The 'logsRoot' directory can be got by the user via the 'ttp.pl vars --logsRoot' command"
+		],
+		"logsRoot": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'dailyLogs' )]",
+
 		"logsDaily_comments": [
 			"The (per-node overridable) daily root of the logs tree",
 			"Rationale: having a per-day or per-week or per-month logs tree is the easiest way in order to periodically purge the logs.",
@@ -149,13 +151,6 @@
 			"The 'logsDaily' directory can be got by the user via the 'ttp.pl vars --logsDaily' command"
 		],
 		"logsDaily": "[eval:File::Spec->catdir( TTP::logsRoot(), localtime->strftime( '%y%m%d' ))]",
-
-		"logsRoot_comments": [
-			"The (per-node overridable) root directory of the logs tree",
-			"Hardcoded default is C:\\Temp or /tmp depending of the running OS",
-			"The 'logsRoot' directory can be got by the user via the 'ttp.pl vars --logsRoot' command"
-		],
-		"logsRoot": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'dailyLogs' )]",
 
 		"logsCommands_comments": [
 			"The daily directory where TTP writes commands and verbs logs",
@@ -238,6 +233,13 @@
 			"The 'nodeRoot' directory can be got by the user via the 'ttp.pl vars --nodeRoot' command"
 		],
 		"nodeRoot": "C:\\Temp|/tmp",
+
+		"privateDirs": [
+			"etc/private",
+			"private",
+			"etc/credentials",
+			"credentials"
+		],
 
 		"SMTPGateway": {
 			"host": "mail.trychlos.org",

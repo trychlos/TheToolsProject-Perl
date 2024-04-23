@@ -43,7 +43,7 @@ sub doPurgeDirs {
 	my $count = 0;
 	if( -d $opt_dirpath ){
 		opendir( FD, "$opt_dirpath" ) || msgErr( "unable to open directory $opt_dirpath: $!" );
-		if( !ttpErrs()){
+		if( !TTP::errs()){
 			my @list = ();
 			while ( my $it = readdir( FD )){
 				my $path = File::Spec->catdir( $opt_dirpath, $it );
@@ -110,12 +110,12 @@ if( !GetOptions(
 	"keep=s"			=> \$opt_keep )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -135,8 +135,8 @@ msgErr( "one of '--dirpath' and '--dircmd' options must be specified" ) if $coun
 # no need to make it exist: if not exist, there is just nothing to purge
 $opt_dirpath = TTP::Path::fromCommand( $opt_dircmd ) if $opt_dircmd;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doPurgeDirs();
 }
 
-ttpExit();
+TTP::exit();

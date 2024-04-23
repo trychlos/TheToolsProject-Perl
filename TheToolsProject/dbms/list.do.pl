@@ -16,7 +16,7 @@ use Data::Dumper;
 use TTP::Constants qw( :all );
 use TTP::Dbms;
 use TTP::Message qw( :all );
-use TTP::Services;
+use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -75,12 +75,12 @@ if( !GetOptions(
 	"listtables!"		=> \$opt_listtables )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -97,9 +97,9 @@ TTP::Dbms::checkInstanceName( $opt_instance );
 # check that the database exists if it is specified
 TTP::Dbms::checkDatabaseExists( $opt_instance, $opt_database ) if $opt_instance && $opt_database;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	listDatabases() if $opt_listdb;
 	listTables() if $opt_database && $opt_listtables;
 }
 
-ttpExit();
+TTP::exit();

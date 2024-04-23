@@ -94,12 +94,12 @@ if( !GetOptions(
 	"debug!"			=> \$opt_debug )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
-		ttpExit( 1 );
+		TTP::exit( 1 );
 }
 
 if( $running->help()){
 	$running->verbHelp( $defaults );
-	ttpExit();
+	TTP::exit();
 }
 
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
@@ -122,8 +122,8 @@ msgErr( "target is empty, but shouldn't" ) if !$opt_to;
 msgErr( "text body can only provided one way, but both '--text' and '--textfname' are specified" ) if $opt_text && $opt_textfname;
 msgErr( "HTML body can only provided one way, but both '--html' and '--htmlfname' are specified" ) if $opt_html && $opt_htmlfname;
 
-if( !ttpErrs()){
+if( !TTP::errs()){
 	doSend();
 }
 
-ttpExit();
+TTP::exit();
