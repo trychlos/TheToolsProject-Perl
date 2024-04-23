@@ -6,7 +6,6 @@
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]commands          list the available commands [${commands}]
 # @(-) --[no]nodes             list the available nodes [${nodes}]
-# @(-) --[no]services          list the defined services on this host [${services}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 2003-2023 Pierre Wieser (see AUTHORS)
@@ -38,13 +37,11 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	commands => 'no',
-	nodes => 'no',
-	services => 'no'
+	nodes => 'no'
 };
 
 my $opt_commands = false;
 my $opt_nodes = false;
-my $opt_services = false;
 
 # -------------------------------------------------------------------------------------------------
 # list the available commands
@@ -107,22 +104,6 @@ sub listNodes {
 	msgOut( "$count found node(s)" );
 }
 
-# -------------------------------------------------------------------------------------------------
-# list the defined services
-# note: this is  design decision that this sort of display at the beginning and at the end of the verb
-# execution must be done in the verb script.
-# in this particular case of listing services, which is handled both as services.pl list and as ttp.pl list,
-# this code is so duplicated..
-sub listServices {
-	my $hostConfig = TTP::getHostConfig();
-	msgOut( "displaying services defined on $hostConfig->{name}..." );
-	my @list = TTP::Service::getDefinedServices( $hostConfig );
-	foreach my $it ( @list ){
-		print " $it".EOL;
-	}
-	msgOut( scalar @list." found defined service(s)" );
-}
-
 # =================================================================================================
 # MAIN
 # =================================================================================================
@@ -133,8 +114,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"commands!"			=> \$opt_commands,
-	"nodes!"			=> \$opt_nodes,
-	"services!"			=> \$opt_services )){
+	"nodes!"			=> \$opt_nodes )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -150,12 +130,10 @@ msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
 msgVerbose( "found nodes='".( $opt_nodes ? 'true':'false' )."'" );
-msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 
 if( !TTP::errs()){
 	listCommands() if $opt_commands;
 	listNodes() if $opt_nodes;
-	listServices() if $opt_services;
 }
 
 TTP::exit();
