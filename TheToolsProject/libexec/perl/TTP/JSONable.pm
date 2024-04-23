@@ -193,8 +193,12 @@ sub jsonLoad {
 
 	# load the raw JSON data
 	my $result = undef;
+	$self->{_jsonable}{loaded} = false;
 	$result = $self->jsonRead( $self->{_jsonable}{json} ) if $self->{_jsonable}{json};
-	$self->{_jsonable}{loaded} = defined( $result );
+	if( defined( $result )){
+		$self->{_jsonable}{loaded} = true;
+		$self->{_jsonable}{raw} = $result;
+	}
 
 	# initialize the evaluated part, even if not actually evaluated, so that jsonData()
 	# can at least returns raw - unevaluated - data

@@ -105,8 +105,8 @@ sub mqttPublish {
 		$command =~ s/<DATA>/$value/;
 		$command =~ s/<OPTIONS>//;
 		my $TTPVars = TTP::TTPVars();
-		my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
-		my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+		my $dummy = $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
+		my $verbose = $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
 		print `$command -nocolored $dummy $verbose`;
 		my $rc = $?;
 		msgVerbose( "Telemetry::mqttPublish() got rc=$rc" );

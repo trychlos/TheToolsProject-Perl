@@ -70,7 +70,7 @@ sub _lastwill {
 # ------------------------------------------------------------------------------------------------
 sub _running {
 	my $TTPVars = TTP::TTPVars();
-	return "running since $TTPVars->{run}{command}{started}";
+	return "running since $ttp->{run}{command}{started}";
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -297,18 +297,18 @@ sub init {
 
 	# initialize TTPVars data to have a pretty log
 	my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
-	$TTPVars->{run}{command}{path} = $0;
-	$TTPVars->{run}{command}{started} = Time::Moment->now;
-	$TTPVars->{run}{command}{args} = \@ARGV;
-	$TTPVars->{run}{command}{basename} = $file;
+	$ttp->{run}{command}{path} = $0;
+	$ttp->{run}{command}{started} = Time::Moment->now;
+	$ttp->{run}{command}{args} = \@ARGV;
+	$ttp->{run}{command}{basename} = $file;
 	$file =~ s/\.[^.]+$//;
-	$TTPVars->{run}{command}{name} = $file;
-	$TTPVars->{run}{help} = scalar @ARGV ? false : true;
+	$ttp->{run}{command}{name} = $file;
+	$ttp->{run}{help} = scalar @ARGV ? false : true;
 
 	# set the qualificant additional name
 	my $name = "";
 	$name = $opts->{name} if $opts->{name};
-	$TTPVars->{run}{verb}{name} = $name if $name;
+	$ttp->{run}{verb}{name} = $name if $name;
 
 	return $TTPVars;
 }

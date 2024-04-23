@@ -130,7 +130,7 @@ sub copyDir {
 		return false;
 	}
 	my $cmdres = commandByOs({
-		command => TTP::var([ 'copyDir', 'byOS', $Config{osname}, 'command' ]),
+		command => $ttp->var([ 'copyDir', 'byOS', $Config{osname}, 'command' ]),
 		macros => {
 			SOURCE => $source,
 			TARGET => $target
@@ -171,7 +171,7 @@ sub copyFile {
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $source );
 	my $srcpath = File::Spec->catpath( $vol, $dirs );
 	my $cmdres = commandByOs({
-		command => TTP::var([ 'copyFile', 'byOS', $Config{osname}, 'command' ]),
+		command => $ttp->var([ 'copyFile', 'byOS', $Config{osname}, 'command' ]),
 		macros => {
 			SOURCE => $srcpath,
 			TARGET => $target,
@@ -319,12 +319,12 @@ sub _evaluatePrint {
 sub executionReport {
 	my ( $args ) = @_;
 	# write JSON file if configuration enables that and relevant arguments are provided
-	my $enabled = TTP::var([ 'executionReports', 'withFile', 'enabled' ]);
+	my $enabled = $ttp->var([ 'executionReports', 'withFile', 'enabled' ]);
 	if( $enabled && $args->{file} ){
 		_executionReportToFile( $args->{file} );
 	}
 	# publish MQTT message if configuration enables that and relevant arguments are provided
-	$enabled = TTP::var([ 'executionReports', 'withMqtt', 'enabled' ]);
+	$enabled = $ttp->var([ 'executionReports', 'withMqtt', 'enabled' ]);
 	if( $enabled && $args->{mqtt} ){
 		_executionReportToMqtt( $args->{mqtt} );
 	}
@@ -334,14 +334,14 @@ sub executionReport {
 # Complete the provided data with the data colected by TTP
 sub _executionReportCompleteData {
 	my ( $data ) = @_;
-	$data->{cmdline} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
-	$data->{command} = $TTPVars->{run}{command}{basename};
-	$data->{verb} = $TTPVars->{run}{verb}{name};
+	$data->{cmdline} = "$0 ".join( ' ', @{$ttp->{run}{command}{args}} );
+	$data->{command} = $ttp->{run}{command}{basename};
+	$data->{verb} = $ttp->{run}{verb}{name};
 	$data->{host} = TTP::host();
-	$data->{code} = $TTPVars->{run}{exitCode};
-	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
+	$data->{code} = $ttp->{run}{exitCode};
+	$data->{started} = $ttp->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
-	$data->{dummy} = $TTPVars->{run}{dummy};
+	$data->{dummy} = $ttp->{run}{dummy};
 	return $data;
 }
 
@@ -362,15 +362,15 @@ sub _executionReportToFile {
 	$data = $args->{data} if exists $args->{data};
 	if( defined $data ){
 		$data = _executionReportCompleteData( $data );
-		my $command = TTP::var([ 'executionReports', 'withFile', 'command' ]);
+		my $command = $ttp->var([ 'executionReports', 'withFile', 'command' ]);
 		if( $command ){
 			my $json = JSON->new;
 			my $str = $json->encode( $data );
 			# protect the double quotes against the CMD.EXE command-line
 			$str =~ s/"/\\"/g;
 			$command =~ s/<DATA>/$str/;
-			my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
-			my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+			my $dummy = $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
+			my $verbose = $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
 			print `$command -nocolored $dummy $verbose`;
 			msgVerbose( "Toops::_executionReportToFile() got $?" );
 			$res = ( $? == 0 );
@@ -407,9 +407,9 @@ sub _executionReportToMqtt {
 		my $excludes = [];
 		$excludes = $args->{excludes} if exists $args->{excludes} && ref $args->{excludes} eq 'ARRAY' && scalar $args->{excludes} > 0;
 		if( $topic ){
-			my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
-			my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
-			my $command = TTP::var([ 'executionReports', 'withMqtt', 'command' ]);
+			my $dummy = $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
+			my $verbose = $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
+			my $command = $ttp->var([ 'executionReports', 'withMqtt', 'command' ]);
 			if( $command ){
 				foreach my $key ( keys %{$data} ){
 					if( !grep( /$key/, @{$excludes} )){
@@ -464,9 +464,9 @@ sub getAvailableCommands {
 	if( $ENV{TTP_ROOT} ){
 		@roots = split( ':', $ENV{TTP_ROOT} );
 	} else {
-		push( @roots, $TTPVars->{run}{command}{directory} );
+		push( @roots, $ttp->{run}{command}{directory} );
 	}
-	my @commands = glob( File::Spec->catdir( $TTPVars->{run}{command}{directory}, "*.pl" ));
+	my @commands = glob( File::Spec->catdir( $ttp->{run}{command}{directory}, "*.pl" ));
 	return @commands;
 }
 
@@ -524,8 +524,8 @@ sub getHostConfig {
 # -------------------------------------------------------------------------------------------------
 # returns a new unique temp filename
 sub getTempFileName {
-	my $fname = $TTPVars->{run}{command}{name};
-	$fname .= "-$TTPVars->{run}{verb}{name}" if $TTPVars->{run}{verb}{name};
+	my $fname = $ttp->{run}{command}{name};
+	$fname .= "-$ttp->{run}{verb}{name}" if $ttp->{run}{verb}{name};
 	my $random = ttpRandom();
 	my $tempfname = File::Spec->catdir( TTP::Path::logsDailyDir(), "$fname-$random.tmp" );
 	msgVerbose( "getTempFileName() tempfname='$tempfname'" );
@@ -587,14 +587,14 @@ sub grepFileByRegex {
 sub helpExtern {
 	my ( $defaults ) = @_;
 	# pre-usage
-	my @help = grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
+	my @help = grepFileByRegex( $ttp->{run}{command}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
 	foreach my $it ( @help ){
 		print " $it".EOL;
 	}
 	# usage
-	@help = TTP::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
+	@help = TTP::grepFileByRegex( $ttp->{run}{command}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
 	if( scalar @help ){
-		print "   Usage: $TTPVars->{run}{command}{basename} [options]".EOL;
+		print "   Usage: $ttp->{run}{command}{basename} [options]".EOL;
 		print "   where available options are:".EOL;
 		foreach my $it ( @help ){
 			$it =~ s/\$\{?(\w+)}?/$defaults->{$1}/e;
@@ -602,7 +602,7 @@ sub helpExtern {
 		}
 	}
 	# post-usage
-	@help = TTP::grepFileByRegex( $TTPVars->{run}{command}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
+	@help = TTP::grepFileByRegex( $ttp->{run}{command}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
 	foreach my $it ( @help ){
 		print " $it".EOL;
 	}
@@ -694,14 +694,14 @@ sub initExtern {
 
 	# Runnable role
 	#my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
-	#$TTPVars->{run}{command}{path} = $0;
-	#$TTPVars->{run}{command}{started} = Time::Moment->now;
-	#$TTPVars->{run}{command}{args} = \@ARGV;
-	#$TTPVars->{run}{command}{basename} = $file;
+	#$ttp->{run}{command}{path} = $0;
+	#$ttp->{run}{command}{started} = Time::Moment->now;
+	#$ttp->{run}{command}{args} = \@ARGV;
+	#$ttp->{run}{command}{basename} = $file;
 	#$file =~ s/\.[^.]+$//;
-	#$TTPVars->{run}{command}{name} = $file;
+	#$ttp->{run}{command}{name} = $file;
 	
-	$TTPVars->{run}{help} = scalar @ARGV ? false : true;
+	$ttp->{run}{help} = scalar @ARGV ? false : true;
 
 	return $TTPVars;
 }
@@ -841,7 +841,7 @@ sub moveDir {
 		return true;
 	}
 	my $cmdres = commandByOs({
-		command => TTP::var([ 'moveDir', 'byOS', $Config{osname}, 'command' ]),
+		command => $ttp->var([ 'moveDir', 'byOS', $Config{osname}, 'command' ]),
 		macros => {
 			SOURCE => $source,
 			TARGET => $target
@@ -886,7 +886,7 @@ sub removeTree {
 	msgVerbose( "Toops::removeTree() removing '$dir'" );
 	my $error;
 	remove_tree( $dir, {
-		verbose => $TTPVars->{run}{verbose},
+		verbose => $ttp->{run}{verbose},
 		error => \$error
 	});
 	# https://perldoc.perl.org/File::Path#make_path%28-%24dir1%2C-%24dir2%2C-....-%29
@@ -1017,7 +1017,7 @@ sub ttpEvaluate {
 		$TTPVars->{config}{$key} = evaluate( $TTPVars->{config}{$key} );
 	}
 	# and reevaluates the logs too
-	$TTPVars->{run}{logsMain} = File::Spec->catdir( TTP::Path::logsDailyDir(), 'main.log' );
+	$ttp->{run}{logsMain} = File::Spec->catdir( TTP::Path::logsDailyDir(), 'main.log' );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -1053,7 +1053,7 @@ sub ttpRandom {
 #   > config: host configuration (useful when searching for a remote host), defaulting to current host config
 # (O):
 # - the evaluated value of this variable, which may be undef
-sub TTP::var {
+sub TTP::var_x {
 	my ( $keys, $opts ) = @_;
 	$opts //= {};
 	# get the toops-level result if any
@@ -1076,7 +1076,7 @@ sub TTPVars {
 
 # -------------------------------------------------------------------------------------------------
 # Returns a variable value
-# This function is callable as 'TTP::var()' and is so one the preferred way of accessing
+# This function is callable as '$ttp->var()' and is so one the preferred way of accessing
 # configurations values from configuration files themselves as well as from external commands.
 # (I):
 # - a scalar, or an array of scalars which are to be successively searched, or an array of arrays
@@ -1112,7 +1112,7 @@ sub varSearch {
 # -------------------------------------------------------------------------------------------------
 # whether we are running in dummy mode
 sub wantsDummy {
-	return $TTPVars->{run}{dummy};
+	return $ttp->{run}{dummy};
 }
 
 1;

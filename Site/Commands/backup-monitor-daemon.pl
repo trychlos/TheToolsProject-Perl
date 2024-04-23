@@ -412,7 +412,7 @@ if( !GetOptions(
 	"json=s"			=> \$opt_json,
 	"remote=s"			=> \$opt_remote )){
 
-		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
+		msgOut( "try '$ttp->{run}{command}{basename} --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 
@@ -421,9 +421,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 msgVerbose( "found remote='$opt_remote'" );
 
@@ -451,7 +451,7 @@ if( !TTP::errs()){
 		if( exists( $daemon->{config}{monitoredService} )){
 			if( exists( $daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}} )){
 				msgVerbose( "monitored service '$daemon->{config}{monitoredService}' successfully found in remote host '$daemon->{monitored}{host}' configuration file" );
-				$TTPVars->{run}{verb}{name} = $daemon->{config}{monitoredService};
+				$ttp->{run}{verb}{name} = $daemon->{config}{monitoredService};
 			} else {
 				msgErr( "monitored service '$daemon->{config}{monitoredService}' doesn't exist in remote host '$daemon->{monitored}{host}' configuration file" );
 			}

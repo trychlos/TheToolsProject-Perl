@@ -56,8 +56,8 @@ sub doSwitch {
 
 	# get and execute the commands for this target state
 	my $tokey = $opt_live ? 'to_live' : 'to_backup';
-	my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
-	my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+	my $dummy = $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
+	my $verbose = $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
 	my $command = "ssh inlingua-user\@$opt_to services.pl vars -service $opt_service -key switch,$tokey,commands -nocolored $dummy $verbose";
 	msgVerbose( $command );
 	my $stdout = `$command`;
@@ -234,7 +234,7 @@ if( !GetOptions(
 	"backup!"			=> \$opt_backup,
 	"force!"			=> \$opt_force )){
 
-		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
+		msgOut( "try '$ttp->{run}{command}{basename} --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 
@@ -243,9 +243,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
 msgVerbose( "found to='$opt_to'" );
 msgVerbose( "found live='".( $opt_live ? 'true':'false' )."'" );

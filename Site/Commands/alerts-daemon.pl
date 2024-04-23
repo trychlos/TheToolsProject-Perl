@@ -113,7 +113,7 @@ if( !GetOptions(
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"json=s"			=> \$opt_json )){
 
-		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
+		msgOut( "try '$ttp->{run}{command}{basename} --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 
@@ -122,9 +122,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;

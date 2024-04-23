@@ -44,8 +44,8 @@ my $opt_http = false;
 # get a daemon status
 sub doStatus {
 	msgOut( "requesting the daemon for its status..." );
-	my $dummy =  $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
-	my $verbose =  $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+	my $dummy =  $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
+	my $verbose =  $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
 	my $cmd = "daemon.pl command -nocolored $dummy $verbose -command status";
 	if( $opt_json ){
 		my $json_path = File::Spec->rel2abs( $opt_json );
@@ -95,9 +95,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 msgVerbose( "found bname='$opt_bname'" );
 msgVerbose( "found port='$opt_port'" );

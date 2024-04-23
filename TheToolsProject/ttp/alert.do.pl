@@ -73,8 +73,8 @@ sub doJsonAlert {
 			# protect the double quotes against the CMD.EXE command-line
 			$str =~ s/"/\\"/g;
 			$command =~ s/<DATA>/$str/;
-			my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
-			my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+			my $dummy = $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
+			my $verbose = $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
 			print `$command -nocolored $dummy $verbose`;
 			#$? = 256
 			$res = $? == 0;
@@ -230,9 +230,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found emitter='$opt_emitter'" );
 msgVerbose( "found level='$opt_level'" );
 msgVerbose( "found message='$opt_message'" );

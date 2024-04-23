@@ -48,8 +48,8 @@ my $opt_http = false;
 # and publish a telemetry if opted for
 sub getLive {
 	msgOut( "displaying live '$opt_environment' machine for '$opt_service' service..." );
-	my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
-	my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+	my $dummy = $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
+	my $verbose = $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
 	my @hosts = ();
 	my $command = "services.pl list -service $opt_service -type $opt_environment -machines -nocolored $dummy $verbose";
 	msgLog( $command );
@@ -160,9 +160,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
 msgVerbose( "found environment='$opt_environment'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );

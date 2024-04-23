@@ -25,14 +25,9 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 
-use Config;
-use Data::Dumper;
 use File::Copy::Recursive qw( dircopy pathrmdir );
 use File::Spec;
 use Time::Piece;
-
-use TTP::Constants qw( :all );
-use TTP::Message qw( :all );
 
 my $defaults = {
 	help => 'no',
@@ -51,11 +46,11 @@ my $opt_tag = true;
 
 sub doPublish {
 	my $result = false;
-	my $tohost = TTP::var([ 'deployments', 'pullReference' ]);
+	my $tohost = $ttp->var([ 'deployments', 'pullReference' ]);
 	msgOut( "publishing to '$tohost'..." );
 	my $asked = 0;
 	my $done = 0;
-	foreach my $dir ( @{TTP::var([ 'deployments', 'sourceDirs' ])} ){
+	foreach my $dir ( @{$ttp->var([ 'deployments', 'sourceDirs' ])} ){
 		$asked += 1;
 		my @dirs = File::Spec->splitdir( $dir );
 		my $srcdir = File::Spec->rel2abs( File::Spec->catdir( File::Spec->curdir(), $dirs[scalar @dirs - 1] ));
@@ -118,9 +113,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found check='".( $opt_check ? 'true':'false' )."'" );
 msgVerbose( "found tag='".( $opt_tag ? 'true':'false' )."'" );
 

@@ -51,8 +51,8 @@ my $opt_timeout = $defaults->{timeout};
 sub doSwitchIP {
 	msgOut( "switching '$opt_ip' service to '$opt_to' host..." );
 	my $res = false;
-	my $dummy = $TTPVars->{run}{dummy} ? "-dummy" : "-nodummy";
-	my $verbose = $TTPVars->{run}{verbose} ? "-verbose" : "-noverbose";
+	my $dummy = $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
+	my $verbose = $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
 
 	# check that the requested desired server is not already the routed one
 	my $out = ttpFilter( `ovh.pl ipget -ip $opt_ip -routed -nocolored $verbose $dummy` );
@@ -170,9 +170,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found ip='$opt_ip'" );
 msgVerbose( "found to='$opt_to'" );
 msgVerbose( "found wait='".( $opt_wait ? 'true':'false' )."'" );

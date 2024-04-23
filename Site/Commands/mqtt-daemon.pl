@@ -142,7 +142,7 @@ if( !GetOptions(
 	"stdout!"			=> \$opt_stdout,
 	"sys!"				=> \$opt_sys )){
 
-		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );
+		msgOut( "try '$ttp->{run}{command}{basename} --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 
@@ -151,9 +151,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 msgVerbose( "found stdout='".( defined $opt_stdout ? ( $opt_stdout ? 'true':'false' ) : '(undef)' )."'" );
 msgVerbose( "found sys='".( defined $opt_sys ? ( $opt_sys ? 'true':'false' ) : '(undef)' )."'" );

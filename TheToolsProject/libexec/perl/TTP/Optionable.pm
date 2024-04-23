@@ -127,7 +127,7 @@ after _newBase => sub {
 
 	$self->{_optionable} //= {};
 
-	# set these standard options in ttp->{run} both for historical reasons and for easy handlings
+	# set these standard options in ttp->{run} both for historical reasons and for easier handlings
 	$ttp->{run} //= {};
 	$ttp->{run}{help} = false;
 	$ttp->{run}{colored} = -1;

@@ -85,7 +85,7 @@ sub doBackup {
 				data => $data
 			},
 			mqtt => {
-				topic => "$TTPVars->{config}{host}{name}/executionReport/$TTPVars->{run}{command}{basename}/$TTPVars->{run}{verb}{name}/$opt_instance/$db",
+				topic => "$TTPVars->{config}{host}{name}/executionReport/$ttp->{run}{command}{basename}/$ttp->{run}{verb}{name}/$opt_instance/$db",
 				data => $data,
 				options => "-retain",
 				excludes => [
@@ -135,9 +135,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
 msgVerbose( "found instance='$opt_instance'" );
 msgVerbose( "found database='$opt_database'" );

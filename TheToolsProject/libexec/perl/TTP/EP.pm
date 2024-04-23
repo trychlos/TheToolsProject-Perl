@@ -154,7 +154,7 @@ my $varDebug = false;
 
 sub var {
 	my ( $self, $keys, $base ) = @_;
-	#$varDebug = ( $keys eq 'logsRoot' || $keys eq 'nodeRoot' );
+	$varDebug = ( $keys eq 'deployments' );
 	print __PACKAGE__."::var() entering with keys='$keys' base='".( defined $base ? $base : '(undef)' )."'".EOL if $varDebug;
 	my $found = undef;
 	if( defined( $base )){
@@ -164,7 +164,7 @@ sub var {
 		my $object = $self->node();
 		$found = $self->var( $keys, $object->jsonData()) if !defined( $found ) && defined( $object );
 		print  __PACKAGE__."::var() node is not set".EOL if $varDebug && !$object;
-		#print  __PACKAGE__."::var() after node found='".( defined $found ? $found : '(undef)' )."'".EOL;
+		print  __PACKAGE__."::var() after node found='".( defined $found ? $found : '(undef)' )."'".EOL if $varDebug;
 		# or search in the site for all known historical keys
 		$object = $self->site();
 		my @newKeys = ref $keys eq 'ARRAY' ? @{$keys} : ( $keys );
@@ -179,7 +179,7 @@ sub var {
 # keys is a scalar, or an array of scalars, or an array of arrays of scalars
 sub _var_rec {
 	my ( $self, $keys, $base, $startBase ) = @_;
-	#print __PACKAGE__."::_var_rec() entering with keys='$keys' base='".( defined $base ? $base : '(undef)' )."'".EOL;
+	print __PACKAGE__."::_var_rec() entering with keys='$keys' base='".( defined $base ? $base : '(undef)' )."'".EOL if $varDebug;
 	return $base if !defined( $base ) || ref( $base ) ne 'HASH';
 	$startBase = $startBase || $base;
 	my $ref = ref( $keys );

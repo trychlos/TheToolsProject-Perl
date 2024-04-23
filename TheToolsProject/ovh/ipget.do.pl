@@ -45,7 +45,7 @@ sub doGetIP {
 	msgOut( "display server to which '".( $opt_service || $opt_ip )."' FO IP is attached..." );
 
 	if( $opt_service ){
-		my $serviceConfig = $TTPVars->{$TTPVars->{run}{command}{name}}{service};
+		my $serviceConfig = $TTPVars->{$ttp->{run}{command}{name}}{service};
 		if( $serviceConfig->{data}{ovh} ){
 			if( $serviceConfig->{data}{ovh}{ip} ){
 				$opt_ip = $serviceConfig->{data}{ovh}{ip};
@@ -96,9 +96,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
 msgVerbose( "found ip='$opt_ip'" );
 msgVerbose( "found routed='".( $opt_routed ? 'true':'false' )."'" );
