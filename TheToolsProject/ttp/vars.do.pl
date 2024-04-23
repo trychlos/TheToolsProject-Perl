@@ -123,7 +123,7 @@ sub listNoderoot {
 # list siteSpec value - e.g. '[ 'etc/ttp/site.json', 'etc/site.json' ]'
 
 sub listSitespec {
-	my $str = "siteSpec: [".join( ',', @{$ttp->site()->spec()} )."]";
+	my $str = "siteSpec: [".join( ',', @{TTP::Site->finder()} )."]";
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }

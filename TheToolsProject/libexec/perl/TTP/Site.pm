@@ -46,7 +46,7 @@ my $Const = {
 	],
 	# hardcoded subpaths to find the global site.json
 	# even if this not too sexy in Win32, this is a standard and a common usage on Unix/Darwin platforms
-	site => [
+	finder => [
 		'etc/ttp/site.json',
 		'etc/site.json',
 		'etc/ttp/toops.json',
@@ -112,11 +112,11 @@ sub new {
 	# try to load and evaluate the JSON configuration file with the list of allowed ending paths
 	#  specs here is a ref to an array of arrays which have to be successively tested (so an array
 	#  inside of an array)
-	my $success = $self->jsonLoad({ spec => [ $Const->{site} ] });
+	my $success = $self->jsonLoad({ spec => [ TTP::Site->finder() ] });
 
 	# unable to find and load a site configuration file ? this is an unrecoverable error
 	if( !$success ){
-		msgErr( "Unable to find the site configuration file among [".( join( ',', @{TTP::Site->spec()}))."]" );
+		msgErr( "Unable to find the site configuration file among [".( join( ',', @{TTP::Site->finder()}))."]" );
 		msgErr( "Please make sure that the file exists in one of the TTP_ROOTS paths" );
 		msgErr( "Exiting with code 1" );
 		exit( 1 );
@@ -151,14 +151,15 @@ sub DESTROY {
 
 # -------------------------------------------------------------------------------------------------
 # Publish the site specifications
-# Can be called both as 'TTP::Site->spec()' or as 'TTP::Site::spec()' as we do not manage any argument here.
+# Can be called both as 'TTP::Site->finder()' or as 'TTP::Site::finder()' as we do not manage any
+# argument here.
 # (I]:
 # - none
 # (O):
-# - Returns the Const->{site} specification as an array ref
+# - Returns the Const->{finder} specification as an array ref
 
-sub spec {
-	return $Const->{site};
+sub finder {
+	return $Const->{finder};
 }
 
 1;

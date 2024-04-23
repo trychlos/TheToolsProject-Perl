@@ -40,7 +40,7 @@ use TTP::Message qw( :all );
 my $Const = {
 	# hardcoded subpaths to find the <node>.json files
 	# even if this not too sexy in Win32, this is a standard and a common usage on Unix/Darwin platforms
-	dirs => [
+	finder => [
 		'etc/nodes',
 		'nodes',
 		'etc/machines',
@@ -98,6 +98,19 @@ sub name {
 	return $self->{_node};
 }
 
+# -------------------------------------------------------------------------------------------------
+# returns whether the node has been successfully loaded
+# (I):
+# - none
+# (O):
+# - returns true|false
+
+sub success {
+	my ( $self ) = @_;
+
+	return $self->jsonSuccess();
+}
+
 ### Class methods
 
 # -------------------------------------------------------------------------------------------------
@@ -106,6 +119,8 @@ sub name {
 # - the TTP EP entry point
 # - an argument object with following keys:
 #   > node: the name of the targeted node, defaulting to current host
+#   > abortOnError: whether to abort if we do not found a suitable node JSON configuration,
+#     defaulting to true
 # (O):
 # - this object
 
@@ -120,11 +135,13 @@ sub new {
 	my $node = $args->{node} || _hostname();
 
 	# allowed nodesDirs can be configured at site-level
-	my $dirs = $ttp->var( 'nodesDirs' ) || $Const->{dirs};
+	my $dirs = $ttp->var( 'nodesDirs' ) || TTP::Node->finder();
 	my $success = $self->jsonLoad({ spec => [ $dirs, "$node.json" ], accept => sub { $self->_acceptable( @_ ) }});
 
 	# unable to find and load the node configuration file ? this is an unrecoverable error
-	if( !$success ){
+	my $abort = true;
+	$abort = $args->{abortOnError} if exists $args->{abortOnError};
+	if( !$success && $abort ){
 		msgErr( "Unable to find a valid execution node for '$node' in [".join( ',', @{$dirs} )."]" );
 		msgErr( "Exiting with code 1" );
 		exit( 1 );
@@ -146,6 +163,21 @@ sub DESTROY {
 	my $self = shift;
 	$self->SUPER::DESTROY();
 	return;
+}
+
+### Global functions
+
+# -------------------------------------------------------------------------------------------------
+# Publish the list of dirs here nodes are to be found
+# Can be called both as 'TTP::Node->finder()' or as 'TTP::Node::finder()' as we do not manage any
+# argument here.
+# (I]:
+# - none
+# (O):
+# - Returns the Const->{finder} specification as an array ref
+
+sub finder {
+	return $Const->{finder};
 }
 
 1;

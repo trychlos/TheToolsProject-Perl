@@ -1,6 +1,4 @@
 {
-	"enabled": false,
-
 	"daemons_comments": [
 		"On top of this host configuration, the daemons which will dictate the host behavior, and mainly whether is it a backup production host or not.",
 		"- ...",

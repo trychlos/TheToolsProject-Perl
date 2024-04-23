@@ -58,11 +58,6 @@ my $Const = {
 		MSWin32 => {
 			tempDir => 'C:\\Temp'
 		}
-	},
-	# these constants are needed to 'ttp.pl list --commands'
-	command => {
-		dir => 'bin',
-		sufix => '*.pl'
 	}
 };
 
@@ -118,13 +113,6 @@ sub commandByOs {
 	}
 	msgVerbose( "Toops::commandByOs() result=$result->{result}" );
 	return $result;
-}
-
-# -------------------------------------------------------------------------------------------------
-# Returns const needed by 'ttp.pl list --commands'
-
-sub commandConst {
-	return $Const->{command};
 }
 
 # -------------------------------------------------------------------------------------------------

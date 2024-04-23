@@ -85,6 +85,15 @@ sub DESTROY {
 	return;
 }
 
+### Global functions
+
+# -------------------------------------------------------------------------------------------------
+# List the services defined a a given host
+# (I]:
+# - an optional node name, defaulting to the current execution node
+# (O):
+# - a ref to an array of the defined services
+
 1;
 
 __END__

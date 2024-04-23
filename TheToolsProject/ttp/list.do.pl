@@ -5,6 +5,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]commands          list the available commands [${commands}]
+# @(-) --[no]nodes             list the available nodes [${nodes}]
 # @(-) --[no]services          list the defined services on this host [${services}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
@@ -28,6 +29,7 @@
 use Config;
 
 use TTP::Command;
+use TTP::Node;
 use TTP::Service;
 
 my $defaults = {
@@ -36,19 +38,22 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	commands => 'no',
+	nodes => 'no',
 	services => 'no'
 };
 
 my $opt_commands = false;
+my $opt_nodes = false;
 my $opt_services = false;
 
 # -------------------------------------------------------------------------------------------------
 # list the available commands
+
 sub listCommands {
 	msgOut( "displaying available commands..." );
 	# list all commands in all TTP_ROOTS trees
 	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
-	my $const = TTP::commandConst();
+	my $const = TTP::Command->finder();
 	my @commands = ();
 	foreach my $it ( @roots ){
 		my $dir = File::Spec->catdir( $it, $const->{dir} );
@@ -67,6 +72,39 @@ sub listCommands {
 		$count += 1;
 	}
 	msgOut( "$count found command(s)" );
+}
+
+# -------------------------------------------------------------------------------------------------
+# list the available nodes
+
+sub listNodes {
+	msgOut( "displaying available nodes..." );
+	# list all nodes in all TTP_ROOTS trees
+	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
+	my $dirs = TTP::Node->finder();
+	my @nodes = ();
+	foreach my $it ( @roots ){
+		foreach my $dir ( @{$dirs} ){
+			my $nodedir = File::Spec->catdir( $it, $dir );
+			push @nodes, glob( File::Spec->catfile( $nodedir, '*.json' ));
+		}
+	}
+	# get only unique available nodes
+	my $uniqs = {};
+	my $count = 0;
+	foreach my $it ( @nodes ){
+		my ( $vol, $dirs, $file ) = File::Spec->splitpath( $it );
+		my $name = $file;
+		$name =~ s/\.[^\.]+$//;
+		my $node = TTP::Node->new( $ttp, { node => $name, abortOnError => false });
+		$uniqs->{$name} = $it if !exists( $uniqs->{$name} ) && $node->success();
+	}
+	# and display them in ascii order
+	foreach my $it ( sort keys %{$uniqs} ){
+		print " $it".EOL;
+		$count += 1;
+	}
+	msgOut( "$count found node(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -95,6 +133,7 @@ if( !GetOptions(
 	"dummy!"			=> \$TTPVars->{run}{dummy},
 	"verbose!"			=> \$TTPVars->{run}{verbose},
 	"commands!"			=> \$opt_commands,
+	"nodes!"			=> \$opt_nodes,
 	"services!"			=> \$opt_services )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
@@ -110,10 +149,12 @@ msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" 
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
+msgVerbose( "found nodes='".( $opt_nodes ? 'true':'false' )."'" );
 msgVerbose( "found services='".( $opt_services ? 'true':'false' )."'" );
 
 if( !TTP::errs()){
 	listCommands() if $opt_commands;
+	listNodes() if $opt_nodes;
 	listServices() if $opt_services;
 }
 

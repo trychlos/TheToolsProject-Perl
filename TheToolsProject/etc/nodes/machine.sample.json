@@ -47,7 +47,7 @@
 				"instance": "DEV",
 				"databases": [
 					"Canal33"
-				],
+				]
 			},
 			"monitor": {
 				"ovh": {

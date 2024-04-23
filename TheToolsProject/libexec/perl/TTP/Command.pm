@@ -59,6 +59,11 @@ my $Const = {
 	commentPost => '^# @\(@\) ',
 	commentUsage => '^# @\(-\) ',
 	verbSed => '\.do\.pl',
+	# these constants are needed to 'ttp.pl list --commands'
+	finder => {
+		dir => 'bin',
+		sufix => '*.pl'
+	}
 };
 
 ### Private methods
@@ -298,6 +303,13 @@ sub DESTROY {
 }
 
 ### Global functions
+
+# -------------------------------------------------------------------------------------------------
+# Returns const needed by 'ttp.pl list --commands'
+
+sub finder {
+	return $Const->{finder};
+}
 
 # -------------------------------------------------------------------------------------------------
 # Display the command one-liner help
