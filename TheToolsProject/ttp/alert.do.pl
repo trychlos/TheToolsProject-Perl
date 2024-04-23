@@ -1,9 +1,9 @@
 # @(#) send an alert
 #
 # @(-) --[no]help              print this message, and exit [${help}]
-# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --emitter=<name>        the emitter's name [${emitter}]
 # @(-) --level=<level>         the alert level [${level}]
 # @(-) --message=<name>        the alert message [${message}]
@@ -12,25 +12,36 @@
 # @(-) --[no]smtp              send the alert by SMTP [${smtp}]
 # @(-) --[no]sms               send the alert by SMS [${sms}]
 #
-# Copyright (@) 2023-2024 PWI Consulting
+# The Tools Project: a Tools System and Paradigm for IT Production
+# Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
+# Copyright (©) 2023-2024 PWI Consulting
+#
+# The Tools Project is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# The Tools Project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with The Tools Project; see the file COPYING. If not,
+# see <http://www.gnu.org/licenses/>.
 
-use Data::Dumper;
 use JSON;
 use Path::Tiny;
 use Time::Moment;
 
-use TTP::Constants qw( :all );
-use TTP::Message qw( :all );
 use TTP::Path;
 use TTP::SMTP;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
-	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
+	verbose => 'no',
 	emitter => TTP::host(),
 	level => 'INFO',
 	message => ''
@@ -54,11 +65,12 @@ $defaults->{sms} = $opt_sms ? 'yes' : 'no';
 # as far as we are concerned here, this is just executing the configured command
 # managed macros:
 # - DATA: the JSON content
+
 sub doJsonAlert {
 	msgOut( "creating a new '$opt_level' json alert..." );
 	my $command = TTP::var([ 'alerts', 'withFile', 'command' ]);
 	if( $command ){
-		my $dir = TTP::Path::alertsDir();
+		my $dir = TTP::var([ 'alerts', 'withFile', 'dropDir' ]);
 		if( $dir ){
 			TTP::Path::makeDirExist( $dir );
 			my $data = {
@@ -96,6 +108,7 @@ sub doJsonAlert {
 # - TOPIC
 # - PAYLOAD
 # - OPTIONS
+
 sub doMqttAlert {
 	msgOut( "publishing a '$opt_level' alert on MQTT bus..." );
 	my $command = TTP::var([ 'alerts', 'withMqtt', 'command' ]);
@@ -134,6 +147,7 @@ sub doMqttAlert {
 # -------------------------------------------------------------------------------------------------
 # send the alert by SMS
 # Expects have some sort of configuration in Toops json
+
 sub doSmsAlert {
 	msgOut( "sending a '$opt_level' alert by SMS..." );
 	my $res = false;
@@ -156,7 +170,7 @@ Best regards.
 		print `$command -nocolored $dummy $verbose`;
 		$res = ( $? == 0 );
 	} else {
-		TTP::msgWarn( "unable to get a command for alerts by SMS" );
+		msgWarn( "unable to get a command for alerts by SMS" );
 	}
 	if( $res ){
 		msgOut( "success" );
@@ -210,9 +224,9 @@ Best regards.
 
 if( !GetOptions(
 	"help!"				=> \$ttp->{run}{help},
-	"verbose!"			=> \$ttp->{run}{verbose},
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
+	"verbose!"			=> \$ttp->{run}{verbose},
 	"emitter=s"			=> \$opt_emitter,
 	"level=s"			=> \$opt_level,
 	"message=s"			=> \$opt_message,
@@ -230,9 +244,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found emitter='$opt_emitter'" );
 msgVerbose( "found level='$opt_level'" );
 msgVerbose( "found message='$opt_message'" );
