@@ -169,6 +169,7 @@ sub execReportsDir {
 #   > makeExist, defaulting to false
 # ((O):
 # - returns a path of undef if an error has occured
+
 sub fromCommand {
 	my( $cmd, $opts ) = @_;
 	$opts //= {};

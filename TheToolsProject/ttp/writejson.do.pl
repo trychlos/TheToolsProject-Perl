@@ -1,28 +1,38 @@
 # @(#) write JSON data into a file
 #
 # @(-) --[no]help              print this message, and exit [${help}]
-# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --file=<filename>       the filename where to write the data [${file}]
 # @(-) --data=<data>           the data to be written as a JSON string [${data}]
 # @(-) --[no]append            whether to append to the file [${append}]
 #
-# Copyright (@) 2023-2024 PWI Consulting
+# The Tools Project: a Tools System and Paradigm for IT Production
+# Copyright (©) 2003-2023 Pierre Wieser (see AUTHORS)
+# Copyright (©) 2024 PWI Consulting
+#
+# The Tools Project is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# The Tools Project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with The Tools Project; see the file COPYING. If not,
+# see <http://www.gnu.org/licenses/>.
 
-use Data::Dumper;
 use JSON;
-
-use TTP::Constants qw( :all );
-use TTP::Message qw( :all );
-
-my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
-	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
+	verbose => 'no',
 	file => '',
 	data => '{}',
 	append => 'no'
@@ -34,6 +44,7 @@ my $opt_append = false;
 
 # -------------------------------------------------------------------------------------------------
 # write the data into the file
+
 sub doWriteJson {
 	msgOut( "writing JSON data into $opt_file..." );
 	my @to = split( /,/, $opt_to );
@@ -58,9 +69,9 @@ sub doWriteJson {
 
 if( !GetOptions(
 	"help!"				=> \$ttp->{run}{help},
-	"verbose!"			=> \$ttp->{run}{verbose},
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
+	"verbose!"			=> \$ttp->{run}{verbose},
 	"file=s"			=> \$opt_file,
 	"data=s"			=> \$opt_data,
 	"append!"			=> \$opt_append )){
@@ -74,9 +85,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found file='$opt_file'" );
 msgVerbose( "found data='$opt_data'" );
 msgVerbose( "found append='".( defined $opt_append ? ( $opt_append ? 'true':'false' ) : '(undef)' )."'" );

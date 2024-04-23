@@ -1,30 +1,41 @@
 # @(#) purge directories from a path
 #
 # @(-) --[no]help              print this message, and exit [${help}]
-# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run [${dummy}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --dirpath=s             the source path [${dirpath}]
 # @(-) --dircmd=s              the command which will give the source path [${dircmd}]
 # @(-) --keep=s                count of to-be-kept directories [${keep}]
 #
-# Copyright (@) 2023-2024 PWI Consulting
+# The Tools Project: a Tools System and Paradigm for IT Production
+# Copyright (©) 2003-2023 Pierre Wieser (see AUTHORS)
+# Copyright (©) 2024 PWI Consulting
+#
+# The Tools Project is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# The Tools Project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with The Tools Project; see the file COPYING. If not,
+# see <http://www.gnu.org/licenses/>.
 
-use Data::Dumper;
 use File::Path qw( remove_tree );
 use File::Spec;
 
-use TTP::Constants qw( :all );
-use TTP::Message qw( :all );
 use TTP::Path;
-
-my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
-	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
+	verbose => 'no',
 	dirpath => '',
 	dircmd => '',
 	keep => '0'
@@ -38,6 +49,7 @@ my $opt_keep = $defaults->{keep};
 # Purge directories from source, only keeping some in source
 # - ignore dot files and dot dirs
 # - ignore files, only considering dirs
+
 sub doPurgeDirs {
 	msgOut( "purging from '$opt_dirpath', keeping '$opt_keep' item(s)" );
 	my $count = 0;
@@ -102,9 +114,9 @@ sub _targetPath {
 
 if( !GetOptions(
 	"help!"				=> \$ttp->{run}{help},
-	"verbose!"			=> \$ttp->{run}{verbose},
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
+	"verbose!"			=> \$ttp->{run}{verbose},
 	"dirpath=s"			=> \$opt_dirpath,
 	"dircmd=s"			=> \$opt_dircmd,
 	"keep=s"			=> \$opt_keep )){
@@ -118,9 +130,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found dirpath='$opt_dirpath'" );
 msgVerbose( "found dircmd='$opt_dircmd'" );
 msgVerbose( "found keep='$opt_keep'" );
