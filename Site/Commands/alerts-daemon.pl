@@ -107,10 +107,10 @@ sub works {
 # =================================================================================================
 
 if( !GetOptions(
-	"help!"				=> \$TTPVars->{run}{help},
-	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"colored!"			=> \$TTPVars->{run}{colored},
-	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"help!"				=> \$ttp->{run}{help},
+	"verbose!"			=> \$ttp->{run}{verbose},
+	"colored!"			=> \$ttp->{run}{colored},
+	"dummy!"			=> \$ttp->{run}{dummy},
 	"json=s"			=> \$opt_json )){
 
 		msgOut( "try '$TTPVars->{run}{command}{basename} --help' to get full usage syntax" );

@@ -35,9 +35,9 @@ use TTP::Path;
 
 my $defaults = {
 	help => 'no',
-	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
+	verbose => 'no',
 	siteSpec => 'no',
 	nodeRoot => 'no',
 	logsRoot => 'no',

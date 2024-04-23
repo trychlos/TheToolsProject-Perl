@@ -119,10 +119,10 @@ sub doWait {
 # =================================================================================================
 
 if( !GetOptions(
-	"help!"				=> \$TTPVars->{run}{help},
-	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"colored!"			=> \$TTPVars->{run}{colored},
-	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"help!"				=> \$ttp->{run}{help},
+	"verbose!"			=> \$ttp->{run}{verbose},
+	"colored!"			=> \$ttp->{run}{colored},
+	"dummy!"			=> \$ttp->{run}{dummy},
 	"json=s"			=> \$opt_json,
 	"port=i"			=> sub {
 		my( $opt_name, $opt_value ) = @_;
@@ -134,7 +134,7 @@ if( !GetOptions(
 	"timeout=i"			=> \$opt_timeout,
 	"sleep=i"			=> \$opt_sleep )){
 
-		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 

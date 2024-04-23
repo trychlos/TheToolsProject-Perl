@@ -69,7 +69,7 @@
 		},
 		"credentialsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'credentials' )]",
 		"DBMS": {
-			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), TTP::host() )]",
+			"backupsDir": "[eval:File::Spec->catdir( TTP::var([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), TTP::host() )]",
 			"backupsRoot": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'dailySQLBackups' )]",
 			"instance": "MSSQLSERVER",
 			"byInstance": {
@@ -80,6 +80,7 @@
 		},
 		"deployments": {
 			"sourceDirs": [
+				"[eval:File::Spec->catdir( TTP::nodeRoot(), 'Site' )]",
 				"[eval:File::Spec->catdir( TTP::nodeRoot(), 'SiteResources' )]",
 				"[eval:File::Spec->catdir( TTP::nodeRoot(), 'TheToolsProject' )]"
 			],

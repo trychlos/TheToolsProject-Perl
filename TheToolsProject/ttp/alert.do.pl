@@ -39,10 +39,10 @@ my $defaults = {
 my $opt_emitter = $defaults->{emitter};
 my $opt_level = INFO;
 my $opt_message = $defaults->{message};
-my $opt_json = ttpVar([ 'alerts', 'withFile', 'enabled' ]);
-my $opt_mqtt = ttpVar([ 'alerts', 'withMqtt', 'enabled' ]);
-my $opt_smtp = ttpVar([ 'alerts', 'withSmtp', 'enabled' ]);
-my $opt_sms = ttpVar([ 'alerts', 'withSms', 'enabled' ]);
+my $opt_json = TTP::var([ 'alerts', 'withFile', 'enabled' ]);
+my $opt_mqtt = TTP::var([ 'alerts', 'withMqtt', 'enabled' ]);
+my $opt_smtp = TTP::var([ 'alerts', 'withSmtp', 'enabled' ]);
+my $opt_sms = TTP::var([ 'alerts', 'withSms', 'enabled' ]);
 
 $defaults->{json} = $opt_json ? 'yes' : 'no';
 $defaults->{mqtt} = $opt_mqtt ? 'yes' : 'no';
@@ -56,7 +56,7 @@ $defaults->{sms} = $opt_sms ? 'yes' : 'no';
 # - DATA: the JSON content
 sub doJsonAlert {
 	msgOut( "creating a new '$opt_level' json alert..." );
-	my $command = ttpVar([ 'alerts', 'withFile', 'command' ]);
+	my $command = TTP::var([ 'alerts', 'withFile', 'command' ]);
 	if( $command ){
 		my $dir = TTP::Path::alertsDir();
 		if( $dir ){
@@ -98,7 +98,7 @@ sub doJsonAlert {
 # - OPTIONS
 sub doMqttAlert {
 	msgOut( "publishing a '$opt_level' alert on MQTT bus..." );
-	my $command = ttpVar([ 'alerts', 'withMqtt', 'command' ]);
+	my $command = TTP::var([ 'alerts', 'withMqtt', 'command' ]);
 	my $res = false;
 	if( $command ){
 		my $topic = TTP::host()."/alert";
@@ -137,7 +137,7 @@ sub doMqttAlert {
 sub doSmsAlert {
 	msgOut( "sending a '$opt_level' alert by SMS..." );
 	my $res = false;
-	my $command = ttpVar([ 'alerts', 'withSms', 'command' ]);
+	my $command = TTP::var([ 'alerts', 'withSms', 'command' ]);
 	if( $command ){
 		my $text = "Hi,
 An alert has been raised:
@@ -174,7 +174,7 @@ Best regards.
 sub doSmtpAlert {
 	msgOut( "publishing a '$opt_level' alert by SMTP..." );
 	my $res = false;
-	my $command = ttpVar([ 'alerts', 'withSmtp', 'command' ]);
+	my $command = TTP::var([ 'alerts', 'withSmtp', 'command' ]);
 	if( $command ){
 		my $subject = "[$opt_level] Alert";
 		my $text = "Hi,
@@ -209,10 +209,10 @@ Best regards.
 # =================================================================================================
 
 if( !GetOptions(
-	"help!"				=> \$TTPVars->{run}{help},
-	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"colored!"			=> \$TTPVars->{run}{colored},
-	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"help!"				=> \$ttp->{run}{help},
+	"verbose!"			=> \$ttp->{run}{verbose},
+	"colored!"			=> \$ttp->{run}{colored},
+	"dummy!"			=> \$ttp->{run}{dummy},
 	"emitter=s"			=> \$opt_emitter,
 	"level=s"			=> \$opt_level,
 	"message=s"			=> \$opt_message,
@@ -221,7 +221,7 @@ if( !GetOptions(
 	"smtp!"				=> \$opt_smtp,
 	"sms!"				=> \$opt_sms )){
 
-		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 

@@ -45,7 +45,7 @@ sub executeCommands {
 	my $hostConfig = TTP::getHostConfig( $host );
 	my $serviceConfig = TTP::Service::serviceConfig( $hostConfig, $opt_service );
 	if( $serviceConfig ){
-		my $hash = ttpVar( $opt_keys, { config => $serviceConfig });
+		my $hash = TTP::var( $opt_keys, { config => $serviceConfig });
 		if( $hash && ref( $hash ) eq 'HASH' ){
 			my $commands = $hash->{commands};
 			if( $commands && ref( $commands ) eq 'ARRAY' && scalar @{$commands} > 0 ){
@@ -80,15 +80,15 @@ sub executeCommands {
 # =================================================================================================
 
 if( !GetOptions(
-	"help!"				=> \$TTPVars->{run}{help},
-	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"colored!"			=> \$TTPVars->{run}{colored},
-	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"help!"				=> \$ttp->{run}{help},
+	"verbose!"			=> \$ttp->{run}{verbose},
+	"colored!"			=> \$ttp->{run}{colored},
+	"dummy!"			=> \$ttp->{run}{dummy},
 	"service=s"			=> \$opt_service,
 	"host=s"			=> \$opt_host,
 	"key=s@"			=> \$opt_keys )){
 
-		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 

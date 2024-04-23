@@ -1,13 +1,29 @@
 # @(#) publish code and configurations from development environment to pull target
 #
 # @(-) --[no]help              print this message, and exit [${help}]
-# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run [${dummy}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]check             whether to check for cleanity [${check}]
 # @(-) --[no]tag               tag the git repository [${tag}]
 #
-# Copyright (@) 2023-2024 PWI Consulting
+# The Tools Project: a Tools System and Paradigm for IT Production
+# Copyright (©) 2003-2023 Pierre Wieser (see AUTHORS)
+# Copyright (©) 2024 PWI Consulting
+#
+# The Tools Project is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# The Tools Project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with The Tools Project; see the file COPYING. If not,
+# see <http://www.gnu.org/licenses/>.
 
 use Config;
 use Data::Dumper;
@@ -17,15 +33,12 @@ use Time::Piece;
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
-use TTP::Path;
-
-my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
-	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
+	verbose => 'no',
 	check => 'yes',
 	tag => 'yes'
 };
@@ -35,13 +48,14 @@ my $opt_tag = true;
 
 # -------------------------------------------------------------------------------------------------
 # publish  the reference tree to the pull target
+
 sub doPublish {
 	my $result = false;
-	my $tohost = ttpVar([ 'deployments', 'pullReference' ]);
+	my $tohost = TTP::var([ 'deployments', 'pullReference' ]);
 	msgOut( "publishing to '$tohost'..." );
 	my $asked = 0;
 	my $done = 0;
-	foreach my $dir ( @{ttpVar([ 'deployments', 'sourceDirs' ])} ){
+	foreach my $dir ( @{TTP::var([ 'deployments', 'sourceDirs' ])} ){
 		$asked += 1;
 		my @dirs = File::Spec->splitdir( $dir );
 		my $srcdir = File::Spec->rel2abs( File::Spec->catdir( File::Spec->curdir(), $dirs[scalar @dirs - 1] ));
@@ -49,7 +63,7 @@ sub doPublish {
 		msgVerbose( "from $srcdir" );
 		msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
 		if( !$running->dummy()){
-			my $removeTree = ttpVar([ 'deployments', 'before', 'removeTree' ]);
+			my $removeTree = TTP::var([ 'deployments', 'before', 'removeTree' ]);
 			$removeTree = true if !defined $removeTree;
 			if( $removeTree ){
 				my $rc = pathrmdir( $dir );
@@ -72,7 +86,7 @@ sub doPublish {
 	if( $done == $asked && !TTP::errs() && $opt_tag ){
 		msgOut( "tagging the git repository" );
 		my $now = localtime->strftime( '%Y%m%d_%H%M%S' );
-		my $message = "$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name}";
+		my $message = $running->command()." ".$running->verb();
 		print `git tag -am "$message" $now`;
 	}
 	my $str = "$done/$asked subdirs copied";
@@ -88,14 +102,14 @@ sub doPublish {
 # =================================================================================================
 
 if( !GetOptions(
-	"help!"				=> \$TTPVars->{run}{help},
-	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"colored!"			=> \$TTPVars->{run}{colored},
-	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"help!"				=> \$ttp->{run}{help},
+	"colored!"			=> \$ttp->{run}{colored},
+	"dummy!"			=> \$ttp->{run}{dummy},
+	"verbose!"			=> \$ttp->{run}{verbose},
 	"check!"			=> \$opt_check,
 	"tag!"				=> \$opt_tag )){
 
-		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 
@@ -104,9 +118,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found check='".( $opt_check ? 'true':'false' )."'" );
 msgVerbose( "found tag='".( $opt_tag ? 'true':'false' )."'" );
 

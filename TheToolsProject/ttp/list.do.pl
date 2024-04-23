@@ -33,9 +33,9 @@ use TTP::Service;
 
 my $defaults = {
 	help => 'no',
-	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
+	verbose => 'no',
 	commands => 'no',
 	nodes => 'no'
 };
@@ -109,10 +109,10 @@ sub listNodes {
 # =================================================================================================
 
 if( !GetOptions(
-	"help!"				=> \$TTPVars->{run}{help},
-	"colored!"			=> \$TTPVars->{run}{colored},
-	"dummy!"			=> \$TTPVars->{run}{dummy},
-	"verbose!"			=> \$TTPVars->{run}{verbose},
+	"help!"				=> \$ttp->{run}{help},
+	"colored!"			=> \$ttp->{run}{colored},
+	"dummy!"			=> \$ttp->{run}{dummy},
+	"verbose!"			=> \$ttp->{run}{verbose},
 	"commands!"			=> \$opt_commands,
 	"nodes!"			=> \$opt_nodes )){
 

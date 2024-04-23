@@ -66,7 +66,7 @@ sub _buildDbms {
 	# dbms is a special object created by TTP for the command
 	my $dbms = $TTPVars->{dbms};
 	$dbms->{config} = TTP::getHostConfig();
-	$dbms->{exitCode} = \$TTPVars->{run}{exitCode};
+	$dbms->{exitCode} = \$ttp->{run}{exitCode};
 	return $dbms;
 }
 

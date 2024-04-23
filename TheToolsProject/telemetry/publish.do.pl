@@ -41,8 +41,8 @@ my $defaults = {
 my $opt_metric = $defaults->{metric};
 my $opt_label = $defaults->{label};
 my $opt_value = undef;
-my $opt_mqtt = ttpVar([ 'Telemetry', 'withMqtt', 'enabled' ]);
-my $opt_http = ttpVar([ 'Telemetry', 'withHttp', 'enabled' ]);
+my $opt_mqtt = TTP::var([ 'Telemetry', 'withMqtt', 'enabled' ]);
+my $opt_http = TTP::var([ 'Telemetry', 'withHttp', 'enabled' ]);
 my $opt_httpPrefix = $defaults->{httpPrefix};
 my $opt_httpOption = $defaults->{httpOption};
 my $opt_mqttPrefix = $defaults->{mqttPrefix};
@@ -86,10 +86,10 @@ sub doMqttPublish {
 # =================================================================================================
 
 if( !GetOptions(
-	"help!"				=> \$TTPVars->{run}{help},
-	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"colored!"			=> \$TTPVars->{run}{colored},
-	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"help!"				=> \$ttp->{run}{help},
+	"verbose!"			=> \$ttp->{run}{verbose},
+	"colored!"			=> \$ttp->{run}{colored},
+	"dummy!"			=> \$ttp->{run}{dummy},
 	"metric=s"			=> \$opt_metric,
 	"label=s@"			=> \$opt_label,
 	"value=s"			=> \$opt_value,
@@ -100,7 +100,7 @@ if( !GetOptions(
 	"mqttPrefix=s"		=> \$opt_mqttPrefix,
 	"mqttOption=s@"		=> \$opt_mqttOption	)){
 
-		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 
