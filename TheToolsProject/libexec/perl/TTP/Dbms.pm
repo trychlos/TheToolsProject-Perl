@@ -178,7 +178,7 @@ sub computeDefaultBackupFilename {
 	my $backupDir = TTP::Path::dbmsBackupsDir();
 	if( !$backupDir ){
 		msgWarn( "Dbms::computeDefaultBackupFilename() instance='$parms->{instance}' backupDir is not specified, set to default temp directory" );
-		$backupDir = TTP::getDefaultTempDir();
+		$backupDir = TTP::tempDir();
 	}
 	# compute the filename
 	my $fname = $dbms->{config}{name}.'-'.$parms->{instance}.'-'.$parms->{database}.'-'.localtime->strftime( '%y%m%d' ).'-'.localtime->strftime( '%H%M%S' ).'-'.$mode.'.backup';

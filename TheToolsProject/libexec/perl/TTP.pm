@@ -45,41 +45,7 @@ my $Const = {
 	}
 };
 
-# store here our Toops variables
-our $TTPVars = {
-	Toops => {
-		# defaults which depend of the host OS provided by 'Config' package
-		byOS => {
-			darwin => {
-				pathSeparator => ':',
-				tempDir => '/tmp'
-			},
-			linux => {
-				pathSeparator => ':',
-				tempDir => '/tmp'
-			},
-			MSWin32 => {
-				pathSeparator => ';',
-				tempDir => 'C:\\Temp'
-			}
-		},
-		# some internally used constants
-		commentPreUsage => '^# @\(#\) ',
-		commentPostUsage => '^# @\(@\) ',
-		commentUsage => '^# @\(-\) ',
-		verbSed => '\.do\.pl',
-	},
-	# a key reserved for the storage of toops+site+host raw json configuration files
-	raw => undef,
-	# initialize some run variables
-	run => {
-		exitCode => 0,
-		help => false,
-		verbose => false,
-		dummy => false,
-		colored => true
-	}
-};
+my $TTPVars = {};
 
 # -------------------------------------------------------------------------------------------------
 # Execute a command dependant of the running OS.
@@ -480,12 +446,6 @@ sub getAvailableCommands {
 }
 
 # -------------------------------------------------------------------------------------------------
-# returns the default temp directory for the running OS
-sub getDefaultTempDir {
-	return $TTPVars->{Toops}{byOS}{$Config{osname}}{tempDir};
-}
-
-# -------------------------------------------------------------------------------------------------
 # returns the list of defined hosts, reading the hosts configuration directory
 # do not return the hosts whose configuration file is disabled
 sub getDefinedHosts {
@@ -548,13 +508,6 @@ sub getTempFileName {
 }
 
 # -------------------------------------------------------------------------------------------------
-# returns the available verbs for the current command
-sub getVerbs {
-	my @verbs = glob( File::Spec->catdir( $TTPVars->{run}{command}{verbsDir}, "*".$TTPVars->{Toops}{verbSufix} ));
-	return @verbs;
-}
-
-# -------------------------------------------------------------------------------------------------
 # greps a file with a regex
 # (E):
 # - the filename to be grep-ed
@@ -602,48 +555,6 @@ sub grepFileByRegex {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Display the command help as:
-# - a one-liner from the command itself
-# - and the one-liner help of each available verb
-sub helpCommand {
-	msgVerbose( "helpCommand()" );
-	# display the command one-line help
-	TTP::helpCommandOneline( $TTPVars->{run}{command}{path} );
-	# display each verb one-line help
-	my @verbs = TTP::getVerbs();
-	my $verbsHelp = {};
-	foreach my $it ( @verbs ){
-		my @fullHelp = grepFileByRegex( $it, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
-		my ( $volume, $directories, $file ) = File::Spec->splitpath( $it );
-		my $verb = $file;
-		$verb =~ s/$TTPVars->{Toops}{verbSed}$//;
-		$verbsHelp->{$verb} = $fullHelp[0];
-	}
-	# verbs being alpha sorted
-	@verbs = keys %{$verbsHelp};
-	my @sorted = sort @verbs;
-	foreach my $it ( @sorted ){
-		print "  $it: $verbsHelp->{$it}".EOL;
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# Display the command one-liner help
-# (I):
-# - the full path to the command
-# - an optional options hash with following keys:
-#   > prefix: the line prefix, defaulting to ''
-sub helpCommandOneline {
-	my ( $command_path, $opts ) = @_;
-	$opts //= {};
-	my $prefix = '';
-	$prefix = $opts->{prefix} if exists( $opts->{prefix} );
-	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $command_path );
-	my @commandHelp = grepFileByRegex( $command_path, $TTPVars->{Toops}{commentPreUsage} );
-	print "$prefix$bname: $commandHelp[0]".EOL;
-}
-
-# -------------------------------------------------------------------------------------------------
 # Display an external command help
 # This is a one-shot help: all the help content is printed here
 # (I):
@@ -670,68 +581,6 @@ sub helpExtern {
 	foreach my $it ( @help ){
 		print " $it".EOL;
 	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# Display the full verb help
-# - the one-liner help of the command
-# - the full help of the verb as:
-#   > a pre-usage help
-#   > the usage of the verb
-#   > a post-usage help
-# (I):
-# - a hash which contains default values
-# - an optional options hash with following keys:
-#   > usage: a reference to display available options
-sub helpVerb {
-	msgVerbose( "helpVerb()" );
-	my ( $defaults, $opts ) = @_;
-	$opts //= {};
-	# display the command one-line help
-	TTP::helpCommandOneline( $TTPVars->{run}{command}{path} );
-	# verb pre-usage
-	my @verbHelp = grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPreUsage}, { warnIfSeveral => false });
-	my $verbInline = '';
-	if( scalar @verbHelp ){
-		$verbInline = shift @verbHelp;
-	}
-	print "  $TTPVars->{run}{verb}{name}: $verbInline".EOL;
-	foreach my $line ( @verbHelp ){
-		print "    $line".EOL;
-	}
-	# verb usage
-	if( $opts->{usage} ){
-		@verbHelp = @{$opts->{usage}->()};
-	} else {
-		@verbHelp = TTP::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentUsage}, { warnIfSeveral => false });
-	}
-	if( scalar @verbHelp ){
-		print "    Usage: $TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} [options]".EOL;
-		print "    where available options are:".EOL;
-		foreach my $line ( @verbHelp ){
-			$line =~ s/\$\{?(\w+)}?/$defaults->{$1}/e;
-			print "      $line".EOL;
-		}
-	}
-	# verb post-usage
-	@verbHelp = TTP::grepFileByRegex( $TTPVars->{run}{verb}{path}, $TTPVars->{Toops}{commentPostUsage}, { warnIfNone => false, warnIfSeveral => false });
-	if( scalar @verbHelp ){
-		foreach my $line ( @verbHelp ){
-			print "    $line".EOL;
-		}
-	}
-}
-
-# -------------------------------------------------------------------------------------------------
-# Returns the help line for the standard options
-sub helpVerbStandardOptions {
-	my @help = (
-		"--[no]help              print this message, and exit [no]",
-		"--[no]verbose           run verbosely [no]",
-		"--[no]colored           color the output depending of the message level [yes]",
-		"--[no]dummy             dummy run (ignored here) [no]"
-	);
-	return \@help;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -949,7 +798,7 @@ sub logsMain {
 #   and at least not definitive while the node has not been instanciated/loaded/evaluated
 
 sub logsRoot {
-	my $result = $ttp->node() ? ( $ttp->var( 'logsRoot' ) || $Const->{byOS}{$Config{osname}}{tempDir} ) : undef;
+	my $result = $ttp->node() ? ( $ttp->var( 'logsRoot' ) || tempDir()) : undef;
 	return $result;
 }
 
@@ -1112,12 +961,15 @@ sub stackTrace {
 	print $trace->as_string; # like carp
 }
 
-# -------------------------------------------------------------------------------------------------
-# check global
+# ------------------------------------------------------------------------------------------------
+# (I):
+# - none
+# (O):
+# - returns the 'tempDir' directory for the running OS
 
-sub testTTP {
-
-	print "testTTP ttp global $ttp".EOL;
+sub tempDir {
+	my $result = $Const->{byOS}{$Config{osname}}{tempDir};
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------

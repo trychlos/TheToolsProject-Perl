@@ -31,6 +31,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Config;
 use Data::Dumper;
 use Getopt::Long;
 use Role::Tiny::With;
@@ -46,7 +47,6 @@ use TTP::Message qw( :all );
 my $Const = {
 	# reserved words: the commands must be named outside of this array
 	#  either because they are folders of the Toops installation tree
-	#  or because they are first level key in TTPVars (thus preventing to have a 'command' object at this first level)
 	reservedWords => [
 		'bin',
 		'libexec',
@@ -55,9 +55,49 @@ my $Const = {
 		'TTP'
 	],
 	verbSufix => '.do.pl',
+	commentPre => '^# @\(#\) ',
+	commentPost => '^# @\(@\) ',
+	commentUsage => '^# @\(-\) ',
+	verbSed => '\.do\.pl',
 };
 
 ### Private methods
+
+# -------------------------------------------------------------------------------------------------
+# returns the available verbs for the current command
+# (O):
+# - a ref to an array of full paths of available verbs for the current command
+
+sub _getVerbs {
+	my ( $self ) = @_;
+
+	my @verbs = ();
+	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
+	foreach my $it ( @roots ){
+		my $dir = File::Spec->catdir( $it, $self->runnableBNameShort());
+		push @verbs, glob( File::Spec->catdir( $dir, "*".$Const->{verbSufix} ));
+	}
+
+	return @verbs;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Display the command one-liner help
+# (I):
+# - the full path to the command
+# - an optional options hash with following keys:
+#   > prefix: the line prefix, defaulting to ''
+
+sub _helpCommandOneline {
+	my ( $self, $command_path, $opts ) = @_;
+
+	$opts //= {};
+	my $prefix = '';
+	$prefix = $opts->{prefix} if exists( $opts->{prefix} );
+	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $command_path );
+	my @commandHelp = TTP::grepFileByRegex( $command_path, $Const->{commentPre} );
+	print "$prefix$bname: $commandHelp[0]".EOL;
+}
 
 # -------------------------------------------------------------------------------------------------
 # command initialization
@@ -96,7 +136,10 @@ sub command {
 }
 
 # -------------------------------------------------------------------------------------------------
-# command help
+# Command help
+# Display the command help as:
+# - a one-liner from the command itself
+# - and the one-liner help of each available verb
 # (I]:
 # - none
 # (O):
@@ -105,7 +148,25 @@ sub command {
 sub commandHelp {
 	my ( $self ) = @_;
 
-	print "commandHelp()".EOL;
+	msgVerbose( "helpCommand()" );
+	# display the command one-line help
+	$self->_helpCommandOneline( $self->runnablePath());
+	# display each verb one-line help
+	my @verbs = $self->_getVerbs();
+	my $verbsHelp = {};
+	foreach my $it ( @verbs ){
+		my @fullHelp = TTP::grepFileByRegex( $it, $Const->{commentPre}, { warnIfSeveral => false });
+		my ( $volume, $directories, $file ) = File::Spec->splitpath( $it );
+		my $verb = $file;
+		$verb =~ s/$Const->verbSed}$//;
+		$verbsHelp->{$verb} = $fullHelp[0];
+	}
+	# verbs are displayed alpha sorted
+	@verbs = keys %{$verbsHelp};
+	my @sorted = sort @verbs;
+	foreach my $it ( @sorted ){
+		print "  $it: $verbsHelp->{$it}".EOL;
+	}
 
 	return $self;
 }
@@ -128,23 +189,18 @@ sub run {
 			my $verb = shift( @command_args );
 			$self->{_verb}{args} = \@command_args;
 			$self->runnableSetQualifier( $verb );
-			if( scalar( @command_args )){
-				# as verbs are written as Perl scripts, they are dynamically ran from here in the context of 'self'
-				# + have direct access to 'ttp' entry point
-				local @ARGV = @command_args;
-				our $running = $ttp->running();
 
-				$self->{_verb}{path} = $self->find({ spec => [ $self->runnableBNameShort(), $verb.$Const->{verbSufix} ]});
-				if( -f $self->{_verb}{path} ){
-					unless( defined do $self->{_verb}{path} ){
-						msgErr( "do $self->{_verb}{path}: ".( $! || $@ ));
-					}
-				} else {
-					msgErr( "script not found or not readable: '$self->{_verb}{path}' (most probably, '$self->{_verb}{name}' is not a valid verb)" );
+			# as verbs are written as Perl scripts, they are dynamically ran from here in the context of 'self'
+			# + have direct access to 'ttp' entry point
+			local @ARGV = @command_args;
+			our $running = $ttp->running();
+			$self->{_verb}{path} = $self->find({ spec => [ $self->runnableBNameShort(), $verb.$Const->{verbSufix} ]});
+			if( -f $self->{_verb}{path} ){
+				unless( defined do $self->{_verb}{path} ){
+					msgErr( "do $self->{_verb}{path}: ".( $! || $@ ));
 				}
 			} else {
-				$self->verbHelp();
-				ttpExit();
+				msgErr( "script not found or not readable: '$self->{_verb}{path}' (most probably, '$self->{_verb}{name}' is not a valid verb)" );
 			}
 		} else {
 			$self->commandHelp();
@@ -174,16 +230,52 @@ sub verb {
 }
 
 # -------------------------------------------------------------------------------------------------
-# verb help
-# (I]:
-# - none
+# Verb help
+# Display the full verb help
+# - the one-liner help of the command
+# - the full help of the verb as:
+#   > a pre-usage help
+#   > the usage of the verb
+#   > a post-usage help
+# (I):
+# - a hash which contains default values
 # (O):
 # - this object
 
 sub verbHelp {
-	my ( $self ) = @_;
+	my ( $self, $defaults ) = @_;
 
-	print "verbHelp()".EOL;
+	msgVerbose( "helpVerb()" );
+	# display the command one-line help
+	$self->_helpCommandOneline( $self->runnablePath());
+	# verb pre-usage
+	my @verbHelp = TTP::grepFileByRegex( $self->{_verb}{path}, $Const->{commentPre}, { warnIfSeveral => false });
+	my $verbInline = '';
+	if( scalar @verbHelp ){
+		$verbInline = shift @verbHelp;
+	}
+	print "  ".$self->verb().": $verbInline".EOL;
+	foreach my $line ( @verbHelp ){
+		print "    $line".EOL;
+	}
+	# verb usage
+	@verbHelp = TTP::grepFileByRegex( $self->{_verb}{path}, $Const->{commentUsage}, { warnIfSeveral => false });
+	if( scalar @verbHelp ){
+		print "    Usage: ".$self->command()." ".$self->verb()." [options]".EOL;
+		print "    where available options are:".EOL;
+		foreach my $line ( @verbHelp ){
+			$line =~ s/\$\{?(\w+)}?/$defaults->{$1}/e;
+			print "      $line".EOL;
+		}
+	}
+	# verb post-usage
+	@verbHelp = TTP::grepFileByRegex( $self->{_verb}{path}, $Const->{commentPost}, { warnIfNone => false, warnIfSeveral => false });
+	if( scalar @verbHelp ){
+		foreach my $line ( @verbHelp ){
+			print "    $line".EOL;
+		}
+	}
+
 	return $self;
 }
 

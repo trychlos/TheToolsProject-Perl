@@ -135,6 +135,19 @@ after _newBase => sub {
 	$ttp->{run}{verbose} = false;
 };
 
+# -------------------------------------------------------------------------------------------------
+# Set the help flag to true if there is not enough arguments in the command-line
+# (I):
+# - none
+# (O):
+# -none
+
+before run => sub {
+	my ( $self ) = @_;
+
+	$ttp->{run}{help} = true if scalar @ARGV <= 2;
+};
+
 ### Global functions
 
 # -------------------------------------------------------------------------------------------------

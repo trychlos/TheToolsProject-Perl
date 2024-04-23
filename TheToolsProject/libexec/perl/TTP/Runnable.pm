@@ -98,6 +98,19 @@ sub runnableIncErr {
 # (I):
 # - none
 # (O):
+# -returns the full path of the runnable
+
+sub runnablePath {
+	my ( $self ) = @_;
+
+	return $self->{_runnable}{me};
+};
+
+# -------------------------------------------------------------------------------------------------
+# Getter
+# (I):
+# - none
+# (O):
 # -returns the qualifier
 
 sub runnableQualifier {
