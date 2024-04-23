@@ -92,7 +92,7 @@ sub mqttPublish {
 	my $count = 0;
 	my $command = TTP::ttpVar([ 'Telemetry', 'withMqtt', 'command' ]);
 	if( $command ){
-		my $topic = TTP::ttpHost();
+		my $topic = TTP::TTP::host();
 		$topic .= "/telemetry";
 		foreach my $it ( @{$labels} ){
 			my @words = split( /=/, $it );

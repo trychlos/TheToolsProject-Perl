@@ -369,7 +369,7 @@ sub _executionReportCompleteData {
 	$data->{cmdline} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
 	$data->{command} = $TTPVars->{run}{command}{basename};
 	$data->{verb} = $TTPVars->{run}{verb}{name};
-	$data->{host} = ttpHost();
+	$data->{host} = TTP::host();
 	$data->{code} = $TTPVars->{run}{exitCode};
 	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
@@ -823,7 +823,7 @@ sub init {
 		print STDERR "Exiting with code 1\n";
 		exit( 1 );
 	}
-	my $host = ttpHost();
+	my $host = TTP::host();
 	my $raw = hostConfigRead( $host );
 	if( !defined $raw ){
 		print STDERR "Unable to read the '$host' host configuration file\n";
@@ -1178,7 +1178,7 @@ sub ttpFilter {
 # - the short hostname
 #   > as-is in *nix environments (including Darwin)
 #   > in uppercase on Windows
-sub ttpHost {
+sub TTP::host {
 	my $name = hostname;
 	$name = uc $name if $Config{osname} eq 'MSWin32';
 	return $name;

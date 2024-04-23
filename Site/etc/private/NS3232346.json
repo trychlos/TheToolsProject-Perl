@@ -5,7 +5,7 @@
 		}
 	},
 	"MQTTGateway": {
-		"username": "[eval:ttpHost()]",
+		"username": "[eval:TTP::host()]",
 		"password": "hqXFCX4ZV1Fo1PWtaJzo"
 	}
 }

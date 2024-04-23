@@ -119,7 +119,7 @@ sub new {
 	# set the site ending path list before trying to load and evaluate the JSON configuration file
 	#  specs here is a ref to an array of arrays which have to be successively tested
 	$args->{spec} = [ $Const->{site} ];
-	my $self = $class->SUPER::new( $args );
+	my $self = $class->SUPER::new( $ttp, $args );
 	bless $self, $class;
 
 	# unable to find and load a site configuration file ? this is an unrecoverable error

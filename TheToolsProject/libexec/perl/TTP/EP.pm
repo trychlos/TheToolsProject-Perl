@@ -28,7 +28,9 @@ use warnings;
 
 use Carp;
 use Data::Dumper;
+use vars::global qw( $ttp );
 
+use TTP::Command;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Node;
@@ -45,7 +47,7 @@ use TTP::Site;
 # - read the toops+site and host configuration files and evaluate them before first use
 # - initialize the logs internal variables
 # (O):
-# -
+# - returns this same object
 
 sub bootstrap {
 	my ( $self, $args ) = @_;
@@ -53,14 +55,16 @@ sub bootstrap {
 	# first identify, load, evaluate the site configuration - exit if error
 	my $site = TTP::Site->new( $self );
 	$self->{_site} = $site;
+	#print "EP::bootstrap() site allocated".EOL;
 	$site->evaluate();
 
 	# identify current host (remind that there is no logical node in this Perl version)
 	my $node = TTP::Node->new( $self );
 	$self->{_node} = $node;
+	#print "EP::bootstrap() node allocated".EOL;
 	$node->evaluate();
 
-	msgLog( "executing $0 ".join( ' ', @ARGV ));
+	return  $self;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -73,6 +77,50 @@ sub bootstrap {
 sub node {
 	my ( $self ) = @_;
 	return $self->{_node};
+}
+
+# -------------------------------------------------------------------------------------------------
+# Run the current command+verb
+# (I):
+# - none
+# (O):
+# - returns this same object
+
+sub runCommand {
+	my ( $self ) = @_;
+
+	my $command = TTP::Command->new( $self );
+	$command->run();
+
+	return $self;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Getter
+# (I):
+# - none
+# (O):
+# - returns the Runnable running command
+
+sub running {
+	my ( $self ) = @_;
+
+	return $self->{_running};
+}
+
+# -------------------------------------------------------------------------------------------------
+# Setter
+# (I):
+# - the Runnable running command
+# (O):
+# - this object
+
+sub setRunning {
+	my ( $self, $running ) = @_;
+
+	$self->{_running} = $running;
+
+	return $self;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -92,20 +140,28 @@ sub site {
 # (I):
 # - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
 #   each key can be itself an array ref of potential candidates for this level
-# - the hash ref to be searched for
+# - the hash ref to be searched for,
+#   defaulting to node, which itself default to site
 # (O):
 # - the evaluated value of this variable, which may be undef
 
 sub var {
 	my ( $self, $keys, $base ) = @_;
+	#print __PACKAGE__."::var() entering with keys='$keys' base='".( defined $base ? $base : '(undef)' )."'".EOL;
 	my $found = undef;
-	if( $base ){
+	if( defined( $base )){
 		$found = $self->_var_rec( $keys, $base );
 	} else {
+		# search in node if it is defined
 		my $object = $self->node();
-		$found = $self->var( $keys, $object->get()) if !$found && $object;
+		$found = $self->var( $keys, $object->get()) if !defined( $found ) && defined( $object );
+		#print  __PACKAGE__."::var() after node found='".( defined $found ? $found : '(undef)' )."'".EOL;
+		# or search in the site for all known historical keys
 		$object = $self->site();
-		$found = $self->var( $keys, $object->get()) if !$found && $object;
+		my @newKeys = ref $keys eq 'ARRAY' ? @{$keys} : ( $keys );
+		unshift( @newKeys, [ '', 'toops', 'TTP' ] );
+		$found = $self->var( \@newKeys, $object->get()) if !defined( $found ) && defined( $object );
+		#print  __PACKAGE__."::var() after site found='".( defined $found ? $found : '(undef)' )."'".EOL;
 	}
 	return $found;
 }
@@ -113,7 +169,8 @@ sub var {
 # keys is a scalar, or an array of scalars, or an array of arrays of scalars
 sub _var_rec {
 	my ( $self, $keys, $base, $startBase ) = @_;
-	return $base if !ref( $base );
+	#print __PACKAGE__."::_var_rec() entering with keys='$keys' base='".( defined $base ? $base : '(undef)' )."'".EOL;
+	return $base if !defined( $base ) || ref( $base ) ne 'HASH';
 	$startBase = $startBase || $base;
 	my $ref = ref( $keys );
 	#print "keys=[".( ref( $keys ) eq 'ARRAY' ? join( ',', @{$keys} ) : $keys )."] base=$base".EOL;
@@ -127,11 +184,12 @@ sub _var_rec {
 					$newKeys[$i] = $k->[$j];
 					$base = $startBase;
 					$base = $self->_var_rec( \@newKeys, $base, $startBase );
-					last if $base;
+					last if defined( $base );
 				}
 			} elsif( $ref ){
 				msgErr( __PACKAGE__."::_var_rec() unexpected intermediate ref='$ref'" );
 			} else {
+				#print __PACKAGE__."::_var_rec() searching for '$k' key in $base".EOL;
 				$base = $self->_var_rec( $k, $base, $startBase );
 			}
 		}
@@ -139,9 +197,10 @@ sub _var_rec {
 		msgErr( __PACKAGE__."::_var_rec() unexpected final ref='$ref'" );
 	} else {
 		# the key here may be empty when targeting the top of the hash
-		$base = $keys ? ( $base->{$keys} || undef ) : $base;
+		$base = $keys ? $base->{$keys} : $base;
+		#print __PACKAGE__."::_var_rec() keys='$keys' found '".( defined $base ? $base : '(undef)' )."'".EOL;
 	}
-	#print "returning '".( $base ? $base : '(undef)' )."'".EOL;
+	#print __PACKAGE__."::_var_rec() returning '".( defined $base ? $base : '(undef)' )."'".EOL;
 	return $base;
 }
 

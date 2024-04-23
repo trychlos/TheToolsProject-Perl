@@ -31,7 +31,7 @@ my $defaults = {
 	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
-	emitter => ttpHost(),
+	emitter => TTP::host(),
 	level => 'INFO',
 	message => ''
 };
@@ -65,7 +65,7 @@ sub doJsonAlert {
 				emitter => $opt_emitter,
 				level => $opt_level,
 				message => $opt_message,
-				host => ttpHost(),
+				host => TTP::host(),
 				stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
 			};
 			my $json = JSON->new;
@@ -101,12 +101,12 @@ sub doMqttAlert {
 	my $command = ttpVar([ 'alerts', 'withMqtt', 'command' ]);
 	my $res = false;
 	if( $command ){
-		my $topic = ttpHost()."/alert";
+		my $topic = TTP::host()."/alert";
 		my $data = {
 			emitter => $opt_emitter,
 			level => $opt_level,
 			message => $opt_message,
-			host => ttpHost(),
+			host => TTP::host(),
 			stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
 		};
 		my $json = JSON->new;

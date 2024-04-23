@@ -30,22 +30,52 @@ use Data::Dumper;
 
 ### Private methods
 
+# -------------------------------------------------------------------------------------------------
+# A placeholder so that roles can come after or before this function which is called at instanciation time
+# (I]:
+# - the TTP EntryPoint ref
+# (O):
+# - this same object
+
+sub _initBase {
+	my ( $self, $ttp ) = @_;
+	return $self;
+}
+
 ### Public methods
+
+# -------------------------------------------------------------------------------------------------
+# Getter
+# (I]:
+# - none 
+# (O):
+# - the TheToolsProject EntryPoint ref recorded at instanciation time
+
+sub ttp {
+	my ( $self ) = @_;
+	return $self->{_ttp};
+}
 
 ### Class methods
 
 # -------------------------------------------------------------------------------------------------
 # Constructor
 # (I]:
-# - none
+# - ttp: the current TheToolsProject EntryPoint ref
 # (O):
 # - this object
 
 sub new {
-	my ( $class, $args ) = @_;
+	my ( $class, $ttp, $args ) = @_;
 	$class = ref( $class ) || $class;
+	$args //= {};
 	my $self = {};
 	bless $self, $class;
+	
+	$self->_initBase( $ttp );
+
+	# keep the TTP EP ref
+	$self->{_ttp} = $ttp;
 
 	return $self;
 }

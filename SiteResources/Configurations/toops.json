@@ -81,7 +81,7 @@
 		},
 		"credentialsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'credentials' )]",
 		"DBMS": {
-			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), ttpHost() )]",
+			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), TTP::host() )]",
 			"backupsRoot": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'dailySQLBackups' )]",
 			"instance": "MSSQLSERVER",
 			"byInstance": {
@@ -180,7 +180,7 @@
 			],
 			"withHttp": {
 				"enabled": true,
-				"url": "http://10.122.1.15:9091/metrics/job/telemetry/host/[eval:ttpHost()]"
+				"url": "http://10.122.1.15:9091/metrics/job/telemetry/host/[eval:TTP::host()]"
 			}
 		}
 	}

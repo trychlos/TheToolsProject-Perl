@@ -76,7 +76,7 @@ sub _running {
 # ------------------------------------------------------------------------------------------------
 sub _topic {
 	my ( $name ) = @_;
-	my $topic = TTP::ttpHost();
+	my $topic = TTP::TTP::host();
 	$topic .= "/daemon";
 	$topic .= "/$name";
 	$topic .= "/status";

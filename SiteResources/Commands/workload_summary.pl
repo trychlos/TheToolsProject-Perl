@@ -118,7 +118,7 @@ sub printSummary {
 	# must manage SUBJECT and OPTIONS macros
 	my $command = $TTPVars->{config}{site}{workloadSummary}{command};
 	if( $command ){
-		my $host = TTP::ttpHost();
+		my $host = TTP::TTP::host();
 		my $textfname = TTP::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );

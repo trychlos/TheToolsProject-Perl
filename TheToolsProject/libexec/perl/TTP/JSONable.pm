@@ -33,12 +33,14 @@ use Carp;
 use Config;
 use Data::Dumper;
 use JSON;
+use Role::Tiny::With;
 use Test::Deep;
 use Time::Piece;
 
+with 'TTP::Findable';
+
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
-use TTP::Path;
 
 ### Private methods
 
@@ -132,71 +134,6 @@ sub _evaluatePrint {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Find the first file which matches the given specification by walking through TTP_ROOTS
-# (I]:
-# - an argument object with following keys:
-#   > spec: the specification to be searched for in TTP_ROOTS tree
-#     as a scalar, or as a ref to an array of items which have to be concatenated,
-#     when each item for the array may itself be an array of scalars to be sucessively tested
-# (O):
-# - the full pathname found, or undef
-
-sub _find {
-	my ( $self, $args ) = @_;
-	my $result = undef;
-	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
-	my $specs = $args->{spec};
-	$specs = [ $args->{spec} ] if !ref( $args->{spec} );
-	foreach my $it ( @roots ){
-		$result = $self->_find_inpath_rec( $it, $specs );
-		last if $result;
-	}
-	msgVerbose( __PACKAGE__."::_find() returning '".( $result ? $result : '(undef)' )."'" );
-	return $result;
-}
-
-# search for the specs in the specified path
-# specs maybe a scalar (a single file specification), or an array of scalars (specs must be concatened), or an array of arrays of scalars (intermediary array scalars must be tested)
-sub _find_inpath_rec {
-	my ( $self, $path, $specs ) = @_;
-	my $result = undef;
-	my $ref = ref( $specs );
-	if( $ref && $ref ne 'ARRAY' ){
-		msgErr( __PACKAGE__."::_find_inpath_rec() unexpected final ref='$ref'" );
-	} elsif( $ref eq 'ARRAY' ){
-		my $haveArray = false;
-		LOOP: for( my $i=0 ; $i<scalar @{$specs} ; ++$i ){
-			$ref = ref( $specs->[$i] );
-			if( $ref && $ref ne 'ARRAY' ){
-				msgErr( __PACKAGE__."::_find_inpath_rec() unexpected intermediate ref='$ref'" );
-			# if a part of specs is itself an array, then each item of this later array must be tested
-			} elsif( $ref ){
-				$haveArray = true;
-				my @newSpecs = @{$specs};
-				for( my $j=0 ; $j<scalar @{$specs->[$i]} ; ++$j ){
-					$newSpecs[$i] = $specs->[$i][$j];
-					$result = $self->_find_inpath_rec( $path, \@newSpecs );
-					last LOOP if $result;
-				}
-			}
-		}
-		# each part of the specs is a scalar, so just test that
-		if( !$haveArray ){
-			my $fname = File::Spec->catfile( $path, @{$specs} );
-			msgVerbose( __PACKAGE__."::_find_inpath_rec() examining '$fname'" );
-			#print __PACKAGE__."::_find_inpath_rec() examining '$fname'".EOL;
-			if( -r $fname ){
-				$result = $fname;
-			}
-		}
-	} else {
-		$result = $specs;
-	}
-	msgVerbose( __PACKAGE__."::_find_inpath_rec() returning '".( $result ? $result : '(undef)' )."'" );
-	return $result;
-}
-
-# -------------------------------------------------------------------------------------------------
 # Read a JSON file into a hash
 # Do not evaluate here, just read the file raw data
 # (I):
@@ -271,6 +208,7 @@ sub success {
 # -------------------------------------------------------------------------------------------------
 # Constructor
 # (I]:
+# - the TTP EP entry point
 # - an argument object with following keys:
 #   > spec: the specification to be searched for in TTP_ROOTS tree, as a scalar or as an array ref
 #   or:
@@ -279,9 +217,9 @@ sub success {
 # - this object
 
 sub new {
-	my ( $class, $args ) = @_;
+	my ( $class, $ttp, $args ) = @_;
 	$class = ref( $class ) || $class;
-	my $self = $class->SUPER::new( $args );
+	my $self = $class->SUPER::new( $ttp, $args );
 	bless $self, $class;
 
 	$args //= {};
@@ -294,7 +232,7 @@ sub new {
 		$self->{_json} = $self->{_path};
 	# else find the first suitable file in TTP_ROOTS and keep its path
 	} else {
-		$self->{_json} = $self->_find( $args ) if $self->{_spec};
+		$self->{_json} = $self->find( $args ) if $self->{_spec};
 	}
 
 	# load the raw JSON data

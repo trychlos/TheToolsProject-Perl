@@ -15,8 +15,6 @@
 
 use Data::Dumper;
 
-use TTP::Constants qw( :all );
-use TTP::Message qw( :all );
 use TTP::Path;
 use TTP::Services;
 
@@ -95,10 +93,10 @@ sub listNoderoot {
 # =================================================================================================
 
 if( !GetOptions(
-	"help!"				=> \$TTPVars->{run}{help},
-	"verbose!"			=> \$TTPVars->{run}{verbose},
-	"colored!"			=> \$TTPVars->{run}{colored},
-	"dummy!"			=> \$TTPVars->{run}{dummy},
+	"help!"				=> $running->helpRef(),
+	"verbose!"			=> $running->verboseRef(),
+	"colored!"			=> $running->coloredRef(),
+	"dummy!"			=> $running->dummyRef(),
 	"nodeRoot!"			=> \$opt_nodeRoot,
 	"logsRoot!"			=> \$opt_logsRoot,
 	"logsDaily!"		=> \$opt_logsDaily,
@@ -106,7 +104,7 @@ if( !GetOptions(
 	"alertsDir!"		=> \$opt_alertsDir,
 	"key=s@"			=> \$opt_key )){
 
-		msgOut( "try '$TTPVars->{run}{command}{basename} $TTPVars->{run}{verb}{name} --help' to get full usage syntax" );
+		msgOut( "try '".$running->runnableBasename()." ".$running->verbName()." --help' to get full usage syntax" );
 		ttpExit( 1 );
 }
 
@@ -115,9 +113,9 @@ if( TTP::wantsHelp()){
 	ttpExit();
 }
 
-msgVerbose( "found verbose='".( $TTPVars->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found colored='".( $TTPVars->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $TTPVars->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found nodeRoot='".( $opt_nodeRoot ? 'true':'false' )."'" );
 msgVerbose( "found logsRoot='".( $opt_logsRoot ? 'true':'false' )."'" );
 msgVerbose( "found logsDaily='".( $opt_logsDaily ? 'true':'false' )."'" );

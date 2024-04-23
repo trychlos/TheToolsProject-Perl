@@ -2,7 +2,7 @@
 	"DBMS": {
 	},
 	"MQTTGateway": {
-		"username": "[eval:ttpHost()]",
+		"username": "[eval:TTP::host()]",
 		"password": "iCAbbREUrsnB6m"
 	}
 }

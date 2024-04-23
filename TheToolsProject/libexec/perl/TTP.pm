@@ -13,21 +13,18 @@ use File::Copy qw( copy move );
 use File::Copy::Recursive qw( dircopy );
 use File::Path qw( make_path remove_tree );
 use File::Spec;
-use Getopt::Long;
 use JSON;
 use Path::Tiny qw( path );
 use Scalar::Util qw( looks_like_number );
 use Test::Deep;
 use Time::Moment;
 use Time::Piece;
-use Try::Tiny;
+use vars::global create => qw( $ttp );
 
 use TTP::Constants qw( :all );
 use TTP::EP;
 use TTP::Message qw( :all );
 use TTP::Path;
-use TTP::Site;
-use TTP::Telemetry;
 
 # autoflush STDOUT
 $| = 1;
@@ -66,30 +63,10 @@ our $TTPVars = {
 				tempDir => 'C:\\Temp'
 			}
 		},
-		# reserved words: the commands must be named outside of this array
-		#  either because they are folders of the Toops installation tree
-		#  or because they are first level key in TTPVars (thus preventing to have a 'command' object at this first level)
-		ReservedWords => [
-			'bin',
-			'config',
-			'evaluating',
-			'libexec',
-			'Mods',
-			'raw',
-			'run',
-			'Toops'
-		],
-		# main configuration keys
-		ConfigKeys => [
-			'site',
-			'toops',
-			'host'
-		],
 		# some internally used constants
 		commentPreUsage => '^# @\(#\) ',
 		commentPostUsage => '^# @\(@\) ',
 		commentUsage => '^# @\(-\) ',
-		verbSufix => '.do.pl',
 		verbSed => '\.do\.pl',
 	},
 	# a key reserved for the storage of toops+site+host raw json configuration files
@@ -103,9 +80,6 @@ our $TTPVars = {
 		colored => true
 	}
 };
-
-# the global TTP object context
-my $ttp = undef;
 
 # -------------------------------------------------------------------------------------------------
 # Execute a command dependant of the running OS.
@@ -242,32 +216,6 @@ sub copyFile {
 	return $result;
 }
 
-# ------------------------------------------------------------------------------------------------
-# Search for a directory specification in the configuration
-# For compatibility reasons, we accept that the directory can be specified:
-# - either at the root of the node configuration
-# - or at the root of the site specification
-# - or as a subkey of the 'toops' object in the site specification
-# - or as a subkey of the 'TTP' object in the site specification
-# (I):
-# - the specification of the searched directory as a scalar string
-# - an optional default value
-# (O):
-# - returns the found directory or undef
-
-sub dir {
-	my ( $specs, $defaultValue ) = @_;
-	my $result = undef;
-	my $ref = ref( $specs );
-	if( $ref ){
-		msgErr( "dir() expects a scalar, found '$ref'" );
-	} else {
-		$result = $ttp->var([[ '', 'toops', 'TTP' ], $specs ]);
-		$result = $defaultValue if !defined $result;
-	}
-	return $result;
-}
-
 # -------------------------------------------------------------------------------------------------
 # recursively interpret the provided data for variables and computings
 #  and restart until all references have been replaced
@@ -398,7 +346,7 @@ sub _executionReportCompleteData {
 	$data->{cmdline} = "$0 ".join( ' ', @{$TTPVars->{run}{command}{args}} );
 	$data->{command} = $TTPVars->{run}{command}{basename};
 	$data->{verb} = $TTPVars->{run}{verb}{name};
-	$data->{host} = ttpHost();
+	$data->{host} = TTP::host();
 	$data->{code} = $TTPVars->{run}{exitCode};
 	$data->{started} = $TTPVars->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
 	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
@@ -499,6 +447,20 @@ sub _executionReportToMqtt {
 		msgErr( "executionReportToMqtt() expected a 'data' argument, not found" );
 	}
 	return $res;
+}
+
+# -------------------------------------------------------------------------------------------------
+# exit the command
+# Return code is optional, defaulting to TTPVars->{run}{exitCode}
+
+sub exit {
+	my $rc = shift || $ttp->running()->runnableErrs();
+	if( $rc ){
+		msgErr( "exiting with code $rc" );
+	} else {
+		msgVerbose( "exiting with code $rc" );
+	}
+	exit $rc;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -773,6 +735,18 @@ sub helpVerbStandardOptions {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Getter
+# (I):
+# - none
+# (O):
+# - returns the current execution node name, which may be undef very early in the process
+
+sub host {
+	my $node = $ttp->node();
+	return $node ? $node->name() : undef;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Substitute the macros in a host configuration file
 # (I):
 # - the raw JSON hash
@@ -843,14 +817,18 @@ sub hostConfigRead {
 # - TTPVars hash ref
 sub initExtern {
 	_bootstrap();
-	my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
-	$TTPVars->{run}{command}{path} = $0;
-	$TTPVars->{run}{command}{started} = Time::Moment->now;
-	$TTPVars->{run}{command}{args} = \@ARGV;
-	$TTPVars->{run}{command}{basename} = $file;
-	$file =~ s/\.[^.]+$//;
-	$TTPVars->{run}{command}{name} = $file;
+
+	# Runnable role
+	#my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
+	#$TTPVars->{run}{command}{path} = $0;
+	#$TTPVars->{run}{command}{started} = Time::Moment->now;
+	#$TTPVars->{run}{command}{args} = \@ARGV;
+	#$TTPVars->{run}{command}{basename} = $file;
+	#$file =~ s/\.[^.]+$//;
+	#$TTPVars->{run}{command}{name} = $file;
+	
 	$TTPVars->{run}{help} = scalar @ARGV ? false : true;
+
 	return $TTPVars;
 }
 
@@ -931,10 +909,11 @@ sub jsonWrite {
 # (I):
 # - none
 # (O):
-# - returns the 'logsCommands' directory
+# - returns the 'logsCommands' directory, which may be undef very early in the bootstrap process
+#   and at least not definitive while the node has not been instanciated/loaded/evaluated
 
 sub logsCommands {
-	my $result = dir( 'logsCommands' ) || logsDaily();
+	my $result = $ttp->node() ? ( $ttp->var( 'logsCommands' ) || logsDaily()) : undef;
 	return $result;
 }
 
@@ -942,10 +921,11 @@ sub logsCommands {
 # (I):
 # - none
 # (O):
-# - returns the 'logsDaily' directory
+# - returns the 'logsDaily' directory, which may be undef very early in the bootstrap process
+#   and at least not definitive while the node has not been instanciated/loaded/evaluated
 
 sub logsDaily {
-	my $result = dir( 'logsDaily' ) || logsRoot();
+	my $result = $ttp->node() ? ( $ttp->var( 'logsDaily' ) || logsRoot()) : undef;
 	return $result;
 }
 
@@ -953,10 +933,23 @@ sub logsDaily {
 # (I):
 # - none
 # (O):
-# - returns the 'logsRoot' directory
+# - returns the 'logsMain' full pathname, which may be undef very early in the bootstrap process
+#   and at least not definitive while the node has not been instanciated/loaded/evaluated
+
+sub logsMain {
+	my $result = $ttp->node() ? ( $ttp->var( 'logsMain' ) || File::Spec->catfile( logsCommands(), 'main.log' )) : undef;
+	return $result;
+}
+
+# ------------------------------------------------------------------------------------------------
+# (I):
+# - none
+# (O):
+# - returns the 'logsRoot' directory, which may be undef very early in the bootstrap process
+#   and at least not definitive while the node has not been instanciated/loaded/evaluated
 
 sub logsRoot {
-	my $result = dir( 'logsRoot' ) || $Const->{byOS}{$Config{osname}}{tempDir};
+	my $result = $ttp->node() ? ( $ttp->var( 'logsRoot' ) || $Const->{byOS}{$Config{osname}}{tempDir} ) : undef;
 	return $result;
 }
 
@@ -997,7 +990,7 @@ sub moveDir {
 #   as there is no logical machine in this Perl version
 
 sub nodeRoot {
-	my $result = dir( 'nodeRoot' ) || $Const->{byOS}{$Config{osname}}{tempDir};
+	my $result = $ttp->var( 'nodeRoot' ) || $Const->{byOS}{$Config{osname}}{tempDir};
 	return $result;
 }
 
@@ -1042,57 +1035,11 @@ sub removeTree {
 # Run by the command
 # Expects $0 be the full path name to the command script (this is the case in Windows+Strawberry)
 # and @ARGV the command-line arguments
+
 sub run {
 	$ttp = TTP::EP->new();
 	$ttp->bootstrap();
-	#print Dumper( $ttp->site()->get() );
-	#print Dumper( TTP::var( 'logsRoot' ));
-
-	try {
-		$TTPVars->{run}{command}{path} = $0;
-		$TTPVars->{run}{command}{started} = Time::Moment->now;
-		my @command_args = @ARGV;
-		$TTPVars->{run}{command}{args} = \@ARGV;
-		my ( $volume, $directories, $file ) = File::Spec->splitpath( $TTPVars->{run}{command}{path} );
-		my $command = $file;
-		$TTPVars->{run}{command}{basename} = $command;
-		$TTPVars->{run}{command}{directory} = TTP::Path::removeTrailingSeparator( $directories );
-		$command =~ s/\.[^.]+$//;
-		# make sure the command is not a reserved word
-		if( grep( /^$command$/, @{$TTPVars->{Toops}{ReservedWords}} )){
-			msgErr( "command '$command' is a Toops reserved word. Aborting." );
-			ttpExit();
-		}
-		$TTPVars->{run}{command}{name} = $command;
-		# the directory where are stored the verbs of the command
-		my @dirs = File::Spec->splitdir( $TTPVars->{run}{command}{directory} );
-		pop( @dirs );
-		$TTPVars->{run}{command}{verbsDir} = File::Spec->catdir( $volume, @dirs, $command );
-		# prepare for the datas of the command
-		$TTPVars->{$command} = {};
-		# first argument is supposed to be the verb
-		if( scalar @command_args ){
-			$TTPVars->{run}{verb}{name} = shift( @command_args );
-			$TTPVars->{run}{verb}{args} = \@command_args;
-			# as verbs are written as Perl scripts, they are dynamically ran from here
-			local @ARGV = @command_args;
-			$TTPVars->{run}{help} = scalar @ARGV ? false : true;
-			$TTPVars->{run}{verb}{path} = File::Spec->catdir( $TTPVars->{run}{command}{verbsDir}, $TTPVars->{run}{verb}{name}.$TTPVars->{Toops}{verbSufix} );
-			if( -f $TTPVars->{run}{verb}{path} ){
-				unless( defined do $TTPVars->{run}{verb}{path} ){
-					msgErr( "do $TTPVars->{run}{verb}{path}: ".( $! || $@ ));
-				}
-			} else {
-				msgErr( "script not found or not readable: '$TTPVars->{run}{verb}{path}' (most probably, '$TTPVars->{run}{verb}{name}' is not a valid verb)" );
-			}
-		} else {
-			helpCommand();
-			ttpExit();
-		}
-	} catch {
-		msgVerbose( "catching exit" );
-		ttpExit();
-	};
+	$ttp->runCommand();
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -1166,10 +1113,11 @@ sub stackTrace {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Returns to the caller access the Entry Point object of TheToolsProject
+# check global
 
-sub ttp() {
-	return $ttp;
+sub testTTP {
+
+	print "testTTP ttp global $ttp".EOL;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -1204,20 +1152,8 @@ sub ttpEvaluate {
 }
 
 # -------------------------------------------------------------------------------------------------
-# exit the command
-# Return code is optional, defaulting to TTPVars->{run}{exitCode}
-sub ttpExit {
-	my $rc = shift || $TTPVars->{run}{exitCode};
-	if( $rc ){
-		msgErr( "exiting with code $rc" );
-	} else {
-		msgVerbose( "exiting with code $rc" );
-	}
-	exit $rc;
-}
-
-# -------------------------------------------------------------------------------------------------
 # given a command output, extracts the [command.pl verb] lines, returning the rest as an array
+
 sub ttpFilter {
 	my @lines = @_;
 	my @result = ();

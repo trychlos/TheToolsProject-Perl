@@ -117,7 +117,7 @@ sub getLive {
 		# we publish here one metric per host for the service and the environment with
 		# - either a 'live' label if the host if the live host
 		# - or a 'backup' label if the host is a backup host
-		my $running = ttpHost();
+		my $running = TTP::host();
 		msgVerbose( "runningHost is '$running'" );
 		foreach my $host ( @hosts ){
 			my $value = ( $live && $live eq $host ) ? "1" : "0";

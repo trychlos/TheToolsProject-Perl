@@ -96,7 +96,7 @@
 		},
 		"credentialsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'credentials' )]",
 		"DBMS": {
-			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), ttpHost() )]",
+			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), TTP::host() )]",
 			"backupsRoot": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'dailySQLBackups' )]",
 			"instance": "MSSQLSERVER",
 			"byInstance": {
@@ -158,34 +158,53 @@
 		"logsRoot": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'dailyLogs' )]",
 
 		"logsCommands_comments": [
-			"The daily directory where TTP writes the logs for comamnds and verbs",
+			"The daily directory where TTP writes commands and verbs logs",
 			"Defaults to the 'logsDaily' value",
 			"The 'logsCommands' directory can be got by the user via the 'ttp.pl vars --logsCommands' command"
 		]
 		"logsCommands": "[eval:File::Spec->catdir( TTP::logsDaily(), 'TTP' )]",
 
+		"logsMain_comments": [
+			"The full pathname of the file where TTP writes commands and verbs logs",
+			"The 'logsCommands' directory can be got by the user via the 'ttp.pl vars --logsMain' command"
+		]
+		"logsMain": "[eval:File::Spec->catfile( TTP::logsCommands(), 'main.log' )]",
+
+		"Message_comments": [
+			"Define the default behavior for msgDummy(), msgErr(), msgOut(), msgVerbose() and msgWarn() functions",
+			"These are all per-node overridable values"
+		],
 		"Message": {
 			"msgDummy": {
 				"withColor": true,
-				"withLog": true
+				"withLog": true,
+				"color": "cyan",
+				"marker": "(DUM) "
 			},
 			"msgErr": {
 				"withColor": true,
 				"withLog": true
+				"color": "bold red",
+				"marker": "(ERR) "
 			},
 			"msgOut": {
-				"withColor": true,
+				"withColor": false,
 				"withLog": true
 			},
 			"msgVerbose": {
 				"withColor": true,
-				"withLog": true
+				"withLog": true,
+				"color": "bright_blue",
+				"marker": "(VER) "
 			},
 			"msgWarn": {
 				"withColor": true,
-				"withLog": true
+				"withLog": true,
+				"color": "bright_yellow",
+				"marker": "(WAR) "
 			}
 		},
+
 		"moveDir_comments": [
 			"manage macros: SOURCE, TARGET"
 		],
@@ -235,7 +254,7 @@
 			],
 			"withHttp": {
 				"enabled": true,
-				"url": "http://10.122.1.15:9091/metrics/job/telemetry/host/[eval:ttpHost()]"
+				"url": "http://10.122.1.15:9091/metrics/job/telemetry/host/[eval:TTP::host()]"
 			}
 		}
 	}

@@ -206,7 +206,7 @@ sub fromCommand {
 # returns the full path of the host configuration file
 sub hostConfigurationPath {
 	my ( $host ) = @_;
-	$host = TTP::ttpHost() if !$host;
+	$host = TTP::TTP::host() if !$host;
 	return File::Spec->catfile( hostsConfigurationsDir(), "$host.json" );
 }
 
@@ -221,15 +221,24 @@ sub hostsConfigurationsDir {
 # -------------------------------------------------------------------------------------------------
 # make sure a directory exist
 # note that this does NOT honor the '-dummy' option as creating a directory is easy and a work may be blocked without that
+# (I):
+# - the directory to be created if not exists
+# - an optional options hash with following keys:
+#   > allowVerbose whether you can call msgVerbose() function (false to not create infinite loop when called from msgXxx()),
+#     defaulting to true
+# (O):
 # returns true|false
 sub makeDirExist {
-	my ( $dir ) = @_;
+	my ( $dir, $opts ) = @_;
+	$opts //= {};
+	my $allowVerbose = true;
+	$allowVerbose = $opts->{allowVerbose} if exists $opts->{allowVerbose};
 	my $result = false;
 	if( -d $dir ){
 		#msgVerbose( "Path::makeDirExist() dir='$dir' exists" );
 		$result = true;
 	} else {
-		msgVerbose( "Path::makeDirExist() make_path() dir='$dir'" );
+		msgVerbose( "Path::makeDirExist() make_path() dir='$dir'" ) if $allowVerbose;
 		my $error;
 		$result = true;
 		make_path( $dir, {
@@ -248,7 +257,7 @@ sub makeDirExist {
 			}
 			$result = false;
 		}
-		msgVerbose( "Path::makeDirExist() dir='$dir' result=$result" );
+		msgVerbose( "Path::makeDirExist() dir='$dir' result=$result" ) if $allowVerbose;
 	}
 	return $result;
 }

@@ -65,6 +65,19 @@ sub _hostname {
 
 ### Public methods
 
+# -------------------------------------------------------------------------------------------------
+# returns the node name
+# (I):
+# - none
+# (O):
+# - returns the node name
+
+sub name {
+	my ( $self ) = @_;
+
+	return $self->{_node};
+}
+
 ### Class methods
 
 # -------------------------------------------------------------------------------------------------
@@ -86,10 +99,10 @@ sub new {
 	my $node = $args->{node} || _hostname();
 
 	# allowed nodesDirs can be configured at site-level
-	my $dirs = TTP::dir( 'nodesDirs' ) || $Const->{dirs};
+	my $dirs = TTP::var( 'nodesDirs' ) || $Const->{dirs};
 	#print Dumper( $dirs );
 
-	my $self = $class->SUPER::new({ spec => [ $dirs, "$node.json" ] });
+	my $self = $class->SUPER::new( $ttp, { spec => [ $dirs, "$node.json" ] });
 	bless $self, $class;
 
 	if( !$self->success()){

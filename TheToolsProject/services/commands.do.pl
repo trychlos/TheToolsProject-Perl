@@ -25,7 +25,7 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	service => '',
-	host => TTP::ttpHost(),
+	host => TTP::TTP::host(),
 	key => ''
 };
 
@@ -41,7 +41,7 @@ my $opt_keys = [];
 sub executeCommands {
 	msgOut( "executing '$opt_service [".join( ',', @{$opt_keys} )."]' commands from '$opt_host' host..." );
 	my $cmdCount = 0;
-	my $host = $opt_host || ttpHost();
+	my $host = $opt_host || TTP::host();
 	my $hostConfig = TTP::getHostConfig( $host );
 	my $serviceConfig = TTP::Services::serviceConfig( $hostConfig, $opt_service );
 	if( $serviceConfig ){

@@ -222,7 +222,7 @@ sub _msgLogAppend {
 	my $logFile = $TTPVars->{run}{logsMain};
 	$logFile = $opts->{logFile} if $opts->{logFile};
 	if( $logFile ){
-		my $host = TTP::ttpHost();
+		my $host = TTP::TTP::host();
 		my $username = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME} || 'unknown'; #getpwuid( $< );
 		my $line = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%5N' )." $host $$ $username $msg";
 		path( $logFile )->append_utf8( $line.EOL );

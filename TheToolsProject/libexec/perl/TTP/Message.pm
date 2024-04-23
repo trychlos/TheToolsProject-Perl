@@ -25,10 +25,12 @@ use Data::Dumper;
 use Path::Tiny qw( path );
 use Sub::Exporter;
 use Term::ANSIColor;
+use vars::global qw( $ttp );
 use if $Config{osname} eq "MSWin32", "Win32::Console::ANSI";
 
-use TTP::Constants qw( :all );
 use TTP;
+use TTP::Constants qw( :all );
+use TTP::Path;
 
 Sub::Exporter::setup_exporter({
 	exports => [ qw(
@@ -65,35 +67,8 @@ use constant {
 	WARN => 'WARN'
 };
 
-=pod
-use constant {
-	ALERT,
-	CRIT,
-	DEBUG,
-	DUMMY,
-	EMERG,
-	ERR,
-	INFO,
-	NOTICE,
-	VERBOSE,
-	WARN
-};
-=cut
-
-=pod
-my $Order = (
-	EMERG,
-	ALERT,
-	CRIT,
-	ERR,
-	WARN,
-	NOTICE,
-	INFO,
-	DEBUG
-);
-=cut
-
-my $Definitions = {
+# colors from https://metacpan.org/pod/Term::ANSIColor
+my $Const = {
 	ALERT => {
 	},
 	CRIT => {
@@ -140,9 +115,10 @@ $Term::ANSIColor::EACHLINE = EOL;
 # - a level string
 # (O):
 # - true|false
+
 sub isKnownLevel {
 	my ( $level ) = @_;
-	my $res = grep( /$level/i, keys %{$Definitions} );
+	my $res = grep( /$level/i, keys %{$Const} );
 	return $res;
 }
 
@@ -150,9 +126,10 @@ sub isKnownLevel {
 # dummy message
 # (I):
 # - the message to be printed (usually the command to be run in dummy mode)
+
 sub msgDummy {
-	my $TTPVars = TTP::TTPVars();
-	if( $TTPVars->{run}{dummy} ){
+	my $running = $ttp->running();
+	if( $running && $running->dummy()){
 		_printMsg({
 			msg => shift,
 			level => DUMMY,
@@ -168,6 +145,7 @@ sub msgDummy {
 # - the message to be printed on STDERR
 # (O):
 # - increments the exit code
+
 sub msgErr {
 	# let have a stack trace
 	#TTP::stackTrace();
@@ -177,8 +155,8 @@ sub msgErr {
 		level => ERR,
 		handle => \*STDERR
 	});
-	my $TTPVars = TTP::TTPVars();
-	$TTPVars->{run}{exitCode} += 1;
+	my $running = $ttp->running();
+	$running->runnableIncErr() if $running;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -188,6 +166,7 @@ sub msgErr {
 #   may be a scalar (a string) or an array ref of scalars
 # - an optional options hash with following keys:
 #   > logFile: the path to the log file to be appended
+
 sub msgLog {
 	my ( $msg, $opts ) = @_;
 	$opts //= {};
@@ -213,18 +192,20 @@ sub msgLog {
 # - the message(s) to be written in Toops/main.log
 #   may be a scalar (a string) or an array ref of scalars
 # - an optional options hash with following keys:
-#   > logFile: the path to the log file to be appended
+#   > logFile: the path to the log file to be appended, defaulting to node or site 'logsMain'
 
 sub _msgLogAppend {
 	my ( $msg, $opts ) = @_;
 	$opts //= {};
-	my $TTPVars = TTP::TTPVars();
-	my $logFile = $TTPVars->{run}{logsMain};
-	$logFile = $opts->{logFile} if $opts->{logFile};
+	my $logFile = $opts->{logFile} || TTP::logsMain();
 	if( $logFile ){
-		my $host = TTP::ttpHost();
+		my $host = TTP::host();
 		my $username = $ENV{LOGNAME} || $ENV{USER} || $ENV{USERNAME} || 'unknown'; #getpwuid( $< );
 		my $line = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%5N' )." $host $$ $username $msg";
+		# make sure the directory exists
+		my ( $vol, $dir, $f ) = File::Spec->splitpath( $logFile );
+		my $logdir = File::Spec->catpath( $vol, $dir );
+		TTP::Path::makeDirExist( $logdir, { allowVerbose => false });
 		path( $logFile )->append_utf8( $line.EOL );
 	}
 }
@@ -233,6 +214,7 @@ sub _msgLogAppend {
 # standard message on stdout
 # (I):
 # - the message to be outputed
+
 sub msgOut {
 	_printMsg({
 		msg => shift
@@ -241,17 +223,18 @@ sub msgOut {
 
 # -------------------------------------------------------------------------------------------------
 # Compute the message prefix, including a trailing space
+
 sub _msgPrefix {
 	my $prefix = '';
-	my $TTPVars = TTP::TTPVars();
-	if( $TTPVars->{run}{command}{basename} ){
-		$prefix = "[$TTPVars->{run}{command}{basename}";
-		$prefix .= ' '.$TTPVars->{run}{verb}{name} if $TTPVars->{run}{verb}{name};
-		$prefix.= '] ';
-	} elsif( $TTPVars->{run}{daemon}{name} ){
-		$prefix = "[$TTPVars->{run}{daemon}{name}";
-		$prefix .= ' '.$TTPVars->{run}{daemon}{add} if $TTPVars->{run}{daemon}{add};
-		$prefix.= '] ';
+	my $running = $ttp->running();
+	if( $running ){
+		my $command = $running->runnableBasename();
+		if( $command ){
+			my $verb = $running->verbName() || '';
+			$prefix = "[$command";
+			$prefix .= " $verb" if $verb;
+			$prefix.= '] ';
+		}
 	}
 	return $prefix;
 }
@@ -260,12 +243,13 @@ sub _msgPrefix {
 # Verbose message
 # (I):
 # - the message to be outputed
+
 sub msgVerbose {
 	my $msg = shift;
 	# be verbose to console ?
 	my $verbose = false;
-	my $TTPVars = TTP::TTPVars();
-	$verbose = $TTPVars->{run}{verbose} if exists( $TTPVars->{run}{verbose} );
+	my $running = $ttp->running();
+	$verbose = $running->verbose() if $running;
 	_printMsg({
 		msg => $msg,
 		level => VERBOSE,
@@ -277,6 +261,7 @@ sub msgVerbose {
 # Warning message - always logged
 # (E):
 # - the single warning message
+
 sub msgWarn {
 	#TTP::stackTrace();
 	_printMsg({
@@ -293,12 +278,13 @@ sub msgWarn {
 # - handle, the output handle, defaulting to STDOUT
 # - withConsole: whether to output to the console, defaulting to true
 # - withPrefix: whether to output the "[command.pl verb]" prefix, defaulting to true
+
 sub _printMsg {
 	my ( $args ) = @_;
 	$args //= {};
 	my $line = '';
-	my $var = undef;
-	my $TTPVars = TTP::TTPVars();
+	my $configured = undef;
+	my $running = $ttp->running();
 	# have a prefix ?
 	my $withPrefix = true;
 	$withPrefix = $args->{withPrefix} if exists $args->{withPrefix};
@@ -306,13 +292,19 @@ sub _printMsg {
 	# have a level marker ?
 	my $level = INFO;
 	$level = $args->{level} if exists $args->{level};
-	$line .= $Definitions->{$level}{marker} if exists $Definitions->{$level}{marker};
+	my $marker = '';
+	$marker = $Const->{$level}{marker} if exists $Const->{$level}{marker};
+	$configured = undef;
+	$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'marker' ]) if exists $Const->{$level}{key};
+	$marker = $configured if defined $configured;
+	$line .= $marker;
 	$line .= $args->{msg} if exists $args->{msg};
 	# writes in log ?
 	my $withLog = true;
-	$var = TTP::ttpVar([ 'Message',  $Definitions->{$level}{key}, 'withLog' ]) if exists $Definitions->{$level}{key};
-	$withLog = $var if defined $var;
-	TTP::Message::_msgLogAppend( $line ) if $withLog;
+	$configured = undef;
+	$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'withLog' ]) if exists $Const->{$level}{key};
+	$withLog = $configured if defined $configured;
+	_msgLogAppend( $line ) if $withLog;
 	# output to the console ?
 	my $withConsole = true;
 	$withConsole = $args->{withConsole} if exists $args->{withConsole};
@@ -320,12 +312,21 @@ sub _printMsg {
 		# print a colored line ?
 		# global runtime option is only considered if not disabled in toops/host configuration
 		my $withColor = true;
-		$var = undef;
-		$var = TTP::ttpVar([ 'Message',  $Definitions->{$level}{key}, 'withColor' ]) if exists $Definitions->{$level}{key};
-		$withColor = $var if defined $var;
-		$withColor = $TTPVars->{run}{colored} if $withColor;
-		my $colorstart = $withColor && exists( $Definitions->{$level}{color} ) ? color( $Definitions->{$level}{color} ) : '';
-		my $colorend = $withColor && exists( $Definitions->{$level}{color} ) ? color( 'reset' ) : '';
+		$configured = undef;
+		$ttp->{debug} = true;
+		$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'withColor' ]) if exists $Const->{$level}{key};
+		#print __PACKAGE__."::_printMsg() configured='".( defined $configured ? $configured : '(undef)' )."'".EOL if $level eq "VERBOSE";
+		$withColor = $configured if defined $configured;
+		$withColor = $running->colored() if $running && $withColor;
+		my $colorstart = '';
+		my $colorend = '';
+		if( $withColor ){
+			$colorstart = color( $Const->{$level}{color} ) if exists( $Const->{$level}{color} );
+			$configured = undef;
+			$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'color' ]) if exists $Const->{$level}{key};
+			$colorstart = color( $configured ) if defined $configured;
+			$colorend = color( 'reset' );
+		}
 		# print on which handle ?
 		my $handle = \*STDOUT;
 		$handle = $args->{handle} if exists $args->{handle};

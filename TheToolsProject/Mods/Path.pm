@@ -206,7 +206,7 @@ sub fromCommand {
 # returns the full path of the host configuration file
 sub hostConfigurationPath {
 	my ( $host ) = @_;
-	$host = TTP::ttpHost() if !$host;
+	$host = TTP::TTP::host() if !$host;
 	return File::Spec->catfile( hostsConfigurationsDir(), "$host.json" );
 }
 

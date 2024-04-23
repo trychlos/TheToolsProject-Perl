@@ -69,7 +69,7 @@
 		},
 		"credentialsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'credentials' )]",
 		"DBMS": {
-			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), ttpHost() )]",
+			"backupsDir": "[eval:File::Spec->catdir( ttpVar([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), TTP::host() )]",
 			"backupsRoot": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'dailySQLBackups' )]",
 			"instance": "MSSQLSERVER",
 			"byInstance": {
@@ -119,28 +119,6 @@
 		"logsDaily": "[eval:File::Spec->catdir( TTP::logsRoot(), localtime->strftime( '%y%m%d' ))]",
 		"logsRoot": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'dailyLogs' )]",
 
-		"Message": {
-			"msgDummy": {
-				"withColor": true,
-				"withLog": true
-			},
-			"msgErr": {
-				"withColor": true,
-				"withLog": true
-			},
-			"msgOut": {
-				"withColor": true,
-				"withLog": true
-			},
-			"msgVerbose": {
-				"withColor": true,
-				"withLog": true
-			},
-			"msgWarn": {
-				"withColor": true,
-				"withLog": true
-			}
-		},
 		"moveDir_comments": [
 			"manage macros: SOURCE, TARGET"
 		],
@@ -172,7 +150,7 @@
 			],
 			"withHttp": {
 				"enabled": true,
-				"url": "http://10.122.1.15:9091/metrics/job/telemetry/host/[eval:ttpHost()]"
+				"url": "http://10.122.1.15:9091/metrics/job/telemetry/host/[eval:TTP::host()]"
 			}
 		}
 	}

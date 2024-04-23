@@ -46,7 +46,7 @@ sub get {
 		}
 		# if not found, looks at credentials/<host>.json
 		if( !defined( $res )){
-			my $host = TTP::ttpHost();
+			my $host = TTP::TTP::host();
 			my $fname = File::Spec->catdir( TTP::Path::credentialsDir(), "$host.json" );
 			my $data = TTP::evaluate( TTP::jsonRead( $fname ));
 			$res = $data;
