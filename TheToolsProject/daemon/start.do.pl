@@ -64,7 +64,7 @@ if( !GetOptions(
 }
 
 if( $running->help()){
-	TTP::helpVerb( $defaults );
+	$running->verbHelp( $defaults );
 	ttpExit();
 }
 

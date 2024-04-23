@@ -17,7 +17,9 @@
 # see <http://www.gnu.org/licenses/>.
 #
 # A role to be composed by both commands+verbs and external commands.
-# Take care of initializing to-be-logged words
+# Take care of initializing to-be-logged words as:
+# - name, e.g. 'ttp.pl'
+# - qualifier, e.g. 'vars'
 
 package TTP::Runnable;
 our $VERSION = '1.00';
@@ -47,9 +49,21 @@ requires qw( _newBase );
 # (O):
 # - returns the computed basename of the runnable (e.g. 'ttp.pl')
 
-sub runnableBasename {
+sub runnableBNameFull {
 	my ( $self ) = @_;
 	return $self->{_runnable}{basename};
+};
+
+# -------------------------------------------------------------------------------------------------
+# Getter
+# (I):
+# - none
+# (O):
+# -returns the computed name (without extension) of the runnable (e.g. 'ttp')
+
+sub runnableBNameShort {
+	my ( $self ) = @_;
+	return $self->{_runnable}{namewoext};
 };
 
 # -------------------------------------------------------------------------------------------------
@@ -84,22 +98,11 @@ sub runnableIncErr {
 # (I):
 # - none
 # (O):
-# -returns the computed name (without extension) of the runnable (e.g. 'ttp')
-
-sub runnableName {
-	my ( $self ) = @_;
-	return $self->{_runnable}{namewoext};
-};
-
-# -------------------------------------------------------------------------------------------------
-# Getter
-# (I):
-# - none
-# (O):
 # -returns the qualifier
 
 sub runnableQualifier {
 	my ( $self ) = @_;
+
 	return $self->{_runnable}{qualifier};
 };
 

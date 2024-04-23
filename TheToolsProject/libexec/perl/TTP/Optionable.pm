@@ -102,22 +102,6 @@ sub help {
 };
 
 # -------------------------------------------------------------------------------------------------
-# Setter
-# Set whether we want display embedded help
-# (I):
-# - whether to display the help as true|false
-# (O):
-# -this object
-
-sub setHelp {
-	my ( $self, $haveHelp ) = @_;
-
-	$ttp->{run}{help} = $haveHelp ? true : false;
-	
-	return $self;
-};
-
-# -------------------------------------------------------------------------------------------------
 # Getter
 # (I):
 # - none

@@ -48,7 +48,7 @@ sub doPublish {
 		msgOut( "  to $dir" );
 		msgVerbose( "from $srcdir" );
 		msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
-		if( !TTP::wantsDummy()){
+		if( !$running->dummy()){
 			my $removeTree = ttpVar([ 'deployments', 'before', 'removeTree' ]);
 			$removeTree = true if !defined $removeTree;
 			if( $removeTree ){
@@ -100,7 +100,7 @@ if( !GetOptions(
 }
 
 if( $running->help()){
-	TTP::helpVerb( $defaults );
+	$running->verbHelp( $defaults );
 	ttpExit();
 }
 

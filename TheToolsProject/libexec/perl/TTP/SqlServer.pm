@@ -374,7 +374,7 @@ sub _sqlExec {
 	if( !TTP::ttpErrs()){
 		msgVerbose( "SqlServer::_sqlExec() executing '$sql'" );
 		$result->{ok} = msgDummy( $sql );
-		if( !TTP::wantsDummy()){
+		if( !$running->dummy()){
 			my $printStdout = true;
 			$printStdout = $opts->{printStdout} if exists $opts->{printStdout};
 			my $resultStyle = Win32::SqlServer::SINGLESET;

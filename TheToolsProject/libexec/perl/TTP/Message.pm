@@ -228,11 +228,11 @@ sub _msgPrefix {
 	my $prefix = '';
 	my $running = $ttp->running();
 	if( $running ){
-		my $command = $running->runnableBasename();
+		my $command = $running->runnableBNameFull();
 		if( $command ){
-			my $verb = $running->verbName() || '';
+			my $qualifier = $running->runnableQualifier() || '';
 			$prefix = "[$command";
-			$prefix .= " $verb" if $verb;
+			$prefix .= " $qualifier" if $qualifier;
 			$prefix.= '] ';
 		}
 	}

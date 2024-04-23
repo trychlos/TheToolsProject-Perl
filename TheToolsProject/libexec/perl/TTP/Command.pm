@@ -60,19 +60,6 @@ my $Const = {
 ### Private methods
 
 # -------------------------------------------------------------------------------------------------
-# command help
-# (I]:
-# - none
-# (O):
-# - this object
-
-sub _help {
-	my ( $self ) = @_;
-
-	return $self;
-}
-
-# -------------------------------------------------------------------------------------------------
 # command initialization
 # (I]:
 # - none
@@ -83,8 +70,7 @@ sub _init {
 	my ( $self ) = @_;
 
 	# make sure the command is not a reserved word
-	my $command = $self->runnableBasename();
-	$command =~ s/\.[^.]+$//;
+	my $command = $self->runnableBNameShort();
 	if( grep( /^$command$/, @{$Const->{reservedWords}} )){
 		msgErr( "command '$command' is a Toops reserved word. Aborting." );
 		ttpExit();
@@ -106,7 +92,22 @@ sub _init {
 sub command {
 	my ( $self ) = @_;
 
-	return $self->runnableBasename();
+	return $self->runnableBNameFull();
+}
+
+# -------------------------------------------------------------------------------------------------
+# command help
+# (I]:
+# - none
+# (O):
+# - this object
+
+sub commandHelp {
+	my ( $self ) = @_;
+
+	print "commandHelp()".EOL;
+
+	return $self;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -127,24 +128,26 @@ sub run {
 			my $verb = shift( @command_args );
 			$self->{_verb}{args} = \@command_args;
 			$self->runnableSetQualifier( $verb );
+			if( scalar( @command_args )){
+				# as verbs are written as Perl scripts, they are dynamically ran from here in the context of 'self'
+				# + have direct access to 'ttp' entry point
+				local @ARGV = @command_args;
+				our $running = $ttp->running();
 
-			#$self->setHelp( scalar @ARGV ? false : true );
-
-			# as verbs are written as Perl scripts, they are dynamically ran from here in the context of 'self'
-			# + have direct access to 'ttp' entry point
-			local @ARGV = @command_args;
-			our $running = $ttp->running();
-
-			$self->{_verb}{path} = $self->find({ spec => [ $self->runnableName(), $verb.$Const->{verbSufix} ]});
-			if( -f $self->{_verb}{path} ){
-				unless( defined do $self->{_verb}{path} ){
-					msgErr( "do $self->{_verb}{path}: ".( $! || $@ ));
+				$self->{_verb}{path} = $self->find({ spec => [ $self->runnableBNameShort(), $verb.$Const->{verbSufix} ]});
+				if( -f $self->{_verb}{path} ){
+					unless( defined do $self->{_verb}{path} ){
+						msgErr( "do $self->{_verb}{path}: ".( $! || $@ ));
+					}
+				} else {
+					msgErr( "script not found or not readable: '$self->{_verb}{path}' (most probably, '$self->{_verb}{name}' is not a valid verb)" );
 				}
 			} else {
-				msgErr( "script not found or not readable: '$self->{_verb}{path}' (most probably, '$self->{_verb}{name}' is not a valid verb)" );
+				$self->verbHelp();
+				ttpExit();
 			}
 		} else {
-			$self->_help();
+			$self->commandHelp();
 			ttpExit();
 		}
 	} catch {
@@ -168,6 +171,20 @@ sub verb {
 	my ( $self ) = @_;
 
 	return $self->runnableQualifier();
+}
+
+# -------------------------------------------------------------------------------------------------
+# verb help
+# (I]:
+# - none
+# (O):
+# - this object
+
+sub verbHelp {
+	my ( $self ) = @_;
+
+	print "verbHelp()".EOL;
+	return $self;
 }
 
 ### Class methods

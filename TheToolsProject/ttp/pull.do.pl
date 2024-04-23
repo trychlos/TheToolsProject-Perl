@@ -78,12 +78,12 @@ sub doPull {
 						my $dst_path = File::Spec->catdir( $pullDir, $it );
 						msgOut( "  resetting from '$pull_path' into '$dst_path'" );
 						msgDummy( "TTP::removeTree( $dst_path )" );
-						if( !TTP::wantsDummy()){
+						if( !$running->dummy()){
 							$result = TTP::removeTree( $dst_path );
 						}
 						if( $result ){
 							msgDummy( "dircopy( $pull_path, $dst_path )" );
-							if( !TTP::wantsDummy()){
+							if( !$running->dummy()){
 								$result = dircopy( $pull_path, $dst_path );
 								msgVerbose( "dircopy() result=$result" );
 							}
@@ -125,7 +125,7 @@ if( !GetOptions(
 }
 
 if( $running->help()){
-	TTP::helpVerb( $defaults );
+	$running->verbHelp( $defaults );
 	ttpExit();
 }
 
