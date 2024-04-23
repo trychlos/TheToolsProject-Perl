@@ -96,6 +96,20 @@ sub _init {
 ### Public methods
 
 # -------------------------------------------------------------------------------------------------
+# Getter
+# Returns the command name
+# (I]:
+# - none
+# (O):
+# - the command e.g. 'ttp.pl'
+
+sub command {
+	my ( $self ) = @_;
+
+	return $self->runnableBasename();
+}
+
+# -------------------------------------------------------------------------------------------------
 # run the command
 # (I]:
 # - none
@@ -144,12 +158,13 @@ sub run {
 
 # -------------------------------------------------------------------------------------------------
 # Getter
+# Returns the verb name
 # (I]:
 # - none
 # (O):
-# - the verb
+# - the verb, e.g. 'vars'
 
-sub verbName {
+sub verb {
 	my ( $self ) = @_;
 
 	return $self->runnableQualifier();

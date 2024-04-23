@@ -1246,10 +1246,4 @@ sub wantsDummy {
 	return $TTPVars->{run}{dummy};
 }
 
-# -------------------------------------------------------------------------------------------------
-# whether help has been required
-sub wantsHelp {
-	return $TTPVars->{run}{help};
-}
-
 1;

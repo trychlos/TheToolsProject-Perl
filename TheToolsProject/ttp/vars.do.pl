@@ -104,11 +104,11 @@ if( !GetOptions(
 	"alertsDir!"		=> \$opt_alertsDir,
 	"key=s@"			=> \$opt_key )){
 
-		msgOut( "try '".$running->runnableBasename()." ".$running->verbName()." --help' to get full usage syntax" );
+		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		ttpExit( 1 );
 }
 
-if( TTP::wantsHelp()){
+if( $running->help()){
 	TTP::helpVerb( $defaults );
 	ttpExit();
 }

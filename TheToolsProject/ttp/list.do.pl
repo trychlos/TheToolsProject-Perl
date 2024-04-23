@@ -72,7 +72,7 @@ if( !GetOptions(
 		ttpExit( 1 );
 }
 
-if( TTP::wantsHelp()){
+if( $running->help()){
 	TTP::helpVerb( $defaults );
 	ttpExit();
 }

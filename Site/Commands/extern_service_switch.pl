@@ -238,7 +238,7 @@ if( !GetOptions(
 		TTP::ttpExit( 1 );
 }
 
-if( TTP::wantsHelp()){
+if( $running->help()){
 	TTP::helpExtern( $defaults );
 	TTP::ttpExit();
 }
