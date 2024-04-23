@@ -7,6 +7,7 @@
 	"enabled_comments": [
 		"Whether this machine configuration file should be examined when scanning all machine configuration files.",
 		"This let us have this 'machine.sample.json' in the machines/ directory",
+		"Note that disabling this node will fully prevent the machine to be visible in the list or loadable, or anything. The machine will no more be visible in TTP context.",
 		"Hardcoded default is 'true'"
 	],
 	"enabled": false,

@@ -135,36 +135,6 @@ sub _evaluatePrint {
 	return $result;
 }
 
-# -------------------------------------------------------------------------------------------------
-# Read a JSON file into a hash
-# Do not evaluate here, just read the file raw data
-# (I):
-# - the full path to the to-be-loaded json file
-# (O):
-# returns the read hash, or undef (most probably in case of a JSON syntax error)
-
-sub _readRaw {
-	my ( $self, $path ) = @_;
-	msgVerbose( __PACKAGE__."::_read() path='$path'" );
-	my $result = undef;
-	if( $path && -r $path ){
-		my $content = do {
-		   open( my $fh, "<:encoding(UTF-8)", $path ) or msgErr( __PACKAGE__."::_read() $path: $!" );
-		   local $/;
-		   <$fh>
-		};
-		my $json = JSON->new;
-		# may croak on error, intercepted below
-		eval { $result = $json->decode( $content ) };
-		if( $@ ){
-			msgWarn( __PACKAGE__."::_read() $path: $@" );
-		} else {
-			$self->{_jsonable}{loaded} = true;
-		}
-	}
-	return $result;
-}
-
 ### Public methods
 
 # -------------------------------------------------------------------------------------------------
@@ -222,10 +192,46 @@ sub jsonLoad {
 	}
 
 	# load the raw JSON data
-	$self->{_jsonable}{loaded} = false;
-	$self->{_jsonable}{raw} = $self->_readRaw( $self->{_jsonable}{json} ) if $self->{_jsonable}{json};
+	my $result = undef;
+	$result = $self->jsonRead( $self->{_jsonable}{json} ) if $self->{_jsonable}{json};
+	$self->{_jsonable}{loaded} = defined( $result );
+
+	# initialize the evaluated part, even if not actually evaluated, so that jsonData()
+	# can at least returns raw - unevaluated - data
+	#$self->{_jsonable}{evaluated} = $self->{_jsonable}{raw};
 
 	return $self->{_jsonable}{loaded};
+}
+
+# -------------------------------------------------------------------------------------------------
+# Read a JSON file into a hash
+# Do not evaluate here, just read the file raw data
+# (I):
+# - the full path to the to-be-loaded json file
+# (O):
+# returns the read hash, or undef (most probably in case of a JSON syntax error)
+
+sub jsonRead {
+	my ( $self, $path ) = @_;
+	TTP::stackTrace() if !$path;
+	msgVerbose( __PACKAGE__."::jsonRead() path='$path'" );
+	#print __PACKAGE__."::jsonRead() path='$path'".EOL;
+	my $result = undef;
+	if( $path && -r $path ){
+		my $content = do {
+		   open( my $fh, "<:encoding(UTF-8)", $path ) or msgErr( __PACKAGE__."::jsonRead() $path: $!" );
+		   local $/;
+		   <$fh>
+		};
+		my $json = JSON->new;
+		# may croak on error, intercepted below
+		eval { $result = $json->decode( $content ) };
+		if( $@ ){
+			msgWarn( __PACKAGE__."::jsonRead() $path: $@" );
+			$result = undef;
+		}
+	}
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -254,6 +260,8 @@ after _newBase => sub {
 
 	$self->{_jsonable} //= {};
 };
+
+### Global functions
 
 1;
 

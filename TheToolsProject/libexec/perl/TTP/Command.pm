@@ -178,12 +178,13 @@ sub run {
 			local @ARGV = @command_args;
 			our $running = $ttp->running();
 			$self->{_verb}{path} = $self->find({ spec => [ $self->runnableBNameShort(), $verb.$Const->{verbSufix} ]});
-			if( -f $self->{_verb}{path} ){
+			if( $self->{_verb}{path} && -f $self->{_verb}{path} ){
 				unless( defined do $self->{_verb}{path} ){
 					msgErr( "do $self->{_verb}{path}: ".( $! || $@ ));
 				}
 			} else {
-				msgErr( "script not found or not readable: '$self->{_verb}{path}' (most probably, '$self->{_verb}{name}' is not a valid verb)" );
+				msgErr( "script not found or not readable in [$ENV{TTP_ROOTS}]: '$verb.$Const->{verbSufix}'" );
+				msgErr( "is it possible that '$verb' be not a valid verb ?" );
 			}
 		} else {
 			$self->commandHelp();

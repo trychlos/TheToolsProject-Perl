@@ -38,7 +38,7 @@ use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 
 my $Const = {
-	# hardcoded subpath to find the global site.json
+	# hardcoded subpaths to find the <node>.json files
 	# even if this not too sexy in Win32, this is a standard and a common usage on Unix/Darwin platforms
 	dirs => [
 		'etc/nodes',
@@ -49,6 +49,23 @@ my $Const = {
 };
 
 ### Private methods
+
+# -------------------------------------------------------------------------------------------------
+# Whether the currenly being loaded JSON is acceptable as an execution node
+# If the node is disabled, then we refuse to load it
+# (I):
+# - the raw loaded data
+# (O):
+# - returns true if we accept that as a valid node, or false else
+
+sub _acceptable {
+	my ( $self, $path ) = @_;
+	my $enabled = true;
+	my $data = $self->jsonRead( $path );
+	$enabled = $data->{enabled} if exists $data->{enabled};
+	#print __PACKAGE__."::_acceptable() path='$path' enabled='$enabled'".EOL;
+	return $enabled;
+}
 
 # -------------------------------------------------------------------------------------------------
 # returns the hostname
@@ -104,7 +121,7 @@ sub new {
 
 	# allowed nodesDirs can be configured at site-level
 	my $dirs = $ttp->var( 'nodesDirs' ) || $Const->{dirs};
-	my $success = $self->jsonLoad({ spec => [ $dirs, "$node.json" ] });
+	my $success = $self->jsonLoad({ spec => [ $dirs, "$node.json" ], accept => sub { $self->_acceptable( @_ ) }});
 
 	# unable to find and load the node configuration file ? this is an unrecoverable error
 	if( !$success ){

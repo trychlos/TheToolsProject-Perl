@@ -151,7 +151,7 @@ sub DESTROY {
 
 # -------------------------------------------------------------------------------------------------
 # Publish the site specifications
-# Can be called both as 'TTP::Site->spec()' or as 'TTP::Site::spec()'
+# Can be called both as 'TTP::Site->spec()' or as 'TTP::Site::spec()' as we do not manage any argument here.
 # (I]:
 # - none
 # (O):

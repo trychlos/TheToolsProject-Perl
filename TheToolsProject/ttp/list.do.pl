@@ -30,8 +30,6 @@ use Config;
 use TTP::Command;
 use TTP::Service;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	verbose => 'no',
@@ -48,17 +46,27 @@ my $opt_services = false;
 # list the available commands
 sub listCommands {
 	msgOut( "displaying available commands..." );
-	my @commands = ();
+	# list all commands in all TTP_ROOTS trees
 	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
 	my $const = TTP::commandConst();
+	my @commands = ();
 	foreach my $it ( @roots ){
 		my $dir = File::Spec->catdir( $it, $const->{dir} );
 		push @commands, glob( File::Spec->catdir( $dir, $const->{sufix} ));
 	}
+	# get only unique commands
+	my $uniqs = {};
+	my $count = 0;
 	foreach my $it ( @commands ){
-		TTP::Command::helpOneline( $it, { prefix => ' ' });
+		my ( $vol, $dirs, $file ) = File::Spec->splitpath( $it );
+		$uniqs->{$file} = $it if !exists( $uniqs->{$file} );
 	}
-	msgOut( scalar @commands." found command(s)" );
+	# and display them in ascii order
+	foreach my $it ( sort keys %{$uniqs} ){
+		TTP::Command::helpOneline( $uniqs->{$it}, { prefix => ' ' });
+		$count += 1;
+	}
+	msgOut( "$count found command(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------

@@ -46,8 +46,11 @@ requires qw( _newBase );
 #   > spec: the specification to be searched for in TTP_ROOTS tree
 #     as a scalar, or as a ref to an array of items which have to be concatenated,
 #     when each item for the array may itself be an array of scalars to be sucessively tested
+#   > accept: a code reference which will receive the full path of the candidate, and must return
+#     true|false to accept or refuse this file
+#     defaults to true if accept is not specified
 # (O):
-# - the full pathname found, or undef
+# - the full pathname of a found and accepted file
 
 sub find {
 	my ( $self, $args ) = @_;
@@ -56,17 +59,27 @@ sub find {
 	my $specs = $args->{spec};
 	$specs = [ $args->{spec} ] if !ref( $args->{spec} );
 	foreach my $it ( @roots ){
-		$result = $self->_find_inpath_rec( $it, $specs );
+		$result = $self->_find_inpath_rec( $it, $specs, $args );
 		last if $result;
 	}
 	msgVerbose( __PACKAGE__."::_find() returning '".( $result ? $result : '(undef)' )."'" );
 	return $result;
 }
 
+# is the current candidate file accepted by the caller
+sub _find_accepted {
+	my ( $self, $args, $candidate ) = @_;
+	my $cb = undef;
+	$cb = $args->{accept} if exists $args->{accept};
+	my $accepted = defined( $cb ) ? $cb->( $candidate ) : true;
+	msgVerbose( __PACKAGE__."::_find_accepted() candidate '$candidate' is refused" ) if !$accepted;
+	return $accepted;
+}
+
 # search for the specs in the specified path
 # specs maybe a scalar (a single file specification), or an array of scalars (specs must be concatened), or an array of arrays of scalars (intermediary array scalars must be tested)
 sub _find_inpath_rec {
-	my ( $self, $path, $specs ) = @_;
+	my ( $self, $path, $specs, $args ) = @_;
 	my $result = undef;
 	my $ref = ref( $specs );
 	if( $ref && $ref ne 'ARRAY' ){
@@ -83,7 +96,7 @@ sub _find_inpath_rec {
 				my @newSpecs = @{$specs};
 				for( my $j=0 ; $j<scalar @{$specs->[$i]} ; ++$j ){
 					$newSpecs[$i] = $specs->[$i][$j];
-					$result = $self->_find_inpath_rec( $path, \@newSpecs );
+					$result = $self->_find_inpath_rec( $path, \@newSpecs, $args );
 					last LOOP if $result;
 				}
 			}
@@ -93,7 +106,7 @@ sub _find_inpath_rec {
 			my $fname = File::Spec->catfile( $path, @{$specs} );
 			msgVerbose( __PACKAGE__."::_find_inpath_rec() examining '$fname'" );
 			#print __PACKAGE__."::_find_inpath_rec() examining '$fname'".EOL;
-			if( -r $fname ){
+			if( -r $fname && $self->_find_accepted( $args, $fname )){
 				$result = $fname;
 			}
 		}
