@@ -31,8 +31,9 @@ use Config;
 use Data::Dumper;
 use Role::Tiny::With;
 use Sys::Hostname qw( hostname );
+use vars::global qw( $ttp );
 
-with 'TTP::Enableable', 'TTP::Findable', 'TTP::JSONable';
+with 'TTP::Acceptable', 'TTP::Enableable', 'TTP::Findable', 'TTP::JSONable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
@@ -40,32 +41,18 @@ use TTP::Message qw( :all );
 my $Const = {
 	# hardcoded subpaths to find the <node>.json files
 	# even if this not too sexy in Win32, this is a standard and a common usage on Unix/Darwin platforms
-	finder => [
-		'etc/nodes',
-		'nodes',
-		'etc/machines',
-		'machines'
-	]
+	finder => {
+		dirs => [
+			'etc/nodes',
+			'nodes',
+			'etc/machines',
+			'machines'
+		],
+		sufix => '.json'
+	}
 };
 
 ### Private methods
-
-# -------------------------------------------------------------------------------------------------
-# Whether the currenly being loaded JSON is acceptable as an execution node
-# If the node is disabled, then we refuse to load it
-# (I):
-# - the raw loaded data
-# (O):
-# - returns true if we accept that as a valid node, or false else
-
-sub _acceptable {
-	my ( $self, $path ) = @_;
-	my $enabled = true;
-	my $data = $self->jsonRead( $path );
-	$enabled = $data->{enabled} if exists $data->{enabled};
-	#print __PACKAGE__."::_acceptable() path='$path' enabled='$enabled'".EOL;
-	return $enabled;
-}
 
 # -------------------------------------------------------------------------------------------------
 # returns the hostname
@@ -113,6 +100,23 @@ sub success {
 
 ### Class methods
 
+# ------------------------------------------------------------------------------------------------
+# Returns the list of subdirectories of TTP_ROOTS in which we may find nodes configuration files
+# (I):
+# - none
+# (O):
+# - returns the list of subdirectories which may contain the JSON nodes configuration files as
+#   an array ref
+
+sub dirs {
+	my ( $class ) = @_;
+	$class = ref( $class ) || $class;
+
+	my $dirs = $ttp->var( 'nodesDirs' ) || $class->finder()->{dirs};
+
+	return $dirs;
+}
+
 # -------------------------------------------------------------------------------------------------
 # Returns the list of dirs where nodes are to be found
 # (I]:
@@ -146,18 +150,24 @@ sub new {
 	my $node = $args->{node} || _hostname();
 
 	# allowed nodesDirs can be configured at site-level
-	my $dirs = $ttp->var( 'nodesDirs' ) || $class->finder();
+	my $dirs = $class->dirs();
 	my $findable = {
-		patterns => [ $dirs, "$node.json" ],
+		dirs => [ $dirs, $node.$class->finder()->{sufix} ],
 		wantsAll => false
 	};
-	my $success = $self->jsonLoad({ findable => $findable, accept => sub { $self->_acceptable( @_ ) }});
+	my $acceptable = {
+		accept => sub { return $self->enabled( @_ ); },
+		opts => {
+			type => 'JSON'
+		}
+	};
+	my $loaded = $self->jsonLoad({ findable => $findable, acceptable => $acceptable });
 
 	# unable to find and load the node configuration file ? this is an unrecoverable error
 	# unless otherwise specified
 	my $abort = true;
 	$abort = $args->{abortOnError} if exists $args->{abortOnError};
-	if( !$success && $abort ){
+	if( !$loaded && $abort ){
 		msgErr( "Unable to find a valid execution node for '$node' in [".join( ',', @{$dirs} )."]" );
 		msgErr( "Exiting with code 1" );
 		exit( 1 );

@@ -84,10 +84,11 @@ my $Const = {
 	},
 	# how to find the daemons configuration files
 	finder => {
-		patterns => [
-			'etc/daemons/*.json',
-			'daemons/*.json'
-		]
+		dirs => [
+			'etc/daemons',
+			'daemons'
+		],
+		sufix => '.json'
 	}
 };
 
@@ -174,7 +175,7 @@ sub start {
 			$self->{_proc} = $proc;
 			$self->{_started} = true;
 		} else {
-			msgErr( "unable to start '$program_path'" );
+			msgErr( "unable to start '$program'" );
 		}
 	}
 
@@ -210,7 +211,7 @@ sub success {
 ### Class methods
 
 # ------------------------------------------------------------------------------------------------
-# Returns the list of directories which we may find daemons configuration files
+# Returns the list of directories in which we may find daemons configuration files
 # (I):
 # - none
 # (O):
@@ -223,12 +224,29 @@ sub configurationsDirs {
 
 	my $dirs = [];
 	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
-	my $specs = $class->finder();
+	my $specs = $class->dirs();
 	foreach my $it ( @roots ){
 		foreach my $sub ( @{$specs} ){
 			push( @{$dirs}, File::Spec->catdir( $it, $sub ));
 		}
 	}
+
+	return $dirs;
+}
+
+# ------------------------------------------------------------------------------------------------
+# Returns the list of subdirectories of TTP_ROOTS in which we may find daemons configuration files
+# (I):
+# - none
+# (O):
+# - returns the list of subdirectories which may contain the JSON daemons configuration files as
+#   an array ref
+
+sub dirs {
+	my ( $class ) = @_;
+	$class = ref( $class ) || $class;
+
+	my $dirs = $ttp->var( 'daemonsDirs' ) || $class->finder()->{dirs};
 
 	return $dirs;
 }

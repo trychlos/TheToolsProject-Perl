@@ -34,7 +34,7 @@ use Carp;
 use Data::Dumper;
 use Role::Tiny::With;
 
-with 'TTP::Findable', 'TTP::JSONable';
+with 'TTP::Acceptable', 'TTP::Enableable', 'TTP::Findable', 'TTP::JSONable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
@@ -51,12 +51,14 @@ my $Const = {
 	],
 	# hardcoded subpaths to find the global site.json
 	# even if this not too sexy in Win32, this is a standard and a common usage on Unix/Darwin platforms
-	finder => [
-		'etc/ttp/site.json',
-		'etc/site.json',
-		'etc/ttp/toops.json',
-		'etc/toops.json'
-	]
+	finder => {
+		dirs => [
+			'etc/ttp/site.json',
+			'etc/site.json',
+			'etc/ttp/toops.json',
+			'etc/toops.json'
+		]
+	}
 };
 
 ### Private methods
@@ -130,14 +132,20 @@ sub new {
 	#  specs here is a ref to an array of arrays which have to be successively tested (so an array
 	#  inside of an array)
 	my $findable = {
-		patterns => [ $class->finder() ],
+		dirs => [ $class->finder()->{dirs} ],
 		wantsAll => false
 	};
-	my $loaded = $self->jsonLoad({ findable => $findable });
+	my $acceptable = {
+		accept => sub { return $self->enabled( @_ ); },
+		opts => {
+			type => 'JSON'
+		}
+	};
+	my $loaded = $self->jsonLoad({ findable => $findable, acceptable => $acceptable });
 
 	# unable to find and load a site configuration file ? this is an unrecoverable error
 	if( !$loaded ){
-		msgErr( "Unable to find the site configuration file among [".( join( ',', @{$class->finder()}))."]" );
+		msgErr( "Unable to find the site configuration file among [".( join( ',', @{$class->finder()->{dirs}}))."]" );
 		msgErr( "Please make sure that the file exists in one of the TTP_ROOTS paths" );
 		msgErr( "Exiting with code 1" );
 		exit( 1 );

@@ -6,6 +6,7 @@
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]siteSpec          display the hardcoded site search specification [${siteSpec}]
 # @(-) --[no]nodeRoot          display the site-defined root path [${nodeRoot}]
+# @(-) --[no]nodesDirs         display the site-defined nodes directories [${nodesDirs}]
 # @(-) --[no]logsRoot          display the TTP logs root (not daily) [${logsRoot}]
 # @(-) --[no]logsDaily         display the TTP daily root [${logsDaily}]
 # @(-) --[no]logsCommands      display the current TTP logs directory [${logsCommands}]
@@ -39,6 +40,7 @@ my $defaults = {
 	verbose => 'no',
 	siteSpec => 'no',
 	nodeRoot => 'no',
+	nodesDirs => 'no',
 	logsRoot => 'no',
 	logsDaily => 'no',
 	logsCommands => 'no',
@@ -48,6 +50,7 @@ my $defaults = {
 
 my $opt_siteSpec = false;
 my $opt_nodeRoot = false;
+my $opt_nodesDirs = false;
 my $opt_logsRoot = false;
 my $opt_logsDaily = false;
 my $opt_logsCommands = false;
@@ -109,10 +112,19 @@ sub listNoderoot {
 }
 
 # -------------------------------------------------------------------------------------------------
+# list nodesDirs value - e.g. '[ 'etc/nodes', 'nodes', 'etc/machines', 'machines' ]'
+
+sub listNodesdirs {
+	my $str = "nodesDirs: [".join( ',', @{TTP::nodesDirs()} )."]";
+	msgVerbose( "returning '$str'" );
+	print " $str".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
 # list siteSpec value - e.g. '[ 'etc/ttp/site.json', 'etc/site.json' ]'
 
 sub listSitespec {
-	my $str = "siteSpec: [".join( ',', @{TTP::Site->finder()} )."]";
+	my $str = "siteSpec: [".join( ',', @{TTP::Site->finder()->{dirs}} )."]";
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
@@ -128,6 +140,7 @@ if( !GetOptions(
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"siteSpec!"			=> \$opt_siteSpec,
 	"nodeRoot!"			=> \$opt_nodeRoot,
+	"nodesDirs!"		=> \$opt_nodesDirs,
 	"logsRoot!"			=> \$opt_logsRoot,
 	"logsDaily!"		=> \$opt_logsDaily,
 	"logsCommands!"		=> \$opt_logsCommands,
@@ -148,6 +161,7 @@ msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found siteSpec='".( $opt_siteSpec ? 'true':'false' )."'" );
 msgVerbose( "found nodeRoot='".( $opt_nodeRoot ? 'true':'false' )."'" );
+msgVerbose( "found nodesDirs='".( $opt_nodesDirs ? 'true':'false' )."'" );
 msgVerbose( "found logsRoot='".( $opt_logsRoot ? 'true':'false' )."'" );
 msgVerbose( "found logsDaily='".( $opt_logsDaily ? 'true':'false' )."'" );
 msgVerbose( "found logsCommands='".( $opt_logsCommands ? 'true':'false' )."'" );
@@ -161,6 +175,7 @@ if( !TTP::errs()){
 	listLogsmain() if $opt_logsMain;
 	listLogsroot() if $opt_logsRoot;
 	listNoderoot() if $opt_nodeRoot;
+	listNodesdirs() if $opt_nodesDirs;
 	listSitespec() if $opt_siteSpec;
 	listByKeys() if scalar @opt_keys;
 }

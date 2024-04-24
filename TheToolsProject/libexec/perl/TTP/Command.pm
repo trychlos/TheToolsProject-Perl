@@ -60,9 +60,12 @@ my $Const = {
 	verbSed => '\.do\.pl',
 	verbSufix => '.do.pl',
 	# these constants are needed to 'ttp.pl list --commands'
-	finder => [
-		'bin'
-	]
+	finder => {
+		dirs => [
+			'bin'
+		],
+		sufix => '.pl'
+	}
 };
 
 ### Private methods
@@ -176,17 +179,22 @@ sub run {
 			my $verb = shift( @command_args );
 			$self->{_verb}{args} = \@command_args;
 
-			# as verbs are written as Perl scripts, they are dynamically ran from here in the context of 'self'
-			# + have direct access to 'ttp' entry point
-			local @ARGV = @command_args;
-			our $running = $ttp->running();
+			# search for the verb
 			my $findable = {
-				patterns => [ $self->runnableBNameShort(), $verb.$Const->{verbSufix} ],
+				dirs => [ $self->runnableBNameShort(), $verb.$Const->{verbSufix} ],
 				wantsAll => false
 			};
 			$self->{_verb}{path} = $self->find( $findable );
-			if( $self->{_verb}{path} && -f $self->{_verb}{path} ){
+
+			# if found, then execute it with our global variables
+			if( $self->{_verb}{path} ){
 				$self->runnableSetQualifier( $verb );
+
+				# as verbs are written as Perl scripts, they are dynamically ran from here in the context of 'self'
+				# + have direct access to 'ttp' entry point
+				local @ARGV = @command_args;
+				our $running = $ttp->running();
+
 				unless( defined do $self->{_verb}{path} ){
 					msgErr( "do $self->{_verb}{path}: ".( $! || $@ ));
 				}

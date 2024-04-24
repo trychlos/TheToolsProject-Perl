@@ -46,22 +46,30 @@ use Role::Tiny;
 requires qw( _newBase );
 
 # -------------------------------------------------------------------------------------------------
-# Find the first file which matches the given specification by walking through TTP_ROOTS
+# Test for enable-ity
+# Site, Node, Service and Daemon classes, which use JSON configuration  files, may choose to disable
+# the instance in the JSON.
+# This is checked here as a sub-component of file Acceptability.
 # (I]:
-# - an argument object with following keys:
-#   > spec: the specification to be searched for in TTP_ROOTS tree
-#     as a scalar, or as a ref to an array of items which have to be concatenated,
-#     when each item for the array may itself be an array of scalars to be sucessively tested
-#   > accept: a code reference which will receive the full path of the candidate, and must return
-#     true|false to accept or refuse this file
-#     defaults to true if accept is not specified
+# - expects a scalar which is the file path
+# - expects an object which contains a 'type' key with 'JSON' value
 # (O):
-# - the full pathname of a found and accepted file
+# - returns true|false
 
 sub enabled {
-	my ( $self, $args ) = @_;
-	my $result = undef;
-	return $result;
+	my ( $self, $obj, $opts ) = @_;
+	$opts //= {};
+	my $enabled = false;
+
+	if( $opts->{type} ){
+		if( $opts->{type} eq 'JSON' ){
+			$enabled = true;
+			my $data = $self->jsonRead( $obj );
+			$enabled = $data->{enabled} if exists $data->{enabled};
+		}
+	}
+
+	return $enabled;
 }
 
 # -------------------------------------------------------------------------------------------------

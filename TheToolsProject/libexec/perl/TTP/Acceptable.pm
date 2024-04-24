@@ -45,19 +45,67 @@ use Role::Tiny;
 requires qw( _newBase );
 
 # -------------------------------------------------------------------------------------------------
-# Test the specified file for acceptation
+# Test something for acceptation
+# We call successively each test function, AND-ing each result to get the final result
+# (of course stopping as soon as we get a false result).
+# Functions prototype is fn( $obj, $opts ): boolean
 # (I]:
-# - an arguments hash which must contain a 'acceptable' hash argument, with following keys:
-#   >
-# - the path to the to-be-tested file
+# - an arguments hash with following keys:
+#   > accept: a code ref or an array of code refs, to be successively executed with passed-in object
+#     and options; the result of each function is AND-ed to get the final result
+#   > object: the (scalar) object to be tested
+#   > opts: optional options to be passed to every test function
 # (O):
 # - current accepted status of the object
 
 sub accept {
-	my ( $self, $file ) = @_;
+	my ( $self, $args ) = @_;
 
+	my $ref = ref( $args );
+	if( $ref eq 'HASH' ){
+		if( $args->{accept} ){
+			$ref = ref( $args->{accept} );
+			if( $ref eq 'CODE' || $ref eq 'ARRAY' ){
+				if( $args->{object} ){
+					$self->_accept_run( $args );
+				} else {
+					msgErr( __PACKAGE__."::accept() expects args->object object, which has not been found" );
+				}
+			} else {
+				msgErr( __PACKAGE__."::accept() expects args->accept be a code ref an an array of code refs, found '$ref'" );
+			}				
+		} else {
+			msgErr( __PACKAGE__."::accept() expects args->accept object, which has not been found" );
+		}
+	} else {
+		msgErr( __PACKAGE__."::accept() expects args be a hash, found '$ref'" );
+	}
 
 	return $self->accepted();
+}
+
+# arguments have been checked, just run
+
+sub _accept_run {
+	my ( $self, $args ) = @_;
+
+	my $ref = ref( $args->{accept} );
+	my $accepted = true;
+	if( $ref eq 'CODE' ){
+		$accepted = $args->{accept}->( $args->{object}, $args->{opts} );
+	} else {
+		foreach my $it ( @{$args->{accept}} ){
+			$ref = ref( $it );
+			if( $ref eq 'CODE' ){
+				$accepted &= $it->( $args->{object}, $args->{opts} );
+			} else {
+				msgErr( __PACKAGE__."::_accept_run() expects a code ref, found '$ref'" );
+			}
+			last if !$accepted;
+		}
+	}
+
+	$self->accepted( $accepted );
 }
 
 # -------------------------------------------------------------------------------------------------

@@ -48,18 +48,17 @@ my $opt_nodes = false;
 
 sub listCommands {
 	msgOut( "displaying available commands..." );
+	my $count = 0;
 	# list all commands in all TTP_ROOTS trees
-	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
-	my $const = TTP::Command->finder();
-	my @commands = ();
-	foreach my $it ( @roots ){
-		my $dir = File::Spec->catdir( $it, $const->{dir} );
-		push @commands, glob( File::Spec->catdir( $dir, $const->{sufix} ));
-	}
+	my $finder = TTP::Command->finder();
+	my $findable = {
+		dirs => [ $finder->{dirs} ],
+		glob => '*'.$finder->{sufix}
+	};
+	my $commands = $running->find( $findable );
 	# get only unique commands
 	my $uniqs = {};
-	my $count = 0;
-	foreach my $it ( @commands ){
+	foreach my $it ( @{$commands} ){
 		my ( $vol, $dirs, $file ) = File::Spec->splitpath( $it );
 		$uniqs->{$file} = $it if !exists( $uniqs->{$file} );
 	}
@@ -76,20 +75,17 @@ sub listCommands {
 
 sub listNodes {
 	msgOut( "displaying available nodes..." );
+	my $count = 0;
 	# list all nodes in all TTP_ROOTS trees
-	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
-	my $dirs = TTP::Node->finder();
-	my @nodes = ();
-	foreach my $it ( @roots ){
-		foreach my $dir ( @{$dirs} ){
-			my $nodedir = File::Spec->catdir( $it, $dir );
-			push @nodes, glob( File::Spec->catfile( $nodedir, '*.json' ));
-		}
-	}
+	my $finder = TTP::Node->finder();
+	my $findable = {
+		dirs => [ $finder->{dirs} ],
+		glob => '*'.$finder->{sufix}
+	};
+	my $nodes = $running->find( $findable );
 	# get only unique available nodes
 	my $uniqs = {};
-	my $count = 0;
-	foreach my $it ( @nodes ){
+	foreach my $it ( @{$nodes} ){
 		my ( $vol, $dirs, $file ) = File::Spec->splitpath( $it );
 		my $name = $file;
 		$name =~ s/\.[^\.]+$//;

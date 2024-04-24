@@ -46,10 +46,11 @@ my $Const = {
 	# hardcoded subpaths to find the <service>.json files
 	# even if this not too sexy in Win32, this is a standard and a common usage on Unix/Darwin platforms
 	finder => {
-		patterns => [
-			'etc/services/*.json',
-			'services/*.json'
-		]
+		dirs => [
+			'etc/services',
+			'services'
+		],
+		sufix => '.json'
 	}
 };
 

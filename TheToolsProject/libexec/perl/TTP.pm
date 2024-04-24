@@ -868,6 +868,18 @@ sub nodeRoot {
 	return $result;
 }
 
+# ------------------------------------------------------------------------------------------------
+# (I):
+# - none
+# (O):
+# - returns the 'nodesDirs' array of directories specified in the site configuration which are the
+#   subdirectories of TTP_ROOTS where we can find nodes JSON configuration files.
+
+sub nodesDirs {
+	my $result = $ttp->site() ? TTP::Node->dirs() : undef;
+	return $result;
+}
+
 # -------------------------------------------------------------------------------------------------
 # pad the provided string until the specified length with the provided char
 sub pad {
