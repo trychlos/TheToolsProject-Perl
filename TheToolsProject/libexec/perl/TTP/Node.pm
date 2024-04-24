@@ -32,7 +32,7 @@ use Data::Dumper;
 use Role::Tiny::With;
 use Sys::Hostname qw( hostname );
 
-with 'TTP::Findable', 'TTP::JSONable';
+with 'TTP::Enableable', 'TTP::Findable', 'TTP::JSONable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
@@ -108,7 +108,7 @@ sub name {
 sub success {
 	my ( $self ) = @_;
 
-	return $self->jsonSuccess();
+	return $self->jsonLoaded();
 }
 
 ### Class methods
@@ -147,9 +147,14 @@ sub new {
 
 	# allowed nodesDirs can be configured at site-level
 	my $dirs = $ttp->var( 'nodesDirs' ) || $class->finder();
-	my $success = $self->jsonLoad({ spec => [ $dirs, "$node.json" ], accept => sub { $self->_acceptable( @_ ) }});
+	my $findable = {
+		patterns => [ $dirs, "$node.json" ],
+		wantsAll => false
+	};
+	my $success = $self->jsonLoad({ findable => $findable, accept => sub { $self->_acceptable( @_ ) }});
 
 	# unable to find and load the node configuration file ? this is an unrecoverable error
+	# unless otherwise specified
 	my $abort = true;
 	$abort = $args->{abortOnError} if exists $args->{abortOnError};
 	if( !$success && $abort ){

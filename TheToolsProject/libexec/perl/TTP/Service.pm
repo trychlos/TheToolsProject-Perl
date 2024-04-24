@@ -37,7 +37,7 @@ use Config;
 use Data::Dumper;
 use Role::Tiny::With;
 
-with 'TTP::Findable', 'TTP::JSONable';
+with 'TTP::Enableable', 'TTP::Findable', 'TTP::JSONable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
@@ -45,10 +45,12 @@ use TTP::Message qw( :all );
 my $Const = {
 	# hardcoded subpaths to find the <service>.json files
 	# even if this not too sexy in Win32, this is a standard and a common usage on Unix/Darwin platforms
-	dirs => [
-		'etc/services',
-		'services'
-	]
+	finder => {
+		patterns => [
+			'etc/services/*.json',
+			'services/*.json'
+		]
+	}
 };
 
 ### Private methods

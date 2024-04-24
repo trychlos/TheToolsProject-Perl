@@ -2,6 +2,7 @@
 	"comments": [
 		"Scan the alerts, dealing new ones."
 	],
+	"enabled": true,
 	"execPath": "[eval:File::Spec->catdir( $TTPVars->{config}{site}{commandsDir}, 'alerts-daemon.pl' )]",
 	"listeningPort": 14391,
 	"listenInterval" : 2,

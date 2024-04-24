@@ -8,7 +8,7 @@
 #
 # @(@) The Tools Project is able to manage any daemons with these very same verbs.
 # @(@) Each separate daemon is characterized by its own JSON properties which uniquely identifies it from the TTP point of view.
-# @(@) Other arguments in the command-line are passed to the run daemon, after the JSON path.
+# @(@) This script accepts other options, after a '--' double dash, which will be passed to the run daemon program.
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -29,11 +29,8 @@
 # see <http://www.gnu.org/licenses/>.
 
 use File::Spec;
-use Proc::Background;
 
 use TTP::Daemon;
-
-my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -45,19 +42,27 @@ my $defaults = {
 
 my $opt_json = $defaults->{json};
 
-my $daemonConfig = undef;
-
 # -------------------------------------------------------------------------------------------------
 # start the daemon
+
 sub doStart {
-	my $program_path = $daemonConfig->{execPath};
-	my $json_path = File::Spec->rel2abs( $opt_json );
 	msgOut( "starting the daemon from '$opt_json'..." );
-	msgErr( "$program_path: not found or not readable" ) if ! -r $program_path;
-	if( !TTP::errs()){
-		#print Dumper( @ARGV );
-		my $proc = Proc::Background->new( "perl $program_path -json $json_path ".join( ' ', @ARGV )) or msgErr( "unable to start '$program_path'" );
-		msgOut( "success" ) if $proc;
+	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json });
+	if( $daemon->success()){
+		# must have a listening port
+		msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemon->listeningPort();
+		if( !TTP::errs()){
+			$daemon->start();
+			if( $daemon->started()){
+				msgOut( "success" );
+			} else {
+				msgErr( "NOT OK" );
+			}
+		}
+	} elsif( $daemon->enabled()) {
+		msgErr( "unable to load the '$opt_json' specified configuration file" );
+	} else {
+		msgErr( "the specified '$opt_json' daemon configuration is disabled" );
 	}
 }
 
@@ -87,13 +92,7 @@ msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 
 # the json is mandatory
-$daemonConfig = TTP::Daemon::getConfigByPath( $opt_json );
-msgLog([ "got daemonConfig:", Dumper( $daemonConfig )]);
-
-# must have a listening port
-msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
-# must have something to run
-msgErr( "daemon configuration must define an 'execPath' value, not found" ) if !$daemonConfig->{execPath};
+msgErr( "'--json' option is mandatry, not found" ) if !$opt_json;
 
 if( !TTP::errs()){
 	doStart();

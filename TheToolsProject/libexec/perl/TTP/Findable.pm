@@ -40,29 +40,70 @@ use Role::Tiny;
 requires qw( _newBase );
 
 # -------------------------------------------------------------------------------------------------
-# Find the first file which matches the given specification by walking through TTP_ROOTS
+# Returns the list of files which match the given specification by walking through TTP_ROOTS
+# Honors TTP::Acceptable role for each candidate.
 # (I]:
 # - an argument object with following keys:
-#   > spec: the specification to be searched for in TTP_ROOTS tree
+#   > patterns: the specifications to be searched for in TTP_ROOTS tree
 #     as a scalar, or as a ref to an array of items which have to be concatenated,
 #     when each item for the array may itself be an array of scalars to be sucessively tested
-#   > accept: a code reference which will receive the full path of the candidate, and must return
-#     true|false to accept or refuse this file
-#     defaults to true if accept is not specified
+#   > wantsAll: whether we want a full list of just the first found
+#     defaulting to true (wants the full list)
+# - an optional options hash which will be passed to Acceptable role if the object implements it
 # (O):
-# - the full pathname of a found and accepted file
+# - if 'wantsAll' is true, returns a ref to an array of (accepted) found files, which may be empty
+# - if 'wantsAll' is false, returns a single scalar string which is the (accepted) found files, which may be undef
 
 sub find {
-	my ( $self, $args ) = @_;
+	my ( $self, $args, $opts ) = @_;
+	$opts //= {};
 	my $result = undef;
-	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
-	my $specs = $args->{spec};
-	$specs = [ $args->{spec} ] if !ref( $args->{spec} );
-	foreach my $it ( @roots ){
-		$result = $self->_find_inpath_rec( $it, $specs, $args );
-		last if $result;
+	# check the provided arguments for type and emptyness
+	my $ref = ref( $args );
+	if( $ref eq 'HASH' ){
+		if( $args->{patterns} ){
+			$ref = ref( $args->{patterns} );
+			if( $ref && $ref ne 'ARRAY' ){
+				msgErr( __PACKAGE__."::_find() expects args->patterns be a scalar or an array, found '$ref'" );
+			} else {
+				$result = $self->_find_run( $args, $opts );
+			}
+		} else {
+			msgErr( __PACKAGE__."::_find() expects args->patterns object, which has not been found" );
+		}
+	} else {
+		msgErr( __PACKAGE__."::_find() expects args be a hash, found '$ref'" );
 	}
-	msgVerbose( __PACKAGE__."::_find() returning '".( $result ? $result : '(undef)' )."'" );
+	return $result;
+}
+
+# arguments have been checked, just run
+
+sub _find_run {
+	my ( $self, $args, $opts ) = @_;
+	my $result = undef;
+	# keep the passed-in arguments
+	$self->{_findable}{args} = \%{$args};
+	# initialize the results
+	# we keep a track of each explored directory, or each candidate files and of its status
+	$self->{_findable}{end} = false;
+	$self->{_findable}{patterns} = [];
+	$self->{_findable}{candidates} = [];
+	$self->{_findable}{accepted} = [];
+	$self->{_findable}{wantsAll} = true;
+	$self->{_findable}{wantsAll} = $args->{wantsAll} if exists $args->{wantsAll};
+	# iter on each root path
+	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
+	foreach my $it ( @roots ){
+		$self->_find_inpath_rec( $args, $opts, $args->{patterns}, $it ) if !$self->{_findable}{end};
+	}
+	if( $self->{_findable}{wantsAll} ){
+		$result = $self->{_findable}{accepted};
+		msgVerbose( __PACKAGE__."::_find() returning [".join( ',', @{$result} )."]" );
+	} else {
+		$result = $self->{_findable}{accepted}->[0] if scalar @{$self->{_findable}{accepted}};
+		msgVerbose( __PACKAGE__."::_find() returning '".( $result ? $result : '(undef)' )."'" );
+	}
 	return $result;
 }
 
@@ -76,12 +117,70 @@ sub _find_accepted {
 	return $accepted;
 }
 
-# search for the specs in the specified path
-# specs maybe a scalar (a single file specification), or an array of scalars (specs must be concatened), or an array of arrays of scalars (intermediary array scalars must be tested)
+# search for the patterns in the specified path
+# the provided findable patterns contains either a scalar or an array
+# each item maybe a scalar (a single file specification), or an array of scalars (specs must be concatened), or an array of arrays of scalars (intermediary array scalars must be tested)
+
 sub _find_inpath_rec {
-	my ( $self, $path, $specs, $args ) = @_;
+	my ( $self, $args, $opts, $patterns, $rootDir ) = @_;
+	my $ref = ref( $patterns );
+	if( $ref ){
+		if( $ref eq 'ARRAY' ){
+			my $haveArray = false;
+			LOOP: for( my $i=0 ; $i<scalar @{$patterns} ; ++$i ){
+				$ref = ref( $patterns->[$i] );
+				if( $ref && $ref ne 'ARRAY' ){
+					msgErr( __PACKAGE__."::_find_inpath_rec() unexpected intermediate ref='$ref'" );
+				# if an element of the patterns is itself an array, then each item of this later array must be tested
+				} elsif( $ref ){
+					$haveArray = true;
+					my @newPatterns = @{$patterns};
+					for( my $j=0 ; $j<scalar @{$patterns->[$i]} ; ++$j ){
+						$newPatterns[$i] = $patterns->[$i][$j];
+						$self->_find_inpath_rec( $args, $opts, \@newPatterns, $rootDir );
+						last LOOP if $self->{_findable}{end};
+					}
+				}
+			}
+			# each part of the specs is a scalar, so just test that
+			if( !$haveArray ){
+				$self->_find_single( $args, $opts, File::Spec->catfile( $rootDir, @{$patterns} ));
+			}
+		} else {
+			msgErr( __PACKAGE__."::_find_inpath_rec() unexpected final ref='$ref'" );
+		}
+	} else {
+		$self->_find_single( $args, $opts, File::Spec->catfile( $rootDir, $patterns ));
+	}
+}
+
+# test here for each candidate file
+
+sub _find_single {
+	my ( $self, $args, $opts, $candidate ) = @_;
+	print __PACKAGE__."::_find_single() testing '$candidate'".EOL;
+	if( -r $candidate ){
+		push( @{$self->{_findable}{candidates}}, $candidate );
+		my $accepted = true;
+		if( $self->does( 'TTP::Acceptable' ) && $opts->{acceptable} ){
+			$accepted = $self->accept( $opts->{acceptable}, $candidate );
+		}
+		if( $accepted ){
+			push( @{$self->{_findable}{accepted}}, $candidate );
+			#$self->{_findable}{end} = true unless $self->{_findable}{wantsAll};
+			print __PACKAGE__."::_find_inpath() candidate='$candidate' is accepted".EOL;
+		}
+	}
+}
+
+# search for the patterns in the specified path
+# the provided finder contains a non-empty patterns array
+# each item maybe a scalar (a single file specification), or an array of scalars (specs must be concatened), or an array of arrays of scalars (intermediary array scalars must be tested)
+
+sub _find_inpath_rec2 {
+	my ( $self, $path, $args, $specs ) = @_;
 	my $result = undef;
-	my $ref = ref( $specs );
+	my $ref = '';#ref( $finder->{dirs} );
 	if( $ref && $ref ne 'ARRAY' ){
 		msgErr( __PACKAGE__."::_find_inpath_rec() unexpected final ref='$ref'" );
 	} elsif( $ref eq 'ARRAY' ){

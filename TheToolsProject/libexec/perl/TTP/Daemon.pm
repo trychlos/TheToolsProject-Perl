@@ -51,11 +51,12 @@ use Config;
 use Data::Dumper;
 use File::Spec;
 use IO::Socket::INET;
+use Proc::Background;
 use Role::Tiny::With;
 use Time::Piece;
 use vars::global qw( $ttp );
 
-with 'TTP::JSONable';
+with 'TTP::Enableable', 'TTP::Findable', 'TTP::JSONable';
 
 use TTP;
 use TTP::Constants qw( :all );
@@ -82,13 +83,129 @@ my $Const = {
 		terminate => \&do_terminate
 	},
 	# how to find the daemons configuration files
-	finder => [
-		'etc/daemons',
-		'daemons'
-	]
+	finder => {
+		patterns => [
+			'etc/daemons/*.json',
+			'daemons/*.json'
+		]
+	}
 };
 
 ### Private methods
+
+### Public methods
+
+# ------------------------------------------------------------------------------------------------
+# Returns whether the daemon is enabled (as a reason to not be successful)
+# (I):
+# - none
+# (O):
+# - returns true|false
+
+sub enabled {
+	my ( $self ) = @_;
+
+	return $self->{_enabled};
+}
+
+# ------------------------------------------------------------------------------------------------
+# Returns the execPath of the daemon
+# This is a mandatory configuration item.
+# (I):
+# - none
+# (O):
+# - returns the execPath
+
+sub execPath {
+	my ( $self ) = @_;
+
+	return $self->jsonData()->{execPath};
+}
+
+# ------------------------------------------------------------------------------------------------
+# Returns the listening port of the daemon
+# This is a mandatory configuration item.
+# (I):
+# - none
+# (O):
+# - returns the listening port
+
+sub listeningPort {
+	my ( $self ) = @_;
+
+	return $self->jsonData()->{listeningPort};
+}
+
+# ------------------------------------------------------------------------------------------------
+# Returns the canonical name of the daemon which happens to be the basename of its configuration file
+# (I):
+# - none
+# (O):
+# - returns the name of the daemon, or undef if the initialization has not been successful
+
+sub name {
+	my ( $self ) = @_;
+
+	return undef if !$self->success();
+	
+	my $path = $self->jsonPath();
+	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $path );
+
+	return $bname;
+}
+
+# ------------------------------------------------------------------------------------------------
+# Start the daemon
+# (I):
+# - none
+# (O):
+# - returns true|false
+
+sub start {
+	my ( $self ) = @_;
+
+	my $program = $self->execPath();
+	msgErr( "daemon configuration must define an 'execPath' value, not found" ) if !$program;
+	msgErr( "execPath='$program' not found or not readable" ) if ! -r $program;
+
+	if( !TTP::errs()){
+		my $proc = Proc::Background->new( "perl $program -json ".$self->jsonPath()." ".join( ' ', @ARGV ));
+		if( $proc ){
+			$self->{_proc} = $proc;
+			$self->{_started} = true;
+		} else {
+			msgErr( "unable to start '$program_path'" );
+		}
+	}
+
+	return $self->{_started};
+}
+
+# ------------------------------------------------------------------------------------------------
+# Returns whether the daemon has been successfully started
+# (I):
+# - none
+# (O):
+# - returns true|false
+
+sub started {
+	my ( $self ) = @_;
+
+	return $self->{_started};
+}
+
+# ------------------------------------------------------------------------------------------------
+# Returns whether the daemon configuration file has been successfully loaded and evaluated
+# (I):
+# - none
+# (O):
+# - returns true|false
+
+sub success {
+	my ( $self ) = @_;
+
+	return $self->{_success};
+}
 
 ### Class methods
 
@@ -130,9 +247,12 @@ sub finder {
 
 # -------------------------------------------------------------------------------------------------
 # Constructor
+# We never abort if we cannot find or load the daemon configuration file. We set instead the 'success'
+# flag that the caller MUST test.
 # (I]:
 # - the TTP EP entry point
 # - an argument object with following keys:
+#   > path: the absolute path to the JSON configuration file
 # (O):
 # - this object
 
@@ -142,6 +262,30 @@ sub new {
 	$args //= {};
 	my $self = $class->SUPER::new( $ttp );
 	bless $self, $class;
+
+	$self->{_success} = false;
+	$self->{_enabled} = true;
+	$self->{_started} = false;
+
+	# if a path is specified, then we try to load it
+	# this is after that raw load that we can test for enability
+	if( $args->{path} ){
+		$self->{_success} = $self->jsonLoad({ path => $args->{path} });
+		if( $self->{_success} ){
+			my $data = $self->jsonData();
+			$self->{_enabled} = $data->{enabled} if exists $data->{enabled};
+			if( !$self->{_enabled} ){
+				msgVerbose( __PACKAGE__."::new() path='$args->{path}' enabled=false" );
+				$self->{_success} = false;
+			}
+		}
+	}
+
+	# evaluate the data if success
+	if( $self->{_success} ){
+		$self->evaluate();
+	}
+
 	return $self;
 }
 

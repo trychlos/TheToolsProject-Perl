@@ -18,6 +18,14 @@
 #
 # A role for classes which have a JSON configuration file.
 #
+# The jsonLoad() method is expected to be called at instanciation time with arguments:
+# - json specifications
+#   either as a 'finder' object to be provided to the Findable::find() method
+#      in this case, find() will examine all specified files until having found an
+#      accepted one (or none)
+#   or as a 'path' object
+#      in which case, this single object must also be an accepted one.
+#
 # Note: JSON configuration files are allowed to embed some dynamically evaluated Perl code.
 # As the evaluation is executed here, this module may have to 'use' the needed Perl packages
 # which are not yet in the running context.
@@ -165,12 +173,21 @@ sub jsonData {
 
 # -------------------------------------------------------------------------------------------------
 # Load the specified JSON configuration file
+# This method is expected to be called at instanciation time.
+#
 # (I]:
 # - an argument object with following keys:
-#   > spec: the specification to be searched for in TTP_ROOTS tree, as a scalar or as an array ref
-#     or as an array of array refs
-#   or:
-#   > path: the absolute exact path to be loaded
+
+#	> path: the path as a string
+#     in which case, this single object must also be an accepted one
+#   or
+#   > findable: an arguments object to be passed to Findable::find() method
+#     in this case, find() will examine all specified files until having found an accepted one (or none)
+#   This is an unrecoverable error to have both 'findable' and 'path' in the arguments object
+#   or to have none of these keys.
+#
+#   > acceptable: an arguments object to be passed to Acceptable::accept() method
+#
 # (O):
 # - true if a file or the specified file has been found and successfully loaded
 # 
@@ -180,31 +197,66 @@ sub jsonLoad {
 	$args //= {};
 
 	# keep the passed-in args
-	$self->{_jsonable}{spec} = $args->{spec} if $args->{spec};
-	$self->{_jsonable}{path} = $args->{path} if $args->{path};
+	$self->{_jsonable}{args} = \%{$args};
 
 	# if a path is specified, the we want this one absolutely
-	if( $self->{_jsonable}{path} ){
-		$self->{_jsonable}{json} = $self->{_jsonable}{path};
-	# else find the first suitable file in TTP_ROOTS and keep its path
+	if( $args->{path} ){
+		$self->{_jsonable}{json} = File::Spec->rel2abs( $args->{path} );
+		if( $self->{_jsonable}{json} ){
+			if( $self->does( 'TTP::Acceptable' ) && $self->accept( $args->{path} )){
+				$self->{_jsonable}{loadable} = true;
+			}
+		}
+
+	# else hope that the class is also a Findable
+	# if a Findable, it will itself manages the Acceptable role
+	} elsif( $self->does( 'TTP::Findable' ) && $args->{findable} ){
+		my $res = $self->find( $args->{findable}, $args );
+		if( $res ){
+			my $ref = ref( $res );
+			if( $ref eq 'ARRAY' ){
+				$self->{_jsonable}{json} = $res->[0] if scalar @{$res};
+			} elsif( !$ref ){
+				$self->{_jsonable}{json} = $res;
+			} else {
+				msgErr( __PACKAGE__."::jsonLoad() expects scalar of array from Findable::find(), received '$ref'" );
+			}
+			$self->{_jsonable}{loadable} = true if $self->{_jsonable}{json};
+		}
+
+	# else we have no way to find the file: this is an unrecoverable error
 	} else {
-		$self->{_jsonable}{json} = $self->find( $args ) if $args->{spec};
+		msgErr( __PACKAGE__."::jsonLoad() must have 'path' argument, or be a 'Findable' and have a 'findable' argument" );
 	}
 
 	# load the raw JSON data
-	my $result = undef;
-	$self->{_jsonable}{loaded} = false;
-	$result = $self->jsonRead( $self->{_jsonable}{json} ) if $self->{_jsonable}{json};
-	if( defined( $result )){
-		$self->{_jsonable}{loaded} = true;
-		$self->{_jsonable}{raw} = $result;
+	if( $self->{_jsonable}{loadable} ){
+		my $result = undef;
+		$result = $self->jsonRead( $self->{_jsonable}{json} );
+		if( defined( $result )){
+			$self->{_jsonable}{loaded} = true;
+			$self->{_jsonable}{raw} = $result;
+		}
+
+		# initialize the evaluated part, even if not actually evaluated, so that jsonData()
+		# can at least returns raw - unevaluated - data
+		$self->{_jsonable}{evaluated} = $self->{_jsonable}{raw};
 	}
-
-	# initialize the evaluated part, even if not actually evaluated, so that jsonData()
-	# can at least returns raw - unevaluated - data
-	#$self->{_jsonable}{evaluated} = $self->{_jsonable}{raw};
-
+	
 	return $self->{_jsonable}{loaded};
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the full path to the JSON file
+# (I):
+# - none
+# (O):
+# returns the path
+
+sub jsonPath {
+	my ( $self ) = @_;
+
+	return $self->{_jsonable}{json};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -245,7 +297,7 @@ sub jsonRead {
 # (O):
 # - true|false
 
-sub jsonSuccess {
+sub jsonLoaded {
 	my ( $self ) = @_;
 
 	return $self->{_jsonable}{loaded};
@@ -263,6 +315,9 @@ after _newBase => sub {
 	my ( $self, $ttp ) = @_;
 
 	$self->{_jsonable} //= {};
+	$self->{_jsonable}{loadable} = false;
+	$self->{_jsonable}{json} = undef;
+	$self->{_jsonable}{loaded} = false;
 };
 
 ### Global functions

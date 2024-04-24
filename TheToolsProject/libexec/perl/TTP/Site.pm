@@ -17,6 +17,10 @@
 # see <http://www.gnu.org/licenses/>.
 #
 # Manage the site configuration as a site context
+#
+# Instanciation may abort and exit immediately with code=1 if site configuration not found or with
+# unknown keys. Because of that, we do not have any 'success()' method: the returned instance can
+# be considered valid by the caller.
 
 package TTP::Site;
 
@@ -40,6 +44,7 @@ my $Const = {
 	# either exact keys or anything which ends with 'comments'
 	keys => [
 		'comments$',
+		'^enabled$',
 		'^site$',
 		'^toops$',
 		'^TTP$'
@@ -108,6 +113,7 @@ sub finder {
 
 # -------------------------------------------------------------------------------------------------
 # Constructor
+# May abort and exit immediately with code=1 if site configuration not found or with unknown keys.
 # (I]:
 # - the TTP EP entry point
 # (O):
@@ -123,10 +129,14 @@ sub new {
 	# try to load and evaluate the JSON configuration file with the list of allowed ending paths
 	#  specs here is a ref to an array of arrays which have to be successively tested (so an array
 	#  inside of an array)
-	my $success = $self->jsonLoad({ spec => [ $class->finder() ] });
+	my $findable = {
+		patterns => [ $class->finder() ],
+		wantsAll => false
+	};
+	my $loaded = $self->jsonLoad({ findable => $findable });
 
 	# unable to find and load a site configuration file ? this is an unrecoverable error
-	if( !$success ){
+	if( !$loaded ){
 		msgErr( "Unable to find the site configuration file among [".( join( ',', @{$class->finder()}))."]" );
 		msgErr( "Please make sure that the file exists in one of the TTP_ROOTS paths" );
 		msgErr( "Exiting with code 1" );

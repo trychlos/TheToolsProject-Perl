@@ -24,9 +24,6 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 
-use File::Spec;
-use Proc::Background;
-
 use TTP::Daemon;
 
 my $defaults = {
@@ -51,11 +48,11 @@ sub doListJSON {
 	foreach my $it ( @{$dirs} ){
 		push @jsons, glob( File::Spec->catdir( $it, '*.json' ));
 	}
-	# only keep first found for each basename
+	# only keep first enabled found for each basename
 	my $kepts = {};
 	foreach my $it ( @jsons ){
-		my ( $vol, $dirs, $file ) = File::Spec->splitpath( $it );
-		$kepts->{$file} = $it if !exists( $kepts->{$file} );
+		my $daemon = TTP::Daemon->new( $ttp, { path => $it });
+		$kepts->{$daemon->name()} = $it if !exists( $kepts->{$file} ) && $daemon->success();
 	}
 	# and list in ascii order
 	foreach my $it ( sort keys %{$kepts} ){
