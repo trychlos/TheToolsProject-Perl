@@ -65,7 +65,7 @@ sub listCommands {
 	}
 	# and display them in ascii order
 	foreach my $it ( sort keys %{$uniqs} ){
-		TTP::Command::helpOneline( $uniqs->{$it}, { prefix => ' ' });
+		TTP::Command->helpOneline( $uniqs->{$it}, { prefix => ' ' });
 		$count += 1;
 	}
 	msgOut( "$count found command(s)" );

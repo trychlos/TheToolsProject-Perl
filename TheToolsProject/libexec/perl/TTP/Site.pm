@@ -96,6 +96,17 @@ sub disallowed {
 ### Class methods
 
 # -------------------------------------------------------------------------------------------------
+# Returns the (hardcoded) site specifications
+# (I]:
+# - none
+# (O):
+# - Returns the Const->{finder} specification as an array ref
+
+sub finder {
+	return $Const->{finder};
+}
+
+# -------------------------------------------------------------------------------------------------
 # Constructor
 # (I]:
 # - the TTP EP entry point
@@ -112,11 +123,11 @@ sub new {
 	# try to load and evaluate the JSON configuration file with the list of allowed ending paths
 	#  specs here is a ref to an array of arrays which have to be successively tested (so an array
 	#  inside of an array)
-	my $success = $self->jsonLoad({ spec => [ TTP::Site->finder() ] });
+	my $success = $self->jsonLoad({ spec => [ $class->finder() ] });
 
 	# unable to find and load a site configuration file ? this is an unrecoverable error
 	if( !$success ){
-		msgErr( "Unable to find the site configuration file among [".( join( ',', @{TTP::Site->finder()}))."]" );
+		msgErr( "Unable to find the site configuration file among [".( join( ',', @{$class->finder()}))."]" );
 		msgErr( "Please make sure that the file exists in one of the TTP_ROOTS paths" );
 		msgErr( "Exiting with code 1" );
 		exit( 1 );
@@ -148,19 +159,9 @@ sub DESTROY {
 }
 
 ### Global functions
-
-# -------------------------------------------------------------------------------------------------
-# Publish the site specifications
-# Can be called both as 'TTP::Site->finder()' or as 'TTP::Site::finder()' as we do not manage any
-# argument here.
-# (I]:
-# - none
-# (O):
-# - Returns the Const->{finder} specification as an array ref
-
-sub finder {
-	return $Const->{finder};
-}
+### Note for the developer: while a global function doesn't take any argument, it can be called both
+### as a class method 'TTP::Package->method()' or as a global function 'TTP::Package::method()',
+### the former being preferred (hence the writing inside of the 'Class methods' block).
 
 1;
 

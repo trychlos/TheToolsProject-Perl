@@ -4,7 +4,7 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
-# @(-) --[no]confdir           display the path to the directory which contains daemons configuration [${confdir}]
+# @(-) --[no]confDirs          display the list of directories which may contain daemons configuration [${confDirs}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -24,23 +24,23 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 
-use TTP::Path;
-
-my $TTPVars = TTP::TTPVars();
+use TTP::Daemon;
 
 my $defaults = {
 	help => 'no',
 	colored => 'no',
 	dummy => 'no',
 	verbose => 'no',
-	confdir => 'no'};
+	confDirs => 'no'
+};
 
-my $opt_confdir = false;
+my $opt_confDirs = false;
 
 # -------------------------------------------------------------------------------------------------
-# list confdir value - e.g. 'C:\INLINGUA\configurations\daemons'
+# list confDirs value - e.g. 'C:\INLINGUA\configurations\daemons'
+
 sub listConfdir {
-	my $str = "confDir: ".TTP::Path::daemonsConfigurationsDir();
+	my $str = "confDirs: [".( join( ',', @{TTP::Daemon->configurationsDirs()} ))."]";
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }
@@ -54,7 +54,7 @@ if( !GetOptions(
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
-	"confdir!"			=> \$opt_confdir )){
+	"confDirs!"			=> \$opt_confDirs )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -68,10 +68,10 @@ if( $running->help()){
 msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
-msgVerbose( "found confdir='".( $opt_confdir ? 'true':'false' )."'" );
+msgVerbose( "found confDirs='".( $opt_confDirs ? 'true':'false' )."'" );
 
 if( !TTP::errs()){
-	listConfdir() if $opt_confdir;
+	listConfdir() if $opt_confDirs;
 }
 
 TTP::exit();

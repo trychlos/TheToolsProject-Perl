@@ -27,9 +27,7 @@
 use File::Spec;
 use Proc::Background;
 
-use TTP::Path;
-
-my $TTPVars = TTP::TTPVars();
+use TTP::Daemon;
 
 my $defaults = {
 	help => 'no',
@@ -42,24 +40,29 @@ my $defaults = {
 my $opt_json = false;
 
 # -------------------------------------------------------------------------------------------------
-# display available JSON configuration files
+# display available JSON configuration files in ASCII order, once for each basename
+
 sub doListJSON {
 	msgOut( "displaying available JSON configuration files..." );
-	my $json_path = TTP::Path::daemonsConfigurationsDir();
-	opendir( my $dh, $json_path ) or msgErr( "opendir $json_path: $!" );
-	if( !TTP::errs()){
-		my $count = 0;
-		my $sufixed_path = TTP::Path::withTrailingSeparator( $json_path );
-		while( readdir( $dh )){
-			if( $_ ne '.' && $_ ne '..' ){
-				my $json = File::Spec->catpath( $sufixed_path, $_ );
-				print "  $json".EOL;
-				$count += 1;
-			}
-		}
-		closedir( $dh );
-		msgOut( "found $count JSON configuration files" );
+	my $dirs = TTP::Daemon->configurationsDirs();
+	my @jsons = ();
+	my $count = 0;
+	# gather all available jsons
+	foreach my $it ( @{$dirs} ){
+		push @jsons, glob( File::Spec->catdir( $it, '*.json' ));
 	}
+	# only keep first found for each basename
+	my $kepts = {};
+	foreach my $it ( @jsons ){
+		my ( $vol, $dirs, $file ) = File::Spec->splitpath( $it );
+		$kepts->{$file} = $it if !exists( $kepts->{$file} );
+	}
+	# and list in ascii order
+	foreach my $it ( sort keys %{$kepts} ){
+		print "  $kepts->{$it}".EOL;
+		$count += 1;
+	}
+	msgOut( "$count found daemon JSON configuration files" );
 }
 
 # =================================================================================================

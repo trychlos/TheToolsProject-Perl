@@ -114,6 +114,17 @@ sub success {
 ### Class methods
 
 # -------------------------------------------------------------------------------------------------
+# Returns the list of dirs where nodes are to be found
+# (I]:
+# - none
+# (O):
+# - Returns the Const->{finder} specification as an array ref
+
+sub finder {
+	return $Const->{finder};
+}
+
+# -------------------------------------------------------------------------------------------------
 # Constructor
 # (I]:
 # - the TTP EP entry point
@@ -135,7 +146,7 @@ sub new {
 	my $node = $args->{node} || _hostname();
 
 	# allowed nodesDirs can be configured at site-level
-	my $dirs = $ttp->var( 'nodesDirs' ) || TTP::Node->finder();
+	my $dirs = $ttp->var( 'nodesDirs' ) || $class->finder();
 	my $success = $self->jsonLoad({ spec => [ $dirs, "$node.json" ], accept => sub { $self->_acceptable( @_ ) }});
 
 	# unable to find and load the node configuration file ? this is an unrecoverable error
@@ -166,19 +177,9 @@ sub DESTROY {
 }
 
 ### Global functions
-
-# -------------------------------------------------------------------------------------------------
-# Publish the list of dirs here nodes are to be found
-# Can be called both as 'TTP::Node->finder()' or as 'TTP::Node::finder()' as we do not manage any
-# argument here.
-# (I]:
-# - none
-# (O):
-# - Returns the Const->{finder} specification as an array ref
-
-sub finder {
-	return $Const->{finder};
-}
+### Note for the developer: while a global function doesn't take any argument, it can be called both
+### as a class method 'TTP::Package->method()' or as a global function 'TTP::Package::method()',
+### the former being preferred (hence the writing inside of the 'Class methods' block).
 
 1;
 

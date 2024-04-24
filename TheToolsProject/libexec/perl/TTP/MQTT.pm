@@ -9,11 +9,12 @@ use warnings;
 
 use Data::Dumper;
 use Net::MQTT::Simple;
+use vars::global qw( $ttp );
 
+use TTP;
 use TTP::Constants qw( :all );
 use TTP::Credentials;
 use TTP::Message qw( :all );
-use TTP;
 
 $ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 1;
 

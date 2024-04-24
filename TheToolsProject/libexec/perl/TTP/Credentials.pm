@@ -9,11 +9,12 @@ use warnings;
 
 use Data::Dumper;
 use File::Spec;
+use vars::global qw( $ttp );
 
+use TTP;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Path;
-use TTP;
 
 # ------------------------------------------------------------------------------------------------
 # Returns the found credentials

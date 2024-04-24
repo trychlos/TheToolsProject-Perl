@@ -22,7 +22,6 @@
 	],
 	"site": {
 		"commandsDir": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'SiteResources', 'Commands' )]",
-		"daemonsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'daemons' )]",
 		"workloadSummary_comments": [
 			"manage macros: SUBJECT, OPTIONS"
 		],
@@ -147,7 +146,7 @@
 		"logsDaily_comments": [
 			"The (per-node overridable) daily root of the logs tree",
 			"Rationale: having a per-day or per-week or per-month logs tree is the easiest way in order to periodically purge the logs.",
-			"This is not mandatry at all, and the default is to stick to the 'logsRoot' value",
+			"This is not mandatory at all, and the default is to stick to the 'logsRoot' value",
 			"The 'logsDaily' directory can be got by the user via the 'ttp.pl vars --logsDaily' command"
 		],
 		"logsDaily": "[eval:File::Spec->catdir( TTP::logsRoot(), localtime->strftime( '%y%m%d' ))]",

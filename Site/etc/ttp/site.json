@@ -1,7 +1,6 @@
 {
 	"site": {
 		"commandsDir": "[eval:File::Spec->catdir( TTP::nodeRoot(), 'SiteResources', 'Commands' )]",
-		"daemonsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'daemons' )]",
 		"workloadSummary_comments": [
 			"manage macros: SUBJECT, OPTIONS"
 		],

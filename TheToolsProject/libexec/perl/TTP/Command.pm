@@ -138,7 +138,7 @@ sub commandHelp {
 
 	msgVerbose( "helpCommand()" );
 	# display the command one-line help
-	helpOneline( $self->runnablePath());
+	ref( $self )->helpOneline( $self->runnablePath());
 	# display each verb one-line help
 	my @verbs = $self->_getVerbs();
 	my $verbsHelp = {};
@@ -236,7 +236,7 @@ sub verbHelp {
 
 	msgVerbose( "helpVerb()" );
 	# display the command one-line help
-	helpOneline( $self->runnablePath());
+	ref( $self )->helpOneline( $self->runnablePath());
 	# verb pre-usage
 	my @verbHelp = TTP::grepFileByRegex( $self->{_verb}{path}, $Const->{commentPre}, { warnIfSeveral => false });
 	my $verbInline = '';
@@ -271,6 +271,30 @@ sub verbHelp {
 ### Class methods
 
 # -------------------------------------------------------------------------------------------------
+# Returns const needed by 'ttp.pl list --commands'
+
+sub finder {
+	return $Const->{finder};
+}
+
+# -------------------------------------------------------------------------------------------------
+# Display the command one-liner help
+# (I):
+# - the full path to the command
+# - an optional options hash with following keys:
+#   > prefix: the line prefix, defaulting to ''
+
+sub helpOneline {
+	my ( $class, $command_path, $opts ) = @_;
+	$opts //= {};
+	my $prefix = '';
+	$prefix = $opts->{prefix} if exists( $opts->{prefix} );
+	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $command_path );
+	my @commandHelp = TTP::grepFileByRegex( $command_path, $Const->{commentPre} );
+	print "$prefix$bname: $commandHelp[0]".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Constructor
 # (I]:
 # - the TTP EP entry point
@@ -303,30 +327,9 @@ sub DESTROY {
 }
 
 ### Global functions
-
-# -------------------------------------------------------------------------------------------------
-# Returns const needed by 'ttp.pl list --commands'
-
-sub finder {
-	return $Const->{finder};
-}
-
-# -------------------------------------------------------------------------------------------------
-# Display the command one-liner help
-# (I):
-# - the full path to the command
-# - an optional options hash with following keys:
-#   > prefix: the line prefix, defaulting to ''
-
-sub helpOneline {
-	my ( $command_path, $opts ) = @_;
-	$opts //= {};
-	my $prefix = '';
-	$prefix = $opts->{prefix} if exists( $opts->{prefix} );
-	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $command_path );
-	my @commandHelp = TTP::grepFileByRegex( $command_path, $Const->{commentPre} );
-	print "$prefix$bname: $commandHelp[0]".EOL;
-}
+### Note for the developer: while a global function doesn't take any argument, it can be called both
+### as a class method 'TTP::Package->method()' or as a global function 'TTP::Package::method()',
+### the former being preferred (hence the writing inside of the 'Class methods' block).
 
 1;
 
