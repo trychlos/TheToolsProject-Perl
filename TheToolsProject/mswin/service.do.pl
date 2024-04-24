@@ -1,9 +1,9 @@
 # @(#) manage Windows services
 #
 # @(-) --[no]help              print this message, and exit [${help}]
-# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --name=<name>           apply to the named service [${name}]
 # @(-) --[no]state             query the service state [${state}]
 # @(-) --[no]mqtt              publish the result as a MQTT telemetry [${mqtt}]
@@ -11,20 +11,31 @@
 #
 # @(@) Other options may be provided to this script after a '--' double dash, and will be passed to the 'telemetry.pl publish' verb.
 #
-# Copyright (@) 2023-2024 PWI Consulting
-
-use Data::Dumper;
-
-use TTP::Constants qw( :all );
-use TTP::Message qw( :all );
+# The Tools Project: a Tools System and Paradigm for IT Production
+# Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
+# Copyright (©) 2023-2024 PWI Consulting
+#
+# The Tools Project is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# The Tools Project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with The Tools Project; see the file COPYING. If not,
+# see <http://www.gnu.org/licenses/>.
 
 my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
-	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
+	verbose => 'no',
 	name => '',
 	state => 'no',
 	mqtt => 'no',
@@ -128,9 +139,9 @@ sub doServiceState {
 
 if( !GetOptions(
 	"help!"				=> \$ttp->{run}{help},
-	"verbose!"			=> \$ttp->{run}{verbose},
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
+	"verbose!"			=> \$ttp->{run}{verbose},
 	"name=s"			=> \$opt_name,
 	"state!"			=> \$opt_state,
 	"mqtt!"				=> \$opt_mqtt,
@@ -145,9 +156,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found name='$opt_name'" );
 msgVerbose( "found state='".( $opt_state ? 'true':'false' )."'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );

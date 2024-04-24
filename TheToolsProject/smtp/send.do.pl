@@ -1,9 +1,9 @@
 # @(#) send an email using the configured SMTP gateway
 #
 # @(-) --[no]help              print this message, and exit [${help}]
-# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --subject=<subject>     the email subject [${subject}]
 # @(-) --text=<text>           the text body [${text}]
 # @(-) --textfname=<filename>  the filename which contains the text body [${textfname}]
@@ -12,22 +12,35 @@
 # @(-) --to=<to>               a comma-separated list of target email addresses [${to}]
 # @(-) --[no]debug             debug the SMTP transport phase [${debug}]
 #
-# Copyright (@) 2023-2024 PWI Consulting
+# The Tools Project: a Tools System and Paradigm for IT Production
+# Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
+# Copyright (©) 2023-2024 PWI Consulting
+#
+# The Tools Project is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# The Tools Project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with The Tools Project; see the file COPYING. If not,
+# see <http://www.gnu.org/licenses/>.
 
-use Data::Dumper;
 use Path::Tiny;
 
-use TTP::Constants qw( :all );
-use TTP::Message qw( :all );
 use TTP::SMTP;
 
 my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
-	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
+	verbose => 'no',
 	subject => '',
 	text => '',
 	textfname => '',
@@ -82,9 +95,9 @@ sub doSend {
 
 if( !GetOptions(
 	"help!"				=> \$ttp->{run}{help},
-	"verbose!"			=> \$ttp->{run}{verbose},
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
+	"verbose!"			=> \$ttp->{run}{verbose},
 	"subject=s"			=> \$opt_subject,
 	"text=s"			=> \$opt_text,
 	"textfname=s"		=> \$opt_textfname,
@@ -102,9 +115,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found subject='$opt_subject'" );
 msgVerbose( "found text='$opt_text'" );
 msgVerbose( "found textfname='$opt_textfname'" );
