@@ -41,22 +41,21 @@ my $opt_json = false;
 
 sub doListJSON {
 	msgOut( "displaying available JSON configuration files..." );
-	my $dirs = TTP::Daemon->configurationsDirs();
-	my @jsons = ();
 	my $count = 0;
-	# gather all available jsons
-	foreach my $it ( @{$dirs} ){
-		push @jsons, glob( File::Spec->catdir( $it, '*.json' ));
-	}
+	my $findable = {
+		dirs => [ TTP::Daemon->dirs() ],
+		glob => '*'.TTP::Daemon->finder()->{sufix}
+	};
+	my $jsons = $running->find( $findable );
 	# only keep first enabled found for each basename
 	my $kepts = {};
-	foreach my $it ( @jsons ){
+	foreach my $it ( @{$jsons} ){
 		my $daemon = TTP::Daemon->new( $ttp, { path => $it });
-		$kepts->{$daemon->name()} = $it if !exists( $kepts->{$file} ) && $daemon->success();
+		$kepts->{$daemon->name()} = $it if !exists( $kepts->{$file} ) && $daemon->loaded();
 	}
 	# and list in ascii order
 	foreach my $it ( sort keys %{$kepts} ){
-		print "  $kepts->{$it}".EOL;
+		print " $kepts->{$it}".EOL;
 		$count += 1;
 	}
 	msgOut( "$count found daemon JSON configuration files" );

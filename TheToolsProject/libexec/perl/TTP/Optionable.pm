@@ -47,7 +47,7 @@ use TTP::Message qw( :all );
 ### All subs created after importing Role::Tiny will be considered methods to be composed.
 use Role::Tiny;
 
-requires qw( _newBase );
+requires qw( _newBase run );
 
 # -------------------------------------------------------------------------------------------------
 # Getter
@@ -149,17 +149,6 @@ before run => sub {
 };
 
 ### Global functions
-
-# -------------------------------------------------------------------------------------------------
-# Interpret command-line options
-# (I):
-# - none
-# (O):
-# - whether the run is verbose: true|false
-
-sub xGetOptions {
-	print "GetOptions".EOL;
-};
 
 1;
 

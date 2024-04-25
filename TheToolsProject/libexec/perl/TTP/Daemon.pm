@@ -56,7 +56,7 @@ use Role::Tiny::With;
 use Time::Piece;
 use vars::global qw( $ttp );
 
-with 'TTP::Enableable', 'TTP::Findable', 'TTP::JSONable';
+with 'TTP::Enableable', 'TTP::Acceptable', 'TTP::Findable', 'TTP::Helpable', 'TTP::JSONable', 'TTP::Optionable', 'TTP::Runnable';
 
 use TTP;
 use TTP::Constants qw( :all );
@@ -97,19 +97,6 @@ my $Const = {
 ### Public methods
 
 # ------------------------------------------------------------------------------------------------
-# Returns whether the daemon is enabled (as a reason to not be successful)
-# (I):
-# - none
-# (O):
-# - returns true|false
-
-sub enabled {
-	my ( $self ) = @_;
-
-	return $self->{_enabled};
-}
-
-# ------------------------------------------------------------------------------------------------
 # Returns the execPath of the daemon
 # This is a mandatory configuration item.
 # (I):
@@ -138,6 +125,19 @@ sub listeningPort {
 }
 
 # ------------------------------------------------------------------------------------------------
+# Returns whether the daemon configuration has been successfully loaded
+# (I):
+# - none
+# (O):
+# - returns true|false
+
+sub loaded {
+	my ( $self ) = @_;
+
+	return $self->jsonLoaded();
+}
+
+# ------------------------------------------------------------------------------------------------
 # Returns the canonical name of the daemon which happens to be the basename of its configuration file
 # (I):
 # - none
@@ -147,7 +147,7 @@ sub listeningPort {
 sub name {
 	my ( $self ) = @_;
 
-	return undef if !$self->success();
+	return undef if !$self->loaded();
 	
 	my $path = $self->jsonPath();
 	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $path );
@@ -155,7 +155,19 @@ sub name {
 	return $bname;
 }
 
+# -------------------------------------------------------------------------------------------------
+# Set the JSON configuration path post instanciation (daemon child)
+
+sub path {
+	my ( $self, $json ) = @_;
+
+	$self->jsonLoad({ path => $json });
+
+	return $self->loaded();
+}
+
 # ------------------------------------------------------------------------------------------------
+# Parent process
 # Start the daemon
 # (I):
 # - none
@@ -183,6 +195,7 @@ sub start {
 }
 
 # ------------------------------------------------------------------------------------------------
+# Parent process
 # Returns whether the daemon has been successfully started
 # (I):
 # - none
@@ -195,44 +208,7 @@ sub started {
 	return $self->{_started};
 }
 
-# ------------------------------------------------------------------------------------------------
-# Returns whether the daemon configuration file has been successfully loaded and evaluated
-# (I):
-# - none
-# (O):
-# - returns true|false
-
-sub success {
-	my ( $self ) = @_;
-
-	return $self->{_success};
-}
-
 ### Class methods
-
-# ------------------------------------------------------------------------------------------------
-# Returns the list of directories in which we may find daemons configuration files
-# (I):
-# - none
-# (O):
-# - returns the list of directories which may contain the JSON daemons configuration files as
-#   an array ref
-
-sub configurationsDirs {
-	my ( $class ) = @_;
-	$class = ref( $class ) || $class;
-
-	my $dirs = [];
-	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
-	my $specs = $class->dirs();
-	foreach my $it ( @roots ){
-		foreach my $sub ( @{$specs} ){
-			push( @{$dirs}, File::Spec->catdir( $it, $sub ));
-		}
-	}
-
-	return $dirs;
-}
 
 # ------------------------------------------------------------------------------------------------
 # Returns the list of subdirectories of TTP_ROOTS in which we may find daemons configuration files
@@ -264,12 +240,30 @@ sub finder {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Run by the daemon program
+# Initialize the TTP environment as soon as possible
+# Instanciating the Daemon also initialize the underlying Runnable
+
+sub init {
+	my ( $class ) = @_;
+	$class = ref( $class ) || $class;
+
+	$ttp = TTP::EP->new();
+	$ttp->bootstrap();
+
+	my $daemon = $class->new( $ttp );
+	$daemon->run();
+
+	return $daemon;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Constructor
-# We never abort if we cannot find or load the daemon configuration file. We set instead the 'success'
-# flag that the caller MUST test.
+# We never abort if we cannot find or load the daemon configuration file. We rely instead on the
+# 'jsonable-loaded' flag that the caller MUST test.
 # (I]:
 # - the TTP EP entry point
-# - an argument object with following keys:
+# - an optional argument object with following keys:
 #   > path: the absolute path to the JSON configuration file
 # (O):
 # - this object
@@ -281,26 +275,24 @@ sub new {
 	my $self = $class->SUPER::new( $ttp );
 	bless $self, $class;
 
-	$self->{_success} = false;
-	$self->{_enabled} = true;
 	$self->{_started} = false;
+	my $loaded = false;
+
+	my $acceptable = {
+		accept => sub { return $self->enabled( @_ ); },
+		opts => {
+			type => 'JSON'
+		}
+	};
 
 	# if a path is specified, then we try to load it
-	# this is after that raw load that we can test for enability
-	if( $args->{path} ){
-		$self->{_success} = $self->jsonLoad({ path => $args->{path} });
-		if( $self->{_success} ){
-			my $data = $self->jsonData();
-			$self->{_enabled} = $data->{enabled} if exists $data->{enabled};
-			if( !$self->{_enabled} ){
-				msgVerbose( __PACKAGE__."::new() path='$args->{path}' enabled=false" );
-				$self->{_success} = false;
-			}
-		}
+	# JSOnable role takes care of validating the acceptability and the enable-ity
+	if( $args && $args->{path} ){
+		$loaded = $self->jsonLoad({ path => $args->{path}, acceptable => $acceptable });
 	}
 
 	# evaluate the data if success
-	if( $self->{_success} ){
+	if( $loaded ){
 		$self->evaluate();
 	}
 
@@ -559,7 +551,7 @@ sub getSleepTime {
 # (O):
 # returns the TTPVars variable
 
-sub init {
+sub init_old {
 	my ( $opts ) = @_;
 	$opts //= {};
 
@@ -596,7 +588,7 @@ sub init {
 # - socket: the created listening socket
 # - sleep: the sleep interval
 # - listenInterval: computed runtime value
-sub run {
+sub run_old {
 	my ( $json ) = @_;
 	my $daemon = undef;
 

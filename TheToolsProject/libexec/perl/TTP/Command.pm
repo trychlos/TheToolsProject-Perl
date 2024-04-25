@@ -38,7 +38,7 @@ use Role::Tiny::With;
 use Try::Tiny;
 use vars::global qw( $ttp );
 
-with 'TTP::Findable', 'TTP::Optionable', 'TTP::Runnable';
+with 'TTP::Findable', 'TTP::Helpable', 'TTP::Optionable', 'TTP::Runnable';
 
 use TTP;
 use TTP::Constants qw( :all );
@@ -54,10 +54,7 @@ my $Const = {
 		'Toops',
 		'TTP'
 	],
-	commentPre => '^# @\(#\) ',
-	commentPost => '^# @\(@\) ',
-	commentUsage => '^# @\(-\) ',
-	verbSed => '\.do\.pl',
+	verbSed => '\.do\.pl$',
 	verbSufix => '.do.pl',
 	# these constants are needed to 'ttp.pl list --commands'
 	finder => {
@@ -77,12 +74,22 @@ my $Const = {
 
 sub _getVerbs {
 	my ( $self ) = @_;
-
+	# get all available verbs
+	my $findable = {
+		dirs => [ $self->runnableBNameShort() ],
+		glob => '*'.$Const->{verbSufix}
+	};
+	my $verbs = $self->find( $findable );
+	# get only unique available verbs
+	my $uniqs = {};
+	foreach my $it ( @{$verbs} ){
+		my ( $vol, $dirs, $file ) = File::Spec->splitpath( $it );
+		$uniqs->{$file} = $it if !exists( $uniqs->{$file} );
+	}
 	my @verbs = ();
-	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
-	foreach my $it ( @roots ){
-		my $dir = File::Spec->catdir( $it, $self->runnableBNameShort());
-		push @verbs, glob( File::Spec->catdir( $dir, "*".$Const->{verbSufix} ));
+	# and display them in ascii order
+	foreach my $it ( sort keys %{$uniqs} ){
+		push( @verbs, $uniqs->{$it} );
 	}
 
 	return @verbs;
@@ -137,24 +144,24 @@ sub command {
 
 sub commandHelp {
 	my ( $self ) = @_;
+	msgVerbose( __PACKAGE__."::commandHelp()" );
 
-	msgVerbose( "helpCommand()" );
 	# display the command one-line help
-	ref( $self )->helpOneline( $self->runnablePath());
+	$self->helpOneline( $self->runnablePath());
+
 	# display each verb one-line help
 	my @verbs = $self->_getVerbs();
 	my $verbsHelp = {};
 	foreach my $it ( @verbs ){
-		my @fullHelp = TTP::grepFileByRegex( $it, $Const->{commentPre}, { warnIfSeveral => false });
+		my @fullHelp = $self->helpPre( $it, { warnIfSeveral => false });
 		my ( $volume, $directories, $file ) = File::Spec->splitpath( $it );
 		my $verb = $file;
-		$verb =~ s/$Const->verbSed}$//;
+		$verb =~ s/$Const->{verbSed}$//;
 		$verbsHelp->{$verb} = $fullHelp[0];
 	}
+
 	# verbs are displayed alpha sorted
-	@verbs = keys %{$verbsHelp};
-	my @sorted = sort @verbs;
-	foreach my $it ( @sorted ){
+	foreach my $it ( sort keys %{$verbsHelp} ){
 		print "  $it: $verbsHelp->{$it}".EOL;
 	}
 
@@ -247,9 +254,9 @@ sub verbHelp {
 
 	msgVerbose( "helpVerb()" );
 	# display the command one-line help
-	ref( $self )->helpOneline( $self->runnablePath());
+	$self->helpOneline( $self->runnablePath());
 	# verb pre-usage
-	my @verbHelp = TTP::grepFileByRegex( $self->{_verb}{path}, $Const->{commentPre}, { warnIfSeveral => false });
+	my @verbHelp = $self->helpPre( $self->{_verb}{path}, { warnIfSeveral => false });
 	my $verbInline = '';
 	if( scalar @verbHelp ){
 		$verbInline = shift @verbHelp;
@@ -259,7 +266,7 @@ sub verbHelp {
 		print "    $line".EOL;
 	}
 	# verb usage
-	@verbHelp = TTP::grepFileByRegex( $self->{_verb}{path}, $Const->{commentUsage}, { warnIfSeveral => false });
+	@verbHelp = $self->helpUsage( $self->{_verb}{path}, { warnIfSeveral => false });
 	if( scalar @verbHelp ){
 		print "    Usage: ".$self->command()." ".$self->verb()." [options]".EOL;
 		print "    where available options are:".EOL;
@@ -269,7 +276,7 @@ sub verbHelp {
 		}
 	}
 	# verb post-usage
-	@verbHelp = TTP::grepFileByRegex( $self->{_verb}{path}, $Const->{commentPost}, { warnIfNone => false, warnIfSeveral => false });
+	@verbHelp = $self->helpPost( $self->{_verb}{path}, { warnIfNone => false, warnIfSeveral => false });
 	if( scalar @verbHelp ){
 		foreach my $line ( @verbHelp ){
 			print "    $line".EOL;
@@ -289,23 +296,6 @@ sub finder {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Display the command one-liner help
-# (I):
-# - the full path to the command
-# - an optional options hash with following keys:
-#   > prefix: the line prefix, defaulting to ''
-
-sub helpOneline {
-	my ( $class, $command_path, $opts ) = @_;
-	$opts //= {};
-	my $prefix = '';
-	$prefix = $opts->{prefix} if exists( $opts->{prefix} );
-	my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $command_path );
-	my @commandHelp = TTP::grepFileByRegex( $command_path, $Const->{commentPre} );
-	print "$prefix$bname: $commandHelp[0]".EOL;
-}
-
-# -------------------------------------------------------------------------------------------------
 # Constructor
 # (I]:
 # - the TTP EP entry point
@@ -313,10 +303,9 @@ sub helpOneline {
 # - this object
 
 sub new {
-	my ( $class, $ttp, $args ) = @_;
+	my ( $class, $ttp ) = @_;
 	$class = ref( $class ) || $class;
-	$args //= {};
-	my $self = $class->SUPER::new( $ttp, $args );
+	my $self = $class->SUPER::new( $ttp );
 	bless $self, $class;
 
 	# command initialization

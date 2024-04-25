@@ -40,7 +40,15 @@ my $opt_confDirs = false;
 # list confDirs value - e.g. 'C:\INLINGUA\configurations\daemons'
 
 sub listConfdir {
-	my $str = "confDirs: [".( join( ',', @{TTP::Daemon->configurationsDirs()} ))."]";
+	my $dirs = [];
+	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
+	my $specs = TTP::Daemon->dirs();
+	foreach my $it ( @roots ){
+		foreach my $sub ( @{$specs} ){
+			push( @{$dirs}, File::Spec->catdir( $it, $sub ));
+		}
+	}
+	my $str = "confDirs: [".( join( ',', @{$dirs} ))."]";
 	msgVerbose( "returning '$str'" );
 	print " $str".EOL;
 }

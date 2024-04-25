@@ -49,22 +49,25 @@ use TTP::Site;
 # (O):
 # - returns this same object
 
+my $bootstrapDebugInstanciation = false;
+my $bootstrapDebugEvaluation = false;
+
 sub bootstrap {
 	my ( $self, $args ) = @_;
 
 	# first identify, load, evaluate the site configuration - exit if error
 	my $site = TTP::Site->new( $self );
-	#print __PACKAGE__."::bootstrap() site instanciated".EOL;
+	print __PACKAGE__."::bootstrap() site instanciated".EOL if $bootstrapDebugInstanciation;
 	$self->{_site} = $site;
 	$site->evaluate();
-	#print __PACKAGE__."::bootstrap() site set and evaluated".EOL;
+	print __PACKAGE__."::bootstrap() site set and evaluated".EOL if $bootstrapDebugEvaluation;
 
 	# identify current host (remind that there is no logical node in this Perl version) and load its configuration
 	my $node = TTP::Node->new( $self );
-	#print __PACKAGE__."::bootstrap() node instanciated".EOL;
+	print __PACKAGE__."::bootstrap() node instanciated".EOL if $bootstrapDebugInstanciation;
 	$self->{_node} = $node;
 	$node->evaluate();
-	#print __PACKAGE__."::bootstrap() node set and evaluated".EOL;
+	print __PACKAGE__."::bootstrap() node set and evaluated".EOL if $bootstrapDebugEvaluation;
 
 	# reevaluate the site when the node is set
 	$site->evaluate();

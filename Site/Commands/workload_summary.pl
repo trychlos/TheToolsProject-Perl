@@ -4,9 +4,9 @@
 # @(#) along with their exit code in 'rc' environment variable.
 #
 # @(-) --[no]help              print this message, and exit [${help}]
-# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --workload=<name>       the workload name [${workload}]
 # @(-) --commands=<name>       the name of the environment variable which holds the commands [${commands}]
 # @(-) --start=<name>          the name of the environment variable which holds the starting timestamp [${start}]
@@ -14,7 +14,23 @@
 # @(-) --rc=<name>             the name of the environment variable which holds the return codes [${rc}]
 # @(-) --count=<count>         the count of commands to deal with [${count}]
 #
-# Copyright (@) 2023-2024 PWI Consulting
+# The Tools Project: a Tools System and Paradigm for IT Production
+# Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
+# Copyright (©) 2023-2024 PWI Consulting
+#
+# The Tools Project is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# The Tools Project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with The Tools Project; see the file COPYING. If not,
+# see <http://www.gnu.org/licenses/>.
 #
 # This script is mostly written like a TTP verb but is not. This is an example of how to take advantage of TTP
 # to write your own (rather pretty and efficient) scripts.
@@ -26,15 +42,16 @@ use Path::Tiny;
 use TTP;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
+use vars::global qw( $ttp );
 
 # TTP initialization
 my $TTPVars = TTP::initExtern();
 
 my $defaults = {
 	help => 'no',
-	verbose => 'no',
 	colored => 'no',
 	dummy => 'no',
+	verbose => 'no',
 	workload => '',
 	commands => 'command',
 	start => 'start',
@@ -143,9 +160,9 @@ sub printSummary {
 
 if( !GetOptions(
 	"help!"				=> \$ttp->{run}{help},
-	"verbose!"			=> \$ttp->{run}{verbose},
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
+	"verbose!"			=> \$ttp->{run}{verbose},
 	"workload=s"		=> \$opt_workload,
 	"commands=s"		=> \$opt_commands,
 	"start=s"			=> \$opt_start,
@@ -158,13 +175,13 @@ if( !GetOptions(
 }
 
 if( $running->help()){
-	TTP::helpExtern( $defaults );
+	$daemon->helpExtern( $defaults );
 	TTP::exit();
 }
 
-msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found workload='$opt_workload'" );
 msgVerbose( "found commands='$opt_commands'" );
 msgVerbose( "found start='$opt_start'" );

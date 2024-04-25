@@ -203,8 +203,11 @@ sub jsonLoad {
 	if( $args->{path} ){
 		$self->{_jsonable}{json} = File::Spec->rel2abs( $args->{path} );
 		if( $self->{_jsonable}{json} ){
-			if( $self->does( 'TTP::Acceptable' ) && $self->accept( $args->{path} )){
-				$self->{_jsonable}{loadable} = true;
+			if( $self->does( 'TTP::Acceptable' ) && $args->{acceptable} ){
+				$args->{acceptable}{object} = $args->{path};
+				if( $self->accept( $args->{acceptable} )){
+					$self->{_jsonable}{loadable} = true;
+				}
 			}
 		}
 
@@ -243,6 +246,19 @@ sub jsonLoad {
 		$self->{_jsonable}{evaluated} = $self->{_jsonable}{raw};
 	}
 	
+	return $self->jsonLoaded();
+}
+
+# -------------------------------------------------------------------------------------------------
+# Says if the JSON raw data has been successfully loaded
+# (I]:
+# - none
+# (O):
+# - true|false
+
+sub jsonLoaded {
+	my ( $self ) = @_;
+
 	return $self->{_jsonable}{loaded};
 }
 
@@ -288,19 +304,6 @@ sub jsonRead {
 		}
 	}
 	return $result;
-}
-
-# -------------------------------------------------------------------------------------------------
-# Says if the JSON raw data has been successfully loaded
-# (I]:
-# - none
-# (O):
-# - true|false
-
-sub jsonLoaded {
-	my ( $self ) = @_;
-
-	return $self->{_jsonable}{loaded};
 }
 
 # -------------------------------------------------------------------------------------------------

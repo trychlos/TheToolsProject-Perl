@@ -43,6 +43,17 @@ use Role::Tiny;
 requires qw( _newBase );
 
 # -------------------------------------------------------------------------------------------------
+# A placeholder run() method which does nothing but may be called even if the implementation doesn't
+# need it - Let Optionable auto-initialize
+# (I):
+# - none
+# (O):
+# - nothing
+
+sub run {
+};
+
+# -------------------------------------------------------------------------------------------------
 # Getter
 # (I):
 # - none
@@ -88,7 +99,7 @@ sub runnableErrs {
 # (O):
 # - returns the current count of errors
 
-sub runnableIncErr {
+sub runnableErrInc {
 	my ( $self ) = @_;
 
 	$self->{_runnable}{errs} += 1;
@@ -156,7 +167,7 @@ after _newBase => sub {
 
 	my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
 	$self->{_runnable}{basename} = $file;
-	$file =~ s/\.[^.]+$//;
+	$file =~ s/\.[^\.]+$//;
 	$self->{_runnable}{namewoext} = $file;
 
 	$ttp->setRunning( $self );

@@ -172,7 +172,7 @@ sub msgErr {
 		handle => \*STDERR
 	});
 	my $running = $ttp->running();
-	$running->runnableIncErr() if $running;
+	$running->runnableErrInc() if $running;
 }
 
 # -------------------------------------------------------------------------------------------------

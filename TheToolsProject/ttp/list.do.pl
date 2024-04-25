@@ -77,10 +77,9 @@ sub listNodes {
 	msgOut( "displaying available nodes..." );
 	my $count = 0;
 	# list all nodes in all TTP_ROOTS trees
-	my $finder = TTP::Node->finder();
 	my $findable = {
-		dirs => [ $finder->{dirs} ],
-		glob => '*'.$finder->{sufix}
+		dirs => [ TTP::Node->dirs() ],
+		glob => '*'.TTP::Node->finder()->{sufix}
 	};
 	my $nodes = $running->find( $findable );
 	# get only unique available nodes
