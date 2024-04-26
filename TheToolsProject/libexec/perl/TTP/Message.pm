@@ -163,16 +163,18 @@ sub msgDummy {
 # - increments the exit code
 
 sub msgErr {
-	# let have a stack trace
-	#TTP::stackTrace();
-	# and send the message
-	_printMsg({
-		msg => shift,
-		level => ERR,
-		handle => \*STDERR
-	});
-	my $running = $ttp->running();
-	$running->runnableErrInc() if $running;
+	if( defined( $ttp )){
+		# let have a stack trace
+		#TTP::stackTrace();
+		# and send the message
+		_printMsg({
+			msg => shift,
+			level => ERR,
+			handle => \*STDERR
+		});
+		my $running = $ttp->running();
+		$running->runnableErrInc() if $running;
+	}
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -297,55 +299,57 @@ sub msgWarn {
 
 sub _printMsg {
 	my ( $args ) = @_;
-	$args //= {};
-	my $line = '';
-	my $configured = undef;
-	my $running = $ttp->running();
-	# have a prefix ?
-	my $withPrefix = true;
-	$withPrefix = $args->{withPrefix} if exists $args->{withPrefix};
-	$line .= _msgPrefix() if $withPrefix;
-	# have a level marker ?
-	my $level = INFO;
-	$level = $args->{level} if exists $args->{level};
-	my $marker = '';
-	$marker = $Const->{$level}{marker} if exists $Const->{$level}{marker};
-	$configured = undef;
-	$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'marker' ]) if exists $Const->{$level}{key};
-	$marker = $configured if defined $configured;
-	$line .= $marker;
-	$line .= $args->{msg} if exists $args->{msg};
-	# writes in log ?
-	my $withLog = true;
-	$configured = undef;
-	$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'withLog' ]) if exists $Const->{$level}{key};
-	$withLog = $configured if defined $configured;
-	_msgLogAppend( $line ) if $withLog;
-	# output to the console ?
-	my $withConsole = true;
-	$withConsole = $args->{withConsole} if exists $args->{withConsole};
-	if( $withConsole ){
-		# print a colored line ?
-		# global runtime option is only considered if not disabled in toops/host configuration
-		my $withColor = true;
+	if( defined(  $ttp )){
+		$args //= {};
+		my $line = '';
+		my $configured = undef;
+		my $running = $ttp->running();
+		# have a prefix ?
+		my $withPrefix = true;
+		$withPrefix = $args->{withPrefix} if exists $args->{withPrefix};
+		$line .= _msgPrefix() if $withPrefix;
+		# have a level marker ?
+		my $level = INFO;
+		$level = $args->{level} if exists $args->{level};
+		my $marker = '';
+		$marker = $Const->{$level}{marker} if exists $Const->{$level}{marker};
 		$configured = undef;
-		$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'withColor' ]) if exists $Const->{$level}{key};
-		#print __PACKAGE__."::_printMsg() configured='".( defined $configured ? $configured : '(undef)' )."'".EOL if $level eq "VERBOSE";
-		$withColor = $configured if defined $configured;
-		$withColor = $running->colored() if $running && $running->coloredSet();
-		my $colorstart = '';
-		my $colorend = '';
-		if( $withColor ){
-			$colorstart = color( $Const->{$level}{color} ) if exists( $Const->{$level}{color} );
+		$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'marker' ]) if exists $Const->{$level}{key};
+		$marker = $configured if defined $configured;
+		$line .= $marker;
+		$line .= $args->{msg} if exists $args->{msg};
+		# writes in log ?
+		my $withLog = true;
+		$configured = undef;
+		$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'withLog' ]) if exists $Const->{$level}{key};
+		$withLog = $configured if defined $configured;
+		_msgLogAppend( $line ) if $withLog;
+		# output to the console ?
+		my $withConsole = true;
+		$withConsole = $args->{withConsole} if exists $args->{withConsole};
+		if( $withConsole ){
+			# print a colored line ?
+			# global runtime option is only considered if not disabled in toops/host configuration
+			my $withColor = true;
 			$configured = undef;
-			$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'color' ]) if exists $Const->{$level}{key};
-			$colorstart = color( $configured ) if defined $configured;
-			$colorend = color( 'reset' );
+			$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'withColor' ]) if exists $Const->{$level}{key};
+			#print __PACKAGE__."::_printMsg() configured='".( defined $configured ? $configured : '(undef)' )."'".EOL if $level eq "VERBOSE";
+			$withColor = $configured if defined $configured;
+			$withColor = $running->colored() if $running && $running->coloredSet();
+			my $colorstart = '';
+			my $colorend = '';
+			if( $withColor ){
+				$colorstart = color( $Const->{$level}{color} ) if exists( $Const->{$level}{color} );
+				$configured = undef;
+				$configured = $ttp->var([ 'Message',  $Const->{$level}{key}, 'color' ]) if exists $Const->{$level}{key};
+				$colorstart = color( $configured ) if defined $configured;
+				$colorend = color( 'reset' );
+			}
+			# print on which handle ?
+			my $handle = \*STDOUT;
+			$handle = $args->{handle} if exists $args->{handle};
+			print $handle "$colorstart$line$colorend".EOL;
 		}
-		# print on which handle ?
-		my $handle = \*STDOUT;
-		$handle = $args->{handle} if exists $args->{handle};
-		print $handle "$colorstart$line$colorend".EOL;
 	}
 }
 

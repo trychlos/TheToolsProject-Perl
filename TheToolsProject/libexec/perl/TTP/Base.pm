@@ -32,6 +32,8 @@ use warnings;
 use Carp;
 use Data::Dumper;
 
+use TTP::Constants qw( :all );
+
 ### Private methods
 
 # -------------------------------------------------------------------------------------------------
@@ -80,8 +82,9 @@ sub new {
 
 	# keep the TTP EP ref
 	$self->{_ttp} = $ttp;
+	print "(ERR) ".__PACKAGE__."::new() 'ttp' is not defined but is mandatory".EOL if !defined $ttp;
 
-	# let the role insert their own code at that time
+	# let the roles insert their own code at that time
 	$self->_newBase( $ttp );
 
 	return $self;
@@ -95,7 +98,6 @@ sub new {
 
 sub DESTROY {
 	my $self = shift;
-	#print "L'objet de la classe " . __PACKAGE__ . " va mourir\n";
 	return;
 }
 
