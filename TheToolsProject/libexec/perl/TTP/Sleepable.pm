@@ -66,14 +66,7 @@ sub _isCallable {
 
 	my $callable = false;
 	if( $last ){
-		my $now = time();
-		#print __PACKAGE__."::_isCallable() now='$now'".EOL;
-		#print __PACKAGE__."::_isCallable() last='$last'".EOL;
-		#print __PACKAGE__."::_isCallable() interval_ms='$interval'".EOL;
-		#print __PACKAGE__."::_isCallable() diff='".( $now - $last )."'".EOL;
 		my $diff_ms = ( time() - $last ) * 1000.0;
-		#print __PACKAGE__."::_isCallable() now='$now' last='$last' diff='".$now-$last."' interval_ms='$interval'".EOL;
-		#print __PACKAGE__."::_isCallable() last='$last' diff_ms='$diff_ms' interval_ms='$interval'".EOL;
 		$callable = ( $diff_ms > $interval );
 	} else {
 		$callable = true;
@@ -160,7 +153,7 @@ sub sleepableStart {
 			my $loop = $min / 10.0;
 			# the sleep time is usec
 			my $uloop = 1000.0 * $loop;
-			print __PACKAGE__."::sleepableStart() found min='$min' sec., compute loop='$loop' sec., uloop='$uloop' usecs.".EOL;
+			#print __PACKAGE__."::sleepableStart() found min='$min' sec., compute loop='$loop' sec., uloop='$uloop' usecs.".EOL;
 
 			# get seconds and microseconds since the epoch
 			#my ( $s, $usec ) = gettimeofday();

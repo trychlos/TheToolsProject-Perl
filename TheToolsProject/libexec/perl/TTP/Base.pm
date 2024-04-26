@@ -46,7 +46,7 @@ use TTP::Constants qw( :all );
 # - this same object
 
 sub _newBase {
-	my ( $self, $ttp ) = @_;
+	my ( $self, $ttp, $args ) = @_;
 	return $self;
 }
 
@@ -89,7 +89,7 @@ sub new {
 	}
 
 	# let the roles insert their own code at that time
-	$self->_newBase( $ttp );
+	$self->_newBase( $ttp, $args );
 
 	return $self;
 }

@@ -371,7 +371,6 @@ sub execPath {
 
 sub listen {
 	my ( $self, $commands ) = @_;
-	print __PACKAGE__."::listen()".EOL;
 	$commands //= {};
 
 	# before anything else, reevalute our configurations
@@ -515,12 +514,6 @@ sub setConfig {
 		$loaded = $self->jsonLoad({ path => $args->{json}, acceptable => $acceptable });
 		# evaluate the data if success
 		if( $loaded ){
-			# set a runnable qualifier as soon as we can
-			my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $self->jsonPath());
-			$bname =~ s/\.[^\.]*$//;
-			$self->runnableSetQualifier( $bname );
-
-			# we can now may evaluate...
 			$self->evaluate();
 
 			# must have a listening port
@@ -534,6 +527,11 @@ sub setConfig {
 			if( TTP::errs()){
 				$self->jsonLoaded( false );
 			} else {
+				# set a runnable qualifier as soon as we can
+				my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $self->jsonPath());
+				$bname =~ s/\.[^\.]*$//;
+				$self->runnableSetQualifier( $bname );
+				# and initialize llistening socket and messaging connection
 				$self->_daemonize();
 			}
 		}
@@ -643,6 +641,7 @@ sub finder {
 sub init {
 	my ( $class ) = @_;
 	$class = ref( $class ) || $class;
+	#print __PACKAGE__."::init()".EOL;
 
 	$ttp = TTP::EP->new();
 	$ttp->bootstrap();
@@ -669,7 +668,7 @@ sub new {
 	my ( $class, $ttp, $args ) = @_;
 	$class = ref( $class ) || $class;
 	$args //= {};
-	my $self = $class->SUPER::new( $ttp );
+	my $self = $class->SUPER::new( $ttp, $args );
 	bless $self, $class;
 
 	$self->{_initialized} = false;

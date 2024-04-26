@@ -11,6 +11,7 @@
 # @(-) --[no]logsDaily         display the TTP daily root [${logsDaily}]
 # @(-) --[no]logsCommands      display the current TTP logs directory [${logsCommands}]
 # @(-) --[no]logsMain          display the current TTP main logs file [${logsMain}]
+# @(-) --[no]alertsDir         display the configured alerts directory [${alertsDir}]
 # @(-) --key=<name[,...]>      the key which addresses the desired value, may be specified several times or as a comma-separated list [${key}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
@@ -45,6 +46,7 @@ my $defaults = {
 	logsDaily => 'no',
 	logsCommands => 'no',
 	logsMain => 'no',
+	alertsDir => 'no',
 	key => ''
 };
 
@@ -57,6 +59,15 @@ my $opt_logsCommands = false;
 my $opt_logsMain = false;
 my $opt_alertsDir = false;
 my @opt_keys = ();
+
+# -------------------------------------------------------------------------------------------------
+# Display the configured alertsDir
+
+sub listAlertsDir {
+	my $str = "alertsDir: ".TTP::alertsDir();
+	msgVerbose( "returning '$str'" );
+	print " $str".EOL;
+}
 
 # -------------------------------------------------------------------------------------------------
 # Display the value accessible through the route of the provided successive keys
@@ -145,6 +156,7 @@ if( !GetOptions(
 	"logsDaily!"		=> \$opt_logsDaily,
 	"logsCommands!"		=> \$opt_logsCommands,
 	"logsMain!"			=> \$opt_logsMain,
+	"alertsDir!"		=> \$opt_alertsDir,
 	"key=s"				=> \@opt_keys )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
@@ -166,10 +178,12 @@ msgVerbose( "found logsRoot='".( $opt_logsRoot ? 'true':'false' )."'" );
 msgVerbose( "found logsDaily='".( $opt_logsDaily ? 'true':'false' )."'" );
 msgVerbose( "found logsCommands='".( $opt_logsCommands ? 'true':'false' )."'" );
 msgVerbose( "found logsMain='".( $opt_logsMain ? 'true':'false' )."'" );
+msgVerbose( "found alertsDir='".( $opt_alertsDir ? 'true':'false' )."'" );
 @opt_keys= split( /,/, join( ',', @opt_keys ));
 msgVerbose( "found keys='".join( ',', @opt_keys )."'" );
 
 if( !TTP::errs()){
+	listAlertsdir() if $opt_alertsDir;
 	listLogsdaily() if $opt_logsDaily;
 	listLogscommands() if $opt_logsCommands;
 	listLogsmain() if $opt_logsMain;

@@ -47,17 +47,12 @@ my $opt_json = $defaults->{json};
 
 sub doStart {
 	msgOut( "starting the daemon from '$opt_json'..." );
-	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json });
+	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json, runnable => { running => false }});
 	if( $daemon->loaded()){
-		# must have a listening port
-		msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemon->listeningPort();
-		if( !TTP::errs()){
-			$daemon->start();
-			if( $daemon->started()){
-				msgOut( "success" );
-			} else {
-				msgErr( "NOT OK" );
-			}
+		if( $daemon->start()){
+			msgOut( "success" );
+		} else {
+			msgErr( "NOT OK" );
 		}
 	} else {
 		msgErr( "unable to load the '$opt_json' specified configuration file" );

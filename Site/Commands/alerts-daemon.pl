@@ -130,7 +130,6 @@ sub wanted {
 # -------------------------------------------------------------------------------------------------
 # do its work
 sub works {
-	print __PACKAGE__."::works()".EOL;
 	@runningScan = ();
 	find( \&wanted, configMonitoredDir());
 	if( scalar @runningScan < scalar @previousScan ){
@@ -187,4 +186,4 @@ $daemon->sleepableDeclareFn( sub => \&works, interval => configScanInterval() );
 
 $daemon->sleepableStart();
 
-TTP::Daemon::terminate( $daemon );
+$daemon->terminate();

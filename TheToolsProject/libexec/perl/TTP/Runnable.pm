@@ -171,7 +171,8 @@ sub runnableSetQualifier {
 # -none
 
 after _newBase => sub {
-	my ( $self, $ttp ) = @_;
+	my ( $self, $ttp, $args ) = @_;
+	$args //= {};
 
 	$self->{_runnable} //= {};
 	$self->{_runnable}{me} = $0;
@@ -184,7 +185,10 @@ after _newBase => sub {
 	$file =~ s/\.[^\.]+$//;
 	$self->{_runnable}{namewoext} = $file;
 
-	$ttp->setRunning( $self );
+	my $running = true;
+	$running = $args->{runnable}{running} if $args->{runnable} && exists $args->{runnable}{running};
+	#print __PACKAGE__."::_newBase() ".ref( $self )." running='$running'".EOL;
+	$ttp->setRunning( $self ) if $running;
 };
 
 ### Global functions

@@ -64,6 +64,18 @@ my $Const = {
 my $TTPVars = {};
 
 # -------------------------------------------------------------------------------------------------
+# Returns the configured alertsDir (when alerts are sent by file), defaultin gto tempDir()
+# (I):
+# - none
+# (O):
+# - returns the alertsdir
+
+sub alertsDir {
+	my $dir = $ttp->var([ 'alerts', 'withFile', 'dropDir' ]) || tempDir();
+	return $dir;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Execute a command dependant of the running OS.
 # This is expected to be configured in TOOPS.json as TOOPS => {<key>} => {command}
 # where command may have some keywords to be remplaced before execution
