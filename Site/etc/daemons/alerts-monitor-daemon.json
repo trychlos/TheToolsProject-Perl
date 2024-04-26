@@ -6,7 +6,5 @@
 	"execPath0": "[eval:File::Spec->catfile( TTP::var([ 'site', 'commandsDir' ]), 'alerts-daemon.pl' )]",
 	"execPath": "[eval:File::Spec->catfile( 'C:\\INLINGUA\\dev\\scripts\\Site\\Commands', 'alerts-daemon.pl' )]",
 	"listeningPort": 14391,
-	"listenInterval" : 2,
-	"scanInterval" : 5,
-	"monitoredDir": "[eval:TTP::var([ 'alerts', 'withFile', 'dropDir' ])]"
+	"scanInterval" : 5000
 }

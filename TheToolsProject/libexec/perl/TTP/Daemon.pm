@@ -28,8 +28,8 @@
 # - enabled: whether this configuration is enabled
 # - execPath: the full path to the program to be executed as the main code of the daemon
 # - listeningPort: the listening port number
-# - listeningInterval: the interval in sec. between two listening loops
-# - messagingInterval: either false (do not advertize to messaging system), or the advertizing interval
+# - listeningInterval: the interval in ms. between two listening loops
+# - messagingInterval: either zero (do not advertize to messaging system), or the advertizing interval in ms
 #
 # Also the daemon writer mmust be conscious of the dynamic character of TheToolsProject.
 # In particular and at least, many output directories (logs, temp files and so on) may be built on a daily basis.
@@ -69,10 +69,10 @@ use TTP::MQTT;
 
 use constant {
 	BUFSIZE => 4096,
-	MIN_LISTEN_INTERVAL => 1,
-	DEFAULT_LISTEN_INTERVAL => 5,
-	MIN_MESSAGING_INTERVAL => 10,
-	DEFAULT_MESSAGING_INTERVAL => 60,
+	MIN_LISTEN_INTERVAL => 500,
+	DEFAULT_LISTEN_INTERVAL => 1000,
+	MIN_MESSAGING_INTERVAL => 5000,
+	DEFAULT_MESSAGING_INTERVAL => 60000,
 	OFFLINE => "offline"
 };
 
@@ -160,6 +160,19 @@ sub _do_terminate {
 ### Private methods
 
 # ------------------------------------------------------------------------------------------------
+# the daemon advertize of its status every 'messagingInterval' seconds (defaults to 60)
+
+sub _advertize {
+	my ( $self ) = @_;
+	if( $self->{_mqtt} ){
+		my $topic = $self->_topic();
+		my $payload = $self->_running();
+		msgLog( "$topic [$payload]" );
+		$self->{_mqtt}->retain( $topic, $payload );
+	}
+}
+
+# ------------------------------------------------------------------------------------------------
 # initialize the TTP daemon
 # when entering here, the JSON config has been successfully read, evaluated and checked
 # (I):
@@ -234,6 +247,26 @@ sub _topic {
 }
 
 ### Public methods
+
+# ------------------------------------------------------------------------------------------------
+# Declare the commom sleepable functions
+# (I):
+# - the daemon-specific commands as a hash ref
+# (O):
+# - this same object
+
+sub declareSleepables {
+	my ( $self, $commands ) = @_;
+
+	$self->sleepableDeclareFn( sub => sub { $self->listen( $commands ); }, interval => $self->listeningInterval() );
+
+	my $msgInterval = $self->messagingInterval();
+	$self->sleepableDeclareFn( sub => sub { $self->_advertize(); }, interval => $msgInterval ) if $msgInterval > 0;
+
+	$self->sleepableDeclareStop( sub => sub { return $self->terminating(); });
+
+	return $self;
+}
 
 # ------------------------------------------------------------------------------------------------
 # the daemon answers to the client
@@ -329,8 +362,6 @@ sub execPath {
 # this is needed to cover running when day changes and be sure that we are logging into the right file
 # (I):
 # - the hash of commands defined by the daemon
-# - an optional ref to the hash which holds the daemon configuration
-#   it is re-evaluated if provided
 # (O):
 # returns undef or a hash with:
 # - client socket
@@ -339,15 +370,16 @@ sub execPath {
 # - args
 
 sub listen {
-	my ( $self, $commands, $config ) = @_;
+	my ( $self, $commands ) = @_;
+	print __PACKAGE__."::listen()".EOL;
 	$commands //= {};
 
 	# before anything else, reevalute our configurations
 	# -> the daemon config
 	$self->evaluate();
-	$config = $self->jsonData() if defined $config;
 	# -> toops+site and execution host configurations
-	$self->ttp()->evaluate();
+	$ttp->site()->evaluate();
+	$ttp->node()->evaluate();
 
 	my $client = $self->{_socket}->accept();
 	my $result = undef;
@@ -369,9 +401,6 @@ sub listen {
 		my $answer = $self->doCommand( $result, $commands );
 		$self->doAnswer( $result, $answer );
 	}
-
-	# advertize the daemon status to the messaging system if asked for
-	$self->advertize();
 
 	return $result;
 }
@@ -671,56 +700,5 @@ sub DESTROY {
 ### Note for the developer: while a global function doesn't take any argument, it can be called both
 ### as a class method 'TTP::Package->method()' or as a global function 'TTP::Package::method()',
 ### the former being preferred (hence the writing inside of the 'Class methods' block).
-
-###
-###
-###
-
-# ------------------------------------------------------------------------------------------------
-# the daemon advertize of its status every 'messagingInterval' seconds (defaults to 60)
-sub daemonAdvertize {
-	my ( $daemon ) = @_;
-	my $now = localtime->epoch;
-	if( !$daemon->{lastAdvertized} || $now-$daemon->{lastAdvertized} >= $daemon->{messagingInterval} ){
-		my $topic = _topic( $daemon->{name} );
-		my $payload = _running();
-		msgLog( "$topic [$payload]" );
-		if( $daemon->{mqtt} ){
-			$daemon->{mqtt}->retain( $topic, $payload );
-		}
-		$daemon->{lastAdvertized} = $now;
-	}
-}
-
-# ------------------------------------------------------------------------------------------------
-# evaluate the raw daemon configuration
-# (I):
-# - the raw config
-# (O):
-# - the evaluated result hash
-sub getEvaluatedConfig {
-	my ( $config ) = @_;
-	my $evaluated = $config;
-	$evaluated = TTP::evaluate( $evaluated );
-	return $evaluated;
-}
-
-# ------------------------------------------------------------------------------------------------
-# read and returns the raw daemon configuration
-# (I):
-# - the daemon configuration file path
-# (O):
-# - the raw result hash
-sub getRawConfigByPath {
-	my ( $json ) = @_;
-	msgVerbose( "Daemon::getRawConfigByPath() json='$json'" );
-	my $result = TTP::jsonRead( $json );
-	my $ref = ref( $result );
-	if( $ref ne 'HASH' ){
-		msgErr( "Daemon::getRawConfigByPath() expected a hash, found a ".( $ref || 'scalar' ));
-		$result = undef;
-	}
-	return $result;
-}
 
 1;

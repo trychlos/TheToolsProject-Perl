@@ -18,12 +18,12 @@
 #
 # Let several tasks have different sleep intervals.
 #
-# First declare all your tasks:
-#   sleepableDeclareFn( sub, interval )
+# First declare all your tasks (with ms intervals):
+#   sleepableDeclareFn( sub => sub, interval => interval )
 #
 # Do not omit to declare a stop function:
 # It will be called every second to see if the loop may continue.
-#   sleepableDeclareStop( sub )
+#   sleepableDeclareStop( sub => sub )
 #   The stop() function is called with this object as a single parameter.
 #   Must return a truethy value to stop the infinite loop.
 #
@@ -36,7 +36,7 @@ use strict;
 use warnings;
 
 use Data::Dumper;
-use Time::Hires qw( time usleep );
+use Time::HiRes qw( time usleep );
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
@@ -45,6 +45,13 @@ my $Const = {
 };
 
 ### Private methods
+
+### Public methods
+### https://metacpan.org/pod/Role::Tiny
+### All subs created after importing Role::Tiny will be considered methods to be composed.
+use Role::Tiny;
+
+requires qw( _newBase );
 
 # -------------------------------------------------------------------------------------------------
 # See if a function has reached its requested interval
@@ -60,7 +67,14 @@ sub _isCallable {
 	my $callable = false;
 	if( $last ){
 		my $now = time();
-		$callable = ( $now - $last > 1000*$interval );
+		#print __PACKAGE__."::_isCallable() now='$now'".EOL;
+		#print __PACKAGE__."::_isCallable() last='$last'".EOL;
+		#print __PACKAGE__."::_isCallable() interval_ms='$interval'".EOL;
+		#print __PACKAGE__."::_isCallable() diff='".( $now - $last )."'".EOL;
+		my $diff_ms = ( time() - $last ) * 1000.0;
+		#print __PACKAGE__."::_isCallable() now='$now' last='$last' diff='".$now-$last."' interval_ms='$interval'".EOL;
+		#print __PACKAGE__."::_isCallable() last='$last' diff_ms='$diff_ms' interval_ms='$interval'".EOL;
+		$callable = ( $diff_ms > $interval );
 	} else {
 		$callable = true;
 	}
@@ -68,35 +82,28 @@ sub _isCallable {
 	return $callable;
 }
 
-### Public methods
-### https://metacpan.org/pod/Role::Tiny
-### All subs created after importing Role::Tiny will be considered methods to be composed.
-use Role::Tiny;
-
-requires qw( _newBase );
-
 # -------------------------------------------------------------------------------------------------
 # Declare a new function to be called on its own interval
 # (I):
-# - the code reference
-# - the parms to pass to the code ref as a single scalar (most probably a hash or an array ref ?)
-# - the interval call in ms.
+# - sub (named option): the code reference
+# - parms (named option): the parms to pass to the code ref as a single scalar (most probably a hash or an array ref ?)
+# - interval (named option): the interval call in ms.
 # (O):
 # - true unless an error has occurred
 
 sub sleepableDeclareFn {
-	my ( $self, $sub, $parms, $interval ) = @_;
+	my ( $self, %args ) = @_;
 
 	my $success = false;
-	my $ref = ref( $sub );
+	my $ref = ref( $args{sub} );
 	msgErr( __PACKAGE__."::sleepableDeclareFn() expects a code reference, found '$ref'" ) if $ref ne 'CODE';
 
-	$ref = ref( $interval );
+	$ref = ref( $args{interval} );
 	msgErr( __PACKAGE__."::sleepableDeclareFn() expects an interval integer, found '$ref'" ) if $ref;
-	msgErr( __PACKAGE__."::sleepableDeclareFn() expects a positive interval, found '$interval'" ) if !$interval || $interval <= 0;
+	msgErr( __PACKAGE__."::sleepableDeclareFn() expects a positive interval, found '$args{interval}'" ) if !$args{interval} || $args{interval} <= 0;
 
 	if( !TTP::errs()){
-		push( @{$self->{_sleepable}{fn}}, { sub => $sub, parms => $parms, interval => $interval } );
+		push( @{$self->{_sleepable}{fn}}, { sub => $args{sub}, parms => $args{parms}, interval => $args{interval} } );
 		$success = true;
 	}
 
@@ -106,19 +113,19 @@ sub sleepableDeclareFn {
 # -------------------------------------------------------------------------------------------------
 # Declare a function to be called for stop
 # (I):
-# - the code reference
+# - sub (named option): the code reference
 # (O):
 # - true unless an error has occurred
 
 sub sleepableDeclareStop {
-	my ( $self, $sub ) = @_;
+	my ( $self, %args ) = @_;
 
 	my $success = false;
-	my $ref = ref( $sub );
+	my $ref = ref( $args{sub} );
 	msgErr( __PACKAGE__."::sleepableDeclareStop() expects a code reference, found '$ref'" ) if $ref ne 'CODE';
 
 	if( !TTP::errs()){
-		$self->{_sleepable}{stop} = { sub => $sub };
+		$self->{_sleepable}{stop} = { sub => $args{sub} };
 		$success = true;
 	}
 
@@ -153,6 +160,7 @@ sub sleepableStart {
 			my $loop = $min / 10.0;
 			# the sleep time is usec
 			my $uloop = 1000.0 * $loop;
+			print __PACKAGE__."::sleepableStart() found min='$min' sec., compute loop='$loop' sec., uloop='$uloop' usecs.".EOL;
 
 			# get seconds and microseconds since the epoch
 			#my ( $s, $usec ) = gettimeofday();
@@ -167,7 +175,7 @@ sub sleepableStart {
 						$it->{last} = time();
 					}
 				}
-				# test for stop
+				# test for stop (every 1000 ms)
 				if( $self->_isCallable( $self->{_sleepable}{stop}{last}, 1000 )){
 					$stop = $self->{_sleepable}{stop}{sub}->( $self );
 					$self->{_sleepable}{stop}{last} = time();

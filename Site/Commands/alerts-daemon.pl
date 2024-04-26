@@ -46,6 +46,13 @@ use TTP::Daemon;
 use TTP::Message qw( :all );
 use vars::global qw( $ttp );
 
+my $daemon = TTP::Daemon->init();
+
+use constant {
+	MIN_SCAN_INTERVAL => 1,
+	DEFAULT_SCAN_INTERVAL => 10
+};
+
 my $defaults = {
 	help => 'no',
 	colored => 'no',
@@ -60,12 +67,35 @@ my $commands = {
 	#help => \&help,
 };
 
-my $daemon = TTP::Daemon->init();
-
 # scanning for new elements
 my $first = true;
 my @previousScan = ();
 my @runningScan = ();
+
+# -------------------------------------------------------------------------------------------------
+# Returns the configured 'monitoredDir' defaulting to alertsDir
+
+sub configMonitoredDir {
+	my $config = $daemon->jsonData();
+	my $dir = $config->{monitoredDir};
+	$dir = TTP::alertsDir() if !$dir;
+	return $dir;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the configured 'scanInterval' (in sec.) defaulting to DEFAULT_SCAN_INTERVAL
+
+sub configScanInterval {
+	my $config = $daemon->jsonData();
+	my $interval = $config->{scanInterval};
+	$interval = DEFAULT_SCAN_INTERVAL if !defined $interval;
+	if( $interval < MIN_SCAN_INTERVAL ){
+		msgVerbose( "defined scanInterval=$interval less than minimum accepted ".MIN_SCAN_INTERVAL.", ignored" );
+		$interval = DEFAULT_SCAN_INTERVAL;
+	}
+
+	return $interval;
+}
 
 # -------------------------------------------------------------------------------------------------
 # new alert
@@ -100,8 +130,9 @@ sub wanted {
 # -------------------------------------------------------------------------------------------------
 # do its work
 sub works {
+	print __PACKAGE__."::works()".EOL;
 	@runningScan = ();
-	find( \&wanted, $daemon->{config}{monitoredDir} );
+	find( \&wanted, configMonitoredDir());
 	if( scalar @runningScan < scalar @previousScan ){
 		varReset();
 	} elsif( $first ){
@@ -146,42 +177,14 @@ msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 if( !TTP::errs()){
 	$daemon->setConfig({ json => $opt_json });
 }
-# more deeply check arguments
-# - the daemon configuration must have monitoredDir key
-if( !TTP::errs()){
-	if( exists( $daemon->{config}{monitoredDir} )){
-		msgVerbose( "monitored dir '$daemon->{config}{monitoredDir}' successfully found in daemon configuration file" );
-	} else {
-		msgErr( "'monitoredDir' must be specified in daemon configuration, not found" );
-	}
-}
 if( TTP::errs()){
 	TTP::exit();
 }
 
-$daemon->sleepableDeclareFn();
-$daemon->sleepableDeclareStop();
+$daemon->declareSleepables( $commands );
+
+$daemon->sleepableDeclareFn( sub => \&works, interval => configScanInterval() );
+
 $daemon->sleepableStart();
-
-#my $scanInterval = 10;
-#$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
-#
-#my $sleepTime = TTP::Daemon::getSleepTime(
-#	$daemon->{listenInterval},
-#	$scanInterval
-#);
-
-#msgVerbose( "sleepTime='$sleepTime'" );
-#msgVerbose( "scanInterval='$scanInterval'" );
-
-#while( !$daemon->{terminating} ){
-#	my $res = TTP::Daemon::daemonListen( $daemon, $commands );
-#	my $now = localtime->epoch;
-#	if( $now - $lastScanTime >= $scanInterval ){
-#		works();
-#		$lastScanTime = $now;
-#	}
-#	sleep( $sleepTime );
-#}
 
 TTP::Daemon::terminate( $daemon );
