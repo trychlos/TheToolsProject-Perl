@@ -5,6 +5,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
+# @(-) --bname=<name>          the JSON file basename [${bname}]
 # @(-) --port=<port>           the port number to address [${port}]
 # @(-) --command=<command>     the command to be sent to the daemon [${command}]
 #
@@ -34,6 +35,7 @@ use IO::Socket::INET;
 $| = 1;
 
 use TTP::Daemon;
+use TTP::Finder;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -43,26 +45,25 @@ my $defaults = {
 	dummy => 'no',
 	verbose => 'no',
 	json => '',
+	bname => '',
 	port => '',
 	command => ''
 };
 
 my $opt_json = $defaults->{json};
+my $opt_bname = $defaults->{bname};
 my $opt_port = -1;
 my $opt_command = $defaults->{command};
 
-my $daemonConfig = undef;
-
 # -------------------------------------------------------------------------------------------------
 # send a command to the daemon
+
 sub doSend {
 	# connect
-	my $port = $opt_port;
-	$port = $daemonConfig->{listeningPort} if $daemonConfig;
 	# triggers an error if the daemon is not active
 	my $socket = new IO::Socket::INET(
 		PeerHost => 'localhost',
-		PeerPort => $port,
+		PeerPort => $opt_port,
 		Proto => 'tcp',
 		Type => SOCK_STREAM
 	) or msgErr( "unable to connect: $!" ) if !$socket;
@@ -87,6 +88,7 @@ sub doSend {
 
 # -------------------------------------------------------------------------------------------------
 # whether the received answer is just 'OK'
+
 sub isOk {
 	my ( $answer ) = @_;
 	my @lines = split( /[\r\n]+/, $answer );
@@ -106,6 +108,7 @@ if( !GetOptions(
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"json=s"			=> \$opt_json,
+	"bname=s"			=> \$opt_bname,
 	"port=i"			=> \$opt_port,
 	"command=s"			=> \$opt_command )){
 
@@ -118,29 +121,41 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
+msgVerbose( "found bname='$opt_bname'" );
 msgVerbose( "found port='$opt_port'" );
 msgVerbose( "found command='$opt_command'" );
 
-# either the json or the port must be specified (and not both)
+# either the json or the basename or the port must be specified (and not both)
 my $count = 0;
 $count += 1 if $opt_json;
+$count += 1 if $opt_bname;
 $count += 1 if $opt_port != -1;
 if( $count == 0 ){
-	msgErr( "one of '--json' or '--port' options must be specified, none found" );
+	msgErr( "one of '--json' or '--bname' or '--port' options must be specified, none found" );
 } elsif( $count > 1 ){
-	msgErr( "one of '--json' or '--port' options must be specified, both were found" );
+	msgErr( "one of '--json' or '--bname' or '--port' options must be specified, several were found" );
 }
-#if a json is specified, must have a listeningPort
+#if a bname is specified, find the full filename
+if( $opt_bname ){
+	my $finder = TTP::Finder->new( $ttp );
+	$opt_json = $finder->find({ dirs => [ TTP::Daemon->dirs(), $opt_bname ], wantsAll => false });
+	if( !$opt_json ){
+		msgErr( "unable to find a suitable daemon JSON configuration file for '$opt_bname'" );
+	}
+}
+#if a json has been specified or has been found, must have a listeningPort and get it
 if( $opt_json ){
-	$daemonConfig = TTP::Daemon::getConfigByPath( $opt_json );
-	# must have a listening port
-	msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json, runnable => { running => false }});
+	if( $daemon->loaded()){
+		$opt_port = $daemon->listeningPort();
+	}
 }
-# and a command too
+
+# must have a command too
 msgErr( "'--command' option is mandatory, but is not specified" ) if !$opt_command;
 
 if( !TTP::errs()){

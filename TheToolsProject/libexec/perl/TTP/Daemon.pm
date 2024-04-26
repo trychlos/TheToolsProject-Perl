@@ -176,12 +176,12 @@ sub _advertize {
 # initialize the TTP daemon
 # when entering here, the JSON config has been successfully read, evaluated and checked
 # (I):
-# - none
+# - messaging (named option): whether to initialize the advertizings system, defaulting to true
 # (O):
 # - returns this same object
 
 sub _daemonize {
-	my ( $self ) = @_;
+	my ( $self, %args ) = @_;
 
 	my $listeningPort = $self->listeningPort();
 	my $listeningInterval = $self->listeningInterval();
@@ -203,7 +203,9 @@ sub _daemonize {
 	}
 
 	# connect to MQTT communication bus if the host is configured for
-	if( !TTP::errs() && $messagingInterval ){
+	my $messaging = true;
+	$messaging = $args{messaging} if exists $args{messaging};
+	if( !TTP::errs() && $messaging && $messagingInterval ){
 		$self->{_mqtt} = TTP::MQTT::connect({
 			will => $self->_lastwill()
 		});
@@ -495,6 +497,7 @@ sub name {
 # - a hash argument with following keys:
 #   > json: the path to the JSON configuration file
 #   > checkConfig: whether to check the loaded config for mandatory items, defaulting to true
+#   > messaging: whether to activate the messaging advertizings, defaulting to true
 # (O):
 # - true|false whether the configuration has been successfully loaded
 
@@ -539,7 +542,9 @@ sub setConfig {
 				$bname =~ s/\.[^\.]*$//;
 				$self->runnableSetQualifier( $bname );
 				# and initialize llistening socket and messaging connection
-				$self->_daemonize();
+				my $messaging = true;
+				$messaging = $args->{messaging} if exists $args->{messaging};
+				$self->_daemonize( messaging => $messaging );
 			}
 		}
 	}
@@ -669,6 +674,7 @@ sub init {
 # - an optional argument object with following keys:
 #   > path: the absolute path to the JSON configuration file
 #   > checkConfig: whether to check the loaded config for mandatory items, defaulting to true
+#   > messaging: whether to activate the messaging advertizings, defaulting to true
 # (O):
 # - this object
 
@@ -687,7 +693,9 @@ sub new {
 	if( $args && $args->{path} ){
 		my $checkConfig = true;
 		$checkConfig = $args->{checkConfig} if exists $args->{checkConfig};
-		$self->setConfig({ json => $args->{path}, checkConfig => $checkConfig });
+		my $messaging = true;
+		$messaging = $args->{messaging} if exists $args->{messaging};
+		$self->setConfig({ json => $args->{path}, checkConfig => $checkConfig, messaging => $messaging });
 	}
 
 	return $self;

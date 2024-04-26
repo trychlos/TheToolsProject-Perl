@@ -34,6 +34,7 @@
 use File::Spec;
 
 use TTP::Daemon;
+use TTP::Finder;
 use TTP::Path;
 
 my $TTPVars = TTP::TTPVars();
@@ -55,18 +56,17 @@ my $opt_http = false;
 
 # -------------------------------------------------------------------------------------------------
 # get a daemon status
+
 sub doStatus {
 	msgOut( "requesting the daemon for its status..." );
-	my $dummy =  $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
-	my $verbose =  $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
-	my $cmd = "daemon.pl command -nocolored $dummy $verbose -command status";
-	if( $opt_json ){
-		my $json_path = File::Spec->rel2abs( $opt_json );
-		$cmd .= " -json $json_path";
-	}
-	$cmd .= " -port $opt_port" if $opt_port != -1;
+	my $dummy = $running->dummy() ? "-dummy" : "-nodummy";
+	my $verbose = $running->verbose() ? "-verbose" : "-noverbose";
+	my $cmd = "daemon.pl command -nocolored $dummy $verbose -command status -port $opt_port";
+	msgVerbose( $cmd );
 	my $res = `$cmd`;
+	print "res='$res'".EOL;
 	my $result = ( $res && length $res && $? == 0 );
+
 	if( $opt_http ){
 		my $value = $result ? "1" : "0";
 		my $command = "telemetry.pl publish -value $value ".join( ' ', @ARGV )." -nomqtt -http -nocolored $dummy $verbose";
@@ -108,9 +108,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
-msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 msgVerbose( "found bname='$opt_bname'" );
 msgVerbose( "found port='$opt_port'" );
@@ -126,15 +126,20 @@ if( $count == 0 ){
 } elsif( $count > 1 ){
 	msgErr( "one of '--json' or '--bname' or '--port' options must be specified, several were found" );
 }
-#if a bname is specified, build the full filename
+#if a bname is specified, find the full filename
 if( $opt_bname ){
-	$opt_json = File::Spec->catdir( TTP::Path::daemonsConfigurationsDir(), $opt_bname );
+	my $finder = TTP::Finder->new( $ttp );
+	$opt_json = $finder->find({ dirs => [ TTP::Daemon->dirs(), $opt_bname ], wantsAll => false });
+	if( !$opt_json ){
+		msgErr( "unable to find a suitable daemon JSON configuration file for '$opt_bname'" );
+	}
 }
-#if a json is specified, must have a listeningPort
+#if a json has been specified or has been found, must have a listeningPort and get it
 if( $opt_json ){
-	my $daemonConfig = TTP::Daemon::getConfigByPath( $opt_json );
-	# must have a listening port
-	msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json, messaging => false, runnable => { running => false }});
+	if( $daemon->loaded()){
+		$opt_port = $daemon->listeningPort();
+	}
 }
 
 if( !TTP::errs()){

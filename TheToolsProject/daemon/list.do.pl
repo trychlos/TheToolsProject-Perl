@@ -55,7 +55,7 @@ sub doListJSON {
 	# only keep first enabled found for each basename
 	my $kepts = {};
 	foreach my $it ( @{$jsons} ){
-		my $daemon = TTP::Daemon->new( $ttp, { path => $it, checkConfig => $opt_checkConfig, runnable => { running => false }});
+		my $daemon = TTP::Daemon->new( $ttp, { path => $it, checkConfig => $opt_checkConfig, messaging => false, runnable => { running => false }});
 		$kepts->{$daemon->name()} = $it if !exists( $kepts->{$file} ) && $daemon->loaded();
 	}
 	# and list in ascii order
@@ -87,7 +87,7 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );

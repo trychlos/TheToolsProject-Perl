@@ -188,7 +188,10 @@ after _newBase => sub {
 	my $running = true;
 	$running = $args->{runnable}{running} if $args->{runnable} && exists $args->{runnable}{running};
 	#print __PACKAGE__."::_newBase() ".ref( $self )." running='$running'".EOL;
-	$ttp->setRunning( $self ) if $running;
+	if( $running ){
+		msgLog( "[] executing $0 ".join( ' ', @ARGV ));
+		$ttp->setRunning( $self );
+	}
 };
 
 ### Global functions
