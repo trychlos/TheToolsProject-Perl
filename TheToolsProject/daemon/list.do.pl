@@ -5,6 +5,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]json              display available JSON configuration files [${json}]
+# @(-) --[no]checkConfig       whether to check the loaded configurations [${checkConfig}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -25,16 +26,19 @@
 # see <http://www.gnu.org/licenses/>.
 
 use TTP::Daemon;
+use TTP::Finder;
 
 my $defaults = {
 	help => 'no',
 	colored => 'no',
 	dummy => 'no',
 	verbose => 'no',
-	json => 'no'
+	json => 'no',
+	checkConfig => 'no'
 };
 
 my $opt_json = false;
+my $opt_checkConfig = false;
 
 # -------------------------------------------------------------------------------------------------
 # display available JSON configuration files in ASCII order, once for each basename
@@ -46,11 +50,12 @@ sub doListJSON {
 		dirs => [ TTP::Daemon->dirs() ],
 		glob => '*'.TTP::Daemon->finder()->{sufix}
 	};
-	my $jsons = $running->find( $findable );
+	my $finder = TTP::Finder->new( $ttp );
+	my $jsons = $finder->find( $findable );
 	# only keep first enabled found for each basename
 	my $kepts = {};
 	foreach my $it ( @{$jsons} ){
-		my $daemon = TTP::Daemon->new( $ttp, { path => $it });
+		my $daemon = TTP::Daemon->new( $ttp, { path => $it, checkConfig => $opt_checkConfig, runnable => { running => false }});
 		$kepts->{$daemon->name()} = $it if !exists( $kepts->{$file} ) && $daemon->loaded();
 	}
 	# and list in ascii order
@@ -58,7 +63,7 @@ sub doListJSON {
 		print " $kepts->{$it}".EOL;
 		$count += 1;
 	}
-	msgOut( "$count found daemon JSON configuration files" );
+	msgOut( "$count found daemon JSON configuration file(s)" );
 }
 
 # =================================================================================================
@@ -70,7 +75,8 @@ if( !GetOptions(
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
-	"json!"				=> \$opt_json )){
+	"json!"				=> \$opt_json,
+	"checkConfig!"		=> \$opt_checkConfig )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -85,6 +91,7 @@ msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
 msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
+msgVerbose( "found checkConfig='".( $opt_checkConfig ? 'true':'false' )."'" );
 
 msgWarn( "no action as '--json' option is not set" ) if !$opt_json;
 

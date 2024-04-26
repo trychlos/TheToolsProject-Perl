@@ -494,6 +494,7 @@ sub name {
 # (I):
 # - a hash argument with following keys:
 #   > json: the path to the JSON configuration file
+#   > checkConfig: whether to check the loaded config for mandatory items, defaulting to true
 # (O):
 # - true|false whether the configuration has been successfully loaded
 
@@ -516,12 +517,18 @@ sub setConfig {
 		if( $loaded ){
 			$self->evaluate();
 
-			# must have a listening port
-			msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$self->listeningPort();
-
-			my $program = $self->execPath();
-			msgErr( "daemon configuration must define an 'execPath' value, not found" ) if !$program;
-			msgErr( "execPath='$program' not found or not readable" ) if ! -r $program;
+			my $checkConfig = true;
+			$checkConfig = $args->{checkConfig} if exists $args->{checkConfig};
+			if( $checkConfig ){
+				# must have a listening port
+				msgErr( "$args->{json}: daemon configuration must define a 'listeningPort' value, not found" ) if !$self->listeningPort();
+				# must have an exec path
+				my $program = $self->execPath();
+				msgErr( "$args->{json}: daemon configuration must define an 'execPath' value, not found" ) if !$program;
+				msgErr( "$args->{json}: execPath='$program' not found or not readable" ) if ! -r $program;
+			} else {
+				msgVerbose( "not checking daemon config as checkConfig='false'" );
+			}
 
 			# if the JSON configuration misses some informations, then says we cannot load
 			if( TTP::errs()){
@@ -661,6 +668,7 @@ sub init {
 # - the TTP EP entry point
 # - an optional argument object with following keys:
 #   > path: the absolute path to the JSON configuration file
+#   > checkConfig: whether to check the loaded config for mandatory items, defaulting to true
 # (O):
 # - this object
 
@@ -677,7 +685,9 @@ sub new {
 	# if a path is specified, then we try to load it
 	# JSOnable role takes care of validating the acceptability and the enable-ity
 	if( $args && $args->{path} ){
-		$self->setConfig({ json => $args->{path} });
+		my $checkConfig = true;
+		$checkConfig = $args->{checkConfig} if exists $args->{checkConfig};
+		$self->setConfig({ json => $args->{path}, checkConfig => $checkConfig });
 	}
 
 	return $self;
