@@ -108,16 +108,6 @@ sub _find_run {
 	return $result;
 }
 
-# is the current candidate file accepted by the caller
-#sub _find_accepted {
-#	my ( $self, $args, $candidate ) = @_;
-#	my $cb = undef;
-#	$cb = $args->{accept} if exists $args->{accept};
-#	my $accepted = defined( $cb ) ? $cb->( $candidate ) : true;
-#	msgVerbose( __PACKAGE__."::_find_accepted() candidate '$candidate' is refused" ) if !$accepted;
-#	return $accepted;
-#}
-
 # search for the patterns in the specified path
 # the provided findable dirs contains either a scalar or an array
 # each item maybe a scalar (a single file specification), or an array of scalars (specs must be concatened), or an array of arrays of scalars (intermediary array scalars must be tested)

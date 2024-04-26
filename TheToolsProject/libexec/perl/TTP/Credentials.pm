@@ -1,4 +1,20 @@
-# Copyright (@) 2023-2024 PWI Consulting
+# The Tools Project: a Tools System and Paradigm for IT Production
+# Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
+# Copyright (©) 2023-2024 PWI Consulting
+#
+# The Tools Project is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# The Tools Project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with The Tools Project; see the file COPYING. If not,
+# see <http://www.gnu.org/licenses/>.
 #
 # Credentials
 
@@ -13,8 +29,27 @@ use vars::global qw( $ttp );
 
 use TTP;
 use TTP::Constants qw( :all );
+use TTP::Finder;
 use TTP::Message qw( :all );
 use TTP::Path;
+
+my $Const = {
+	# hardcoded subpaths to find the <service>.json files
+	# even if this not too sexy in Win32, this is a standard and a common usage on Unix/Darwin platforms
+	finder => {
+		dirs => [
+			'etc/credentials',
+			'credentials',
+			'etc/private',
+			'private'
+		],
+		files => [
+			'toops.json',
+			'site.json',
+			'ttp.json'
+		]
+	}
+};
 
 # ------------------------------------------------------------------------------------------------
 # Returns the found credentials
@@ -23,41 +58,37 @@ use TTP::Path;
 # - an array ref of the keys to be read
 # (O):
 # - the object found at the given address, or undef
+
 sub get {
 	my ( $keys ) = @_;
 	my $res = undef;
 	if( ref( $keys ) ne 'ARRAY' ){
-		msgErr( "Credentials::get() expects an array, found '".ref( $keys )."'" );
+		msgErr( __PACKAGE__."::get() expects an array, found '".ref( $keys )."'" );
 	} else {
+		my $finder = TTP::Finder->new( $ttp );
+
 		# first look in the Toops/host configurations
 		$res = $ttp->var( $keys );
-		# if not found, looks at credentials/toops.json
+
+		# if not found, looks at credentialsDirs/credentialsFiles
 		if( !defined( $res )){
-			my $fname = File::Spec->catdir( TTP::Path::credentialsDir(), "toops.json" );
-			my $data = TTP::evaluate( TTP::jsonRead( $fname ));
-			$res = $data;
-			foreach my $k ( @{$keys} ){
-				if( exists( $res->{$k} )){
-					$res = $res->{$k};
-				} else {
-					$res = undef;
-					last;
-				}
+			if( $finder->jsonLoad({ findable => {
+				dirs => [ $Const->{finder}{dirs}, $Const->{finder}{files} ],
+				wantsAll => false
+			}})){
+				$finder->evaluate();
+				$res = $ttp->var( $keys, $finder->jsonData());
 			}
 		}
 		# if not found, looks at credentials/<host>.json
 		if( !defined( $res )){
-			my $host = TTP::host();
-			my $fname = File::Spec->catdir( TTP::Path::credentialsDir(), "$host.json" );
-			my $data = TTP::evaluate( TTP::jsonRead( $fname ));
-			$res = $data;
-			foreach my $k ( @{$keys} ){
-				if( exists( $res->{$k} )){
-					$res = $res->{$k};
-				} else {
-					$res = undef;
-					last;
-				}
+			my $node = $ttp->node()->name();
+			if( $finder->jsonLoad({ findable => {
+				dirs => [ $Const->{finder}{dirs}, "$node.json" ],
+				wantsAll => false
+			}})){
+				$finder->evaluate();
+				$res = $ttp->var( $keys, $finder->jsonData());
 			}
 		}
 	}

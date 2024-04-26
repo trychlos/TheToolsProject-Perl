@@ -16,7 +16,7 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 #
-# anage the hekps both for commands+verbs than for external scripts.
+# Manage the helps both for commands+verbs than for external scripts.
 
 package TTP::Helpable;
 our $VERSION = '1.00';

@@ -81,8 +81,12 @@ sub new {
 	bless $self, $class;
 
 	# keep the TTP EP ref
-	$self->{_ttp} = $ttp;
-	print "(ERR) ".__PACKAGE__."::new() 'ttp' is not defined but is mandatory".EOL if !defined $ttp;
+	if( defined( $ttp )){
+		$self->{_ttp} = $ttp;
+	} else {
+		print "(ERR) ".__PACKAGE__."::new() 'ttp' is not defined but is mandatory".EOL;
+		TTP::stackTrace();
+	}
 
 	# let the roles insert their own code at that time
 	$self->_newBase( $ttp );

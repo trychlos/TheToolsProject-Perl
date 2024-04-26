@@ -20,7 +20,6 @@
 
 package TTP::EP;
 
-use base qw( TTP::Base );
 our $VERSION = '1.00';
 
 use strict;
@@ -227,9 +226,9 @@ sub _var_rec {
 # - this object
 
 sub new {
-	my ( $class, $args ) = @_;
+	my ( $class ) = @_;
 	$class = ref( $class ) || $class;
-	my $self = $class->SUPER::new( $args );
+	my $self = {};
 	bless $self, $class;
 	return $self;
 }
@@ -242,7 +241,7 @@ sub new {
 
 sub DESTROY {
 	my $self = shift;
-	$self->SUPER::DESTROY();
+	#print __PACKAGE__."::Destroy()".EOL;
 	return;
 }
 

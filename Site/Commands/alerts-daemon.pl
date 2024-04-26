@@ -44,7 +44,6 @@ use TTP;
 use TTP::Constants qw( :all );
 use TTP::Daemon;
 use TTP::Message qw( :all );
-use TTP::Path;
 use vars::global qw( $ttp );
 
 my $defaults = {
@@ -61,12 +60,9 @@ my $commands = {
 	#help => \&help,
 };
 
-#my $TTPVars = TTP::Daemon::init();
-#my $daemon = undef;
 my $daemon = TTP::Daemon->init();
 
 # scanning for new elements
-my $lastScanTime = 0;
 my $first = true;
 my @previousScan = ();
 my @runningScan = ();
@@ -131,7 +127,7 @@ if( !GetOptions(
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"json=s"			=> \$opt_json )){
 
-		msgOut( "try '".$daemon->runnableBNameFull()." --help' to get full usage syntax" );
+		msgOut( "try '".$daemon->command()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 
@@ -148,8 +144,7 @@ msgVerbose( "found json='$opt_json'" );
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 
 if( !TTP::errs()){
-	#$daemon = TTP::Daemon::run( $opt_json );
-	$daemon->path( $opt_json );
+	$daemon->setConfig({ json => $opt_json });
 }
 # more deeply check arguments
 # - the daemon configuration must have monitoredDir key
@@ -164,25 +159,29 @@ if( TTP::errs()){
 	TTP::exit();
 }
 
-my $scanInterval = 10;
-$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
+$daemon->sleepableDeclareFn();
+$daemon->sleepableDeclareStop();
+$daemon->sleepableStart();
 
-my $sleepTime = TTP::Daemon::getSleepTime(
-	$daemon->{listenInterval},
-	$scanInterval
-);
+#my $scanInterval = 10;
+#$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
+#
+#my $sleepTime = TTP::Daemon::getSleepTime(
+#	$daemon->{listenInterval},
+#	$scanInterval
+#);
 
-msgVerbose( "sleepTime='$sleepTime'" );
-msgVerbose( "scanInterval='$scanInterval'" );
+#msgVerbose( "sleepTime='$sleepTime'" );
+#msgVerbose( "scanInterval='$scanInterval'" );
 
-while( !$daemon->{terminating} ){
-	my $res = TTP::Daemon::daemonListen( $daemon, $commands );
-	my $now = localtime->epoch;
-	if( $now - $lastScanTime >= $scanInterval ){
-		works();
-		$lastScanTime = $now;
-	}
-	sleep( $sleepTime );
-}
+#while( !$daemon->{terminating} ){
+#	my $res = TTP::Daemon::daemonListen( $daemon, $commands );
+#	my $now = localtime->epoch;
+#	if( $now - $lastScanTime >= $scanInterval ){
+#		works();
+#		$lastScanTime = $now;
+#	}
+#	sleep( $sleepTime );
+#}
 
 TTP::Daemon::terminate( $daemon );

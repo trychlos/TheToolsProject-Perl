@@ -195,6 +195,7 @@ sub jsonData {
 sub jsonLoad {
 	my ( $self, $args ) = @_;
 	$args //= {};
+	#print Dumper( $args );
 
 	# keep the passed-in args
 	$self->{_jsonable}{args} = \%{$args};
@@ -250,14 +251,17 @@ sub jsonLoad {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Getter/Setter
 # Says if the JSON raw data has been successfully loaded
 # (I]:
-# - none
+# - optional boolean to set the 'loaded' status
 # (O):
 # - true|false
 
 sub jsonLoaded {
-	my ( $self ) = @_;
+	my ( $self, $loaded ) = @_;
+
+	$self->{_jsonable}{loaded} = $loaded if defined $loaded;
 
 	return $self->{_jsonable}{loaded};
 }

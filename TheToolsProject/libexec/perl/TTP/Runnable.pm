@@ -125,12 +125,26 @@ sub runnablePath {
 # (I):
 # - none
 # (O):
-# -returns the qualifier
+# - returns the qualifier
 
 sub runnableQualifier {
 	my ( $self ) = @_;
 
 	return $self->{_runnable}{qualifier};
+};
+
+# -------------------------------------------------------------------------------------------------
+# Getter
+# Returns the start time of this runnable
+# (I):
+# - none
+# (O):
+# -returns the start time
+
+sub runnableStarted {
+	my ( $self ) = @_;
+
+	return $self->{_runnable}{started};
 };
 
 # -------------------------------------------------------------------------------------------------

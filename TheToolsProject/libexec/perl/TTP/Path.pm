@@ -42,27 +42,6 @@ use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 
 # ------------------------------------------------------------------------------------------------
-# (I):
-# - an optional options hash with following keys:
-#   > config: host configuration (useful when searching for a remote host)
-#   > makeDirExist: whether to create the directory if it doesn't yet exist, defaulting to true
-# (O):
-# - the (maybe daily) alerts directory
-sub alertsDir {
-	my ( $opts ) = @_;
-	$opts //= {};
-	my $dir = $ttp->var([ 'alerts', 'withFile', 'dropDir' ], $opts );
-	if( defined $dir && length $dir ){
-		my $makeDirExist = true;
-		$makeDirExist = $opts->{makeDirExist} if exists $opts->{makeDirExist};
-		makeDirExist( $dir ) if $makeDirExist;
-	} else {
-		msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
-	}
-	return $dir;
-}
-
-# ------------------------------------------------------------------------------------------------
 # (O):
 # - the credentials directory
 sub credentialsDir {
@@ -70,7 +49,7 @@ sub credentialsDir {
 	$opts //= {};
 	my $dir = $ttp->var([ 'credentialsDir' ], $opts );
 	if( !defined $dir || !length $dir ){
-		msgWarn( "'alertsDir/withFile/dropDir' is not defined in toops.json nor in host configuration" );
+		msgWarn( "'credentialsDir' is not defined in toops.json nor in host configuration" );
 	}
 	return $dir;
 }
