@@ -67,7 +67,7 @@ sub doStop {
 	my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
 	my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
 	my $cmd = "daemon.pl command -nocolored $dummy $verbose -command terminate";
-	$cmd .= " -verbose" if $ttp->{run}{verbose};
+	$cmd .= " -verbose" if $running->verbose();
 	if( $opt_json ){
 		my $json_path = File::Spec->rel2abs( $opt_json );
 		$cmd .= " -json $json_path";
@@ -156,9 +156,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
-msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 msgVerbose( "found port='$opt_port'" );
 msgVerbose( "found port_set='".( $opt_port_set ? 'true':'false' )."'" );

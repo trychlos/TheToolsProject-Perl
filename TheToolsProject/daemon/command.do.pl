@@ -122,8 +122,8 @@ if( $running->help()){
 }
 
 msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
-msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 msgVerbose( "found bname='$opt_bname'" );
 msgVerbose( "found port='$opt_port'" );

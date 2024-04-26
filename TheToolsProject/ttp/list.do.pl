@@ -120,9 +120,9 @@ if( $running->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found colored='".( $ttp->{run}{colored} ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $ttp->{run}{dummy} ? 'true':'false' )."'" );
-msgVerbose( "found verbose='".( $ttp->{run}{verbose} ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found commands='".( $opt_commands ? 'true':'false' )."'" );
 msgVerbose( "found nodes='".( $opt_nodes ? 'true':'false' )."'" );
 
