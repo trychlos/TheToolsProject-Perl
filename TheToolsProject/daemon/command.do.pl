@@ -143,15 +143,15 @@ if( $count == 0 ){
 if( $opt_bname ){
 	my $finder = TTP::Finder->new( $ttp );
 	$opt_json = $finder->find({ dirs => [ TTP::Daemon->dirs(), $opt_bname ], wantsAll => false });
-	if( !$opt_json ){
-		msgErr( "unable to find a suitable daemon JSON configuration file for '$opt_bname'" );
-	}
+	msgErr( "unable to find a suitable daemon JSON configuration file for '$opt_bname'" ) if !$opt_json;
 }
 #if a json has been specified or has been found, must have a listeningPort and get it
 if( $opt_json ){
-	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json, runnable => { running => false }});
+	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json, daemonize => false });
 	if( $daemon->loaded()){
 		$opt_port = $daemon->listeningPort();
+	} else {
+		msgErr( "unable to load a suitable daemon configuration for json='$opt_json'" );
 	}
 }
 

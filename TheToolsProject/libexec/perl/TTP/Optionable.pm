@@ -123,16 +123,20 @@ sub verbose {
 # -none
 
 after _newBase => sub {
-	my ( $self, $ttp ) = @_;
+	my ( $self, $ttp, $args ) = @_;
+	$args //= {};
+	 #print __PACKAGE__."::new()".EOL;
 
 	$self->{_optionable} //= {};
 
 	# set these standard options in ttp->{run} both for historical reasons and for easier handlings
-	$ttp->{run} //= {};
-	$ttp->{run}{help} = false;
-	$ttp->{run}{colored} = -1;
-	$ttp->{run}{dummy} = false;
-	$ttp->{run}{verbose} = false;
+	if( !$ttp->runner()){
+		$ttp->{run} //= {};
+		$ttp->{run}{help} = false;
+		$ttp->{run}{colored} = -1;
+		$ttp->{run}{dummy} = false;
+		$ttp->{run}{verbose} = false;
+	}
 };
 
 # -------------------------------------------------------------------------------------------------

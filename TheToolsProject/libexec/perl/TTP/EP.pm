@@ -103,31 +103,18 @@ sub runCommand {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Getter
+# Getter/Setter
 # (I):
-# - none
+# - optional object to be set as the current Runnable
 # (O):
 # - returns the Runnable running command
 
-sub running {
-	my ( $self ) = @_;
+sub runner {
+	my ( $self, $runner ) = @_;
+
+	$self->{_running} = $runner if defined $runner;
 
 	return $self->{_running};
-}
-
-# -------------------------------------------------------------------------------------------------
-# Setter
-# (I):
-# - the Runnable running command
-# (O):
-# - this object
-
-sub setRunning {
-	my ( $self, $running ) = @_;
-
-	$self->{_running} = $running;
-
-	return $self;
 }
 
 # -------------------------------------------------------------------------------------------------

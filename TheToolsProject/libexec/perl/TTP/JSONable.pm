@@ -201,13 +201,17 @@ sub jsonLoad {
 	$self->{_jsonable}{args} = \%{$args};
 
 	# if a path is specified, the we want this one absolutely
+	# load it and see if it is accepted
 	if( $args->{path} ){
 		$self->{_jsonable}{json} = File::Spec->rel2abs( $args->{path} );
 		if( $self->{_jsonable}{json} ){
-			if( $self->does( 'TTP::Acceptable' ) && $args->{acceptable} ){
-				$args->{acceptable}{object} = $args->{path};
-				if( $self->accept( $args->{acceptable} )){
-					$self->{_jsonable}{loadable} = true;
+			$self->{_jsonable}{raw} = $self->jsonRead( $self->{_jsonable}{json} );
+			if( $self->{_jsonable}{raw} ){
+				if( $self->does( 'TTP::Acceptable' ) && $args->{acceptable} ){
+					$args->{acceptable}{object} = $self->{_jsonable}{raw};
+					if( !$self->accept( $args->{acceptable} )){
+						$self->{_jsonable}{raw} = undef;
+					}
 				}
 			}
 		}
@@ -225,7 +229,9 @@ sub jsonLoad {
 			} else {
 				msgErr( __PACKAGE__."::jsonLoad() expects scalar of array from Findable::find(), received '$ref'" );
 			}
-			$self->{_jsonable}{loadable} = true if $self->{_jsonable}{json};
+			if( $self->{_jsonable}{json} ){
+				$self->{_jsonable}{raw} = $self->jsonRead( $self->{_jsonable}{json} );
+			}
 		}
 
 	# else we have no way to find the file: this is an unrecoverable error
@@ -233,21 +239,17 @@ sub jsonLoad {
 		msgErr( __PACKAGE__."::jsonLoad() must have 'path' argument, or be a 'Findable' and have a 'findable' argument" );
 	}
 
-	# load the raw JSON data
-	if( $self->{_jsonable}{loadable} ){
-		my $result = undef;
-		$result = $self->jsonRead( $self->{_jsonable}{json} );
-		if( defined( $result )){
-			$self->{_jsonable}{loaded} = true;
-			$self->{_jsonable}{raw} = $result;
-		}
-
-		# initialize the evaluated part, even if not actually evaluated, so that jsonData()
-		# can at least returns raw - unevaluated - data
+	# if the raw data has been successfully loaded (no JSON syntax error) and content has been accepted
+	# then initialize the evaluated part, even if not actually evaluated, so that jsonData()
+	# can at least returns raw - unevaluated - data
+	if( $self->{_jsonable}{raw} ){
+		$self->{_jsonable}{loaded} = true;
 		$self->{_jsonable}{evaluated} = $self->{_jsonable}{raw};
 	}
-	
-	return $self->jsonLoaded();
+
+	my $loaded = $self->jsonLoaded();
+	msgVerbose( __PACKAGE__."::jsonLoad() returning loaded='$loaded'" );
+	return $loaded;
 }
 
 # -------------------------------------------------------------------------------------------------

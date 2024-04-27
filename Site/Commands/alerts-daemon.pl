@@ -166,9 +166,9 @@ if( $daemon->help()){
 	TTP::exit();
 }
 
-msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
-msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $daemon->colored() ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $daemon->dummy() ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $daemon->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;

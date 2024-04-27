@@ -51,6 +51,7 @@ my $defaults = {
 };
 
 my $opt_json = $defaults->{json};
+my $opt_bname = $defaults->{bname};
 my $opt_port = -1;
 my $opt_http = false;
 
@@ -64,7 +65,7 @@ sub doStatus {
 	my $cmd = "daemon.pl command -nocolored $dummy $verbose -command status -port $opt_port";
 	msgVerbose( $cmd );
 	my $res = `$cmd`;
-	print "res='$res'".EOL;
+	msgVerbose( "res='$res'" );
 	my $result = ( $res && length $res && $? == 0 );
 
 	if( $opt_http ){
@@ -130,15 +131,15 @@ if( $count == 0 ){
 if( $opt_bname ){
 	my $finder = TTP::Finder->new( $ttp );
 	$opt_json = $finder->find({ dirs => [ TTP::Daemon->dirs(), $opt_bname ], wantsAll => false });
-	if( !$opt_json ){
-		msgErr( "unable to find a suitable daemon JSON configuration file for '$opt_bname'" );
-	}
+	msgErr( "unable to find a suitable daemon JSON configuration file for '$opt_bname'" ) if !$opt_json;
 }
 #if a json has been specified or has been found, must have a listeningPort and get it
 if( $opt_json ){
-	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json, messaging => false, runnable => { running => false }});
+	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json, daemonize => false });
 	if( $daemon->loaded()){
 		$opt_port = $daemon->listeningPort();
+	} else {
+		msgErr( "unable to load a suitable daemon configuration for json='$opt_json'" );
 	}
 }
 

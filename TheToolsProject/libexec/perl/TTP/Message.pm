@@ -144,7 +144,7 @@ sub isKnownLevel {
 # - the message to be printed (usually the command to be run in dummy mode)
 
 sub msgDummy {
-	my $running = $ttp->running();
+	my $running = $ttp->runner();
 	if( $running && $running->dummy()){
 		_printMsg({
 			msg => shift,
@@ -172,7 +172,7 @@ sub msgErr {
 			level => ERR,
 			handle => \*STDERR
 		});
-		my $running = $ttp->running();
+		my $running = $ttp->runner();
 		$running->runnableErrInc() if $running;
 	}
 }
@@ -244,7 +244,7 @@ sub msgOut {
 
 sub _msgPrefix {
 	my $prefix = '';
-	my $running = $ttp->running();
+	my $running = $ttp->runner();
 	if( $running ){
 		my $command = $running->runnableBNameFull();
 		if( $command ){
@@ -266,7 +266,7 @@ sub msgVerbose {
 	my $msg = shift;
 	# be verbose to console ?
 	my $verbose = false;
-	my $running = $ttp->running();
+	my $running = $ttp->runner();
 	$verbose = $running->verbose() if $running;
 	_printMsg({
 		msg => $msg,
@@ -303,7 +303,7 @@ sub _printMsg {
 		$args //= {};
 		my $line = '';
 		my $configured = undef;
-		my $running = $ttp->running();
+		my $running = $ttp->runner();
 		# have a prefix ?
 		my $withPrefix = true;
 		$withPrefix = $args->{withPrefix} if exists $args->{withPrefix};

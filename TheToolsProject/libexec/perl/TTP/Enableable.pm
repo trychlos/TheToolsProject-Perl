@@ -51,7 +51,7 @@ requires qw( _newBase );
 # the instance in the JSON.
 # This is checked here as a sub-component of file Acceptability.
 # (I]:
-# - expects a scalar which is the file path
+# - expects a scalar which is either the file path or the data content as a hash ref
 # - expects an object which contains a 'type' key with 'JSON' value
 # (O):
 # - returns true|false
@@ -60,15 +60,29 @@ sub enabled {
 	my ( $self, $obj, $opts ) = @_;
 	$opts //= {};
 	my $enabled = false;
+	my $ref = ref( $obj );
 
-	if( $opts->{type} ){
-		if( $opts->{type} eq 'JSON' ){
-			$enabled = true;
-			my $data = $self->jsonRead( $obj );
-			$enabled = $data->{enabled} if exists $data->{enabled};
+	# if the object is a scalar, expects the opts specifies a type='JSON'
+	if( !$ref ){
+		if( $opts->{type} ){
+			if( $opts->{type} eq 'JSON' ){
+				$enabled = true;
+				my $data = $self->jsonRead( $obj );
+				$enabled = $data->{enabled} if exists $data->{enabled};
+			}
 		}
+
+	# else this a the data content as a hash ref
+	} elsif( $ref eq 'HASH' ){
+		$enabled = true;
+		$enabled = $obj->{enabled} if exists $obj->{enabled};
+
+	# else this is an unrecoverable error
+	} else {
+		msgErr( __PACKAGE__."::enabled() expects object be a hash reference or a scalar, found '$ref'" );
 	}
 
+	msgVerbose( __PACKAGE__.":enabled() returning '$enabled'" );
 	return $enabled;
 }
 

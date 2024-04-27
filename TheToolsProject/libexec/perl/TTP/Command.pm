@@ -200,7 +200,7 @@ sub run {
 				# as verbs are written as Perl scripts, they are dynamically ran from here in the context of 'self'
 				# + have direct access to 'ttp' entry point
 				local @ARGV = @command_args;
-				our $running = $ttp->running();
+				our $running = $ttp->runner();
 
 				unless( defined do $self->{_verb}{path} ){
 					msgErr( "do $self->{_verb}{path}: ".( $! || $@ ));

@@ -5,7 +5,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]json              display available JSON configuration files [${json}]
-# @(-) --[no]checkConfig       whether to check the loaded configurations [${checkConfig}]
+# @(-) --[no]check             whether to check the loaded configurations [${check}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -34,11 +34,11 @@ my $defaults = {
 	dummy => 'no',
 	verbose => 'no',
 	json => 'no',
-	checkConfig => 'no'
+	check => 'no'
 };
 
 my $opt_json = false;
-my $opt_checkConfig = false;
+my $opt_check = false;
 
 # -------------------------------------------------------------------------------------------------
 # display available JSON configuration files in ASCII order, once for each basename
@@ -55,7 +55,7 @@ sub doListJSON {
 	# only keep first enabled found for each basename
 	my $kepts = {};
 	foreach my $it ( @{$jsons} ){
-		my $daemon = TTP::Daemon->new( $ttp, { path => $it, checkConfig => $opt_checkConfig, messaging => false, runnable => { running => false }});
+		my $daemon = TTP::Daemon->new( $ttp, { path => $it, checkConfig => $opt_check, daemonize => false });
 		$kepts->{$daemon->name()} = $it if !exists( $kepts->{$file} ) && $daemon->loaded();
 	}
 	# and list in ascii order
@@ -76,7 +76,7 @@ if( !GetOptions(
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"json!"				=> \$opt_json,
-	"checkConfig!"		=> \$opt_checkConfig )){
+	"check!"			=> \$opt_check )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -91,7 +91,7 @@ msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found json='".( $opt_json ? 'true':'false' )."'" );
-msgVerbose( "found checkConfig='".( $opt_checkConfig ? 'true':'false' )."'" );
+msgVerbose( "found check='".( $opt_check ? 'true':'false' )."'" );
 
 msgWarn( "no action as '--json' option is not set" ) if !$opt_json;
 

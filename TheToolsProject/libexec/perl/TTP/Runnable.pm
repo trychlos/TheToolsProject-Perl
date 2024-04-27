@@ -173,6 +173,7 @@ sub runnableSetQualifier {
 after _newBase => sub {
 	my ( $self, $ttp, $args ) = @_;
 	$args //= {};
+	#print __PACKAGE__."::new()".EOL;
 
 	$self->{_runnable} //= {};
 	$self->{_runnable}{me} = $0;
@@ -185,12 +186,9 @@ after _newBase => sub {
 	$file =~ s/\.[^\.]+$//;
 	$self->{_runnable}{namewoext} = $file;
 
-	my $running = true;
-	$running = $args->{runnable}{running} if $args->{runnable} && exists $args->{runnable}{running};
-	#print __PACKAGE__."::_newBase() ".ref( $self )." running='$running'".EOL;
-	if( $running ){
+	if( !$ttp->runner()){
 		msgLog( "[] executing $0 ".join( ' ', @ARGV ));
-		$ttp->setRunning( $self );
+		$ttp->runner( $self );
 	}
 };
 

@@ -176,7 +176,7 @@ sub _advertize {
 # initialize the TTP daemon
 # when entering here, the JSON config has been successfully read, evaluated and checked
 # (I):
-# - messaging (named option): whether to initialize the advertizings system, defaulting to true
+# - none
 # (O):
 # - returns this same object
 
@@ -497,7 +497,7 @@ sub name {
 # - a hash argument with following keys:
 #   > json: the path to the JSON configuration file
 #   > checkConfig: whether to check the loaded config for mandatory items, defaulting to true
-#   > messaging: whether to activate the messaging advertizings, defaulting to true
+#   > daemonize: whether to activate the daemonization process, defaulting to true
 # (O):
 # - true|false whether the configuration has been successfully loaded
 
@@ -505,7 +505,7 @@ sub setConfig {
 	my ( $self, $args ) = @_;
 	$args //= {};
 
-	#only manage JSON configuration at the moment
+	# only manage JSON configuration at the moment
 	if( $args->{json} ){
 		my $loaded = false;
 		my $acceptable = {
@@ -537,14 +537,16 @@ sub setConfig {
 			if( TTP::errs()){
 				$self->jsonLoaded( false );
 			} else {
-				# set a runnable qualifier as soon as we can
-				my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $self->jsonPath());
-				$bname =~ s/\.[^\.]*$//;
-				$self->runnableSetQualifier( $bname );
-				# and initialize llistening socket and messaging connection
-				my $messaging = true;
-				$messaging = $args->{messaging} if exists $args->{messaging};
-				$self->_daemonize( messaging => $messaging );
+				my $daemonize = true;
+				$daemonize = $args->{daemonize} if exists $args->{daemonize};
+				if( $daemonize ){
+					# set a runnable qualifier as soon as we can
+					my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $self->jsonPath());
+					$bname =~ s/\.[^\.]*$//;
+					$self->runnableSetQualifier( $bname );
+					# and initialize llistening socket and messaging connection
+					$self->_daemonize();
+				}
 			}
 		}
 	}
@@ -674,7 +676,7 @@ sub init {
 # - an optional argument object with following keys:
 #   > path: the absolute path to the JSON configuration file
 #   > checkConfig: whether to check the loaded config for mandatory items, defaulting to true
-#   > messaging: whether to activate the messaging advertizings, defaulting to true
+#   > daemonize: whether to activate the daemonization process, defaulting to true
 # (O):
 # - this object
 
@@ -693,9 +695,9 @@ sub new {
 	if( $args && $args->{path} ){
 		my $checkConfig = true;
 		$checkConfig = $args->{checkConfig} if exists $args->{checkConfig};
-		my $messaging = true;
-		$messaging = $args->{messaging} if exists $args->{messaging};
-		$self->setConfig({ json => $args->{path}, checkConfig => $checkConfig, messaging => $messaging });
+		my $daemonize = true;
+		$daemonize = $args->{daemonize} if exists $args->{daemonize};
+		$self->setConfig({ json => $args->{path}, checkConfig => $checkConfig, daemonize => $daemonize });
 	}
 
 	return $self;

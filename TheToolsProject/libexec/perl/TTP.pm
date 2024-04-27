@@ -214,7 +214,7 @@ sub copyFile {
 # Returns the current count of errors
 
 sub errs {
-	my $running = $ttp->running();
+	my $running = $ttp->runner();
 	return $running->runnableErrs() if $running;
 	return 0;
 }
@@ -457,7 +457,7 @@ sub _executionReportToMqtt {
 # Return code is optional, defaulting to TTPVars->{run}{exitCode}
 
 sub exit {
-	my $rc = shift || $ttp->running()->runnableErrs();
+	my $rc = shift || $ttp->runner()->runnableErrs();
 	if( $rc ){
 		msgErr( "exiting with code $rc" );
 	} else {

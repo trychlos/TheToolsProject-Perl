@@ -5,6 +5,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
+# @(-) --bname=<name>          the JSON file basename [${bname}]
 #
 # @(@) The Tools Project is able to manage any daemons with these very same verbs.
 # @(@) Each separate daemon is characterized by its own JSON properties which uniquely identifies it from the TTP point of view.
@@ -37,7 +38,8 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	verbose => 'no',
-	json => ''
+	json => '',
+	bname => ''
 };
 
 my $opt_json = $defaults->{json};
@@ -47,7 +49,7 @@ my $opt_json = $defaults->{json};
 
 sub doStart {
 	msgOut( "starting the daemon from '$opt_json'..." );
-	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json, runnable => { running => false }});
+	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json, daemonize => false });
 	if( $daemon->loaded()){
 		if( $daemon->start()){
 			msgOut( "success" );
@@ -68,7 +70,8 @@ if( !GetOptions(
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
-	"json=s"			=> \$opt_json )){
+	"json=s"			=> \$opt_json,
+ 	"bname=s"			=> \$opt_bname )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -83,9 +86,23 @@ msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
+msgVerbose( "found bname='$opt_bname'" );
 
-# the json is mandatory
-msgErr( "'--json' option is mandatry, not found" ) if !$opt_json;
+# either the json or the basename must be specified (and not both)
+my $count = 0;
+$count += 1 if $opt_json;
+$count += 1 if $opt_bname;
+if( $count == 0 ){
+	msgErr( "one of '--json' or '--bname' options must be specified, none found" );
+} elsif( $count > 1 ){
+	msgErr( "one of '--json' or '--bname' options must be specified, several were found" );
+}
+#if a bname is specified, find the full filename
+if( $opt_bname ){
+	my $finder = TTP::Finder->new( $ttp );
+	$opt_json = $finder->find({ dirs => [ TTP::Daemon->dirs(), $opt_bname ], wantsAll => false });
+	msgErr( "unable to find a suitable daemon JSON configuration file for '$opt_bname'" ) if !$opt_json;
+}
 
 if( !TTP::errs()){
 	doStart();
