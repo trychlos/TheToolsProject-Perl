@@ -477,8 +477,10 @@ sub messagingInterval {
 }
 
 # ------------------------------------------------------------------------------------------------
-# Returns the canonical name of the daemon which happens to be the basename of its configuration file
-# without the extension
+# Returns the canonical name of the daemon
+#  which happens to be the basename of its configuration file without the extension
+# This name is set as soon as the JSON has been successfully loaded, whether the daemon itself
+# is for daemonizing or not.
 # (I):
 # - none
 # (O):
@@ -489,7 +491,7 @@ sub name {
 
 	return undef if !$self->loaded();
 
-	return $self->runnableQualifier();
+	return $self->{_name};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -534,16 +536,19 @@ sub setConfig {
 				msgVerbose( "not checking daemon config as checkConfig='false'" );
 			}
 
-			# if the JSON configuration misses some informations, then says we cannot load
+			# if the JSON configuration has been checked but misses some informations, then says we cannot load
 			if( TTP::errs()){
 				$self->jsonLoaded( false );
+
+			# else initialize the daemon (socket+messaging) unless otherwise specified
 			} else {
+				my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $self->jsonPath());
+				$bname =~ s/\.[^\.]*$//;
+				$self->{_name} = $bname;
 				my $daemonize = true;
 				$daemonize = $args->{daemonize} if exists $args->{daemonize};
 				if( $daemonize ){
 					# set a runnable qualifier as soon as we can
-					my ( $vol, $dirs, $bname ) = File::Spec->splitpath( $self->jsonPath());
-					$bname =~ s/\.[^\.]*$//;
 					$self->runnableSetQualifier( $bname );
 					# and initialize llistening socket and messaging connection
 					$self->_daemonize();
