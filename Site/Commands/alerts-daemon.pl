@@ -7,6 +7,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --json=<filename>       the name of the JSON configuration file of this daemon [${json}]
+# @(-) --[no]ignoreInt         ignore the (Ctrl+C) INT signal [${ignoreInt}]
 #
 # @(@) This script is expected to be run as a daemon, started via a 'daemon.pl start -json <filename.json>' command.
 #
@@ -58,10 +59,12 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	verbose => 'no',
-	json => ''
+	json => '',
+	ignoreInt => 'no'
 };
 
 my $opt_json = $defaults->{json};
+my $opt_ignoreInt = false;
 
 my $commands = {
 	#help => \&help,
@@ -155,7 +158,8 @@ if( !GetOptions(
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
-	"json=s"			=> \$opt_json )){
+	"json=s"			=> \$opt_json,
+	"ignoreInt!"		=> \$opt_ignoreInt )){
 
 		msgOut( "try '".$daemon->command()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -170,11 +174,12 @@ msgVerbose( "found colored='".( $daemon->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $daemon->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $daemon->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
+msgVerbose( "found ignoreInt='".( $opt_ignoreInt ? 'true':'false' )."'" );
 
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 
 if( !TTP::errs()){
-	$daemon->setConfig({ json => $opt_json });
+	$daemon->setConfig({ json => $opt_json, ignoreInt => $opt_ignoreInt });
 }
 if( TTP::errs()){
 	TTP::exit();

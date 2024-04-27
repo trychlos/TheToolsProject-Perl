@@ -189,6 +189,10 @@ after _newBase => sub {
 	if( !$ttp->runner()){
 		msgLog( "[] executing $0 ".join( ' ', @ARGV ));
 		$ttp->runner( $self );
+		$SIG{INT} = sub {
+			msgVerbose( "quitting on Ctrl+C keyboard interrupt" );
+			TTP::exit();
+		}
 	}
 };
 

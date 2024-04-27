@@ -176,12 +176,14 @@ sub _advertize {
 # initialize the TTP daemon
 # when entering here, the JSON config has been successfully read, evaluated and checked
 # (I):
-# - none
+# - messaging: whether to advertize about the daemon status to the messaging system,
+#   defaulting to true
+# - ignoreInt: whether to ignore (Ctrl+C) INT signal, defaulting to false
 # (O):
 # - returns this same object
 
 sub _daemonize {
-	my ( $self, %args ) = @_;
+	my ( $self, $args ) = @_;
 
 	my $listeningPort = $self->listeningPort();
 	my $listeningInterval = $self->listeningInterval();
@@ -204,14 +206,25 @@ sub _daemonize {
 
 	# connect to MQTT communication bus if the host is configured for
 	my $messaging = true;
-	$messaging = $args{messaging} if exists $args{messaging};
+	$messaging = $args->{messaging} if exists $args->{messaging};
 	if( !TTP::errs() && $messaging && $messagingInterval ){
 		$self->{_mqtt} = TTP::MQTT::connect({
 			will => $self->_lastwill()
 		});
 	}
+
+	# Ctrl+C handling
 	if( !TTP::errs()){
-		$SIG{INT} = sub { $self->{_socket}->close(); TTP::exit(); };
+		my $ignoreInt = false;
+		$ignoreInt = $args->{ignoreInt} if exists $args->{ignoreInt};
+		$SIG{INT} = sub { 
+			if( $ignoreInt ){
+				msgVerbose( "INT (Ctrl+C) signal received, ignored" );
+			} else {
+				$self->{_socket}->close();
+				TTP::exit();
+			}
+		};
 	}
 
 	return $self;
@@ -550,8 +563,8 @@ sub setConfig {
 				if( $daemonize ){
 					# set a runnable qualifier as soon as we can
 					$self->runnableSetQualifier( $bname );
-					# and initialize llistening socket and messaging connection
-					$self->_daemonize();
+					# and initialize listening socket and messaging connection
+					$self->_daemonize( $args );
 				}
 			}
 		}
@@ -572,7 +585,7 @@ sub start {
 	my ( $self ) = @_;
 
 	my $program = $self->execPath();
-	my $proc = Proc::Background->new( "perl $program -json ".$self->jsonPath()." ".join( ' ', @ARGV ));
+	my $proc = Proc::Background->new( "perl $program -json ".$self->jsonPath()." -ignoreInt ".join( ' ', @ARGV ));
 
 	return $proc;
 }
@@ -681,8 +694,6 @@ sub init {
 # - the TTP EP entry point
 # - an optional argument object with following keys:
 #   > path: the absolute path to the JSON configuration file
-#   > checkConfig: whether to check the loaded config for mandatory items, defaulting to true
-#   > daemonize: whether to activate the daemonization process, defaulting to true
 # (O):
 # - this object
 
@@ -699,11 +710,8 @@ sub new {
 	# if a path is specified, then we try to load it
 	# JSOnable role takes care of validating the acceptability and the enable-ity
 	if( $args && $args->{path} ){
-		my $checkConfig = true;
-		$checkConfig = $args->{checkConfig} if exists $args->{checkConfig};
-		my $daemonize = true;
-		$daemonize = $args->{daemonize} if exists $args->{daemonize};
-		$self->setConfig({ json => $args->{path}, checkConfig => $checkConfig, daemonize => $daemonize });
+		$args->{json} = $args->{path};
+		$self->setConfig( $args );
 	}
 
 	return $self;
