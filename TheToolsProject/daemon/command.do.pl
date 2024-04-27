@@ -53,6 +53,7 @@ my $defaults = {
 my $opt_json = $defaults->{json};
 my $opt_bname = $defaults->{bname};
 my $opt_port = -1;
+my $opt_port_set = false;
 my $opt_command = $defaults->{command};
 
 # -------------------------------------------------------------------------------------------------
@@ -78,7 +79,8 @@ sub doSend {
 		my $response = "";
 		while( !isOk( $response )){
 			$socket->recv( $response, 4096 );
-			print "$response";
+			chomp $response;
+			print "$response".EOL;
 			msgLog( $response );
 		}
 		$socket->close();
@@ -109,7 +111,11 @@ if( !GetOptions(
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"json=s"			=> \$opt_json,
 	"bname=s"			=> \$opt_bname,
-	"port=i"			=> \$opt_port,
+	"port=i"			=> sub {
+		my( $opt_name, $opt_value ) = @_;
+		$opt_port = $opt_value;
+		$opt_port_set = true;
+	},
 	"command=s"			=> \$opt_command )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
@@ -127,6 +133,7 @@ msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 msgVerbose( "found bname='$opt_bname'" );
 msgVerbose( "found port='$opt_port'" );
+msgVerbose( "found port_set='".( $opt_port_set ? 'true':'false' )."'" );
 msgVerbose( "found command='$opt_command'" );
 
 # either the json or the basename or the port must be specified (and not both)
@@ -154,6 +161,8 @@ if( $opt_json ){
 		msgErr( "unable to load a suitable daemon configuration for json='$opt_json'" );
 	}
 }
+#if a port is set, must be greater than zero
+msgErr( "when specified, addressed port must be greater than zero" ) if $opt_port <= 0;
 
 # must have a command too
 msgErr( "'--command' option is mandatory, but is not specified" ) if !$opt_command;

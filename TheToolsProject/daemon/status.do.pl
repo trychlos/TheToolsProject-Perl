@@ -53,6 +53,7 @@ my $defaults = {
 my $opt_json = $defaults->{json};
 my $opt_bname = $defaults->{bname};
 my $opt_port = -1;
+my $opt_port_set = false;
 my $opt_http = false;
 
 # -------------------------------------------------------------------------------------------------
@@ -97,7 +98,11 @@ if( !GetOptions(
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"json=s"			=> \$opt_json,
 	"bname=s"			=> \$opt_bname,
-	"port=i"			=> \$opt_port,
+	"port=i"			=> sub {
+		my( $opt_name, $opt_value ) = @_;
+		$opt_port = $opt_value;
+		$opt_port_set = true;
+	},
 	"http!"				=> \$opt_http )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
@@ -115,6 +120,7 @@ msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
 msgVerbose( "found bname='$opt_bname'" );
 msgVerbose( "found port='$opt_port'" );
+msgVerbose( "found port_set='".( $opt_port_set ? 'true':'false' )."'" );
 msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 
 # either the json or the basename or the port must be specified (and not both)
@@ -142,6 +148,8 @@ if( $opt_json ){
 		msgErr( "unable to load a suitable daemon configuration for json='$opt_json'" );
 	}
 }
+#if a port is set, must be greater than zero
+msgErr( "when specified, addressed port must be greater than zero" ) if $opt_port <= 0;
 
 if( !TTP::errs()){
 	doStatus();

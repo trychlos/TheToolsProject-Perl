@@ -310,11 +310,12 @@ sub doCommand {
 
 	# first try to execute a specific daemon command, passing it the received request
 	if( $commands->{$req->{command}} ){
-		$answer = $commands->{$req->{command}}( $req );
+		$answer = $commands->{$req->{command}}( $self, $req );
 
 	# else ty to execute a standard command
+	# the subroutine code refs must be called with the daemin instance as first argument
 	} elsif( $Const->{commonCommands}{$req->{command}} ){
-		$answer = $self->$Const->{commonCommands}{$req->{command}}( $req, $commands );
+		$answer = $Const->{commonCommands}{$req->{command}}( $self, $req, $commands );
 
 	# else the command is just unknowned
 	} else {

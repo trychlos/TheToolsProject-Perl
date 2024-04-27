@@ -5,6 +5,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
+# @(-) --bname=<name>          the JSON file basename [${bname}]
 # @(-) --port=<port>           the port number to address [${port}]
 # @(-) --[no]ignore            ignore the return code if the daemon was not active [${ignore}]
 # @(-) --[no]wait              wait for actual termination [${wait}]
@@ -45,6 +46,7 @@ my $defaults = {
 	dummy => 'no',
 	verbose => 'no',
 	json => '',
+	bname => '',
 	port => '',
 	ignore => 'yes',
 	wait => 'yes',
@@ -53,6 +55,7 @@ my $defaults = {
 };
 
 my $opt_json = $defaults->{json};
+my $opt_bname = $defaults->{bname};
 my $opt_port = -1;
 my $opt_port_set = false;
 my $opt_ignore = true;
@@ -62,23 +65,19 @@ my $opt_sleep = $defaults->{sleep};
 
 # -------------------------------------------------------------------------------------------------
 # stop the daemon
+
 sub doStop {
 	msgOut( "requesting the daemon for termination..." );
-	my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
-	my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-	my $cmd = "daemon.pl command -nocolored $dummy $verbose -command terminate";
-	$cmd .= " -verbose" if $running->verbose();
-	if( $opt_json ){
-		my $json_path = File::Spec->rel2abs( $opt_json );
-		$cmd .= " -json $json_path";
-	} elsif( $opt_port_set ){
-		$cmd .= " -port $opt_port";
-	}
+	my $dummy = $running->dummy() ? "-dummy" : "-nodummy";
+	my $verbose = $running->verbose() ? "-verbose" : "-noverbose";
+	my $cmd = "daemon.pl command -nocolored $dummy $verbose -command terminate -port $opt_port";
+	msgVerbose( $cmd );
 	my $res = `$cmd`;
 	# rc is zero if OK
 	my $rc = $?;
 	if( $res && length $res && !$rc ){
-		print "$res";
+		$res = $running->filter( $res );
+		print join( '\n', @{$res} ).EOL;
 		my $result = true;
 		if( $opt_wait ){
 			$result = doWait( $res );
@@ -106,11 +105,11 @@ sub doStop {
 # -------------------------------------------------------------------------------------------------
 # wait for the daemon actual termination
 # return true if the daemon is terminated, false else
+
 sub doWait {
 	my ( $answer ) = @_;
-	msgOut( "waiting for actual termination..." );
 	# get the pid of the answering daemon (first word of each line)
-	my @w = split( /\s+/, $answer );
+	my @w = split( /\s+/, $answer->[0] );
 	my $pid = $w[0];
 	msgLog( "waiting for '$pid' termination" );
 	my $start = localtime;
@@ -137,6 +136,7 @@ if( !GetOptions(
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"json=s"			=> \$opt_json,
+	"bname=s"			=> \$opt_bname,
 	"port=i"			=> sub {
 		my( $opt_name, $opt_value ) = @_;
 		$opt_port = $opt_value;
@@ -160,6 +160,7 @@ msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
+msgVerbose( "found bname='$opt_bname'" );
 msgVerbose( "found port='$opt_port'" );
 msgVerbose( "found port_set='".( $opt_port_set ? 'true':'false' )."'" );
 msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
@@ -167,25 +168,33 @@ msgVerbose( "found wait='".( $opt_wait ? 'true':'false' )."'" );
 msgVerbose( "found timeout='$opt_timeout'" );
 msgVerbose( "found sleep='$opt_sleep'" );
 
-# either the json or the port must be specified (and not both)
+# either the json or the basename or the port must be specified (and not both)
 my $count = 0;
 $count += 1 if $opt_json;
+$count += 1 if $opt_bname;
 $count += 1 if $opt_port != -1;
 if( $count == 0 ){
-	msgErr( "one of '--json' or '--port' options must be specified, none found" );
+	msgErr( "one of '--json' or '--bname' or '--port' options must be specified, none found" );
 } elsif( $count > 1 ){
-	msgErr( "one of '--json' or '--port' options must be specified, both were found" );
+	msgErr( "one of '--json' or '--bname' or '--port' options must be specified, several were found" );
 }
-#if a json is specified, must have a listeningPort
+#if a bname is specified, find the full filename
+if( $opt_bname ){
+	my $finder = TTP::Finder->new( $ttp );
+	$opt_json = $finder->find({ dirs => [ TTP::Daemon->dirs(), $opt_bname ], wantsAll => false });
+	msgErr( "unable to find a suitable daemon JSON configuration file for '$opt_bname'" ) if !$opt_json;
+}
+#if a json has been specified or has been found, must have a listeningPort and get it
 if( $opt_json ){
-	my $daemonConfig = TTP::Daemon::getConfigByPath( $opt_json );
-	# must have a listening port
-	msgErr( "daemon configuration must define a 'listeningPort' value, not found" ) if !$daemonConfig->{listeningPort};
+	my $daemon = TTP::Daemon->new( $ttp, { path => $opt_json, daemonize => false });
+	if( $daemon->loaded()){
+		$opt_port = $daemon->listeningPort();
+	} else {
+		msgErr( "unable to load a suitable daemon configuration for json='$opt_json'" );
+	}
 }
-#if a port is specified, must have greater than zero
-if( $opt_port_set ){
-	msgErr( "when specified, addressed port must be regater than zero" ) if $opt_port <= 0;
-}
+#if a port is set, must be greater than zero
+msgErr( "when specified, addressed port must be greater than zero" ) if $opt_port <= 0;
 
 if( !TTP::errs()){
 	doStop();

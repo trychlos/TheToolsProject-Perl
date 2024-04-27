@@ -43,6 +43,7 @@ my $defaults = {
 };
 
 my $opt_json = $defaults->{json};
+my $opt_bname = $defaults->{bname};
 
 # -------------------------------------------------------------------------------------------------
 # start the daemon
