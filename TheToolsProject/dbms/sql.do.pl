@@ -36,7 +36,7 @@
 
 use Path::Tiny;
 
-use TTP::Dbms;
+use TTP::DBMS;
 use TTP::Service;
 
 my $TTPVars = TTP::TTPVars();
@@ -95,7 +95,7 @@ sub execSqlStdin {
 	}
 	chomp $command;
 	msgVerbose( "executing '$command' from stdin" );
-	_result( TTP::Dbms::execSqlCommand( $command, { tabular => $opt_tabular, multiple => $opt_multiple }));
+	_result( TTP::DBMS::execSqlCommand( $command, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -104,14 +104,14 @@ sub execSqlScript {
 	msgVerbose( "executing from '$opt_script'" );
 	my $sql = path( $opt_script )->slurp_utf8;
 	msgVerbose( "sql='$sql'" );
-	_result( TTP::Dbms::execSqlCommand( $sql, { tabular => $opt_tabular, multiple => $opt_multiple }));
+	_result( TTP::DBMS::execSqlCommand( $sql, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
 # -------------------------------------------------------------------------------------------------
 # execute the sql command to be read from stdin
 sub execSqlCommand {
 	msgVerbose( "executing command='$opt_command'" );
-	_result( TTP::Dbms::execSqlCommand( $opt_command, { tabular => $opt_tabular, multiple => $opt_multiple }));
+	_result( TTP::DBMS::execSqlCommand( $opt_command, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
 # =================================================================================================
@@ -150,7 +150,7 @@ msgVerbose( "found tabular='".( $opt_tabular ? 'true':'false' )."'" );
 msgVerbose( "found multiple='".( $opt_multiple ? 'true':'false' )."'" );
 
 # instance is mandatory
-TTP::Dbms::checkInstanceName( $opt_instance );
+TTP::DBMS::checkInstanceName( $opt_instance );
 # either -stdin or -script or -command options must be specified and only one
 my $count = 0;
 $count += 1 if $opt_stdin;

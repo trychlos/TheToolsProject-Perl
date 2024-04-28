@@ -88,6 +88,20 @@ sub run {
 
 # -------------------------------------------------------------------------------------------------
 # Getter
+# Returns the Runnable command-line arguments
+# (I]:
+# - none
+# (O):
+# - the arguments as an array ref
+
+sub runnableArgs {
+	my ( $self ) = @_;
+
+	return \@{$self->{_irunnable}{argv}};
+}
+
+# -------------------------------------------------------------------------------------------------
+# Getter
 # (I):
 # - none
 # (O):
@@ -210,7 +224,8 @@ after _newBase => sub {
 
 	$self->{_irunnable} //= {};
 	$self->{_irunnable}{me} = $0;
-	$self->{_irunnable}{argv} = @ARGV;
+	my @argv = @ARGV;
+	$self->{_irunnable}{argv} = \@argv;
 	$self->{_irunnable}{started} = Time::Moment->now;
 	$self->{_irunnable}{errs} = 0;
 

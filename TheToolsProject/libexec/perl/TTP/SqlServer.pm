@@ -52,6 +52,45 @@ my $Const = {
 };
 
 # -------------------------------------------------------------------------------------------------
+# Backup a database
+# (I):
+# - parms is a hash ref with following keys:
+#   > database: mandatory
+#   > output: optional
+#   > mode: full-diff, defaulting to 'full'
+#   > compress: true|false
+# (O):
+# - returns a hash with following keys:
+#   > ok: true|false
+#   > stdout: a copy of lines outputed on stdout as an array ref
+
+sub apiBackupDatabase {
+	my ( $me, $dbms, $parms ) = @_;
+	my $result = { ok => false };
+	msgErr( __PACKAGE__."::apiBackupDatabase() database is mandatory, but is not specified" ) if !$parms->{database};
+	msgErr( __PACKAGE__."::apiBackupDatabase() mode must be 'full' or 'diff', found '$parms->{mode}'" ) if $parms->{mode} ne 'full' && $parms->{mode} ne 'diff';
+	msgErr( __PACKAGE__."::apiBackupDatabase() output is mandatory, but is not specified" ) if !$parms->{output};
+	if( !TTP::errs()){
+		msgVerbose( __PACKAGE__."::apiBackupDatabase() entering with instance='".$dbms->instance()."' database='$parms->{database}' mode='$parms->{mode}'..." );
+		my $tstring = localtime->strftime( '%Y-%m-%d %H:%M:%S' );
+		# if full
+		my $options = "NOFORMAT, NOINIT, MEDIANAME='SQLServerBackups'";
+		my $label = "Full";
+		# if diff
+		if( $parms->{mode} eq 'diff' ){
+			$options .= ", DIFFERENTIAL";
+			$label = "Differential";
+		}
+		$options .= ", COMPRESSION" if exists $parms->{compress} && $parms->{compress};
+		$parms->{sql} = "USE master; BACKUP DATABASE $parms->{database} TO DISK='$parms->{output}' WITH $options, NAME='$parms->{database} $label Backup $tstring';";
+		msgVerbose( __PACKAGE__."::apiBackupDatabase() sql='$parms->{sql}'" );
+		$result = _sqlExec( $dbms, $parms->{sql} );
+	}
+	msgVerbose( __PACKAGE__."::apiBackupDatabase() returns '".( $result->{ok} ? 'true':'false' )."'" );
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
 # get and returns the list of databases in the instance
 # (I):
 # - the DBMS instance

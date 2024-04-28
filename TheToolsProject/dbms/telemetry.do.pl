@@ -31,7 +31,7 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 
-use TTP::Dbms;
+use TTP::DBMS;
 use TTP::Service;
 use TTP::Telemetry;
 
@@ -124,7 +124,7 @@ sub doDbSize {
 		last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 		msgOut( "  database '$db'" );
 		# sp_spaceused provides two results sets, where each one only contains one data row
-		my $resultSets = TTP::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple -nocolored $dummy $verbose` ));
+		my $resultSets = TTP::DBMS::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple -nocolored $dummy $verbose` ));
 		my $set = _interpretDbResultSet( $resultSets );
 		foreach my $key ( keys %{$set} ){
 			`telemetry.pl publish -metric $key -value $set->{$key} -label instance=$opt_instance -label database=$db -httpPrefix ttp_dbms_database_size_ -mqttPrefix dbsize/ -nocolored $dummy $verbose`;
@@ -156,7 +156,7 @@ sub doTablesCount {
 			foreach my $tab ( @{$tables} ){
 				last if $mqttCount >= $opt_limit && $opt_limit >= 0;
 				msgOut( "  table '$tab'" );
-				my $resultSet = TTP::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular -nocolored $dummy $verbose` ));
+				my $resultSet = TTP::DBMS::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular -nocolored $dummy $verbose` ));
 				my $set = $resultSet->[0];
 				$set->{rows_count} = 0 if !defined $set->{rows_count};
 				foreach my $key ( keys %{$set} ){
@@ -216,7 +216,7 @@ if( $opt_service ){
 	} else {
 		$serviceConfig = TTP::Service::serviceConfig( $hostConfig, $opt_service );
 		if( $serviceConfig ){
-			$opt_instance = TTP::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
+			$opt_instance = TTP::DBMS::checkInstanceName( undef, { serviceConfig => $serviceConfig });
 			if( $opt_instance ){
 				msgVerbose( "setting instance='$opt_instance'" );
 				@databases = @{$serviceConfig->{DBMS}{databases}} if exists $serviceConfig->{DBMS}{databases};
@@ -231,12 +231,12 @@ if( $opt_service ){
 }
 
 $opt_instance = $defaults->{instance} if !$opt_instance;
-my $instance = TTP::Dbms::checkInstanceName( $opt_instance );
+my $instance = TTP::DBMS::checkInstanceName( $opt_instance );
 
 # if a database has been specified (or found), check that it exists
 if( scalar @databases ){
 	foreach my $db ( @databases ){
-		my $exists = TTP::Dbms::checkDatabaseExists( $opt_instance, $db );
+		my $exists = TTP::DBMS::checkDatabaseExists( $opt_instance, $db );
 		if( !$exists ){
 			msgErr( "database '$db' doesn't exist" );
 		}

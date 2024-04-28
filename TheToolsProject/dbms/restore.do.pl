@@ -32,7 +32,7 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 
-use TTP::Dbms;
+use TTP::DBMS;
 
 my $TTPVars = TTP::TTPVars();
 
@@ -65,7 +65,7 @@ sub doRestore {
 	} else {
 		msgOut( "restoring database '$hostConfig->{name}\\$opt_instance\\$opt_database' from '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
 	}
-	my $res = TTP::Dbms::restoreDatabase({
+	my $res = TTP::DBMS::restoreDatabase({
 		instance => $opt_instance,
 		database => $opt_database,
 		full => $opt_full,
@@ -147,7 +147,7 @@ msgVerbose( "found full='$opt_full'" );
 msgVerbose( "found diff='$opt_diff'" );
 msgVerbose( "found verifyonly='".( $opt_verifyonly ? 'true':'false' )."'" );
 
-my $instance = TTP::Dbms::checkInstanceName( $opt_instance );
+my $instance = TTP::DBMS::checkInstanceName( $opt_instance );
 
 msgErr( "'--database' option is mandatory, but is not specified" ) if !$opt_database && !$opt_verifyonly;
 msgErr( "'--full' option is mandatory, but is not specified" ) if !$opt_full;

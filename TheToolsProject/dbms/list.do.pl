@@ -136,6 +136,7 @@ msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
 msgVerbose( "found listinstance='".( $opt_listinstance ? 'true':'false' )."'" );
 msgVerbose( "found instance='$opt_instance'" );
+msgVerbose( "found instance_set='".( $opt_instance_set ? 'true':'false' )."'" );
 msgVerbose( "found listdb='".( $opt_listdb ? 'true':'false' )."'" );
 msgVerbose( "found database='$opt_database'" );
 msgVerbose( "found listtables='".( $opt_listtables ? 'true':'false' )."'" );

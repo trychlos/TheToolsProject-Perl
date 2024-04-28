@@ -328,6 +328,7 @@ sub _evaluatePrint {
 # - end timestamp
 # - return code
 # - full run command
+
 sub executionReport {
 	my ( $args ) = @_;
 	# write JSON file if configuration enables that and relevant arguments are provided
@@ -343,17 +344,19 @@ sub executionReport {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Complete the provided data with the data colected by TTP
+# Complete the provided data with the data collected by TTP
+
 sub _executionReportCompleteData {
 	my ( $data ) = @_;
-	$data->{cmdline} = "$0 ".join( ' ', @{$ttp->{run}{command}{args}} );
-	$data->{command} = $ttp->{run}{command}{basename};
-	$data->{verb} = $ttp->{run}{verb}{name};
-	$data->{host} = TTP::host();
-	$data->{code} = $ttp->{run}{exitCode};
-	$data->{started} = $ttp->{run}{command}{started}->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
-	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%6N' );
-	$data->{dummy} = $ttp->{run}{dummy};
+	my $running = $ttp->runner();
+	$data->{cmdline} = "$0 ".join( ' ', @{$running->runnableArgs()} );
+	$data->{command} = $running->command();
+	$data->{verb} = $running->verb();
+	$data->{host} = $ttp->node()->name();
+	$data->{code} = $running->runnableErrs();
+	$data->{started} = $running->runnableStarted()->strftime( '%Y-%m-%d %H:%M:%S.%5N' );
+	$data->{ended} = Time::Moment->now->strftime( '%Y-%m-%d %H:%M:%S.%5N' );
+	$data->{dummy} = $running->dummy();
 	return $data;
 }
 
@@ -367,6 +370,7 @@ sub _executionReportCompleteData {
 #   > data, a hash ref
 # (O):
 # - returns true|false
+
 sub _executionReportToFile {
 	my ( $args ) = @_;
 	my $res = false;
@@ -376,15 +380,18 @@ sub _executionReportToFile {
 		$data = _executionReportCompleteData( $data );
 		my $command = $ttp->var([ 'executionReports', 'withFile', 'command' ]);
 		if( $command ){
+			my $running = $ttp->runner();
 			my $json = JSON->new;
 			my $str = $json->encode( $data );
 			# protect the double quotes against the CMD.EXE command-line
 			$str =~ s/"/\\"/g;
 			$command =~ s/<DATA>/$str/;
-			my $dummy = $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
-			my $verbose = $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
-			print `$command -nocolored $dummy $verbose`;
-			msgVerbose( "Toops::_executionReportToFile() got $?" );
+			my $dummy = $running->dummy() ? "-dummy" : "-nodummy";
+			my $verbose = $running->verbose() ? "-verbose" : "-noverbose";
+			my $cmd = "$command -nocolored $dummy $verbose";
+			msgOut( "executing '$cmd'" );
+			`$cmd`;
+			msgVerbose( "TTP::_executionReportToFile() got $?" );
 			$res = ( $? == 0 );
 		} else {
 			msgErr( "executionReportToFile() expected a 'command' argument, not found" );
@@ -419,8 +426,9 @@ sub _executionReportToMqtt {
 		my $excludes = [];
 		$excludes = $args->{excludes} if exists $args->{excludes} && ref $args->{excludes} eq 'ARRAY' && scalar $args->{excludes} > 0;
 		if( $topic ){
-			my $dummy = $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
-			my $verbose = $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
+			my $running = $ttp->runner();
+			my $dummy = $running->dummy() ? "-dummy" : "-nodummy";
+			my $verbose = $running->verbose() ? "-verbose" : "-noverbose";
 			my $command = $ttp->var([ 'executionReports', 'withMqtt', 'command' ]);
 			if( $command ){
 				foreach my $key ( keys %{$data} ){
@@ -432,7 +440,9 @@ sub _executionReportToMqtt {
 						$cmd =~ s/<DATA>/$data->{$key}/;
 						my $options = $args->{options} ? $args->{options} : "";
 						$cmd =~ s/<OPTIONS>/$options/;
-						print `$cmd -nocolored $dummy $verbose`;
+						$cmd = "$cmd -nocolored $dummy $verbose";
+						msgOut( "executing '$cmd'" );
+						`$cmd`;
 						my $rc = $?;
 						msgVerbose( "Toops::_executionReportToMqtt() got rc=$rc" );
 						$res = ( $rc == 0 );

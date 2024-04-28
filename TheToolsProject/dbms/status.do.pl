@@ -30,7 +30,7 @@
 use Scalar::Util qw( looks_like_number );
 use URI::Escape;
 
-use TTP::Dbms;
+use TTP::DBMS;
 use TTP::Service;
 use TTP::Telemetry;
 
@@ -66,7 +66,7 @@ sub doState {
 	my $instance = undef;
 	my @databases = undef;
 	if( $serviceConfig ){
-		$instance = TTP::Dbms::checkInstanceName( undef, { serviceConfig => $serviceConfig });
+		$instance = TTP::DBMS::checkInstanceName( undef, { serviceConfig => $serviceConfig });
 		msgVerbose( "found instance='".( $instance || 'undef' )."'" );
 		if( $instance ){
 			@databases = @{$serviceConfig->{DBMS}{databases}} if exists $serviceConfig->{DBMS}{databases};
@@ -84,7 +84,7 @@ sub doState {
 		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
 		foreach my $db ( @databases ){
 			msgOut( "  database '$db'" );
-			my $result = TTP::Dbms::hashFromTabular( ttpFilter( `dbms.pl sql -instance $instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose` ));
+			my $result = TTP::DBMS::hashFromTabular( ttpFilter( `dbms.pl sql -instance $instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose` ));
 			my $row = @{$result}[0];
 			# due to the differences between the two publications contents, publish separately
 			# -> stdout
