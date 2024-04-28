@@ -18,9 +18,9 @@
 #
 # Manage the site configuration as a site context
 #
-# Instanciation may abort and exit immediately with code=1 if site configuration not found or with
-# unknown keys. Because of that, we do not have any 'success()' method: the returned instance can
-# be considered valid by the caller.
+# Instanciation may abort and exit immediately with exitCode=1 if site configuration is not found
+# or with unknown keys. Thanks to that, the returned instance can always be considered valid by
+# the caller.
 
 package TTP::Site;
 

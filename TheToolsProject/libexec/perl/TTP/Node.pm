@@ -86,19 +86,6 @@ sub name {
 }
 
 # -------------------------------------------------------------------------------------------------
-# returns whether the node has been successfully loaded
-# (I):
-# - none
-# (O):
-# - returns true|false
-
-sub success {
-	my ( $self ) = @_;
-
-	return $self->jsonLoaded();
-}
-
-# -------------------------------------------------------------------------------------------------
 # returns the content of a var, read from the node, defaulting to same from the site
 # (I):
 # - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
@@ -152,7 +139,7 @@ sub finder {
 #   > abortOnError: whether to abort if we do not found a suitable node JSON configuration,
 #     defaulting to true
 # (O):
-# - this object
+# - this object, or undef in case of an error
 
 sub new {
 	my ( $class, $ttp, $args ) = @_;
@@ -176,20 +163,25 @@ sub new {
 			type => 'JSON'
 		}
 	};
-	my $loaded = $self->jsonLoad({ findable => $findable, acceptable => $acceptable });
 
-	# unable to find and load the node configuration file ? this is an unrecoverable error
-	# unless otherwise specified
-	my $abort = true;
-	$abort = $args->{abortOnError} if exists $args->{abortOnError};
-	if( !$loaded && $abort ){
-		msgErr( "Unable to find a valid execution node for '$node' in [".join( ',', @{$dirs} )."]" );
-		msgErr( "Exiting with code 1" );
-		exit( 1 );
+	# try to load the json configuration
+	if( $self->jsonLoad({ findable => $findable, acceptable => $acceptable })){
+		# keep node name if ok
+		$self->{_node} = $node;
+
+	# unable to find and load the node configuration file ?
+	# this is an unrecoverable error unless otherwise specified
+	} else {
+		my $abort = true;
+		$abort = $args->{abortOnError} if exists $args->{abortOnError};
+		if( $abort ){
+			msgErr( "Unable to find a valid execution node for '$node' in [".join( ',', @{$dirs} )."]" );
+			msgErr( "Exiting with code 1" );
+			exit( 1 );
+		} else {
+			$self = undef;
+		}
 	}
-
-	# keep node name
-	$self->{_node} = $node;
 
 	return $self;
 }

@@ -89,7 +89,7 @@ sub listNodes {
 		my $name = $file;
 		$name =~ s/\.[^\.]+$//;
 		my $node = TTP::Node->new( $ttp, { node => $name, abortOnError => false });
-		$uniqs->{$name} = $it if !exists( $uniqs->{$name} ) && $node->success();
+		$uniqs->{$name} = $it if !exists( $uniqs->{$name} ) && $node;
 	}
 	# and display them in ascii order
 	foreach my $it ( sort keys %{$uniqs} ){
