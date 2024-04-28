@@ -105,7 +105,7 @@
 			"withFile": {
 				"enabled": true,
 				"dropDir": "[eval:File::Spec->catdir( TTP::logsRoot(), localtime->strftime( '%y%m%d' ), 'execReports' )]",
-				"command": "ttp.pl writejson -file [eval:File::Spec->catfile( TTP::Path::execReportsDir({ makeDirExist => false }), Time::Moment->now->strftime( '%Y%m%d%H%M%S%6N' ).'-'.ttpRandom().'.json' )] -data \"<DATA>\""
+				"command": "ttp.pl writejson -file [eval:File::Spec->catfile( TTP::var([ 'executionReports', 'withFile', 'dropDir' ]), Time::Moment->now->strftime( '%Y%m%d%H%M%S%5N' ).'-'.TTP::random().'.json' )] -data \"<DATA>\""
 			},
 			"withMqtt_comments": [
 				"manage macros: SUBJECT, DATA, OPTIONS"

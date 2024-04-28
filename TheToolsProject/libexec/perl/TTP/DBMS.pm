@@ -187,6 +187,34 @@ sub package {
 	return $self->{_dbms}{package};
 }
 
+# ------------------------------------------------------------------------------------------------
+# Restore a file into a database
+# (I):
+# - parms is a hash ref with keys:
+#   > database: mandatory
+#   > full: mandatory, the full backup file
+#   > diff: optional, the diff backup file
+#   > verifyonly: whether we want only check the restorability of the provided file
+# (O):
+# - return true|false
+
+sub restoreDatabase {
+	my ( $self, $parms ) = @_;
+	my $result = undef;
+	msgErr( __PACKAGE__."::restoreDatabase() database is mandatory, but is not specified" ) if !$parms->{database} && !$parms->{verifyonly};
+	msgErr( __PACKAGE__."::restoreDatabase() full backup is mandatory, but is not specified" ) if !$parms->{full};
+	msgErr( __PACKAGE__."::restoreDatabase() $parms->{diff}: file not found or not readable" ) if $parms->{diff} && ! -f $parms->{diff};
+	if( !TTP::errs()){
+		$result = $self->toPackage( 'apiRestoreDatabase', $parms );
+	}
+	if( $result && $result->{ok} ){
+		msgVerbose( __PACKAGE__."::restoreDatabase() returning status='true'" );
+	} else {
+		msgErr( __PACKAGE__."::restoreDatabase() ".$self->instance()."\\$parms->{database} NOT OK" );
+	}
+	return $result && $result->{ok};
+}
+
 # -------------------------------------------------------------------------------------------------
 # address a function in the package which deserves the instance
 #  and returns the result which is expected to be a hash with (at least) a 'ok' key, or undef

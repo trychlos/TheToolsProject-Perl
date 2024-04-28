@@ -414,6 +414,7 @@ sub _executionReportToFile {
 #   > topic, as a string
 #   > options, as a string
 #   > excludes, the list of data keys to be excluded
+
 sub _executionReportToMqtt {
 	my ( $args ) = @_;
 	my $res = false;
@@ -548,7 +549,7 @@ sub getHostConfig {
 sub getTempFileName {
 	my $fname = $ttp->{run}{command}{name};
 	$fname .= "-$ttp->{run}{verb}{name}" if $ttp->{run}{verb}{name};
-	my $random = ttpRandom();
+	my $random = TTP::random();
 	my $tempfname = File::Spec->catdir( TTP::Path::logsDailyDir(), "$fname-$random.tmp" );
 	msgVerbose( "getTempFileName() tempfname='$tempfname'" );
 	return $tempfname;
@@ -837,6 +838,16 @@ sub pad {
 }
 
 # -------------------------------------------------------------------------------------------------
+# returns a random identifier
+
+sub random {
+	my $ug = new Data::UUID;
+	my $uuid = lc $ug->create_str();
+	$uuid =~ s/-//g;
+	return $uuid;
+}
+
+# -------------------------------------------------------------------------------------------------
 # delete a directory and all its content
 sub removeTree {
 	my ( $dir ) = @_;
@@ -991,15 +1002,6 @@ sub ttpFilter {
 		push( @result, $it ) if !grep( /^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, $it ) && $it !~ /\(WAR\)/ && $it !~ /\(ERR\)/;
 	}
 	return \@result;
-}
-
-# -------------------------------------------------------------------------------------------------
-# returns a random identifier
-sub ttpRandom {
-	my $ug = new Data::UUID;
-	my $uuid = lc $ug->create_str();
-	$uuid =~ s/-//g;
-	return $uuid;
 }
 
 # -------------------------------------------------------------------------------------------------

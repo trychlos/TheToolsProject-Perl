@@ -34,8 +34,6 @@
 
 use TTP::DBMS;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
@@ -49,24 +47,24 @@ my $defaults = {
 };
 
 my $opt_instance = $defaults->{instance};
+my $opt_instance_set = false;
 my $opt_database = $defaults->{database};
 my $opt_full = $defaults->{full};
 my $opt_diff = $defaults->{diff};
 my $opt_verifyonly = false;
 
-my $fname = undef;
+my $dbms = undef;
 
 # -------------------------------------------------------------------------------------------------
 # restore the provided backup file
+
 sub doRestore {
-	my $hostConfig = TTP::getHostConfig();
 	if( $opt_verifyonly ){
 		msgOut( "verifying the restorability of '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
 	} else {
-		msgOut( "restoring database '$hostConfig->{name}\\$opt_instance\\$opt_database' from '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
+		msgOut( "restoring database '$opt_instance\\$opt_database' from '$opt_full'".( $opt_diff ? ", with additional diff" : "" )."..." );
 	}
-	my $res = TTP::DBMS::restoreDatabase({
-		instance => $opt_instance,
+	my $res = $dbms->restoreDatabase({
 		database => $opt_database,
 		full => $opt_full,
 		diff => $opt_diff,
@@ -86,7 +84,9 @@ sub doRestore {
 			$data->{diff} = $opt_diff;
 		} else {
 			msgVerbose( "emptying '/diff' MQTT message as restored from a full backup" );
-			`mqtt.pl publish -topic $TTPVars->{config}{host}{name}/executionReport/$ttp->{run}{command}{basename}/$ttp->{run}{verb}{name}/$opt_instance/$opt_database/diff -payload "" -retain -nocolored`;
+			my $cmd = 'mqtt.pl publish -topic '.$ttp->node()->name().'/executionReport/'.$running->command().'/'.$running->verb()."/$opt_instance/$opt_database/diff -payload \"\" -retain -nocolored";
+			msgOut( "executing '$cmd'" );
+			`$cmd`;
 		}
 		TTP::executionReport({
 			file => {
@@ -94,7 +94,7 @@ sub doRestore {
 			},
 			mqtt => {
 				data => $data,
-				topic => "$TTPVars->{config}{host}{name}/executionReport/$ttp->{run}{command}{basename}/$ttp->{run}{verb}{name}/$opt_instance/$opt_database",
+				topic => $ttp->node()->name().'/executionReport/'.$running->command().'/'.$running->verb()."/$opt_instance/$opt_database",
 				options => "-retain",
 				excludes => [
 					'instance',
@@ -123,7 +123,11 @@ if( !GetOptions(
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
-	"instance=s"		=> \$opt_instance,
+	"instance=s"		=> sub {
+		my( $opt_name, $opt_value ) = @_;
+		$opt_instance = $opt_value;
+		$opt_instance_set = true;
+	},
 	"database=s"		=> \$opt_database,
 	"full=s"			=> \$opt_full,
 	"diff=s"			=> \$opt_diff,
@@ -142,16 +146,19 @@ msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found instance='$opt_instance'" );
+msgVerbose( "found instance_set='".( $opt_instance_set ? 'true':'false' )."'" );
 msgVerbose( "found database='$opt_database'" );
 msgVerbose( "found full='$opt_full'" );
 msgVerbose( "found diff='$opt_diff'" );
 msgVerbose( "found verifyonly='".( $opt_verifyonly ? 'true':'false' )."'" );
 
-my $instance = TTP::DBMS::checkInstanceName( $opt_instance );
-
+msgErr( "'--instance' option is mandatory, but is not specified" ) if !$opt_instance;
 msgErr( "'--database' option is mandatory, but is not specified" ) if !$opt_database && !$opt_verifyonly;
 msgErr( "'--full' option is mandatory, but is not specified" ) if !$opt_full;
 msgErr( "$opt_diff: file not found or not readable" ) if $opt_diff && ! -f $opt_diff;
+
+# instanciates the DBMS class
+$dbms = TTP::DBMS->new( $ttp, { instance => $opt_instance }) if !TTP::errs();
 
 if( !TTP::errs()){
 	doRestore();

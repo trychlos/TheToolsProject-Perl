@@ -54,6 +54,7 @@ my $Const = {
 # -------------------------------------------------------------------------------------------------
 # Backup a database
 # (I):
+# - the DBMS instance
 # - parms is a hash ref with following keys:
 #   > database: mandatory
 #   > output: optional
@@ -120,6 +121,7 @@ sub apiGetInstanceDatabases {
 # ------------------------------------------------------------------------------------------------
 # returns the list of tables in the database
 # (I):
+# - the DBMS instance
 # - a parms hash with following keys:
 #   > database: the database name
 # (O):
@@ -145,6 +147,52 @@ sub apiGetDatabaseTables {
 		msgErr( __PACKAGE__."::apiGetDatabaseTables() database is mandatory, but not specified" );
 	}
 	msgVerbose( __PACKAGE__."::apiGetDatabaseTables() result='".( $result->{ok} ? 'true' : 'false' )."'" );
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Restore a file into a database
+# (I):
+# - the DBMS instance
+# - parms is a hash ref with keys:
+#   > database: mandatory
+#   > full: mandatory, the full backup file
+#   > diff: optional, the diff backup file
+#   > verifyonly: whether we want only check the restorability of the provided file
+# (O):
+# - returns a hash with following keys:
+#   > ok: true|false
+
+sub apiRestoreDatabase {
+	my ( $me, $dbms, $parms ) = @_;
+	my $result = { ok => false };
+	my $verifyonly = false;
+	$verifyonly = $parms->{verifyonly} if exists $parms->{verifyonly};
+	msgErr( __PACKAGE__."::apiRestoreDatabase() database is mandatory, not specified" ) if !$parms->{database} && !$verifyonly;
+	msgErr( __PACKAGE__."::apiRestoreDatabase() full is mandatory, not specified" ) if !$parms->{full};
+	if( !TTP::errs()){
+		msgVerbose( __PACKAGE__."::apiRestoreDatabase() entering with instance='".$dbms->instance()."' database='$parms->{database}' verifyonly='$verifyonly'..." );
+		my $diff = $parms->{diff} || '';
+		if( $verifyonly || _restoreDatabaseSetOffline( $dbms, $parms )){
+			$parms->{'file'} = $parms->{full};
+			$parms->{'last'} = length $diff == 0 ? true : false;
+			if( $verifyonly ){
+				$result->{ok} = _restoreDatabaseVerify( $dbms, $parms );
+			} else {
+				$result->{ok} = _restoreDatabaseFile( $dbms, $parms );
+			}
+			if( $result->{ok} && length $diff ){
+				$parms->{'file'} = $diff;
+				$parms->{'last'} = true;
+				if( $verifyonly ){
+					$result->{ok} &= _restoreDatabaseVerify( $dbms, $parms );
+				} else {
+					$result->{ok} &= _restoreDatabaseFile( $dbms, $parms );
+				}
+			}
+		}
+	}
+	msgVerbose( __PACKAGE__."::apiRestoreDatabase() result='".( $result->{ok} ? 'true' : 'false' )."'" );
 	return $result;
 }
 
@@ -209,6 +257,114 @@ sub _getCredentials {
 		msgErr( __PACKAGE__."::_getCredentials() unable to get credentials with provided arguments" );
 	}
 	return ( $account, $passwd );
+}
+
+# -------------------------------------------------------------------------------------------------
+# restore the target database from the specified backup file
+# (I):
+# - the DBMS instance
+# - parms is a hash ref with keys:
+#   > database: mandatory
+#   > file: mandatory
+#   > last: mandatory
+# (O):
+# - returns the needed 'MOVE' sentence
+
+sub _restoreDatabaseFile {
+	my ( $dbms, $parms ) = @_;
+	my $instance = $dbms->instance();
+	my $database = $parms->{database};
+	my $fname = $parms->{file};
+	my $last = $parms->{last};
+	#
+	msgVerbose(  __PACKAGE__."::_restoreDatabaseFile() restoring $fname" );
+	my $recovery = 'NORECOVERY';
+	if( $last ){
+		$recovery = 'RECOVERY';
+	}
+	my $move = _restoreDatabaseMove( $dbms, $parms );
+	my $result = true;
+	if( $move ){
+		my $res = _sqlExec( $dbms, "RESTORE DATABASE $database FROM DISK='$fname' WITH $recovery, $move;" );
+		$result = $res->{ok};
+	}
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the move option in case of the datapath is different from the source or when the target
+# database has changed
+# (I):
+# - the DBMS instance
+# - parms is a hash ref with keys:
+#   > database: mandatory
+#   > file: mandatory
+# (O):
+# - returns the needed 'MOVE' sentence
+
+sub _restoreDatabaseMove {
+	my ( $dbms, $parms ) = @_;
+	my $instance = $dbms->instance();
+	my $database = $parms->{database};
+	my $fname = $parms->{file};
+	my $result = _sqlExec( $dbms, "RESTORE FILELISTONLY FROM DISK='$fname'" );
+	my $move = undef;
+	if( !scalar @{$result->{result}} ){
+		msgErr( __PACKAGE__."::_restoreDatabaseMove() unable to get the files list of the backup set" );
+	} else {
+		my $sqlDataPath = $dbms->ttp()->node()->var([ 'DBMS', 'byInstance', $instance, 'dataPath' ]);
+		foreach( @{$result->{result}} ){
+			my $row = $_;
+			$move .= ', ' if length $move;
+			my ( $vol, $dirs, $fname ) = File::Spec->splitpath( $sqlDataPath, true );
+			my $target_file = File::Spec->catpath( $vol, $dirs, $database.( $row->{Type} eq 'D' ? '.mdf' : '.ldf' ));
+			$move .= "MOVE '".$row->{'LogicalName'}."' TO '$target_file'";
+		}
+	}
+	return $move;
+}
+
+# -------------------------------------------------------------------------------------------------
+# restore the target database from the specified backup file
+# in this first phase, set it first offline (if it exists)
+# return true|false
+# (I):
+# - the DBMS instance
+# - parms is a hash ref with keys:
+#   > database: mandatory
+# (O):
+# - returns true|false
+
+sub _restoreDatabaseSetOffline {
+	my ( $dbms, $parms ) = @_;
+	my $database = $parms->{database};
+	my $result = true;
+	if( $dbms->databaseExists( $database )){
+		my $res = _sqlExec( $dbms, "ALTER DATABASE $database SET OFFLINE WITH ROLLBACK IMMEDIATE;" );
+		$result = $res->{ok};
+	}
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# verify the restorability of the file
+# (I):
+# - the DBMS instance
+# - parms is a hash ref with keys:
+#   > database: mandatory
+#   > file: mandatory
+# (O):
+# - returns true|false
+
+sub _restoreDatabaseVerify {
+	my ( $dbms, $parms ) = @_;
+	my $instance = $dbms->instance();
+	my $database = $parms->{database};
+	my $fname = $parms->{file};
+	msgVerbose( __PACKAGE__."::_restoreDatabaseVerify() verifying $fname" );
+	my $move = _restoreDatabaseMove( $dbms, $parms );
+	my $res = _sqlExec( $dbms, "RESTORE VERIFYONLY FROM DISK='$fname' WITH $move;" );
+	return $res->{ok};
 }
 
 # -------------------------------------------------------------------------------------------------
