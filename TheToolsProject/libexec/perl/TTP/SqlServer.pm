@@ -91,6 +91,37 @@ sub apiBackupDatabase {
 	return $result;
 }
 
+# ------------------------------------------------------------------------------------------------
+# execute a SQL command and returns its result
+# (I):
+# - the DBMS instance
+# - an object with following keys:
+#   > command: the sql command
+#   > opts: an optional options hash which following keys:
+#     - multiple: whether several result sets are expected, defaulting to false
+# (O):
+# returns a hash with following keys:
+# - ok: true|false
+# - result: the result set as an array ref
+# - stdout: a copy of lines outputed on stdout as an array ref
+
+sub apiExecSqlCommand {
+	my ( $me, $dbms, $parms ) = @_;
+	my $result = { ok => false };
+	msgErr( __PACKAGE__."::apiExecSqlCommand() command is mandatory, but not specified" ) if !$parms || !$parms->{command};
+	if( !TTP::errs()){
+		msgVerbose( __PACKAGE__."::apiExecSqlCommand() entering with instance='".$dbms->instance()."' sql='$parms->{command}'" );
+		my $resultStyle = Win32::SqlServer::SINGLESET;
+		$resultStyle = Win32::SqlServer::MULTISET if $parms->{opts} && $parms->{opts}{multiple};
+		my $opts = {
+			resultStyle => $resultStyle
+		};
+		$result = _sqlExec( $dbms, $parms->{command}, $opts );
+	}
+	msgVerbose( __PACKAGE__."::apiExecSqlCommand() result='".( $result->{ok} ? 'true' : 'false' )."'" );
+	return $result;
+}
+
 # -------------------------------------------------------------------------------------------------
 # get and returns the list of databases in the instance
 # (I):

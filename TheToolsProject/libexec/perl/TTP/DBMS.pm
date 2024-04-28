@@ -132,6 +132,116 @@ sub databaseExists {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Display a variable starting with its reference
+# expects a data variable (not a reference to code, or so)
+# a SqlResult is just an array of hashes, or an array of array of hashes in the case of a multiple
+# result sets
+
+sub displayTabularSql {
+	my ( $self, $result ) = @_;
+	my $ref = ref( $result );
+	# expects an array, else just give up
+	if( $ref ne 'ARRAY' ){
+		msgVerbose( __PACKAGE__."::displayTabularSql() expected an array, but found '$ref', so just give up" );
+		return;
+	}
+	if( !scalar @{$result} ){
+		msgVerbose( __PACKAGE__."::displayTabularSql() got an empty array, so just give up" );
+		return;
+	}
+	# expects an array of hashes
+	# if we got an array of arrays, then this is a multiple result sets and recurse
+	$ref = ref( $result->[0] );
+	if( $ref eq 'ARRAY' ){
+		foreach my $set ( @{$result} ){
+			$self->displayTabularSql( $set );
+		}
+		return;
+	}
+	if( $ref ne 'HASH' ){
+		msgVerbose( __PACKAGE__."::displayTabularSql() expected an array of hashes, but found an array of '$ref', so just give up" );
+		return;
+	}
+	# first compute the max length of each field name + keep the same field order
+	my $lengths = {};
+	my @fields = ();
+	foreach my $key ( keys %{@{$result}[0]} ){
+		push( @fields, $key );
+		$lengths->{$key} = length $key;
+	}
+	# and for each field, compute the max length content
+	my $haveWarned = false;
+	foreach my $it ( @{$result} ){
+		foreach my $key ( keys %{$it} ){
+			if( $lengths->{$key} ){
+				if( defined $it->{$key} && length $it->{$key} > $lengths->{$key} ){
+					$lengths->{$key} = length $it->{$key};
+				}
+			} elsif( !$haveWarned ){
+				msgWarn( "found a row with different result set, do you have omit '--multiple' option ?" );
+				$haveWarned = true;
+			}
+		}
+	}
+	# and last display the full resulting array
+	# have a carriage return to be aligned on line beginning in log files
+	foreach my $key ( @fields ){
+		print TTP::pad( "+", $lengths->{$key}+3, '-' );
+	}
+	print "+".EOL;
+	foreach my $key ( @fields ){
+		print TTP::pad( "| $key", $lengths->{$key}+3, ' ' );
+	}
+	print "|".EOL;
+	foreach my $key ( @fields ){
+		print TTP::pad( "+", $lengths->{$key}+3, '-' );
+	}
+	print "+".EOL;
+	foreach my $it ( @{$result} ){
+		foreach my $key ( @fields ){
+			print TTP::pad( "| ".( defined $it->{$key} ? $it->{$key} : "" ), $lengths->{$key}+3, ' ' );
+		}
+		print "|".EOL;
+	}
+	foreach my $key ( @fields ){
+		print TTP::pad( "+", $lengths->{$key}+3, '-' );
+	}
+	print "+".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
+# execute a sql command
+# (I):
+# - the command string to be executed
+# - an optional options hash which may contain following keys:
+#   > tabular: whether to format data as tabular data, defaulting to true
+#   > multiple: whether we expect several result sets, defaulting to false
+# (O):
+# returns a hash ref with following keys:
+# - ok: true|false
+# - result: an array ref to hash results
+
+sub execSqlCommand {
+	my ( $self, $command, $opts ) = @_;
+	$opts //= {};
+	my $parms = {
+		command => $command,
+		opts => $opts
+	};
+	my $result = $self->toPackage( 'apiExecSqlCommand', $parms );
+	if( $result && $result->{ok} ){
+		my $tabular = true;
+		$tabular = $opts->{tabular} if exists $opts->{tabular};
+		if( $tabular ){
+			$self->displayTabularSql( $result->{result} );
+		} else {
+			msgVerbose( "do not display tabular result as opts->{tabular}='false'" );
+		}
+	}
+	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
 # returns the list of instance databases
 # (I):
 # - none

@@ -4,6 +4,7 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --service=<name>        acts on the named service [${service}]
 # @(-) --instance=<name>       acts on the named instance [${instance}]
 # @(-) --[no]stdin             whether the sql command has to be read from stdin [${stdin}]
 # @(-) --script=<filename>     the sql script filename [${script}]
@@ -39,13 +40,12 @@ use Path::Tiny;
 use TTP::DBMS;
 use TTP::Service;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
 	dummy => 'no',
 	verbose => 'no',
+	service => '',
 	instance => 'MSSQLSERVER',
 	stdin => 'no',
 	script => '',
@@ -54,19 +54,26 @@ my $defaults = {
 	multiple => 'no'
 };
 
+my $opt_service = $defaults->{service};
 my $opt_instance = $defaults->{instance};
+my $opt_instance_set = false;
 my $opt_stdin = false;
 my $opt_script = $defaults->{script};
 my $opt_command = $defaults->{command};
 my $opt_tabular = false;
 my $opt_multiple = false;
 
+# may be overriden by the service if specified
+my $jsonable = $ttp->node();
+my $dbms = undef;
+
 # -------------------------------------------------------------------------------------------------
-# Dbms::execSqlCommand returns a hash with:
+# DBMS::execSqlCommand returns a hash with:
 # - ok: true|false
 # - result: the result set as an array ref
 #   an array of hashes for a single set, or an array of arrays of hashes in case of a multiple result sets
 # - stdout: an array of what has been printed (which are often error messages)
+
 sub _result {
 	my ( $res ) = @_;
 	if( $res->{ok} && scalar @{$res->{result}} && !$opt_tabular ){
@@ -88,6 +95,7 @@ sub _result {
 
 # -------------------------------------------------------------------------------------------------
 # execute the sql command to be read from stdin
+
 sub execSqlStdin {
 	my $command = '';
 	while( <> ){
@@ -95,23 +103,25 @@ sub execSqlStdin {
 	}
 	chomp $command;
 	msgVerbose( "executing '$command' from stdin" );
-	_result( TTP::DBMS::execSqlCommand( $command, { tabular => $opt_tabular, multiple => $opt_multiple }));
+	_result( $dbms->execSqlCommand( $command, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
 # -------------------------------------------------------------------------------------------------
 # execute the sql script
+
 sub execSqlScript {
 	msgVerbose( "executing from '$opt_script'" );
 	my $sql = path( $opt_script )->slurp_utf8;
 	msgVerbose( "sql='$sql'" );
-	_result( TTP::DBMS::execSqlCommand( $sql, { tabular => $opt_tabular, multiple => $opt_multiple }));
+	_result( $dbms->execSqlCommand( $sql, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
 # -------------------------------------------------------------------------------------------------
-# execute the sql command to be read from stdin
+# execute the sql command passed in the command-line
+
 sub execSqlCommand {
 	msgVerbose( "executing command='$opt_command'" );
-	_result( TTP::DBMS::execSqlCommand( $opt_command, { tabular => $opt_tabular, multiple => $opt_multiple }));
+	_result( $dbms->execSqlCommand( $opt_command, { tabular => $opt_tabular, multiple => $opt_multiple }));
 }
 
 # =================================================================================================
@@ -123,7 +133,12 @@ if( !GetOptions(
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
-	"instance=s"		=> \$opt_instance,
+	"service=s"			=> \$opt_service,
+	"instance=s"		=> sub {
+		my( $opt_name, $opt_value ) = @_;
+		$opt_instance = $opt_value;
+		$opt_instance_set = true;
+	},
 	"stdin!"			=> \$opt_stdin,
 	"script=s"			=> \$opt_script,
 	"command=s"			=> \$opt_command,
@@ -142,15 +157,36 @@ if( $running->help()){
 msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
+msgVerbose( "found service='$opt_service'" );
 msgVerbose( "found instance='$opt_instance'" );
+msgVerbose( "found instance_set='".( $opt_instance_set ? 'true':'false' )."'" );
 msgVerbose( "found stdin='".( $opt_stdin ? 'true':'false' )."'" );
 msgVerbose( "found script='$opt_script'" );
 msgVerbose( "found command='$opt_command'" );
 msgVerbose( "found tabular='".( $opt_tabular ? 'true':'false' )."'" );
 msgVerbose( "found multiple='".( $opt_multiple ? 'true':'false' )."'" );
 
-# instance is mandatory
-TTP::DBMS::checkInstanceName( $opt_instance );
+# must have either -service or -instance options
+# compute instance from service
+my $count = 0;
+$count += 1 if $opt_service;
+$count += 1 if $opt_instance_set;
+if( $count == 0 ){
+	msgErr( "must have one of '--service' or '--instance' option, none found" );
+} elsif( $count > 1 ){
+	msgErr( "must have one of '--service' or '--instance' option, both found" );
+} elsif( $opt_service ){
+	if( $jsonable->hasService( $opt_service )){
+		$jsonable = TTP::Service->new( $ttp, { service => $opt_service });
+		$opt_instance = $jsonable->var([ 'DBMS', 'instance' ]);
+	} else {
+		msgErr( "service '$opt_service' if not defined on current execution node" ) ;
+	}
+}
+
+# instanciates the DBMS class
+$dbms = TTP::DBMS->new( $ttp, { instance => $opt_instance }) if !TTP::errs();
+
 # either -stdin or -script or -command options must be specified and only one
 my $count = 0;
 $count += 1 if $opt_stdin;
