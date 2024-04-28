@@ -30,7 +30,7 @@
 # As the evaluation is executed here, this module may have to 'use' the needed Perl packages
 # which are not yet in the running context.
 
-package TTP::JSONable;
+package TTP::IJsonable;
 our $VERSION = '1.00';
 
 use strict;
@@ -153,8 +153,8 @@ sub _evaluatePrint {
 
 sub evaluate {
 	my ( $self, $args ) = @_;
-	$self->{_jsonable}{evaluated} = $self->{_jsonable}{raw};
-	$self->{_jsonable}{evaluated} = $self->_evaluate( $self->{_jsonable}{raw} );
+	$self->{_ijsonable}{evaluated} = $self->{_ijsonable}{raw};
+	$self->{_ijsonable}{evaluated} = $self->_evaluate( $self->{_ijsonable}{raw} );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -167,7 +167,7 @@ sub evaluate {
 sub jsonData {
 	my ( $self, $args ) = @_;
 
-	return $self->{_jsonable}{evaluated};
+	return $self->{_ijsonable}{evaluated};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -197,19 +197,19 @@ sub jsonLoad {
 	#print Dumper( $args );
 
 	# keep the passed-in args
-	$self->{_jsonable}{args} = \%{$args};
+	$self->{_ijsonable}{args} = \%{$args};
 
 	# if a path is specified, the we want this one absolutely
 	# load it and see if it is accepted
 	if( $args->{path} ){
-		$self->{_jsonable}{json} = File::Spec->rel2abs( $args->{path} );
-		if( $self->{_jsonable}{json} ){
-			$self->{_jsonable}{raw} = $self->jsonRead( $self->{_jsonable}{json} );
-			if( $self->{_jsonable}{raw} ){
-				if( $self->does( 'TTP::Acceptable' ) && $args->{acceptable} ){
-					$args->{acceptable}{object} = $self->{_jsonable}{raw};
+		$self->{_ijsonable}{json} = File::Spec->rel2abs( $args->{path} );
+		if( $self->{_ijsonable}{json} ){
+			$self->{_ijsonable}{raw} = $self->jsonRead( $self->{_ijsonable}{json} );
+			if( $self->{_ijsonable}{raw} ){
+				if( $self->does( 'TTP::IAcceptable' ) && $args->{acceptable} ){
+					$args->{acceptable}{object} = $self->{_ijsonable}{raw};
 					if( !$self->accept( $args->{acceptable} )){
-						$self->{_jsonable}{raw} = undef;
+						$self->{_ijsonable}{raw} = undef;
 					}
 				}
 			}
@@ -217,19 +217,19 @@ sub jsonLoad {
 
 	# else hope that the class is also a Findable
 	# if a Findable, it will itself manages the Acceptable role
-	} elsif( $self->does( 'TTP::Findable' ) && $args->{findable} ){
+	} elsif( $self->does( 'TTP::IFindable' ) && $args->{findable} ){
 		my $res = $self->find( $args->{findable}, $args );
 		if( $res ){
 			my $ref = ref( $res );
 			if( $ref eq 'ARRAY' ){
-				$self->{_jsonable}{json} = $res->[0] if scalar @{$res};
+				$self->{_ijsonable}{json} = $res->[0] if scalar @{$res};
 			} elsif( !$ref ){
-				$self->{_jsonable}{json} = $res;
+				$self->{_ijsonable}{json} = $res;
 			} else {
 				msgErr( __PACKAGE__."::jsonLoad() expects scalar of array from Findable::find(), received '$ref'" );
 			}
-			if( $self->{_jsonable}{json} ){
-				$self->{_jsonable}{raw} = $self->jsonRead( $self->{_jsonable}{json} );
+			if( $self->{_ijsonable}{json} ){
+				$self->{_ijsonable}{raw} = $self->jsonRead( $self->{_ijsonable}{json} );
 			}
 		}
 
@@ -241,9 +241,9 @@ sub jsonLoad {
 	# if the raw data has been successfully loaded (no JSON syntax error) and content has been accepted
 	# then initialize the evaluated part, even if not actually evaluated, so that jsonData()
 	# can at least returns raw - unevaluated - data
-	if( $self->{_jsonable}{raw} ){
-		$self->{_jsonable}{loaded} = true;
-		$self->{_jsonable}{evaluated} = $self->{_jsonable}{raw};
+	if( $self->{_ijsonable}{raw} ){
+		$self->{_ijsonable}{loaded} = true;
+		$self->{_ijsonable}{evaluated} = $self->{_ijsonable}{raw};
 	}
 
 	my $loaded = $self->jsonLoaded();
@@ -262,9 +262,9 @@ sub jsonLoad {
 sub jsonLoaded {
 	my ( $self, $loaded ) = @_;
 
-	$self->{_jsonable}{loaded} = $loaded if defined $loaded;
+	$self->{_ijsonable}{loaded} = $loaded if defined $loaded;
 
-	return $self->{_jsonable}{loaded};
+	return $self->{_ijsonable}{loaded};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -277,7 +277,7 @@ sub jsonLoaded {
 sub jsonPath {
 	my ( $self ) = @_;
 
-	return $self->{_jsonable}{json};
+	return $self->{_ijsonable}{json};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -394,10 +394,10 @@ sub jsonVar_rec {
 after _newBase => sub {
 	my ( $self, $ttp ) = @_;
 
-	$self->{_jsonable} //= {};
-	$self->{_jsonable}{loadable} = false;
-	$self->{_jsonable}{json} = undef;
-	$self->{_jsonable}{loaded} = false;
+	$self->{_ijsonable} //= {};
+	$self->{_ijsonable}{loadable} = false;
+	$self->{_ijsonable}{json} = undef;
+	$self->{_ijsonable}{loaded} = false;
 };
 
 ### Global functions

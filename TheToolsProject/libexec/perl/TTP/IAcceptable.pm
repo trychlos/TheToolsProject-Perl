@@ -24,7 +24,7 @@
 #
 # The accepted status is set to true at instanciation time.
 
-package TTP::Acceptable;
+package TTP::IAcceptable;
 our $VERSION = '1.00';
 
 use strict;
@@ -119,10 +119,10 @@ sub accepted {
 	my ( $self, $newAccepted ) = @_;
 	
 	if( defined( $newAccepted )){
-		$self->{_acceptable}{accepted} = ( $newAccepted ? true : false );
+		$self->{_iacceptable}{accepted} = ( $newAccepted ? true : false );
 	}
 
-	return $self->{_acceptable}{accepted};
+	return $self->{_iacceptable}{accepted};
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -135,8 +135,8 @@ sub accepted {
 after _newBase => sub {
 	my ( $self ) = @_;
 
-	$self->{_acceptable} //= {};
-	$self->{_acceptable}{accepted} = true;
+	$self->{_iacceptable} //= {};
+	$self->{_iacceptable}{accepted} = true;
 };
 
 1;

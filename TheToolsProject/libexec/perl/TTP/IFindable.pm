@@ -18,7 +18,7 @@
 #
 # Find a file
 
-package TTP::Findable;
+package TTP::IFindable;
 our $VERSION = '1.00';
 
 use strict;
@@ -38,7 +38,7 @@ requires qw( _newBase );
 
 # -------------------------------------------------------------------------------------------------
 # Returns the list of files which match the given specification by walking through TTP_ROOTS
-# Honors TTP::Acceptable role for each candidate.
+# Honors TTP::IAcceptable role for each candidate.
 # (I]:
 # - an argument object with following keys:
 #   > dirs: the specifications to be searched for in TTP_ROOTS tree
@@ -81,25 +81,25 @@ sub _find_run {
 	my ( $self, $args, $opts ) = @_;
 	my $result = undef;
 	# keep the passed-in arguments
-	$self->{_findable}{args} = \%{$args};
+	$self->{_ifindable}{args} = \%{$args};
 	# initialize the results
 	# we keep a track of each explored directory, or each candidate files and of its status
-	$self->{_findable}{end} = false;
-	$self->{_findable}{dirs} = [];
-	$self->{_findable}{candidates} = [];
-	$self->{_findable}{accepted} = [];
-	$self->{_findable}{wantsAll} = true;
-	$self->{_findable}{wantsAll} = $args->{wantsAll} if exists $args->{wantsAll};
+	$self->{_ifindable}{end} = false;
+	$self->{_ifindable}{dirs} = [];
+	$self->{_ifindable}{candidates} = [];
+	$self->{_ifindable}{accepted} = [];
+	$self->{_ifindable}{wantsAll} = true;
+	$self->{_ifindable}{wantsAll} = $args->{wantsAll} if exists $args->{wantsAll};
 	# iter on each root path
 	my @roots = split( /$Config{path_sep}/, $ENV{TTP_ROOTS} );
 	foreach my $it ( @roots ){
-		$self->_find_inpath_rec( $args, $opts, $args->{dirs}, $it ) if !$self->{_findable}{end};
+		$self->_find_inpath_rec( $args, $opts, $args->{dirs}, $it ) if !$self->{_ifindable}{end};
 	}
-	if( $self->{_findable}{wantsAll} ){
-		$result = $self->{_findable}{accepted};
+	if( $self->{_ifindable}{wantsAll} ){
+		$result = $self->{_ifindable}{accepted};
 		msgVerbose( __PACKAGE__."::_find() returning [".join( ',', @{$result} )."]" );
 	} else {
-		$result = $self->{_findable}{accepted}->[0] if scalar @{$self->{_findable}{accepted}};
+		$result = $self->{_ifindable}{accepted}->[0] if scalar @{$self->{_ifindable}{accepted}};
 		msgVerbose( __PACKAGE__."::_find() returning '".( $result ? $result : '(undef)' )."'" );
 	}
 	return $result;
@@ -126,7 +126,7 @@ sub _find_inpath_rec {
 					for( my $j=0 ; $j<scalar @{$dirs->[$i]} ; ++$j ){
 						$newDirs[$i] = $dirs->[$i][$j];
 						$self->_find_inpath_rec( $args, $opts, \@newDirs, $rootDir );
-						last LOOP if $self->{_findable}{end};
+						last LOOP if $self->{_ifindable}{end};
 					}
 				}
 			}
@@ -155,16 +155,16 @@ sub _find_single {
 	foreach my $candidate ( @results ){
 		#print __PACKAGE__."::_find_single() testing '$candidate'".EOL;
 		if( -r $candidate ){
-			push( @{$self->{_findable}{candidates}}, $candidate );
+			push( @{$self->{_ifindable}{candidates}}, $candidate );
 			my $accepted = true;
-			if( $self->does( 'TTP::Acceptable' ) && $opts->{acceptable} ){
+			if( $self->does( 'TTP::IAcceptable' ) && $opts->{acceptable} ){
 				my $acceptable = $opts->{acceptable};
 				$acceptable->{object} = $candidate;
 				$accepted = $self->accept( $acceptable );
 			}
 			if( $accepted ){
-				push( @{$self->{_findable}{accepted}}, $candidate );
-				$self->{_findable}{end} = true unless $self->{_findable}{wantsAll};
+				push( @{$self->{_ifindable}{accepted}}, $candidate );
+				$self->{_ifindable}{end} = true unless $self->{_ifindable}{wantsAll};
 				#print __PACKAGE__."::_find_inpath() candidate='$candidate' is accepted".EOL;
 			}
 		}
@@ -181,7 +181,7 @@ sub _find_single {
 after _newBase => sub {
 	my ( $self ) = @_;
 
-	$self->{_findable} //= {};
+	$self->{_ifindable} //= {};
 };
 
 1;

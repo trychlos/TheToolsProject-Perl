@@ -61,7 +61,7 @@ use Role::Tiny::With;
 use Time::Piece;
 use vars::global qw( $ttp );
 
-with 'TTP::Enableable', 'TTP::Acceptable', 'TTP::Findable', 'TTP::Helpable', 'TTP::JSONable', 'TTP::Optionable', 'TTP::Sleepable', 'TTP::Runnable';
+with 'TTP::IEnableable', 'TTP::IAcceptable', 'TTP::IFindable', 'TTP::IHelpable', 'TTP::IJsonable', 'TTP::IOptionable', 'TTP::ISleepable', 'TTP::IRunnable';
 
 use TTP;
 use TTP::Constants qw( :all );

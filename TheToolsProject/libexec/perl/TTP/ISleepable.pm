@@ -29,7 +29,7 @@
 #
 # Then sleepableStart(), and let each sub be called at its own interval
 
-package TTP::Sleepable;
+package TTP::ISleepable;
 our $VERSION = '1.00';
 
 use strict;
@@ -93,7 +93,7 @@ sub sleepableDeclareFn {
 	msgErr( __PACKAGE__."::sleepableDeclareFn() expects a positive interval, found '$args{interval}'" ) if !$args{interval} || $args{interval} <= 0;
 
 	if( !TTP::errs()){
-		push( @{$self->{_sleepable}{fn}}, { sub => $args{sub}, parms => $args{parms}, interval => $args{interval} } );
+		push( @{$self->{_isleepable}{fn}}, { sub => $args{sub}, parms => $args{parms}, interval => $args{interval} } );
 		$success = true;
 	}
 
@@ -115,7 +115,7 @@ sub sleepableDeclareStop {
 	msgErr( __PACKAGE__."::sleepableDeclareStop() expects a code reference, found '$ref'" ) if $ref ne 'CODE';
 
 	if( !TTP::errs()){
-		$self->{_sleepable}{stop} = { sub => $args{sub} };
+		$self->{_isleepable}{stop} = { sub => $args{sub} };
 		$success = true;
 	}
 
@@ -134,12 +134,12 @@ sub sleepableStart {
 	my ( $self ) = @_;
 
 	my $success = false;
-	msgErr( __PACKAGE__."::sleepableStart() no stop() function has been declared" ) if !defined $self->{_sleepable}{stop};
+	msgErr( __PACKAGE__."::sleepableStart() no stop() function has been declared" ) if !defined $self->{_isleepable}{stop};
 
 	if( !TTP::errs()){
 		# compute the minimal interval and loop on 1/10e of it
 		my $min = 0;
-		foreach my $it ( @{$self->{_sleepable}{fn}} ){
+		foreach my $it ( @{$self->{_isleepable}{fn}} ){
 			my $interval = $it->{interval};
 			$min = $interval if !$min || $min > $interval;
 		}
@@ -159,16 +159,16 @@ sub sleepableStart {
 	
 			while( !$stop ){
 				# call each function first
-				foreach my $it ( @{$self->{_sleepable}{fn}} ){
+				foreach my $it ( @{$self->{_isleepable}{fn}} ){
 					if( $self->_isCallable( $it->{last}, $it->{interval} )){
 						$it->{sub}->( $self, $it->{params} );
 						$it->{last} = time();
 					}
 				}
 				# test for stop (every 1000 ms)
-				if( $self->_isCallable( $self->{_sleepable}{stop}{last}, 1000 )){
-					$stop = $self->{_sleepable}{stop}{sub}->( $self );
-					$self->{_sleepable}{stop}{last} = time();
+				if( $self->_isCallable( $self->{_isleepable}{stop}{last}, 1000 )){
+					$stop = $self->{_isleepable}{stop}{sub}->( $self );
+					$self->{_isleepable}{stop}{last} = time();
 				}
 				usleep( $uloop );
 			}
@@ -190,9 +190,9 @@ sub sleepableStart {
 after _newBase => sub {
 	my ( $self ) = @_;
 
-	$self->{_sleepable} //= {};
-	$self->{_sleepable}{fn} = [];
-	$self->{_sleepable}{stop} = undef;
+	$self->{_isleepable} //= {};
+	$self->{_isleepable}{fn} = [];
+	$self->{_isleepable}{stop} = undef;
 };
 
 1;

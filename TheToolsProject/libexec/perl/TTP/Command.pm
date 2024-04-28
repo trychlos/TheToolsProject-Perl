@@ -38,7 +38,7 @@ use Role::Tiny::With;
 use Try::Tiny;
 use vars::global qw( $ttp );
 
-with 'TTP::Findable', 'TTP::Helpable', 'TTP::Optionable', 'TTP::Runnable';
+with 'TTP::IFindable', 'TTP::IHelpable', 'TTP::IOptionable', 'TTP::IRunnable';
 
 use TTP;
 use TTP::Constants qw( :all );

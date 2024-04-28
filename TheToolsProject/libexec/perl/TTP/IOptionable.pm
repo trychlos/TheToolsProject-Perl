@@ -30,7 +30,7 @@
 #
 # After their initialization here, 'dummy' and 'verbose' flags only depend of GetOptions().
 
-package TTP::Optionable;
+package TTP::IOptionable;
 our $VERSION = '1.00';
 
 use Carp;
@@ -124,7 +124,7 @@ after _newBase => sub {
 	$args //= {};
 	 #print __PACKAGE__."::new()".EOL;
 
-	$self->{_optionable} //= {};
+	$self->{_ioptionable} //= {};
 
 	# set these standard options in ttp->{run} both for historical reasons and for easier handlings
 	if( !$ttp->runner()){

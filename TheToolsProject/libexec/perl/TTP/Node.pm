@@ -33,7 +33,7 @@ use Role::Tiny::With;
 use Sys::Hostname qw( hostname );
 use vars::global qw( $ttp );
 
-with 'TTP::Acceptable', 'TTP::Enableable', 'TTP::Findable', 'TTP::JSONable';
+with 'TTP::IAcceptable', 'TTP::IEnableable', 'TTP::IFindable', 'TTP::IJsonable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
@@ -108,7 +108,7 @@ sub success {
 
 sub var {
 	my ( $self, $keys ) = @_;
-	my $value = $self->TTP::JSONable::var( $keys );
+	my $value = $self->TTP::IJsonable::var( $keys );
 	$value = $ttp->site()->var( $keys ) if !defined( $value );
 	return $value;
 }

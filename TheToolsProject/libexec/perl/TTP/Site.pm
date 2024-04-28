@@ -34,7 +34,7 @@ use Carp;
 use Data::Dumper;
 use Role::Tiny::With;
 
-with 'TTP::Acceptable', 'TTP::Enableable', 'TTP::Findable', 'TTP::JSONable';
+with 'TTP::IAcceptable', 'TTP::IEnableable', 'TTP::IFindable', 'TTP::IJsonable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
@@ -118,7 +118,7 @@ sub var {
 	my ( $self, $keys ) = @_;
 	my @newKeys = ref $keys eq 'ARRAY' ? @{$keys} : ( $keys );
 	unshift( @newKeys, $Const->{prefix} );
-	my $value = $self->TTP::JSONable::var( \@newKeys, $self->jsonData());
+	my $value = $self->TTP::IJsonable::var( \@newKeys, $self->jsonData());
 	return $value;
 }
 

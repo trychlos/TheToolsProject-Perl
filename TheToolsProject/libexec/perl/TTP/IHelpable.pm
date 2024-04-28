@@ -18,7 +18,7 @@
 #
 # Manage the helps both for commands+verbs than for external scripts.
 
-package TTP::Helpable;
+package TTP::IHelpable;
 our $VERSION = '1.00';
 
 use strict;
@@ -190,7 +190,7 @@ sub helpUsage {
 after _newBase => sub {
 	my ( $self ) = @_;
 
-	$self->{_helpable} //= {};
+	$self->{_ihelpable} //= {};
 };
 
 1;

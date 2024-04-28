@@ -25,7 +25,7 @@
 # The (hardcoded) default is to enable the configuration, and hence the underlying configured
 # object.
 
-package TTP::Enableable;
+package TTP::IEnableable;
 our $VERSION = '1.00';
 
 use strict;
@@ -93,8 +93,8 @@ sub enabled {
 after _newBase => sub {
 	my ( $self ) = @_;
 
-	$self->{_enableable} //= {};
-	$self->{_enableable}{enabled} = true;
+	$self->{_ienableable} //= {};
+	$self->{_ienableable}{enabled} = true;
 };
 
 1;

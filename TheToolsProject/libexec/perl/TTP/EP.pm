@@ -148,7 +148,7 @@ sub var {
 	my $value = undef;
 	# we may not have yet a current execution node, so accept that jsonable be undef
 	my $jsonable = $opts->{jsonable} || $self->node();
-	if( $jsonable && ref( $jsonable ) && $jsonable->does( 'TTP::JSONable' )){
+	if( $jsonable && ref( $jsonable ) && $jsonable->does( 'TTP::IJsonable' )){
 		$value = $jsonable->var( $keys );
 	}
 	return $value;

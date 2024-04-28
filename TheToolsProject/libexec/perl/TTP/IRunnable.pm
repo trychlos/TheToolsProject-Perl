@@ -21,7 +21,7 @@
 # - name, e.g. 'ttp.pl'
 # - qualifier, e.g. 'vars'
 
-package TTP::Runnable;
+package TTP::IRunnable;
 our $VERSION = '1.00';
 
 use Carp;
@@ -96,7 +96,7 @@ sub run {
 sub runnableBNameFull {
 	my ( $self ) = @_;
 
-	return $self->{_runnable}{basename};
+	return $self->{_irunnable}{basename};
 };
 
 # -------------------------------------------------------------------------------------------------
@@ -109,7 +109,7 @@ sub runnableBNameFull {
 sub runnableBNameShort {
 	my ( $self ) = @_;
 
-	return $self->{_runnable}{namewoext};
+	return $self->{_irunnable}{namewoext};
 };
 
 # -------------------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ sub runnableBNameShort {
 sub runnableErrs {
 	my ( $self ) = @_;
 
-	return $self->{_runnable}{errs};
+	return $self->{_irunnable}{errs};
 };
 
 # -------------------------------------------------------------------------------------------------
@@ -135,7 +135,7 @@ sub runnableErrs {
 sub runnableErrInc {
 	my ( $self ) = @_;
 
-	$self->{_runnable}{errs} += 1;
+	$self->{_irunnable}{errs} += 1;
 
 	return $self->runnableErrs();
 };
@@ -150,7 +150,7 @@ sub runnableErrInc {
 sub runnablePath {
 	my ( $self ) = @_;
 
-	return $self->{_runnable}{me};
+	return $self->{_irunnable}{me};
 };
 
 # -------------------------------------------------------------------------------------------------
@@ -163,7 +163,7 @@ sub runnablePath {
 sub runnableQualifier {
 	my ( $self ) = @_;
 
-	return $self->{_runnable}{qualifier};
+	return $self->{_irunnable}{qualifier};
 };
 
 # -------------------------------------------------------------------------------------------------
@@ -177,7 +177,7 @@ sub runnableQualifier {
 sub runnableStarted {
 	my ( $self ) = @_;
 
-	return $self->{_runnable}{started};
+	return $self->{_irunnable}{started};
 };
 
 # -------------------------------------------------------------------------------------------------
@@ -190,7 +190,7 @@ sub runnableStarted {
 sub runnableSetQualifier {
 	my ( $self, $qualifier ) = @_;
 
-	$self->{_runnable}{qualifier} = $qualifier;
+	$self->{_irunnable}{qualifier} = $qualifier;
 
 	return $self;
 };
@@ -208,16 +208,16 @@ after _newBase => sub {
 	$args //= {};
 	#print __PACKAGE__."::new()".EOL;
 
-	$self->{_runnable} //= {};
-	$self->{_runnable}{me} = $0;
-	$self->{_runnable}{argv} = @ARGV;
-	$self->{_runnable}{started} = Time::Moment->now;
-	$self->{_runnable}{errs} = 0;
+	$self->{_irunnable} //= {};
+	$self->{_irunnable}{me} = $0;
+	$self->{_irunnable}{argv} = @ARGV;
+	$self->{_irunnable}{started} = Time::Moment->now;
+	$self->{_irunnable}{errs} = 0;
 
 	my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
-	$self->{_runnable}{basename} = $file;
+	$self->{_irunnable}{basename} = $file;
 	$file =~ s/\.[^\.]+$//;
-	$self->{_runnable}{namewoext} = $file;
+	$self->{_irunnable}{namewoext} = $file;
 
 	if( !$ttp->runner()){
 		msgLog( "[] executing $0 ".join( ' ', @ARGV ));

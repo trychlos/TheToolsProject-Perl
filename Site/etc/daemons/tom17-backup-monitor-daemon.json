@@ -9,8 +9,8 @@
 		"",
 		"This daemon is designed to run (on the backup production host) with network read permissions on the live production host."
 	],
-	"execPath0": "[eval:File::Spec->catfile( TTP::var([ 'site', 'commandsDir' ]), 'backup-monitor-daemon.pl' )]",
-	"execPath": "[eval:File::Spec->catfile( 'C:\\INLINGUA\\dev\\scripts\\Site\\Commands', 'backup-monitor-daemon.pl' )]",
+	"execPath": "[eval:File::Spec->catfile( TTP::var([ 'site', 'commandsDir' ]), 'backup-monitor-daemon.pl' )]",
+	"execPath1": "[eval:File::Spec->catfile( 'C:\\INLINGUA\\dev\\scripts\\Site\\Commands', 'backup-monitor-daemon.pl' )]",
 	"listeningPort": 14392,
 
 	"monitoredService": "Tom17",
