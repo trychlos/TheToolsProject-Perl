@@ -33,14 +33,47 @@ use vars::global qw( $ttp );
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 
-### Private methods
-
-### Public methods
 ### https://metacpan.org/pod/Role::Tiny
 ### All subs created after importing Role::Tiny will be considered methods to be composed.
 use Role::Tiny;
 
 requires qw( _newBase );
+
+# -------------------------------------------------------------------------------------------------
+# Getter
+# Returns the Runnable name
+# (I]:
+# - none
+# (O):
+# - the command e.g. 'ttp.pl'
+
+sub command {
+	my ( $self ) = @_;
+
+	return $self->runnableBNameFull();
+}
+
+# -------------------------------------------------------------------------------------------------
+# given a command output, extracts the [command.pl verb] lines, returning the rest as an array
+# (I):
+# - the command output
+# (O):
+# - the filtered command output as an array ref
+
+sub filter {
+	my ( $self, $output ) = @_;
+	my @result = ();
+	my @lines = split( /[\r\n]/, $output );
+	my $command = $self->command();
+	foreach my $it ( @lines ){
+		chomp $it;
+		$it =~ s/^\s*//;
+		$it =~ s/\s*$//;
+		#push( @result, $it ) if !grep( /^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, $it ) && $it !~ /\(WAR\)/ && $it !~ /\(ERR\)/;
+		push( @result, $it ) if $it !~ m/^\[$command/;
+	}
+	return \@result;
+}
 
 # -------------------------------------------------------------------------------------------------
 # A placeholder run() method which does nothing but may be called even if the implementation doesn't

@@ -47,7 +47,6 @@ use Time::Piece;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 
-### Private methods
 ### https://metacpan.org/pod/Role::Tiny
 ### All subs created after importing Role::Tiny will be considered methods to be composed.
 use Role::Tiny;
@@ -310,6 +309,78 @@ sub jsonRead {
 		}
 	}
 	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the content of a var read from the evaluated JSON
+# (I):
+# - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
+#   each key can be itself an array ref of potential candidates for this level
+# - the hash ref to be searched for,
+#   defaulting to this json evaluated data
+# (O):
+# - the evaluated value of this variable, which may be undef
+
+my $varDebug = false;
+
+sub var {
+	my ( $self, $keys, $base ) = @_;
+	#print __PACKAGE__."::var() self=$self keys=[".( ref( $keys ) ? join( ',', @{$keys} ) : $keys )."] ".( $base || '' ).EOL;
+	my $jsonData = undef;
+	my $value = undef;
+	if( $base ){
+		my $ref = ref( $base );
+		if( $ref && $ref eq 'HASH' ){
+			$jsonData = $base;
+		} elsif( $ref ){
+			msgErr( __PACKAGE__."::var() expects base be a hash or a scalar, found '$ref'" );
+		} else {
+			$value = $base;
+		}
+	} else {
+		$jsonData = $self->jsonData();
+	}
+	$value = $self->jsonVar_rec( $keys, $jsonData ) if !defined $value && $jsonData;
+	return $value;
+}
+
+# keys is a scalar, or an array of scalars, or an array of arrays of scalars
+
+sub jsonVar_rec {
+	my ( $self, $keys, $base, $startBase ) = @_;
+	print __PACKAGE__."::jsonVar_rec() entering with keys='$keys' base='".( defined $base ? $base : '(undef)' )."'".EOL if $varDebug;
+	return $base if !defined( $base ) || ref( $base ) ne 'HASH';
+	$startBase = $startBase || $base;
+	my $ref = ref( $keys );
+	#print "keys=[".( ref( $keys ) eq 'ARRAY' ? join( ',', @{$keys} ) : $keys )."] base=$base".EOL;
+	if( $ref eq 'ARRAY' ){
+		for( my $i=0 ; $i<scalar @{$keys} ; ++$i ){
+			my $k = $keys->[$i];
+			$ref = ref( $k );
+			if( $ref eq 'ARRAY' ){
+				my @newKeys = @{$keys};
+				for( my $j=0 ; $j<scalar @{$k} ; ++$j ){
+					$newKeys[$i] = $k->[$j];
+					$base = $startBase;
+					$base = $self->jsonVar_rec( \@newKeys, $base, $startBase );
+					last if defined( $base );
+				}
+			} elsif( $ref ){
+				msgErr( __PACKAGE__."::jsonVar_rec() unexpected intermediate ref='$ref'" );
+			} else {
+				#print __PACKAGE__."::jsonVar_rec() searching for '$k' key in $base".EOL;
+				$base = $self->jsonVar_rec( $k, $base, $startBase );
+			}
+		}
+	} elsif( $ref ){
+		msgErr( __PACKAGE__."::jsonVar_rec() unexpected final ref='$ref'" );
+	} else {
+		# the key here may be empty when targeting the top of the hash
+		$base = $keys ? $base->{$keys} : $base;
+		#print __PACKAGE__."::jsonVar_rec() keys='$keys' found '".( defined $base ? $base : '(undef)' )."'".EOL;
+	}
+	print __PACKAGE__."::jsonVar_rec() returning '".( defined $base ? $base : '(undef)' )."'".EOL if $varDebug;
+	return $base;
 }
 
 # -------------------------------------------------------------------------------------------------

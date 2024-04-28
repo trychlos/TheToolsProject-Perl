@@ -22,7 +22,8 @@
 # - can be configured in an optional <service>.json file
 # - must at least be mentionned in each and every <node>.json which manage or participate to the service.
 # Note:
-# - Even if the host doesn't want override any service key, it still MUST define the service in the 'Services' object of its own configuration file
+# - Even if the node doesn't want override any service key, it still MUST define the service in the
+#   'Services' object of its own configuration file
 
 package TTP::Service;
 
@@ -36,11 +37,13 @@ use Carp;
 use Config;
 use Data::Dumper;
 use Role::Tiny::With;
+use vars::global qw( $ttp );
 
 with 'TTP::Enableable', 'TTP::Findable', 'TTP::JSONable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
+use TTP::Node;
 
 my $Const = {
 	# hardcoded subpaths to find the <service>.json files
@@ -58,12 +61,111 @@ my $Const = {
 
 ### Public methods
 
+# ------------------------------------------------------------------------------------------------
+# Returns the name of the service
+# (I):
+# -none
+# (O):
+# - returns the name of the service, or undef
+
+sub name {
+	my ( $self ) = @_;
+
+	return $self->{_name};
+}
+
+# ------------------------------------------------------------------------------------------------
+# Returns the value of the specified var.
+# The var is successively searched for in the Node configuration, then in this Service configuration
+# and last at the site level.
+# (I):
+# - a ref to the array of successive keys to be addressed
+# - an optional node to be searched for, defaulting to current execution node
+#   the node can be specified either as a string (the node name) or a TTP::Node object
+# (O):
+# - returns the found value, or undef
+
+sub var {
+	my ( $self, $args, $node ) = @_;
+	# keep a copy of the provided arguments
+	my @args = @{$args};
+	my $name = $self->name();
+	my $value = undef;
+	my $jsonable = undef;
+	# do we have a provided node ?
+	if( $node ){
+		my $ref = ref( $node );
+		if( $ref ){
+			if( $ref eq 'TTP::Node' ){
+				$jsonable = $node;
+			} else {
+				msgErr( __PACKAGE__."::var() expects node be provided either by name or as a 'TTP::Node', found '$ref'" );
+			}
+		} else {
+			my $nodeObj = TTP::Node->new( $ttp, { node => $node });
+			if( $nodeObj->loaded()){
+				$jsonable = $nodeObj;
+			}
+		}
+	} else {
+		$jsonable = $ttp->node();
+	}
+	if( $jsonable ){
+		# search for the service definition in the node
+		unshift( @{$args}, [ 'Services', $name ] );
+		$value = $ttp->var( $args, { jsonable => $jsonable });
+		# search as the value general to the node
+		if( !defined( $value )){
+			$value = $ttp->var( \@args, { jsonable => $jsonable });
+		}
+		# search in this service definition
+		if( !defined( $value )){
+			$value = $ttp->var( \@args, { jsonable => $self });
+		}
+		# last search for a default value at site level
+		if( !defined( $value )){
+			$value = $ttp->var( \@args, { jsonable => $ttp->site() });
+		}
+	}
+	return $value;
+}
+
 ### Class methods
+
+# ------------------------------------------------------------------------------------------------
+# Returns the list of subdirectories of TTP_ROOTS in which we may find services configuration files
+# (I):
+# - none
+# (O):
+# - returns the list of subdirectories which may contain the JSON services configuration files as
+#   an array ref
+
+sub dirs {
+	my ( $class ) = @_;
+	$class = ref( $class ) || $class;
+
+	my $dirs = $ttp->var( 'servicesDirs' ) || $class->finder()->{dirs};
+
+	return $dirs;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the list of dirs where nodes are to be found
+# (I]:
+# - none
+# (O):
+# - Returns the Const->{finder} specification as an array ref
+
+sub finder {
+	return $Const->{finder};
+}
 
 # -------------------------------------------------------------------------------------------------
 # Constructor
 # (I]:
 # - the TTP EP entry point ref
+# - an arguments hash with following keys:
+#   > service: the service name to be initialized
 # (O):
 # - this object
 
@@ -71,8 +173,31 @@ sub new {
 	my ( $class, $ttp, $args ) = @_;
 	$class = ref( $class ) || $class;
 	$args //= {};
-	my $self = $class->SUPER::new( $ttp );
+	my $self = $class->SUPER::new( $ttp, $args );
 	bless $self, $class;
+
+	if( $args->{service} ){
+
+		# keep the service name
+		$self->{_name} = $args->{service};
+
+		# allowed servicesDirs are configured at site-level
+		my $findable = {
+			dirs => [ $class->dirs(), $args->{service}.$class->finder()->{sufix} ],
+			wantsAll => false
+		};
+		my $acceptable = {
+			accept => sub { return $self->enabled( @_ ); },
+			opts => {
+				type => 'JSON'
+			}
+		};
+		$self->jsonLoad({ findable => $findable, acceptable => $acceptable });
+
+	} else {
+		msgErr( __PACKAGE__."::new() expects an 'args->{service}' key, which has not been found" );
+	}
+
 	return $self;
 }
 

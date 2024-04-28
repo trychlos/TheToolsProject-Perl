@@ -7,6 +7,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --json=<filename>       the name of the JSON configuration file of this daemon [${json}]
+# @(-) --[no]ignoreInt         ignore the (Ctrl+C) INT signal [${ignoreInt}]
 # @(-) --remote=<host>         remote host to be monitored [${remote}]
 #
 # @(@) Rationale:
@@ -16,29 +17,6 @@
 # @(@) Automatic restores, a full in the morning, and diff's every 2h during the day, let us be relatively sure that it will be easiy ready in case the live stops.
 # @(@)
 # @(@) This script is expected to be run as a daemon, started via a 'daemon.pl start -json <filename.json>' command.
-#
-# Additionnally to the Daemon data structure for daemon object, we have:
-# daemon
-#  |
-#  +- raw: the raw daemon configuration
-#  +- config: the evaluated and interpreted with macros daemon configuration
-#  |
-#  + monitored
-#     |
-#     +- host: the remote hostname to be monitored, specified in the command-line (e.g. NS3232346)
-#     +- raw: the raw remote host configuration
-#     +- config: the evaluated remote host configuration
-#
-# known macros here are:
-# - REMOTEHOST
-# - REMOTESHARE
-#
-# So each daemon instance only monitors one host service.
-# -------------------------------------------------------
-#
-# This script is mostly written like a TTP verb but is not. This is an example of how to take advantage of TTP
-# to write your own (rather pretty and efficient) daemon.
-# Just to be sure: this makes use of Toops, but is not part itself of Toops (though a not so bad example of application).
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -57,6 +35,20 @@
 # You should have received a copy of the GNU General Public License
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
+#
+# This script is mostly written like a TTP verb but is not. This is an example of how to take advantage of TTP
+# to write your own (rather pretty and efficient) daemon.
+# Just to be sure: this makes use of Toops, but is not part itself of Toops (though a not so bad example of application).
+#
+# JSON configuration:
+#
+# - monitoredService: the monitored service, mandatory
+# - localDir: the directory of the current node into which remote found backup files must be copied, mandatory
+# - scanInterval, the scan interval, defaulting to 10000 ms (10 sec.)
+#
+# known macros here are:
+# - REMOTEHOST
+# - REMOTESHARE
 
 use strict;
 use warnings;
@@ -74,7 +66,16 @@ use TTP::Constants qw( :all );
 use TTP::Daemon;
 use TTP::Message qw( :all );
 use TTP::Path;
+use TTP::Reporter;
+use TTP::Service;
 use vars::global qw( $ttp );
+
+my $daemon = TTP::Daemon->init();
+
+use constant {
+	MIN_SCAN_INTERVAL => 1000,
+	DEFAULT_SCAN_INTERVAL => 10000
+};
 
 my $defaults = {
 	help => 'no',
@@ -82,10 +83,12 @@ my $defaults = {
 	dummy => 'no',
 	verbose => 'no',
 	json => '',
+	ignoreInt => 'no',
 	remote => ''
 };
 
 my $opt_json = $defaults->{json};
+my $opt_ignoreInt = false;
 my $opt_remote = $defaults->{remote};
 
 my $commands = {
@@ -93,11 +96,7 @@ my $commands = {
 	status => \&answerStatus,
 };
 
-my $TTPVars = TTP::Daemon::init();
-my $daemon = undef;
-
 # scanning for new elements
-my $lastScanTime = 0;
 my $first = true;
 my @previousScan = ();
 my @runningScan = ();
@@ -137,24 +136,6 @@ sub answerStatus {
 }
 
 # -------------------------------------------------------------------------------------------------
-#  all needed dynamic variables are computed here at the very beginning of each scan loop
-# - reevaluate the remote host configuration
-# - interpret macros in daemon configuration:
-#   > REMOTESHARE
-#   > REMOTEHOST
-sub computeDynamics {
-	# remote host configuration
-	$daemon->{monitored}{config} = TTP::evaluate( $daemon->{monitored}{raw} );
-	# daemon configuration is reevaluated by Daemon::daemonListen() on each listenInterval
-	# we still have to substitute macros
-	$daemon->{config} = computeMacrosRec( $daemon->{config} );
-	# monitored dir is the (maybe daily) remote host execReportsDir
-	my $dir = TTP::Path::execReportsDir({ config => $daemon->{monitored}{config} });
-	my( $ler_vol, $ler_dirs, $ler_file ) = File::Spec->splitpath( $dir );
-	$daemon->{dyn}{remoteExecReportsDir} = File::Spec->catpath( $daemon->{monitored}{config}{remoteShare}, $ler_dirs, $ler_file );
-}
-
-# -------------------------------------------------------------------------------------------------
 sub computeMacrosRec {
 	my ( $var ) = @_;
 	my $result = $var;
@@ -170,11 +151,92 @@ sub computeMacrosRec {
 			push( @{$result}, computeMacrosRec( $it ));
 		}
 	} elsif( !$ref ){
-		$result =~ s/<REMOTEHOST>/$daemon->{monitored}{host}/g;
-		$result =~ s/<REMOTESHARE>/$daemon->{monitored}{config}{remoteShare}/g;
+		my $remoteShare = configRemoteShare();
+		$result =~ s/<REMOTEHOST>/$opt_remote/g;
+		$result =~ s/<REMOTESHARE>/$remoteShare/g;
 	}
 	#msgVerbose( "var='$var' ref='$ref' result='$result'" );
 	return $result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the computed monitored databases list as an array ref
+
+sub computeMonitoredDatabases {
+	return $daemon->{monitoredService}->var([ 'DBMS', 'databases' ], $daemon->{monitoredNode} );
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the computed monitored DBMS instance name
+
+sub computeMonitoredInstance {
+	return $daemon->{monitoredService}->var([ 'DBMS', 'instance' ], $daemon->{monitoredNode} );
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the computed monitored share
+
+sub computeMonitoredShare {
+	my $dir = $ttp->var([ 'executionReports', 'withFile', 'dropDir' ], { jsonable => $daemon->{monitoredNode} });
+	msgErr( "unable to compute executionRepots.withFile.dropDir for remote $opt_remote" ) if !defined $dir;
+	my( $local_vol, $local_dirs, $local_file ) = File::Spec->splitpath( $dir );
+	my( $remote_vol, $no_dirs, $no_file ) = File::Spec->splitpath( configRemoteShare());
+	my $share = File::Spec->catpath( $remote_vol, $local_dirs, $local_file );
+	msgVerbose( "monitoredShare='$share'" );
+	return $share;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the computed restored DBMS instance name
+
+sub computeRestoredInstance {
+	return $daemon->{monitoredService}->var([ 'DBMS', 'instance' ]);
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the configured 'localDir', or undef
+# the value is searched for in the 'config' hash which is the result of macros substitutions
+
+sub configLocalDir {
+	return $daemon->{config}{localDir};
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the configured 'monitoredService', or undef
+# the value is searched for in the 'config' hash which is the result of macros substitutions
+
+sub configMonitoredService {
+	return $daemon->{config}{monitoredService};
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the configured 'remoteShare' from the remote host configuration
+
+sub configRemoteShare {
+	my $remoteShare = undef;
+	my $node = $daemon->{monitoredNode};
+	if( $node ){
+		my $remoteConfig = $node->jsonData();
+		if( $remoteConfig ){
+			$remoteShare = $remoteConfig->{remoteShare};
+		}
+	}
+	return $remoteShare;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Returns the configured 'scanInterval' (in sec.) defaulting to DEFAULT_SCAN_INTERVAL
+
+sub configScanInterval {
+	my $config = $daemon->jsonData();
+	my $interval = $config->{scanInterval};
+	$interval = DEFAULT_SCAN_INTERVAL if !defined $interval;
+	if( $interval < MIN_SCAN_INTERVAL ){
+		msgVerbose( "defined scanInterval=$interval less than minimum accepted ".MIN_SCAN_INTERVAL.", ignored" );
+		$interval = DEFAULT_SCAN_INTERVAL;
+	}
+
+	return $interval;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -192,6 +254,7 @@ sub _execReport {
 # - full: always, the (local) full backup to be restored
 # - diff: if set, the (local) diff backup to be restored
 # or undef in case of an error
+
 sub locallySyncedBackups {
 	my ( $report ) = @_;
 	my $result = undef;
@@ -250,7 +313,7 @@ sub locallySearchLastFull {
 	# search locally, based on TTP configuration
 	# hardcoding the expected format file name as host-instance-database ... -mode.backup
 	# this should be enough in most situations
-	my $dir = $daemon->{config}{localDir};
+	my $dir = configLocalDir();
 	msgVerbose( "searching for full backup in '$dir'" );
 	$_localdata = {};
 	$_localdata->{host} = $report->{host};
@@ -274,17 +337,24 @@ sub locallySearchLastFull_wanted {
 # search for last full backup starting by scanning remote execution reports
 # return the transferred last full if possible;
 my $_remote = [];
+
 sub remoteSearchLastFull {
 	my ( $report ) = @_;
 	my $res = undef;
 	# get the remote execution reports
-	find( \&remoteSearchLastFull_wanted, $daemon->{dyn}{remoteExecReportsDir} );
+	my $dir = computeMonitoredShare();
+	my $reporter = TTP::Reporter->new( $ttp );
+	find( \&remoteSearchLastFull_wanted, $dir );
 	# sort in reverse name order (the most recent first)
 	my @sorted = reverse sort @{$_remote};
 	foreach my $json ( @sorted ){
-		my $remote = TTP::jsonRead( $json );
-		if( $remote->{instance} eq $report->{instance} && $remote->{database} eq $report->{database} && $remote->{mode} eq 'full' && !$remote->{dummy} ){
-			$res = syncedPath( $remote->{output} );
+		if( $reporter->jsonLoad( $json )){
+			my $remote = $reporter->jsonData();
+			if( $remote->{instance} eq $report->{instance} && $remote->{database} eq $report->{database} && $remote->{mode} eq 'full' && !$remote->{dummy} ){
+				$res = syncedPath( $remote->{output} );
+			}
+		} else {
+			msgErr( "unable to read the '$json' JSON file" );
 		}
 	}
 	return $res;
@@ -296,26 +366,28 @@ sub remoteSearchLastFull_wanted {
 }
 
 # -------------------------------------------------------------------------------------------------
-# source file is file on the source host, specified in the source language (aka a local path rather than a network path)
+# source file is file on the source host, specified in the source language (aka a local path rather
+#  than a network path).
 # we want here:
 # - copy the remote file on the local host
 # - returns the local path, or undef in case of an error
+
 sub syncedPath {
 	my ( $localSource ) = @_;
 	msgVerbose( "localSource='$localSource'" );
-	# the output file is specified as a local filename in the remote host
-	# we need to get a the remote filename (source of the copy) and the local filename (target of the copy)
+	# the output file is specified as a local filename on the remote host
+	# we need to build a the remote filename (source of the copy) and the local filename (target of the copy)
 	my( $rl_vol, $rl_dirs, $rl_file ) = File::Spec->splitpath( $localSource );
-	my $remoteSource = File::Spec->catpath( $daemon->{monitored}{config}{remoteShare}, $rl_dirs, $rl_file );
+	my $remoteSource = File::Spec->catpath( computeMonitoredShare(), $rl_dirs, $rl_file );
 	msgVerbose( "remoteSource='$remoteSource'" );
 	# local target
-	my $localTarget = TTP::Path::withTrailingSeparator( $daemon->{config}{localDir} );
+	my $localTarget = File::Spec->catdir( configLocalDir(), "" );
 	msgVerbose( "localTarget='$localTarget'" );
-	TTP::Path::makeDirExist( $daemon->{config}{localDir} );
+	TTP::Path::makeDirExist( $localTarget );
 	my $res = TTP::copyFile( $remoteSource, $localTarget );
 	if( $res ){
 		msgVerbose( "successfully copied '$remoteSource' to '$localTarget'" );
-		$localTarget = File::Spec->catpath( $localTarget, $rl_file );
+		$localTarget = File::Spec->catfile( $localTarget, $rl_file );
 	} else {
 		msgErr( "unable to copy '$remoteSource' to '$localTarget': $!" );
 		$localTarget = undef;
@@ -327,48 +399,51 @@ sub syncedPath {
 # new execution reports
 # we are tracking backup databases with dbms.pl backup -nodummy
 # warning when we have a diff without a previous full
+
 sub doWithNew {
 	my ( @newFiles ) = @_;
+	my $reporter = TTP::Reporter->new( $ttp );
+	my $monitoredInstance = computeMonitoredInstance();
+	my $monitoredDatabases = computeMonitoredDatabases();
 	#print "newFiles".EOL.Dumper( @runningScan );
 	foreach my $report ( @newFiles ){
 		$stats->{count} += 1;
 		msgVerbose( "new report '$report'" );
-		my $data = TTP::jsonRead( $report );
-		if( exists( $data->{command} ) && $data->{command} eq "dbms.pl" && exists( $data->{verb} ) && $data->{verb} eq "backup" && ( !exists( $data->{dummy} ) || !$data->{dummy} )){
+		if( $reporter->jsonLoad({ path => $report })){
+			my $data = $reporter->jsonData();
+			if( exists( $data->{command} ) && $data->{command} eq "dbms.pl" && exists( $data->{verb} ) && $data->{verb} eq "backup" && ( !exists( $data->{dummy} ) || !$data->{dummy} )){
 
-			my $instance = $data->{instance};
-			if( $instance ne $daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}}{instance} ){
-				msgVerbose( "instance='$instance' ignored" );
-				$stats->{ignored} += 1;
-				next;
-			}
+				my $instance = $data->{instance};
+				if( $instance ne $monitoredInstance ){
+					msgVerbose( "instance='$instance' ignored" );
+					$stats->{ignored} += 1;
+					next;
+				}
 
-			my $database = $data->{database};
-			if( !grep ( /$database/, @{$daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}}{databases}} )){
-				msgVerbose( "database='$database' ignored" );
-				$stats->{ignored} += 1;
-				next;
-			}
+				my $database = $data->{database};
+				if( !grep ( /$database/, @{$monitoredDatabases} )){
+					msgVerbose( "database='$database' ignored" );
+					$stats->{ignored} += 1;
+					next;
+				}
 
-			my $mode = $data->{mode};
-			my $output = $data->{output};
-
-			# have to make sure we have locally this file to be restored, plus maybe the last full backup
-			# transfert the remote backup file to our backup host, getting the local backup file (from remote host) to be restored
-			my $result = locallySyncedBackups( $data );
-			if( $result ){
-				# restore instance if the instance defined for this service in this host
-				my $hostConfig = TTP::getHostConfig();
-				my $restoreInstance = $hostConfig->{Services}{$daemon->{config}{monitoredService}}{instance};
-				my $command = "dbms.pl restore -nocolored -instance $restoreInstance -database $database ";
-				$command .= " -full $result->{full}";
-				$command .= " -diff $result->{diff}" if $result->{diff};
-				msgVerbose( "executing $command" );
-				my $out = `$command`;
-				print $out;
-				msgLog( $out );
-			} else {
-				msgWarn( "result is undefined, unable to restore" );
+				# have to make sure we have locally this file to be restored, plus maybe the last full backup
+				# transfert the remote backup file to our backup host, getting the local backup file (from remote host) to be restored
+				my $result = locallySyncedBackups( $data );
+				if( $result ){
+					# restore instance if the instance defined for this service in this host
+					my $restoreInstance = computeRestoredInstance();
+					my $command = "dbms.pl restore -nocolored -instance $restoreInstance -database $database ";
+					$command .= " -full $result->{full}";
+					$command .= " -diff $result->{diff}" if $result->{diff};
+					msgVerbose( $command );
+					my $res = `$command`;
+					my $rc = $?;
+					$res = $daemon->filter( $res );
+					print join( '\n', @{$res} ).EOL;
+				} else {
+					msgWarn( "result is undefined, unable to restore" );
+				}
 			}
 		}
 	}
@@ -377,6 +452,7 @@ sub doWithNew {
 # -------------------------------------------------------------------------------------------------
 # we find less files in this iteration than in the previous - maybe some files have been purged, deleted
 # moved, or we have a new directory, or another reason - just reset and restart over
+
 sub varReset {
 	msgVerbose( "varReset()" );
 	@previousScan = ();
@@ -388,6 +464,7 @@ sub varReset {
 #   $File::Find::dir is the current directory name,
 #   $_ is the current filename within that directory
 #   $File::Find::name is the complete pathname to the file.
+
 sub wanted {
 	return unless /\.json$/;
 	push( @runningScan, $File::Find::name );
@@ -397,12 +474,21 @@ sub wanted {
 # do its work
 # because the directories we are monitoring here are typically backups/logs directories and their
 # name may change every day
+
 sub works {
 	# recompute at each loop all dynamic variables
-	computeDynamics();
+	# - reevaluate the remote host configuration
+	$daemon->{monitoredNode}->evaluate();
+	# - interpret macros in this daemon configuration:
+	#   > REMOTESHARE
+	#   > REMOTEHOST
+	$daemon->{config} = $daemon->jsonData();
+	$daemon->{config} = computeMacrosRec( $daemon->{config} );
+	# monitored dir is the (maybe daily) remote host execReportsDir
+	$daemon->{monitoredShare} = computeMonitoredShare();
 	# and scan..
 	@runningScan = ();
-	find( \&wanted, $daemon->{dyn}{remoteExecReportsDir} );
+	find( \&wanted, $daemon->{monitoredShare} );
 	if( scalar @runningScan < scalar @previousScan ){
 		varReset();
 	} elsif( $first ){
@@ -427,92 +513,82 @@ if( !GetOptions(
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"json=s"			=> \$opt_json,
+	"ignoreInt!"		=> \$opt_ignoreInt,
 	"remote=s"			=> \$opt_remote )){
 
-		msgOut( "try '$ttp->{run}{command}{basename} --help' to get full usage syntax" );
+		msgOut( "try '".$daemon->command()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 
-if( $running->help()){
+if( $daemon->help()){
 	$daemon->helpExtern( $defaults );
 	TTP::exit();
 }
 
-msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
-msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $daemon->colored() ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $daemon->dummy() ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $daemon->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found json='$opt_json'" );
+msgVerbose( "found ignoreInt='".( $opt_ignoreInt ? 'true':'false' )."'" );
 msgVerbose( "found remote='$opt_remote'" );
 
 msgErr( "'--json' option is mandatory, not specified" ) if !$opt_json;
 msgErr( "'--remote' option is mandatory, not specified" ) if !$opt_remote;
 
 if( !TTP::errs()){
-	$daemon = TTP::Daemon::run( $opt_json );
+	$daemon->setConfig({ json => $opt_json, ignoreInt => $opt_ignoreInt });
 }
 
 # deeply check arguments
 # - monitored host must have a json configuration file
 # - the daemon configuration must have monitoredService and localDir keys
-if( !TTP::errs()){
-	$opt_remote = uc $opt_remote;
-	$daemon->{monitored}{host} = $opt_remote;
-	$daemon->{monitored}{raw} = TTP::getHostConfig( $daemon->{monitored}{host}, { withEvaluate => false });
-	$daemon->{monitored}{config} = TTP::evaluate( $daemon->{monitored}{raw} );
-}
 # stop here if we do not have any configuration for the remote host 
 if( !TTP::errs()){
-	if( $daemon->{monitored}{config} && ref( $daemon->{monitored}{config} ) eq 'HASH' ){
-		# daemon: monitoredService
-		# set TTPVars->{run}{verb}{name} to improve logs
-		if( exists( $daemon->{config}{monitoredService} )){
-			if( exists( $daemon->{monitored}{config}{Services}{$daemon->{config}{monitoredService}} )){
-				msgVerbose( "monitored service '$daemon->{config}{monitoredService}' successfully found in remote host '$daemon->{monitored}{host}' configuration file" );
-				$ttp->{run}{verb}{name} = $daemon->{config}{monitoredService};
-			} else {
-				msgErr( "monitored service '$daemon->{config}{monitoredService}' doesn't exist in remote host '$daemon->{monitored}{host}' configuration file" );
-			}
+	$daemon->{config} = $daemon->jsonData();
+	$daemon->{config} = computeMacrosRec( $daemon->{config} );
+	$daemon->{monitoredNode} = TTP::Node->new( $ttp, { node => $opt_remote });
+	#print Dumper( $daemon );
+}
+
+# check configuration for mandatory keys
+if( !TTP::errs()){
+	my $remoteConfig = $daemon->{monitoredNode}->jsonData();
+	# monitoredService is mandatory
+	my $monitoredService = configMonitoredService();
+	if( $monitoredService ){
+		my $remoteService = $remoteConfig->{Services}{$monitoredService};
+		if( $remoteService ){
+			msgVerbose( "monitored service '$monitoredService' successfully found in remote host '$opt_remote' configuration file" );
+			$daemon->{monitoredService} = TTP::Service->new( $ttp, { service => $monitoredService });
 		} else {
-			msgErr( "'monitoredService' must be specified in daemon configuration, not found" );
+			msgErr( "monitored service '$monitoredService' doesn't exist in remote host '$opt_remote' configuration file" );
 		}
-	}
-	# daemon: localDir
-	if( exists( $daemon->{config}{localDir} )){
-		msgVerbose( "local dir '$daemon->{config}{localDir}' successfully found in daemon configuration file" );
 	} else {
-		msgErr( "'localDir' must be specified in daemon configuration, not found" );
+		msgErr( "'monitoredService' key must be specified in daemon configuration, not found" );
 	}
-	# host: remoteShare
-	if( exists( $daemon->{monitored}{config}{remoteShare} )){
-		msgVerbose( "found remoteShare='$daemon->{monitored}{config}{remoteShare}'" );
+	# localDir is mandatory: the directory where found remote backups are to be copied
+	my $localDir = configLocalDir();
+	if( $localDir ){
+		msgVerbose( "localDir='$localDir' successfully found in daemon configuration file" );
 	} else {
-		msgErr( "remote share must be specified in remote host '$daemon->{monitored}{host}' configuration, not found" );
+		msgErr( "'localDir' key must be specified in daemon configuration, not found" );
+	}
+	# the remoteHost must exhibit a 'remoteShare' which is the share to which we can connect to
+	if( exists( $remoteConfig->{remoteShare} )){
+		msgVerbose( "found remoteShare='$remoteConfig->{remoteShare}'" );
+	} else {
+		msgErr( "'remoteShare' key must be specified in remote host '$opt_remote' configuration, not found" );
 	}
 }
+
 if( TTP::errs()){
 	TTP::exit();
 }
 
-my $scanInterval = 10;
-$scanInterval = $daemon->{config}{scanInterval} if exists $daemon->{config}{scanInterval} && $daemon->{config}{scanInterval} >= $scanInterval;
+$daemon->declareSleepables( $commands );
 
-my $sleepTime = TTP::Daemon::getSleepTime(
-	$daemon->{listenInterval},
-	$scanInterval
-);
+$daemon->sleepableDeclareFn( sub => \&works, interval => configScanInterval() );
 
-msgVerbose( "sleepTime='$sleepTime'" );
-msgVerbose( "scanInterval='$scanInterval'" );
+$daemon->sleepableStart();
 
-while( !$daemon->{terminating} ){
-	my $res = TTP::Daemon::daemonListen( $daemon, $commands );
-	my $now = localtime->epoch;
-	#print "now=$now lastScanTime=$lastScanTime now-lastScanTime=".( $now - $lastScanTime)." scanInterval=$scanInterval".EOL;
-	if( $now - $lastScanTime >= $scanInterval ){
-		works();
-		$lastScanTime = $now;
-	}
-	sleep( $sleepTime );
-}
-
-TTP::Daemon::terminate( $daemon );
+$daemon->terminate();

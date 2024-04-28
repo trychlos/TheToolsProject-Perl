@@ -134,16 +134,29 @@ sub site {
 # (I):
 # - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
 #   each key can be itself an array ref of potential candidates for this level
-# - the hash ref to be searched for,
-#   defaulting to node, which itself default to site
+# - an optional options hash with following keys:
+#   > jsonable: a JSONable object to be searched for
+#     defaulting for current execution node, itself defaulting to site
 # (O):
 # - the evaluated value of this variable, which may be undef
 
 my $varDebug = false;
 
 sub var {
+	my ( $self, $keys, $opts ) = @_;
+	$opts //= {};
+	my $value = undef;
+	# we may not have yet a current execution node, so accept that jsonable be undef
+	my $jsonable = $opts->{jsonable} || $self->node();
+	if( $jsonable && ref( $jsonable ) && $jsonable->does( 'TTP::JSONable' )){
+		$value = $jsonable->var( $keys );
+	}
+	return $value;
+}
+
+sub var_old {
 	my ( $self, $keys, $base ) = @_;
-	$varDebug = ( $keys eq 'deployments' );
+	#$varDebug = grep( 'executionReports', @{$keys} );
 	print __PACKAGE__."::var() entering with keys='$keys' base='".( defined $base ? $base : '(undef)' )."'".EOL if $varDebug;
 	my $found = undef;
 	if( defined( $base )){

@@ -32,6 +32,11 @@
 # This script is mostly written like a TTP verb but is not. This is an example of how to take advantage of TTP
 # to write your own (rather pretty and efficient) daemon.
 # Just to be sure: this makes use of Toops, but is not part itself of Toops (though a not so bad example of application).
+#
+# JSON configuration:
+#
+# - monitoredDir: the directory to be monitored for alerts files, defaulting to alertsDir
+# - scanInterval, the scan interval, defaulting to 10000 ms (10 sec.)
 
 use strict;
 use warnings;
@@ -50,8 +55,8 @@ use vars::global qw( $ttp );
 my $daemon = TTP::Daemon->init();
 
 use constant {
-	MIN_SCAN_INTERVAL => 1,
-	DEFAULT_SCAN_INTERVAL => 10
+	MIN_SCAN_INTERVAL => 1000,
+	DEFAULT_SCAN_INTERVAL => 10000
 };
 
 my $defaults = {
@@ -102,18 +107,22 @@ sub configScanInterval {
 
 # -------------------------------------------------------------------------------------------------
 # new alert
-# should never arrive as all alerts should also be sent through MQTT bus which is the preferred way of dealing with these alerts
+# should never arrive as all alerts should also be sent through MQTT bus which is the preferred way
+# of dealing with these alerts
+
 sub doWithNew {
 	my ( @newFiles ) = @_;
 	foreach my $file ( @newFiles ){
 		msgVerbose( "new alert '$file'" );
 		my $data = TTP::jsonRead( $file );
+		# and what ?
 	}
 }
 
 # -------------------------------------------------------------------------------------------------
 # we find less files in this iteration than in the previous - maybe some files have been purged, deleted
 # moved, or we have a new directory, or another reason - just reset and restart over
+
 sub varReset {
 	msgVerbose( "varReset()" );
 	@previousScan = ();
@@ -125,13 +134,16 @@ sub varReset {
 #   $File::Find::dir is the current directory name,
 #   $_ is the current filename within that directory
 #   $File::Find::name is the complete pathname to the file.
+
 sub wanted {
 	return unless /\.json$/;
 	push( @runningScan, $File::Find::name );
 }
 
 # -------------------------------------------------------------------------------------------------
-# do its work
+# do its work, i.e. detects new files in monitoredDir
+# Note that the find() function sends errors to stderr when directory doesn't exist
+
 sub works {
 	@runningScan = ();
 	find( \&wanted, configMonitoredDir());

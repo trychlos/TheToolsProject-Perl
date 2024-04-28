@@ -64,7 +64,7 @@ sub connect {
 	$password = $args->{password} if $args->{password};
 	msgErr( "MQTT::connect() password is not configured nor provided as an argument" ) if !$password;
 
-	$mqtt = Net::MQTT::Simple->new( $broker );
+	$mqtt = Net::MQTT::Simple->new( $broker ) if $broker;
 	if( $mqtt ){
 		# define a last will if requested by the caller
 		if( $args->{will} ){
@@ -83,7 +83,7 @@ sub connect {
 		my $logged = $mqtt->login( $username, $password );
 		msgVerbose( "MQTT::connect() logged-in with '$logged' account" );
 	} else {
-		msgErr( "MQTT::connect() unable to instanciate a new connection against '$broker' broker" );
+		msgErr( "MQTT::connect() unable to instanciate a new connection against '".( $broker ? $broker : '(undef)' )."' broker" );
 	}
 	
 	return $mqtt;

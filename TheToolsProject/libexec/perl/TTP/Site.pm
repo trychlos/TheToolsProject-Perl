@@ -49,6 +49,12 @@ my $Const = {
 		'^toops$',
 		'^TTP$'
 	],
+	# when searching for a key value in the site.json file, test following prefixes
+	prefix => [
+		'',
+		'toops',
+		'TTP'
+	],
 	# hardcoded subpaths to find the global site.json
 	# even if this not too sexy in Win32, this is a standard and a common usage on Unix/Darwin platforms
 	finder => {
@@ -98,6 +104,22 @@ sub disallowed {
 	my ( $self ) = @_;
 
 	return $self->{_disallowed};
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the content of a var read from the site
+# (I):
+# - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
+#   each key can be itself an array ref of potential candidates for this level
+# (O):
+# - the evaluated value of this variable, which may be undef
+
+sub var {
+	my ( $self, $keys ) = @_;
+	my @newKeys = ref $keys eq 'ARRAY' ? @{$keys} : ( $keys );
+	unshift( @newKeys, $Const->{prefix} );
+	my $value = $self->TTP::JSONable::var( \@newKeys, $self->jsonData());
+	return $value;
 }
 
 ### Class methods

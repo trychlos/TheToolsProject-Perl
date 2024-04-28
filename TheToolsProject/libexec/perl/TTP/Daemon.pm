@@ -25,11 +25,12 @@
 #
 # JSON configuration:
 #
-# - enabled: whether this configuration is enabled
-# - execPath: the full path to the program to be executed as the main code of the daemon
-# - listeningPort: the listening port number
-# - listeningInterval: the interval in ms. between two listening loops
-# - messagingInterval: either zero (do not advertize to messaging system), or the advertizing interval in ms
+# - enabled: whether this configuration is enabled, defaulting to true
+# - execPath: the full path to the program to be executed as the main code of the daemon, mandatory
+# - listeningPort: the listening port number, mandatory
+# - listeningInterval: the interval in ms. between two listening loops, defaulting to 1000 ms
+# - messagingInterval: either zero (do not advertize to messaging system), or the advertizing interval in ms,
+#   defaulting to 60000 ms (1 mn)
 #
 # Also the daemon writer mmust be conscious of the dynamic character of TheToolsProject.
 # In particular and at least, many output directories (logs, temp files and so on) may be built on a daily basis.
@@ -176,8 +177,6 @@ sub _advertize {
 # initialize the TTP daemon
 # when entering here, the JSON config has been successfully read, evaluated and checked
 # (I):
-# - messaging: whether to advertize about the daemon status to the messaging system,
-#   defaulting to true
 # - ignoreInt: whether to ignore (Ctrl+C) INT signal, defaulting to false
 # (O):
 # - returns this same object
@@ -205,9 +204,7 @@ sub _daemonize {
 	}
 
 	# connect to MQTT communication bus if the host is configured for
-	my $messaging = true;
-	$messaging = $args->{messaging} if exists $args->{messaging};
-	if( !TTP::errs() && $messaging && $messagingInterval ){
+	if( !TTP::errs() && $messagingInterval > 0 ){
 		$self->{_mqtt} = TTP::MQTT::connect({
 			will => $self->_lastwill()
 		});
@@ -247,7 +244,7 @@ sub _lastwill {
 sub _running {
 	my ( $self ) = @_;
 
-	return "running since ".$self->runnableStarted();
+	return "running since ".$self->runnableStarted()->strftime( '%Y-%m-%d %H:%M:%S.%5N' );
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -262,6 +259,14 @@ sub _topic {
 }
 
 ### Public methods
+
+# ------------------------------------------------------------------------------------------------
+# returns common commands
+# (useful when the daeon wants override a standard answer)
+
+sub commonCommands {
+	return $Const->{commonCommands};
+}
 
 # ------------------------------------------------------------------------------------------------
 # Declare the commom sleepable functions
@@ -335,28 +340,6 @@ sub doCommand {
 		$answer = "unknowned command '$req->{command}'\n";
 	}
 	return $answer;
-}
-
-# -------------------------------------------------------------------------------------------------
-# Getter
-# Returns the daemon command basename
-# (I]:
-# - none
-# (O):
-# - the command e.g. 'alert-daemon.pl'
-
-sub command {
-	my ( $self ) = @_;
-
-	return $self->runnableBNameFull();
-}
-
-# ------------------------------------------------------------------------------------------------
-# returns common commands
-# (useful when the daeon wants override a standard answer)
-
-sub commonCommands {
-	return $Const->{commonCommands};
 }
 
 # ------------------------------------------------------------------------------------------------

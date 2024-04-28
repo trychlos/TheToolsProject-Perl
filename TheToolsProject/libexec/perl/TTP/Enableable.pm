@@ -36,9 +36,6 @@ use Data::Dumper;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 
-### Private methods
-
-### Public methods
 ### https://metacpan.org/pod/Role::Tiny
 ### All subs created after importing Role::Tiny will be considered methods to be composed.
 use Role::Tiny;

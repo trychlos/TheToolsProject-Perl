@@ -98,6 +98,21 @@ sub success {
 	return $self->jsonLoaded();
 }
 
+# -------------------------------------------------------------------------------------------------
+# returns the content of a var, read from the node, defaulting to same from the site
+# (I):
+# - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
+#   each key can be itself an array ref of potential candidates for this level
+# (O):
+# - the evaluated value of this variable, which may be undef
+
+sub var {
+	my ( $self, $keys ) = @_;
+	my $value = $self->TTP::JSONable::var( $keys );
+	$value = $ttp->site()->var( $keys ) if !defined( $value );
+	return $value;
+}
+
 ### Class methods
 
 # ------------------------------------------------------------------------------------------------
@@ -143,13 +158,13 @@ sub new {
 	my ( $class, $ttp, $args ) = @_;
 	$class = ref( $class ) || $class;
 	$args //= {};
-	my $self = $class->SUPER::new( $ttp );
+	my $self = $class->SUPER::new( $ttp, $args );
 	bless $self, $class;
 
 	# of which node are we talking about ?
 	my $node = $args->{node} || _hostname();
 
-	# allowed nodesDirs can be configured at site-level
+	# allowed nodesDirs are configured at site-level
 	my $dirs = $class->dirs();
 	my $findable = {
 		dirs => [ $dirs, $node.$class->finder()->{sufix} ],

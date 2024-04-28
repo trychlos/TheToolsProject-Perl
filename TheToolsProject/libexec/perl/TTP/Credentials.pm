@@ -77,7 +77,7 @@ sub get {
 				wantsAll => false
 			}})){
 				$finder->evaluate();
-				$res = $ttp->var( $keys, $finder->jsonData());
+				$res = $ttp->var( $keys, { jsonable => $finder });
 			}
 		}
 		# if not found, looks at credentials/<host>.json
@@ -88,7 +88,7 @@ sub get {
 				wantsAll => false
 			}})){
 				$finder->evaluate();
-				$res = $ttp->var( $keys, $finder->jsonData());
+				$res = $ttp->var( $keys, { jsonable => $finder });
 			}
 		}
 	}
