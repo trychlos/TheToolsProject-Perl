@@ -39,7 +39,7 @@ use Data::Dumper;
 use Role::Tiny::With;
 use vars::global qw( $ttp );
 
-with 'TTP::IEnableable', 'TTP::IFindable', 'TTP::IJsonable';
+with 'TTP::IEnableable', 'TTP::IFindable', 'TTP::IJSONable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
@@ -120,7 +120,7 @@ sub var {
 		}
 		# search in this service definition
 		if( !defined( $value )){
-			$value = $self->TTP::IJsonable::var( \@args );
+			$value = $self->TTP::IJSONable::var( \@args );
 		}
 		# last search for a default value at site level
 		if( !defined( $value )){

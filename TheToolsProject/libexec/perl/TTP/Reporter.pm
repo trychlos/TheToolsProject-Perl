@@ -32,7 +32,7 @@ use Data::Dumper;
 use Role::Tiny::With;
 use vars::global qw( $ttp );
 
-with 'TTP::IJsonable';
+with 'TTP::IJSONable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );

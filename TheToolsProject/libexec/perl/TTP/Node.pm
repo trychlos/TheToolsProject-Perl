@@ -33,7 +33,7 @@ use Role::Tiny::With;
 use Sys::Hostname qw( hostname );
 use vars::global qw( $ttp );
 
-with 'TTP::IAcceptable', 'TTP::IEnableable', 'TTP::IFindable', 'TTP::IJsonable';
+with 'TTP::IAcceptable', 'TTP::IEnableable', 'TTP::IFindable', 'TTP::IJSONable';
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
@@ -73,6 +73,30 @@ sub _hostname {
 ### Public methods
 
 # -------------------------------------------------------------------------------------------------
+# Check if the provided service is defined and not disabled in this node
+# (I):
+# - name of the service
+# (O):
+# - returns true|false
+
+sub hasService {
+	my ( $self, $service ) = @_;
+	my $hasService = false;
+
+	if( !$service || ref( $service )){
+		msgErr( __PACKAGE__."::hasService() expects a service name be specified, found '".( $service || '(undef)' )."'" );
+	} else {
+		my $services = $self->jsonData()->{Services} || {};
+		my $hash = $services->{$service};
+		my $enabled = $hash ? true : false;
+		$enabled = $hash->{enabled} if $hash && exists( $hash->{enabled} );
+		$hasService = $hash && $enabled;
+	}
+
+	return $hasService;
+}
+
+# -------------------------------------------------------------------------------------------------
 # returns the node name
 # (I):
 # - none
@@ -93,9 +117,13 @@ sub name {
 # (O):
 # - the evaluated value of this variable, which may be undef
 
+my $varDebug = false;
 sub var {
 	my ( $self, $keys ) = @_;
-	my $value = $self->TTP::IJsonable::var( $keys );
+	#$varDebug = true if ref( $keys ) eq 'ARRAY' && grep( /package/, @{$keys} );
+	print __PACKAGE__."::var() keys=".( ref( $keys ) ? '['.join( ',', @{$keys} ).']' : "'$keys'" ).EOL if $varDebug;
+	my $value = $self->TTP::IJSONable::var( $keys );
+	print __PACKAGE__."::var() value='".( $value || '(undef)' )."'".EOL if $varDebug;
 	$value = $ttp->site()->var( $keys ) if !defined( $value );
 	return $value;
 }

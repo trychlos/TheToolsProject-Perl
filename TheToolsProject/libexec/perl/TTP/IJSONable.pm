@@ -30,7 +30,7 @@
 # As the evaluation is executed here, this module may have to 'use' the needed Perl packages
 # which are not yet in the running context.
 
-package TTP::IJsonable;
+package TTP::IJSONable;
 our $VERSION = '1.00';
 
 use strict;
