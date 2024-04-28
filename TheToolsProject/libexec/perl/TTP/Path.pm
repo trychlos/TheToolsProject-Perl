@@ -201,12 +201,13 @@ sub hostsConfigurationsDir {
 
 # -------------------------------------------------------------------------------------------------
 # make sure a directory exist
-# note that this does NOT honor the '-dummy' option as creating a directory is easy and a work may be blocked without that
+# note that this does NOT honor the '-dummy' option as creating a directory is easy and a work may
+# be blocked without that
 # (I):
 # - the directory to be created if not exists
 # - an optional options hash with following keys:
-#   > allowVerbose whether you can call msgVerbose() function (false to not create infinite loop when called from msgXxx()),
-#     defaulting to true
+#   > allowVerbose whether you can call msgVerbose() function (false to not create infinite loop
+#     when called from msgXxx()), defaulting to true
 # (O):
 # returns true|false
 sub makeDirExist {
@@ -219,7 +220,8 @@ sub makeDirExist {
 		#msgVerbose( "Path::makeDirExist() dir='$dir' exists" );
 		$result = true;
 	} else {
-		msgVerbose( "Path::makeDirExist() make_path() dir='$dir'" ) if $allowVerbose;
+		# why is that needed in TTP::Path !?
+		TTP::Message::msgVerbose( "Path::makeDirExist() make_path() dir='$dir'" ) if $allowVerbose;
 		my $error;
 		$result = true;
 		make_path( $dir, {
@@ -238,7 +240,8 @@ sub makeDirExist {
 			}
 			$result = false;
 		}
-		msgVerbose( "Path::makeDirExist() dir='$dir' result=$result" ) if $allowVerbose;
+		# why is that needed in TTP::Path !?
+		TTP::Message::msgVerbose( "Path::makeDirExist() dir='$dir' result=$result" ) if $allowVerbose;
 	}
 	return $result;
 }

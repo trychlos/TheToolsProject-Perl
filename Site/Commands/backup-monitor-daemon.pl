@@ -348,7 +348,8 @@ sub remoteSearchLastFull {
 	# sort in reverse name order (the most recent first)
 	my @sorted = reverse sort @{$_remote};
 	foreach my $json ( @sorted ){
-		if( $reporter->jsonLoad( $json )){
+		#print __PACKAGE__."::remoteSearchLastFull() json='$json'".EOL;
+		if( $reporter->jsonLoad({ path => $json })){
 			my $remote = $reporter->jsonData();
 			if( $remote->{instance} eq $report->{instance} && $remote->{database} eq $report->{database} && $remote->{mode} eq 'full' && !$remote->{dummy} ){
 				$res = syncedPath( $remote->{output} );
@@ -377,17 +378,18 @@ sub syncedPath {
 	msgVerbose( "localSource='$localSource'" );
 	# the output file is specified as a local filename on the remote host
 	# we need to build a the remote filename (source of the copy) and the local filename (target of the copy)
-	my( $rl_vol, $rl_dirs, $rl_file ) = File::Spec->splitpath( $localSource );
-	my $remoteSource = File::Spec->catpath( computeMonitoredShare(), $rl_dirs, $rl_file );
+	my( $ls_vol, $ls_dirs, $ls_file ) = File::Spec->splitpath( $localSource );
+	my( $rs_vol, $rs_dirs, $rs_file ) = File::Spec->splitpath( computeMonitoredShare());
+	my $remoteSource = File::Spec->catpath( $rs_vol, $ls_dirs, $ls_file );
 	msgVerbose( "remoteSource='$remoteSource'" );
 	# local target
-	my $localTarget = File::Spec->catdir( configLocalDir(), "" );
+	my $localTarget = configLocalDir();
 	msgVerbose( "localTarget='$localTarget'" );
 	TTP::Path::makeDirExist( $localTarget );
 	my $res = TTP::copyFile( $remoteSource, $localTarget );
 	if( $res ){
 		msgVerbose( "successfully copied '$remoteSource' to '$localTarget'" );
-		$localTarget = File::Spec->catfile( $localTarget, $rl_file );
+		$localTarget = File::Spec->catfile( $localTarget, $ls_file );
 	} else {
 		msgErr( "unable to copy '$remoteSource' to '$localTarget': $!" );
 		$localTarget = undef;

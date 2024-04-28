@@ -113,18 +113,18 @@ sub var {
 	if( $jsonable ){
 		# search for the service definition in the node
 		unshift( @{$args}, [ 'Services', $name ] );
-		$value = $ttp->var( $args, { jsonable => $jsonable });
+		$value = $jsonable->var( $args );
 		# search as the value general to the node
 		if( !defined( $value )){
-			$value = $ttp->var( \@args, { jsonable => $jsonable });
+			$value = $jsonable->var( \@args );
 		}
 		# search in this service definition
 		if( !defined( $value )){
-			$value = $ttp->var( \@args, { jsonable => $self });
+			$value = $self->TTP::JSONable::var( \@args );
 		}
 		# last search for a default value at site level
 		if( !defined( $value )){
-			$value = $ttp->var( \@args, { jsonable => $ttp->site() });
+			$value = $ttp->site()->var( \@args );
 		}
 	}
 	return $value;
