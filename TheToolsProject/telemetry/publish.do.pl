@@ -14,6 +14,9 @@
 # @(-) --mqttPrefix=<prefix>       a prefix to be set on MQTT metrics name [${mqttPrefix}]
 # @(-) --mqttOption <name=value>   an option to be passed to MQTT publication, may be specified several times or with a comma-separated list [${mqttOption}]
 #
+# @(@) This verb let you publish a metric to any enabled medium, among messaging-based (MQTT), or http-based (Prometheus PushGateway) or
+# @(@) text-based (Prometheus TextFile Collector).
+#
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
 # Copyright (©) 2023-2024 PWI Consulting
@@ -33,8 +36,6 @@
 # see <http://www.gnu.org/licenses/>.
 
 use TTP::Telemetry;
-
-my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',

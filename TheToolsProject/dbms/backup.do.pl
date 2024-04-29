@@ -203,7 +203,7 @@ if( scalar @{$databases} ){
 		}
 	}
 } else {
-	msgErr( "'--database' option is required (or '--service'), but is not specified" );
+	msgErr( "'--database' option is required (or '--service'), but none is specified" );
 }
 
 # check for full or diff backup mode

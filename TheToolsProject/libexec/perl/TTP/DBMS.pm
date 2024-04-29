@@ -37,7 +37,7 @@ use TTP;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
 use TTP::Path;
-#use TTP::SqlServer;
+use TTP::SqlServer;
 
 ### Private methods
 
@@ -269,6 +269,65 @@ sub getDatabaseTables {
 	my $result = $self->toPackage( 'apiGetDatabaseTables', { database => $database });
 
 	return $result->{output} || [];
+}
+
+# -------------------------------------------------------------------------------------------------
+# Converts back the output of displayTabularSql() function to an array of hashes
+# as the only way for an external command to get the output of a sql batch is to pass through a tabular display output and re-interpretation
+# (I):
+# - an array of the lines outputed by a 'dbms.pl sql -tabular' command, which may contains several result sets
+#   it is expected the output has already be filtered through Toops::ttpFilter()
+# (O):
+# returns:
+# - an array of hashes if we have found a single result set
+# - an array of arrays of hashes if we have found several result sets
+
+sub hashFromTabular {
+	my ( $self, $output ) = @_;
+	my $result = [];
+	my $multiple = false;
+	my $array = [];
+	my $sepCount = 0;
+	my @columns = ();
+	foreach my $line ( @{$output} ){
+		if( $line =~ /^\+---/ ){
+			$sepCount += 1;
+			next;
+		}
+		# found another result set
+		if( $sepCount == 4 ){
+			$multiple = true;
+			push( @{$result}, $array );
+			$array = [];
+			@columns = ();
+			$sepCount = 1;
+		}
+		# header line -> provide column names
+		if( $sepCount == 1 ){
+			@columns = split( /\s*\|\s*/, $line );
+			shift @columns;
+		}
+		# get data
+		if( $sepCount == 2 ){
+			my @data = split( /\s*\|\s*/, $line );
+			shift @data;
+			my $row = {};
+			for( my $i=0 ; $i<scalar @columns ; ++$i ){
+				$row->{$columns[$i]} = $data[$i];
+			}
+			push( @{$array}, $row );
+		}
+		# end of the current result set
+		#if( $sepCount == 3 ){
+		#}
+	}
+	# at the end, either push the current array, or set it
+	if( $multiple ){
+		push( @{$result}, $array );
+	} else {
+		$result = $array;
+	}
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------

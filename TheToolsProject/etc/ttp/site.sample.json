@@ -257,17 +257,30 @@
 			"port": 465,
 			"mailfrom": "No Reply <no-reply@blingua.fr>"
 		},
+
+		"Telemetry_comments": [
+			"Starting with its v3.0 version, TheToolsProject has chosen Prometheus ecosystem to host its telemetry, while keeping the capability",
+			"to have a messaging-based (MQTT) telemetry. These two medias are both available, and configured here.",
+			"Note that Prometheus let us sent our telemetry either via the PushGateway or via the TextFileCollector."
+		],
 		"Telemetry": {
 			"withMqtt": {
 				"enabled": true,
 				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
 			},
 			"withHttp_comments": [
-				"Actually a Prometheus gateway which is installed besides of the Prometheus server"
+				"The Prometheus PushGateway which is installed besides of the Prometheus server"
 			],
 			"withHttp": {
 				"enabled": true,
 				"url": "http://10.122.1.15:9091/metrics/job/telemetry/host/[eval:TTP::host()]"
+			},
+			"withTextfile_comments": [
+				"The Prometheus TextFileCollector"
+			],
+			"withTextfile": {
+				"enabled": true,
+				"dropDir": ""
 			}
 		}
 	}

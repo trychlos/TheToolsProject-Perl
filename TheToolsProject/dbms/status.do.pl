@@ -4,10 +4,13 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
-# @(-) --service=<name>        service name [${service}]
+# @(-) --service=<name>        acts on the named service [${service}]
+# @(-) --instance=<name>       acts on the named instance [${instance}]
+# @(-) --database=<name>       database name [${database}]
 # @(-) --[no]state             get state [${state}]
-# @(-) --[no]mqtt              send status as a MQTT payload [${mqtt}]
-# @(-) --[no]http              send status as a HTTP telemetry [${http}]
+# @(-) --[no]mqtt              publish the metrics to the messaging MQTT-based system [${mqtt}]
+# @(-) --[no]http              publish the metrics to the PushGateway HTTP-based system [${http}]
+# @(-) --[no]text              publish the metrics to the TextFile Collector system [${text}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -42,91 +45,96 @@ my $defaults = {
 	dummy => 'no',
 	verbose => 'no',
 	service => '',
+	instance => 'MSSQLSERVER',
+	database => '',
 	state => 'no',
 	mqtt => 'no',
-	http => 'no'
+	http => 'no',
+	text => 'no'
 };
 
 my $opt_service = $defaults->{service};
+my $opt_instance = $defaults->{instance};
+my $opt_instance_set = false;
+my $opt_database = $defaults->{database};
 my $opt_state = false;
 my $opt_mqtt = false;
 my $opt_http = false;
+my $opt_text = false;
+
+# may be overriden by the service if specified
+my $jsonable = $ttp->node();
+my $dbms = undef;
+
+# list of databases to be checked
+my $databases = [];
 
 # -------------------------------------------------------------------------------------------------
-# get the state of all databases of the specified service
+# get the state of all databases of the specified service, or specified in the command-line
 # Also publish as a labelled telemetry the list of possible values
 # (same behavior than for example Prometheus windows_explorer which display the status of services)
 # We so publish:
 # - on MQTT, two payloads as .../state and .../state_desc
 # - to HTTP, 10 numerical payloads, only one having a one value
+
 sub doState {
-	msgOut( "get database(s) state for '$opt_service'..." );
-	my $hostConfig = TTP::getHostConfig();
-	my $serviceConfig = TTP::Service::serviceConfig( $hostConfig, $opt_service );
-	my $instance = undef;
-	my @databases = undef;
-	if( $serviceConfig ){
-		$instance = TTP::DBMS::checkInstanceName( undef, { serviceConfig => $serviceConfig });
-		msgVerbose( "found instance='".( $instance || 'undef' )."'" );
-		if( $instance ){
-			@databases = @{$serviceConfig->{DBMS}{databases}} if exists $serviceConfig->{DBMS}{databases};
-			msgVerbose( "found databases='".( scalar @databases ? join( ',', @databases ) : 'none' )."'" );
-		} else {
-			msgErr( "unable to find a suitable DBMS instance for '$opt_service' service" );
-		}
+	if( $opt_service ){
+		msgOut( "get database(s) state for '$opt_service'..." );
 	} else {
-		msgErr( "unable to find '$opt_service' service configuration for '$hostConfig->{name}' host" );
+		msgOut( "get database(s) state in '$opt_instance'..." );
 	}
-	if( $instance && scalar @databases ){
-		my $list = [];
-		my $code = 0;
-		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
-		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-		foreach my $db ( @databases ){
-			msgOut( "  database '$db'" );
-			my $result = TTP::DBMS::hashFromTabular( ttpFilter( `dbms.pl sql -instance $instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose` ));
-			my $row = @{$result}[0];
-			# due to the differences between the two publications contents, publish separately
-			# -> stdout
-			foreach my $key ( sort keys %{$row} ){
-				print "  $key: $row->{$key}".EOL;
-			}
-			if( $opt_mqtt ){
-				# -> MQTT: only publish the label as state=<label>
-				print `telemetry.pl publish -metric state -value $row->{state_desc} -label instance=$instance -label database=$db -mqtt -nohttp -nocolored $dummy $verbose`;
-				my $rc = $?;
-				msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
-			}
-			if( $opt_http ){
-				# -> HTTP
-				# Source: https://learn.microsoft.com/fr-fr/sql/relational-databases/system-catalog-views/sys-databases-transact-sql?view=sql-server-ver16
-				my $states = {
-					'0' => 'online',
-					'1' => 'restoring',
-					'2' => 'recovering',
-					'3' => 'recovery_pending',
-					'4' => 'suspect',
-					'5' => 'emergency',
-					'6' => 'offline',
-					'7' => 'copying',
-					'10' => 'offline_secondary'
-				};
-			# contrarily to what is said in the doc, seems that push gateway requires the TYPE line
-				foreach my $key ( keys( %{$states} )){
-					my $value = 0;
-					$value = 1 if "$key" eq "$row->{state}";
-					print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$instance -label database=$db -label state=$states->{$key} -nomqtt -http -nocolored $dummy $verbose`;
-					my $rc = $?;	
-					msgVerbose( "doState() HTTP key='$key' state='$states->{$key}' got rc=$rc" );
-					$code += $rc;
-				}
+	my $list = [];
+	my $code = 0;
+	my $dummy = $running->dummy() ? "-dummy" : "-nodummy";
+	my $verbose = $running->verbose() ? "-verbose" : "-noverbose";
+	foreach my $db ( @{$databases} ){
+		msgOut( "  database '$db'" );
+		$command = "dbms.pl sql -instance $opt_instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose";
+		msgVerbose( $command );
+		my $res = `$command`;
+		my $rc = $?;
+		my $result = $dbms->hashFromTabular( $running->filter( $res ));
+		my $row = @{$result}[0];
+		# due to the differences between the two publications contents, publish separately
+		# -> stdout
+		foreach my $key ( sort keys %{$row} ){
+			print "  $key: $row->{$key}".EOL;
+		}
+		if( $opt_mqtt ){
+			# -> MQTT: only publish the label as state=<label>
+			print `telemetry.pl publish -metric state -value $row->{state_desc} -label instance=$opt_instance -label database=$db -mqtt -nohttp -nocolored $dummy $verbose`;
+			my $rc = $?;
+			msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
+		}
+		if( $opt_http ){
+			# -> HTTP
+			# Source: https://learn.microsoft.com/fr-fr/sql/relational-databases/system-catalog-views/sys-databases-transact-sql?view=sql-server-ver16
+			my $states = {
+				'0' => 'online',
+				'1' => 'restoring',
+				'2' => 'recovering',
+				'3' => 'recovery_pending',
+				'4' => 'suspect',
+				'5' => 'emergency',
+				'6' => 'offline',
+				'7' => 'copying',
+				'10' => 'offline_secondary'
+			};
+		# contrarily to what is said in the doc, seems that push gateway requires the TYPE line
+			foreach my $key ( keys( %{$states} )){
+				my $value = 0;
+				$value = 1 if "$key" eq "$row->{state}";
+				print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$opt_instance -label database=$db -label state=$states->{$key} -nomqtt -http -nocolored $dummy $verbose`;
+				my $rc = $?;	
+				msgVerbose( "doState() HTTP key='$key' state='$states->{$key}' got rc=$rc" );
+				$code += $rc;
 			}
 		}
-		if( $code ){
-			msgErr( "NOT OK" );
-		} else {
-			msgOut( "done" );
-		}
+	}
+	if( $code ){
+		msgErr( "NOT OK" );
+	} else {
+		msgOut( "done" );
 	}
 }
 
@@ -140,9 +148,16 @@ if( !GetOptions(
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"service=s"			=> \$opt_service,
+	"instance=s"		=> sub {
+		my( $opt_name, $opt_value ) = @_;
+		$opt_instance = $opt_value;
+		$opt_instance_set = true;
+	},
+	"database=s"		=> \$opt_database,
 	"state!"			=> \$opt_state,
 	"mqtt!"				=> \$opt_mqtt,
-	"http!"				=> \$opt_http )){
+	"http!"				=> \$opt_http,
+	"text!"				=> \$opt_text )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -157,12 +172,54 @@ msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
+msgVerbose( "found instance='$opt_instance'" );
+msgVerbose( "found instance_set='".( $opt_instance_set ? 'true':'false' )."'" );
+msgVerbose( "found database='$opt_database'" );
 msgVerbose( "found state='".( $opt_state ? 'true':'false' )."'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
 msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
+msgVerbose( "found text='".( $opt_text ? 'true':'false' )."'" );
 
-# must have a service
-msgErr( "a service is required, not specified" ) if !$opt_service;
+# must have either -service or -instance options
+# compute instance from service
+my $count = 0;
+$count += 1 if $opt_service;
+$count += 1 if $opt_instance_set;
+if( $count == 0 ){
+	msgErr( "must have one of '--service' or '--instance' option, none found" );
+} elsif( $count > 1 ){
+	msgErr( "must have one of '--service' or '--instance' option, both found" );
+} elsif( $opt_service ){
+	if( $jsonable->hasService( $opt_service )){
+		$jsonable = TTP::Service->new( $ttp, { service => $opt_service });
+		$opt_instance = $jsonable->var([ 'DBMS', 'instance' ]);
+	} else {
+		msgErr( "service '$opt_service' if not defined on current execution node" ) ;
+	}
+}
+
+# instanciates the DBMS class
+$dbms = TTP::DBMS->new( $ttp, { instance => $opt_instance }) if !TTP::errs();
+
+# database(s) can be specified in the command-line, or can come from the service
+if( $opt_database ){
+	push( @{$databases}, $opt_database );
+} elsif( $opt_service ){
+	$databases = $jsonable->var([ 'DBMS', 'databases' ]);
+	msgVerbose( "setting databases='".join( ', ', @{$databases} )."'" );
+}
+
+# all databases must exist in the instance
+if( scalar @{$databases} ){
+	foreach my $db ( @{$databases} ){
+		my $exists = $dbms->databaseExists( $db );
+		if( !$exists ){
+			msgErr( "database '$db' doesn't exist in the '$opt_instance' instance" );
+		}
+	}
+} else {
+	msgErr( "'--database' option is required (or '--service'), but none is specified" );
+}
 
 # if no option is given, have a warning message
 msgWarn( "no status has been requested, exiting gracefully" ) if !$opt_state;

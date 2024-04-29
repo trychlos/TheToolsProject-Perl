@@ -10,6 +10,9 @@
 # @(-) --[no]dbsize            get databases size for the specified instance [${dbsize}]
 # @(-) --[no]tabcount          get tables rows count for the specified database [${tabcount}]
 # @(-) --limit=<limit>         limit the MQTT published messages [${limit}]
+# @(-) --[no]mqtt              publish the metrics to the messaging MQTT-based system [${mqtt}]
+# @(-) --[no]http              publish the metrics to the PushGateway HTTP-based system [${http}]
+# @(-) --[no]text              publish the metrics to the TextFile Collector system [${text}]
 #
 # @(@) When limiting the published messages, be conscious that the '--dbsize' option provides 6 messages per database.
 #
@@ -35,8 +38,6 @@ use TTP::DBMS;
 use TTP::Service;
 use TTP::Telemetry;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
@@ -47,21 +48,29 @@ my $defaults = {
 	database => '',
 	dbsize => 'no',
 	tabcount => 'no',
-	limit => -1
+	limit => -1,
+	mqtt => 1,
+	http => 1,
+	text => 1
 };
 
 my $opt_service = $defaults->{service};
 my $opt_instance = '';
+my $opt_instance_set = false;
 my $opt_database = $defaults->{database};
 my $opt_dbsize = false;
 my $opt_tabcout = false;
 my $opt_limit = $defaults->{limit};
+my $opt_mqtt = false;
+my $opt_http = false;
+my $opt_text = false;
 
-# this host configuration
-my $hostConfig = TTP::getHostConfig();
+# may be overriden by the service if specified
+my $jsonable = $ttp->node();
+my $dbms = undef;
 
-# list of databases to be measured (or none, depending of the option)
-my @databases = ();
+# list of databases to be checked
+my $databases = [];
 
 # note that the sp_spaceused stored procedure returns:
 # - TWO resuts sets
@@ -182,11 +191,18 @@ if( !GetOptions(
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"service=s"			=> \$opt_service,
-	"instance=s"		=> \$opt_instance,
+	"instance=s"		=> sub {
+		my( $opt_name, $opt_value ) = @_;
+		$opt_instance = $opt_value;
+		$opt_instance_set = true;
+	},
 	"database=s"		=> \$opt_database,
 	"dbsize!"			=> \$opt_dbsize,
 	"tabcount!"			=> \$opt_tabcount,
-	"limit=i"			=> \$opt_limit )){
+	"limit=i"			=> \$opt_limit,
+	"mqtt!"				=> \$opt_mqtt,
+	"http!"				=> \$opt_http,
+	"text!"				=> \$opt_text )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -206,44 +222,49 @@ msgVerbose( "found database='$opt_database'" );
 msgVerbose( "found dbsize='".( $opt_dbsize ? 'true':'false' )."'" );
 msgVerbose( "found tabcount='".( $opt_tabcount ? 'true':'false' )."'" );
 msgVerbose( "found limit='$opt_limit'" );
+msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
+msgVerbose( "found text='".( $opt_text ? 'true':'false' )."'" );
 
-# depending of the measurement option, may have a service or an instance plus maybe a database
-# must have -service or -instance + -database
-if( $opt_service ){
-	my $serviceConfig = undef;
-	if( $opt_instance || $opt_database ){
-		msgErr( "'--service' option is exclusive of '--instance' and '--database' options" );
+# must have either -service or -instance options
+# compute instance from service
+my $count = 0;
+$count += 1 if $opt_service;
+$count += 1 if $opt_instance_set;
+if( $count == 0 ){
+	msgErr( "must have one of '--service' or '--instance' option, none found" );
+} elsif( $count > 1 ){
+	msgErr( "must have one of '--service' or '--instance' option, both found" );
+} elsif( $opt_service ){
+	if( $jsonable->hasService( $opt_service )){
+		$jsonable = TTP::Service->new( $ttp, { service => $opt_service });
+		$opt_instance = $jsonable->var([ 'DBMS', 'instance' ]);
 	} else {
-		$serviceConfig = TTP::Service::serviceConfig( $hostConfig, $opt_service );
-		if( $serviceConfig ){
-			$opt_instance = TTP::DBMS::checkInstanceName( undef, { serviceConfig => $serviceConfig });
-			if( $opt_instance ){
-				msgVerbose( "setting instance='$opt_instance'" );
-				@databases = @{$serviceConfig->{DBMS}{databases}} if exists $serviceConfig->{DBMS}{databases};
-				msgVerbose( "setting databases='".join( ',', @databases )."'" );
-			}
-		} else {
-			msgErr( "service='$opt_service' not defined in host configuration" );
-		}
+		msgErr( "service '$opt_service' if not defined on current execution node" ) ;
 	}
-} else {
-	push( @databases, $opt_database ) if $opt_database;
 }
 
-$opt_instance = $defaults->{instance} if !$opt_instance;
-my $instance = TTP::DBMS::checkInstanceName( $opt_instance );
+# instanciates the DBMS class
+$dbms = TTP::DBMS->new( $ttp, { instance => $opt_instance }) if !TTP::errs();
 
-# if a database has been specified (or found), check that it exists
-if( scalar @databases ){
-	foreach my $db ( @databases ){
-		my $exists = TTP::DBMS::checkDatabaseExists( $opt_instance, $db );
+# database(s) can be specified in the command-line, or can come from the service
+if( $opt_database ){
+	push( @{$databases}, $opt_database );
+} elsif( $opt_service ){
+	$databases = $jsonable->var([ 'DBMS', 'databases' ]);
+	msgVerbose( "setting databases='".join( ', ', @{$databases} )."'" );
+}
+
+# all databases must exist in the instance
+if( scalar @{$databases} ){
+	foreach my $db ( @{$databases} ){
+		my $exists = $dbms->databaseExists( $db );
 		if( !$exists ){
-			msgErr( "database '$db' doesn't exist" );
+			msgErr( "database '$db' doesn't exist in the '$opt_instance' instance" );
 		}
 	}
 } else {
-	msgWarn( "no database found nor specified, exiting" );
-	TTP::exit();
+	msgErr( "'--database' option is required (or '--service'), but none is specified" );
 }
 
 # if no option is given, have a warning message
