@@ -135,9 +135,9 @@ sub apiGetInstanceDatabases {
 	my ( $me, $dbms ) = @_;
 	my $result = { ok => false, output => [] };
 	msgVerbose( __PACKAGE__."::apiGetInstanceDatabases() entering with instance='".$dbms->instance()."'" );
-	$result = _sqlExec( $dbms, "select name from master.sys.databases order by name" );
-	if( $result->{ok} ){
-		foreach( @{$result->{result}} ){
+	my $sqlres = _sqlExec( $dbms, "select name from master.sys.databases order by name" );
+	if( $sqlres->{ok} ){
+		foreach( @{$sqlres->{result}} ){
 			my $dbname = $_->{'name'};
 			if( !grep( /^$dbname$/, @{$Const->{systemDatabases}} )){
 				push( @{$result->{output}}, $dbname );
@@ -426,6 +426,7 @@ sub _sqlExec {
 		if( $dbms->ttp()->runner()->dummy()){
 			msgDummy( $sql );
 			$result->{ok} = true;
+			$result->{result} = [];
 		} else {
 			my $printStdout = true;
 			$printStdout = $opts->{printStdout} if exists $opts->{printStdout};

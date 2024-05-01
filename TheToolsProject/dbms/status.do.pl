@@ -34,10 +34,8 @@ use Scalar::Util qw( looks_like_number );
 use URI::Escape;
 
 use TTP::DBMS;
+use TTP::Metric;
 use TTP::Service;
-use TTP::Telemetry;
-
-my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -69,10 +67,23 @@ my $dbms = undef;
 # list of databases to be checked
 my $databases = [];
 
+# Source: https://learn.microsoft.com/fr-fr/sql/relational-databases/system-catalog-views/sys-databases-transact-sql?view=sql-server-ver16
+my $sqlStates = {
+	'0' => 'online',
+	'1' => 'restoring',
+	'2' => 'recovering',
+	'3' => 'recovery_pending',
+	'4' => 'suspect',
+	'5' => 'emergency',
+	'6' => 'offline',
+	'7' => 'copying',
+	'10' => 'offline_secondary'
+};
+
 # -------------------------------------------------------------------------------------------------
 # get the state of all databases of the specified service, or specified in the command-line
 # Also publish as a labelled telemetry the list of possible values
-# (same behavior than for example Prometheus windows_explorer which display the status of services)
+# (same behavior than for example Prometheus windows_exporter which display the status of services)
 # We so publish:
 # - on MQTT, two payloads as .../state and .../state_desc
 # - to HTTP, 10 numerical payloads, only one having a one value
@@ -87,49 +98,85 @@ sub doState {
 	my $code = 0;
 	my $dummy = $running->dummy() ? "-dummy" : "-nodummy";
 	my $verbose = $running->verbose() ? "-verbose" : "-noverbose";
+	my $result = undef;
 	foreach my $db ( @{$databases} ){
-		msgOut( "  database '$db'" );
+		msgOut( "database '$db'" );
 		$command = "dbms.pl sql -instance $opt_instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose";
-		msgVerbose( $command );
-		my $res = `$command`;
-		my $rc = $?;
-		my $result = $dbms->hashFromTabular( $running->filter( $res ));
-		my $row = @{$result}[0];
+		if( $running->dummy()){
+			msgDummy( $command );
+			$result = {
+				state => 0,
+				state_desc => 'DUMMY_ONLINE'
+			}
+		} else {
+			msgVerbose( $command );
+			my $res = `$command`;
+			my $rc = $?;
+			my $hash = $dbms->hashFromTabular( $running->filter( $res ));
+			$result = @{$hash}[0];
+		}
 		# due to the differences between the two publications contents, publish separately
 		# -> stdout
-		foreach my $key ( sort keys %{$row} ){
-			print "  $key: $row->{$key}".EOL;
+		foreach my $key ( sort keys %{$result} ){
+			print " $key: $result->{$key}".EOL;
 		}
-		if( $opt_mqtt ){
-			# -> MQTT: only publish the label as state=<label>
-			print `telemetry.pl publish -metric state -value $row->{state_desc} -label instance=$opt_instance -label database=$db -mqtt -nohttp -nocolored $dummy $verbose`;
-			my $rc = $?;
-			msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
+		# -> mqtt: publish a single string metric
+		#    e.g. state: online
+		my $rc = TTP::Metric->new( $ttp, {
+			name => 'state',
+			value => $result->{state_desc},
+			type => 'gauge',
+			help => 'Database status',
+			labels => [
+				"instance=$opt_instance",
+				"database=$db"
+			]
+		})->publish({
+			mqtt => $opt_mqtt
+		});
+		msgVerbose( "got rc=$rc" );
+		# -> http/text: publish a metric per known sqlState
+		#    e.g. state=emergency 0
+		foreach my $key ( keys( %{$sqlStates} )){
+			my $rc = TTP::Metric->new( $ttp, {
+				name => 'dbms_database_state',
+				value => "$key" eq "$result->{state}" ? 1 : 0,
+				type => 'gauge',
+				help => 'Database status',
+				labels => [
+					"instance=$opt_instance",
+					"database=$db",
+					"state=$sqlStates->{$key}"
+				]
+			})->publish({
+				http => $opt_http,
+				text => $opt_text
+			});
+			msgVerbose( "got rc=$rc" );
 		}
-		if( $opt_http ){
+		#	print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$opt_instance -label database=$db -label state=$states->{$key} -nomqtt -http -nocolored $dummy $verbose`;
+		#	my $rc = $?;	
+		#	msgVerbose( "doState() HTTP key='$key' state='$states->{$key}' got rc=$rc" );
+		#	$code += $rc;
+		#}
+		#if( $opt_mqtt ){
+		#	# -> MQTT: only publish the label as state=<label>
+		#	print `telemetry.pl publish -metric state -value $row->{state_desc} -label instance=$opt_instance -label database=$db -mqtt -nohttp -nocolored $dummy $verbose`;
+		#	my $rc = $?;
+		#	msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
+		#}
+		#if( $opt_http ){
 			# -> HTTP
-			# Source: https://learn.microsoft.com/fr-fr/sql/relational-databases/system-catalog-views/sys-databases-transact-sql?view=sql-server-ver16
-			my $states = {
-				'0' => 'online',
-				'1' => 'restoring',
-				'2' => 'recovering',
-				'3' => 'recovery_pending',
-				'4' => 'suspect',
-				'5' => 'emergency',
-				'6' => 'offline',
-				'7' => 'copying',
-				'10' => 'offline_secondary'
-			};
 		# contrarily to what is said in the doc, seems that push gateway requires the TYPE line
-			foreach my $key ( keys( %{$states} )){
-				my $value = 0;
-				$value = 1 if "$key" eq "$row->{state}";
-				print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$opt_instance -label database=$db -label state=$states->{$key} -nomqtt -http -nocolored $dummy $verbose`;
-				my $rc = $?;	
-				msgVerbose( "doState() HTTP key='$key' state='$states->{$key}' got rc=$rc" );
-				$code += $rc;
-			}
-		}
+		#	foreach my $key ( keys( %{$states} )){
+		#		my $value = 0;
+		#		$value = 1 if "$key" eq "$row->{state}";
+		#		print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$opt_instance -label database=$db -label state=$states->{$key} -nomqtt -http -nocolored $dummy $verbose`;
+		#		my $rc = $?;	
+		#		msgVerbose( "doState() HTTP key='$key' state='$states->{$key}' got rc=$rc" );
+		#		$code += $rc;
+		#	}
+		#}
 	}
 	if( $code ){
 		msgErr( "NOT OK" );

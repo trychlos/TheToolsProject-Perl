@@ -144,7 +144,7 @@
 		"Telemetry": {
 			"withMqtt": {
 				"enabled": true,
-				"command": "mqtt.pl publish -topic <SUBJECT> -payload \"<DATA>\" <OPTIONS>"
+				"command": "mqtt.pl publish -topic <TOPIC> -payload \"<PAYLOAD>\""
 			},
 			"withHttp_comments": [
 				"Actually a Prometheus gateway which is installed besides of the Prometheus server"

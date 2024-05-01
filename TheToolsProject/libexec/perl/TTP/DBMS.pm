@@ -123,6 +123,10 @@ sub databaseExists {
 	if( $database ){
 		my $list = $self->getDatabases();
 		$exists = true if grep( /$database/i, @{$list} );
+		if( $self->ttp()->runner()->dummy()){
+			msgDummy( "considering exists='true'" );
+			$exists = true;
+		}
 	} else {
 		msgErr( __PACKAGE__."::databaseExists() database is mandatory, but is not specified" );
 	}
@@ -243,6 +247,7 @@ sub execSqlCommand {
 
 # -------------------------------------------------------------------------------------------------
 # returns the list of instance databases
+# cache the result (the list of found databases) to request the DBMS only once
 # (I):
 # - none
 # (O):
@@ -251,9 +256,14 @@ sub execSqlCommand {
 sub getDatabases {
 	my ( $self ) = @_;
 
-	my $result = $self->toPackage( 'apiGetInstanceDatabases' );
+	if( $self->{_dbms}{databases} ){
+		return $self->{_dbms}{databases};
+	}
 
-	return $result->{output} || [];
+	my $result = $self->toPackage( 'apiGetInstanceDatabases' );
+	$self->{_dbms}{databases} = $result->{output} || [];
+
+	return $self->{_dbms}{databases};
 }
 
 # -------------------------------------------------------------------------------------------------
