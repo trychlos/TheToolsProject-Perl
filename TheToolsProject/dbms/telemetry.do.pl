@@ -159,7 +159,7 @@ sub doDbSize {
 				http => $opt_http,
 				text => $opt_text
 			});
-			$count += 1;
+			$count += 1 if $opt_mqtt || $opt_http || $opt_text;
 			last if $count >= $opt_limit && $opt_limit >= 0;
 		}
 	}
@@ -215,7 +215,7 @@ sub doTablesCount {
 					http => $opt_http,
 					text => $opt_text
 				});
-				$count += 1;
+				$count += 1 if $opt_mqtt || $opt_http || $opt_text;
 				last if $count >= $opt_limit && $opt_limit >= 0;
 			}
 		}
@@ -311,9 +311,17 @@ if( scalar @{$databases} ){
 
 # if no option is given, have a warning message
 if( !$opt_dbsize && !$opt_tabcount ){
-	msgWarn( "no measure has been requested, exiting" );
+	msgWarn( "no measure has been requested" );
 
-} elsif( !TTP::errs()){
+}
+
+# also warns if no telemetry is to be published
+if( !$opt_mqtt && !$opt_http && !$opt_text ){
+	msgWarn( "no telemetry has been requested" );
+
+}
+
+if( !TTP::errs()){
 	doDbSize() if $opt_dbsize;
 	doTablesCount() if $opt_tabcount;
 }

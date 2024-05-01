@@ -338,9 +338,12 @@ sub _restoreDatabaseMove {
 	my $instance = $dbms->instance();
 	my $database = $parms->{database};
 	my $fname = $parms->{file};
+	msgVerbose( __PACKAGE__."::_restoreDatabaseMove() database='$database'" );
 	my $result = _sqlExec( $dbms, "RESTORE FILELISTONLY FROM DISK='$fname'" );
 	my $move = undef;
-	if( !scalar @{$result->{result}} ){
+	if( $dbms->ttp()->runner()->dummy()){
+		msgDummy( "considering nomove" );
+	} elsif( !scalar @{$result->{result}} ){
 		msgErr( __PACKAGE__."::_restoreDatabaseMove() unable to get the files list of the backup set" );
 	} else {
 		my $sqlDataPath = $dbms->ttp()->node()->var([ 'DBMS', 'byInstance', $instance, 'dataPath' ]);
@@ -369,6 +372,7 @@ sub _restoreDatabaseMove {
 sub _restoreDatabaseSetOffline {
 	my ( $dbms, $parms ) = @_;
 	my $database = $parms->{database};
+	msgVerbose( __PACKAGE__."::_restoreDatabaseSetOffline() database='$database'" );
 	my $result = true;
 	if( $dbms->databaseExists( $database )){
 		my $res = _sqlExec( $dbms, "ALTER DATABASE $database SET OFFLINE WITH ROLLBACK IMMEDIATE;" );

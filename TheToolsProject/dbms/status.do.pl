@@ -110,7 +110,7 @@ sub doState {
 			}
 		} else {
 			my $sqlres = $dbms->execSqlCommand( $sql, { tabular => false });
-			$result = $sqlres->{ok} ? $sqlres->{result}->[0];
+			$result = $sqlres->{ok} ? $sqlres->{result}->[0] : {};
 		}
 		# due to the differences between the two publications contents, publish separately
 		# -> stdout
