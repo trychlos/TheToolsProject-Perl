@@ -4,8 +4,8 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
-# @(-) --task=<name>           apply to specified task(s) [${task}]
 # @(-) --[no]list              list the scheduled tasks [${list}]
+# @(-) --task=<name>           acts on the named task [${task}]
 # @(-) --[no]status            display the status of the named task [${status}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
@@ -26,24 +26,23 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
 	dummy => 'no',
 	verbose => 'no',
-	task => '',
 	list => 'no',
+	task => '',
 	status => 'no'
 };
 
-my $opt_task = $defaults->{task};
 my $opt_list = false;
+my $opt_task = $defaults->{task};
 my $opt_status = false;
 
 # -------------------------------------------------------------------------------------------------
 # list the scheduled tasks (once for each)
+
 sub doListTasks {
 	if( $opt_task ){
 		msgOut( "listing tasks filtered on '$opt_task' name..." );
@@ -76,6 +75,7 @@ sub doListTasks {
 
 # -------------------------------------------------------------------------------------------------
 # display the status of a task
+
 sub doTaskStatus {
 	msgOut( "displaying the '$opt_task' task status..." );
 	my $stdout = `schtasks /Query /fo table /TN $opt_task`;
@@ -102,8 +102,8 @@ if( !GetOptions(
 	"colored!"			=> \$ttp->{run}{colored},
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
-	"task=s"			=> \$opt_task,
 	"list!"				=> \$opt_list,
+	"task=s"			=> \$opt_task,
 	"status!"			=> \$opt_status	)){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
@@ -118,8 +118,8 @@ if( $running->help()){
 msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
-msgVerbose( "found task='$opt_task'" );
 msgVerbose( "found list='".( $opt_list ? 'true':'false' )."'" );
+msgVerbose( "found task='$opt_task'" );
 msgVerbose( "found status='".( $opt_status ? 'true':'false' )."'" );
 
 # a task name is mandatory when asking for the status

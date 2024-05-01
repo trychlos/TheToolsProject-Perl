@@ -9,6 +9,8 @@
 # @(-) --[no]publishHeader     publish the found header content [${publishHeader}]
 # @(-) --accept=<code>         consider the return code as OK, regex, may be specified several times or as a comma-separated list [${accept}]
 # @(-) --[no]response          print the received response to stdout [${response}]
+# @(-) --[no]status            publish status-based telemetry [${status}]
+# @(-) --[no]epoch             publish epoch-based telemetry [${epoch}]
 # @(-) --[no]mqtt              publish the metrics to the (MQTT-based) messaging system [${mqtt}]
 # @(-) --[no]http              publish the metrics to the (HTTP-based) Prometheus PushGateway system [${http}]
 # @(-) --[no]text              publish the metrics to the (text-based) Prometheus TextFile Collector system [${text}]
@@ -19,6 +21,8 @@
 # @(@) IP Failover system. But, in such a system, all physical hosts are configured with this FO IP, and so would answer to this IP is the request
 # @(@) originates from this same physical host.
 # @(@) In order to get accurate result, this verb must so be run from outside of the involved physical hosts.
+# @(@) '--epoch' option let the verb publish an epoch-based telemetry. This is very specific to the use of the telemetry by Grafana in order
+# à(@) to be able to both identify the last live node, and to set a status on this last live node to current or not.
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -55,6 +59,8 @@ my $defaults = {
 	publishHeader => 'no',
 	response => 'no',
 	accept => '200',
+	status => 'no',
+	epoch => 'no',
 	mqtt => 'no',
 	http => 'no',
 	text => 'no',
@@ -68,6 +74,8 @@ my $opt_publishHeader = false;
 my $opt_response = false;
 my $opt_ignore = false;
 my $opt_accept = [ $defaults->{accept} ];
+my $opt_status = false;
+my $opt_epoch = false;
 my $opt_mqtt = false;
 my $opt_http = false;
 my $opt_text = false;
@@ -120,9 +128,27 @@ sub doGet {
 	# test
 	#$res = false;
 	# and send the telemetry if opt-ed in
+	_telemetry( $res ? 1 : 0, $header, 'gauge' ) if $opt_status;
+	_telemetry( $res ? localtime->epoch : 0, $header, 'counter', '_epoch' ) if $opt_epoch;
+	if( $res ){
+		if( $opt_response ){
+			print Dumper( $response );
+		}
+		msgOut( "success" );
+	} else {
+		msgLog( Dumper( $response ));
+		msgErr( "NOT OK: $status" );
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# publish the telemetry, either with a status value, or with the epoch
+
+sub _telemetry {
+	my ( $value, $header, $type, $sufix ) = @_;
+	$sufix //= '';
 	if( $opt_mqtt || $opt_http || $opt_text ){
 		my ( $proto, $path ) = split( /:\/\//, $opt_url );
-		my $value = $res ? localtime->epoch : 0;
 		my @labels = @opt_prepends;
 		push( @labels, "proto=$proto" );
 		push( @labels, "path=$path" );
@@ -135,9 +161,9 @@ sub doGet {
 		msgVerbose( "added labels [".join( ',', @labels )."]" );
 
 		TTP::Metric->new( $ttp, {
-			name => 'url_status',
+			name => "url_status$sufix",
 			value => $value,
-			type => 'counter',
+			type => $type,
 			help => 'The last time the url has been seen alive',
 			labels => \@labels
 		})->publish({
@@ -145,15 +171,6 @@ sub doGet {
 			http => $opt_http,
 			text => $opt_text
 		});
-	}
-	if( $res ){
-		if( $opt_response ){
-			print Dumper( $response );
-		}
-		msgOut( "success" );
-	} else {
-		msgLog( Dumper( $response ));
-		msgErr( "NOT OK: $status" );
 	}
 }
 
@@ -187,6 +204,8 @@ if( !GetOptions(
 	"response!"			=> \$opt_response,
 	"ignore!"			=> \$opt_ignore,
 	"accept=s@"			=> \$opt_accept,
+	"status!"			=> \$opt_status,
+	"epoch!"			=> \$opt_epoch,
 	"mqtt!"				=> \$opt_mqtt,
 	"http!"				=> \$opt_http,
 	"text!"				=> \$opt_text,
@@ -211,6 +230,8 @@ msgVerbose( "found publishHeader='".( $opt_publishHeader ? 'true':'false' )."'" 
 msgVerbose( "found response='".( $opt_response ? 'true':'false' )."'" );
 msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
 msgVerbose( "found accept='".join( ',', @{$opt_accept} )."'" );
+msgVerbose( "found status='".( $opt_status ? 'true':'false' )."'" );
+msgVerbose( "found epoch='".( $opt_epoch ? 'true':'false' )."'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
 msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 msgVerbose( "found text='".( $opt_text ? 'true':'false' )."'" );

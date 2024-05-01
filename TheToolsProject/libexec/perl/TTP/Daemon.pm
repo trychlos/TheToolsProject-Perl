@@ -247,9 +247,12 @@ sub _daemonize {
 # ------------------------------------------------------------------------------------------------
 # the daemon advertize of its status every 'httpingInterval' seconds (defaults to 60)
 # the metric advertizes the last time we have seen the daemon alive
+# (I):
+# - the value to be advertized, defaulting to '1'
 
 sub _http_advertize {
-	my ( $self ) = @_;
+	my ( $self, $value ) = @_;
+	$value = '1' if !defined $value;
 	# compute the metric name
 	my $name = $self->name();
 	my $data = $self->jsonData();
@@ -262,7 +265,7 @@ sub _http_advertize {
 	}
 	TTP::Metric->new( $ttp, {
 		name => $name,
-		value => localtime->epoch,
+		value => $value,
 		type => 'counter',
 		help => 'The last epoch time the daemon has been seen alive',
 	})->publish({
@@ -292,9 +295,12 @@ sub _running {
 
 # ------------------------------------------------------------------------------------------------
 # the daemon advertize of its status every 'textingInterval' seconds (defaults to 60)
+# (I):
+# - the value to be advertized, defaulting to '1'
 
 sub _text_advertize {
-	my ( $self ) = @_;
+	my ( $self, $value ) = @_;
+	$value = '1' if !defined $value;
 	msgVerbose( "text-based telemetry not honored at the moment" );
 }
 
@@ -665,6 +671,13 @@ sub start {
 
 sub terminate {
 	my ( $self ) = @_;
+
+	# close MQTT connection
+	TTP::MQTT::disconnect( $self->{_mqtt} ) if $self->{_mqtt};
+
+	# advertize http and text-based telemetry
+	$self->_http_advertize( 0 ) if $self->httpingInterval() > 0;
+	$self->_text_advertize( 0 ) if $self->textingInterval() > 0;
 
 	# close MQTT connection
 	TTP::MQTT::disconnect( $self->{_mqtt} ) if $self->{_mqtt};
