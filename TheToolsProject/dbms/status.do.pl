@@ -11,6 +11,8 @@
 # @(-) --[no]mqtt              publish the metrics to the (MQTT-based) messaging system [${mqtt}]
 # @(-) --[no]http              publish the metrics to the (HTTP-based) Prometheus PushGateway system [${http}]
 # @(-) --[no]text              publish the metrics to the (text-based) Prometheus TextFile Collector system [${text}]
+# @(-) --prepend=<name=value>  label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${prepend}]
+# @(-) --append=<name=value>   label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${append}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -48,7 +50,9 @@ my $defaults = {
 	state => 'no',
 	mqtt => 'no',
 	http => 'no',
-	text => 'no'
+	text => 'no',
+	prepend => '',
+	append => ''
 };
 
 my $opt_service = $defaults->{service};
@@ -59,6 +63,8 @@ my $opt_state = false;
 my $opt_mqtt = false;
 my $opt_http = false;
 my $opt_text = false;
+my @opt_prepends = ();
+my @opt_appends = ();
 
 # may be overriden by the service if specified
 my $jsonable = $ttp->node();
@@ -119,31 +125,26 @@ sub doState {
 		}
 		# -> mqtt: publish a single string metric
 		#    e.g. state: online
+		my @labels = ( @opt_prepends, "instance=$opt_instance", "database=$db", @opt_appends );
 		TTP::Metric->new( $ttp, {
 			name => 'state',
 			value => $result->{state_desc},
 			type => 'gauge',
 			help => 'Database status',
-			labels => [
-				"instance=$opt_instance",
-				"database=$db"
-			]
+			labels => \@labels
 		})->publish({
 			mqtt => $opt_mqtt
 		});
 		# -> http/text: publish a metric per known sqlState
 		#    e.g. state=emergency 0
 		foreach my $key ( keys( %{$sqlStates} )){
+			my @labels = ( @opt_prepends, "instance=$opt_instance", "database=$db", "state=$sqlStates->{$key}", @opt_appends );
 			TTP::Metric->new( $ttp, {
 				name => 'dbms_database_state',
 				value => "$key" eq "$result->{state}" ? 1 : 0,
 				type => 'gauge',
 				help => 'Database status',
-				labels => [
-					"instance=$opt_instance",
-					"database=$db",
-					"state=$sqlStates->{$key}"
-				]
+				labels => \@labels
 			})->publish({
 				http => $opt_http,
 				text => $opt_text
@@ -176,7 +177,9 @@ if( !GetOptions(
 	"state!"			=> \$opt_state,
 	"mqtt!"				=> \$opt_mqtt,
 	"http!"				=> \$opt_http,
-	"text!"				=> \$opt_text )){
+	"text!"				=> \$opt_text,
+	"prepend=s@"		=> \@opt_prepends,
+	"append=s@"			=> \@opt_appends )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -198,6 +201,10 @@ msgVerbose( "found state='".( $opt_state ? 'true':'false' )."'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
 msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 msgVerbose( "found text='".( $opt_text ? 'true':'false' )."'" );
+@opt_prepends = split( /,/, join( ',', @opt_prepends ));
+msgVerbose( "found prepends='".join( ',', @opt_prepends )."'" );
+@opt_appends = split( /,/, join( ',', @opt_appends ));
+msgVerbose( "found appends='".join( ',', @opt_appends )."'" );
 
 # must have either -service or -instance options
 # compute instance from service

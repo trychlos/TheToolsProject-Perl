@@ -2,20 +2,23 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
-# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --url=<url>             the URL to be requested [${url}]
 # @(-) --header=<header>       output the received (case insensitive) header [${header}]
 # @(-) --[no]publishHeader     publish the found header content [${publishHeader}]
 # @(-) --accept=<code>         consider the return code as OK, regex, may be specified several times or as a comma-separated list [${accept}]
 # @(-) --[no]response          print the received response to stdout [${response}]
-# @(-) --[no]mqtt              publish MQTT telemetry [${mqtt}]
-# @(-) --[no]http              publish HTTP telemetry [${http}]
-# @(-) --label=<name=value>    label to be added to the telemetry, may be specified several times or as a comma-separated list [${label}]
+# @(-) --[no]mqtt              publish the metrics to the (MQTT-based) messaging system [${mqtt}]
+# @(-) --[no]http              publish the metrics to the (HTTP-based) Prometheus PushGateway system [${http}]
+# @(-) --[no]text              publish the metrics to the (text-based) Prometheus TextFile Collector system [${text}]
+# @(-) --prepend=<name=value>  label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${prepend}]
+# @(-) --append=<name=value>   label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${append}]
 #
-# Among other uses, this verb is notably used to check which machine answers to a given URL in an architecture which wants take advantage of IP Failover system.
-# But, in such a system, all physical hosts hold the FO IP, and will answer to this IP is the request originates from the same physical host.
-# To get accurate result, this verb must so be run from outside of the involved physical hosts.
+# @(@) Among other uses, this verb is notably used to check which machine answers to a given URL in an architecture which wants take advantage of
+# @(@) IP Failover system. But, in such a system, all physical hosts are configured with this FO IP, and so would answer to this IP is the request
+# @(@) originates from this same physical host.
+# @(@) In order to get accurate result, this verb must so be run from outside of the involved physical hosts.
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -54,7 +57,9 @@ my $defaults = {
 	accept => '200',
 	mqtt => 'no',
 	http => 'no',
-	label => ''
+	text => 'no',
+	prepend => '',
+	append => ''
 };
 
 my $opt_url = $defaults->{url};
@@ -65,74 +70,81 @@ my $opt_ignore = false;
 my $opt_accept = [ $defaults->{accept} ];
 my $opt_mqtt = false;
 my $opt_http = false;
-my $opt_label = $defaults->{label};
-
-# list of labels
-my @labels = ();
+my $opt_text = false;
+my @opt_prepends = ();
+my @opt_appends = ();
 
 # -------------------------------------------------------------------------------------------------
 # request the url
+
 sub doGet {
 	msgOut( "requesting '$opt_url'..." );
-	my $ua = LWP::UserAgent->new();
-	$ua->timeout( 5 );
-	my $req = HTTP::Request->new( GET => $opt_url );
-	my $response = $ua->request( $req );
-	my $res = $response->is_success;
-	my $status = $response->code;
+	my $res = false;
 	my $header = undef;
-	msgVerbose( "receiving HTTP status='$status', success='".( $res ? 'true' : 'false' )."'" );
-	if( $res ){
-		msgLog( "content='".$response->decoded_content."'" );
+	if( $running->dummy()){
+		msgDummy( "considering successful with status='200' sent from this node" );
+		$res = true;
+		$header = "DUMMY_".$ttp->node()->name();
 	} else {
-		$status = $response->status_line;
-		msgLog( "additional status: '$status'" );
-		my $acceptedRegex = undef;
-		foreach my $regex ( @{$opt_accept} ){
-			$acceptedRegex = $regex if ( $response->code =~ /$regex/ );
-			last if defined $acceptedRegex;
+		my $ua = LWP::UserAgent->new();
+		$ua->timeout( 5 );
+		my $req = HTTP::Request->new( GET => $opt_url );
+		my $response = $ua->request( $req );
+		$res = $response->is_success;
+		my $status = $response->code;
+		msgVerbose( "receiving HTTP status='$status', success='".( $res ? 'true' : 'false' )."'" );
+		if( $res ){
+			msgLog( "content='".$response->decoded_content."'" );
+		} else {
+			$status = $response->status_line;
+			msgLog( "additional status: '$status'" );
+			my $acceptedRegex = undef;
+			foreach my $regex ( @{$opt_accept} ){
+				$acceptedRegex = $regex if ( $response->code =~ /$regex/ );
+				last if defined $acceptedRegex;
+			}
+			if( defined $acceptedRegex ){
+				msgVerbose( "status code match '$acceptedRegex' accepted regex, forcing result to true" );
+				$res = true;
+			}
 		}
-		if( defined $acceptedRegex ){
-			msgVerbose( "status code match '$acceptedRegex' accepted regex, forcing result to true" );
-			$res = true;
+		# find the header if asked for
+		if( $res && $opt_header ){
+			$header = $response->header( $opt_header );
 		}
+	}
+	# print the header if asked for
+	if( $res && $opt_header ){
+		print "  $opt_header: $header".EOL;
 	}
 	# test
 	#$res = false;
-	# set and print the header if asked for
-	if( $res ){
-		if( $opt_header ){
-			$header = $response->header( $opt_header );
-			print "  $opt_header: $header".EOL;
-		}
-	}
 	# and send the telemetry if opt-ed in
-	if( $opt_mqtt || $opt_http ){
+	if( $opt_mqtt || $opt_http || $opt_text ){
 		my ( $proto, $path ) = split( /:\/\//, $opt_url );
-		my $value = $res ? "1" : "0";
-		my $other_labels = "";
-		foreach my $it ( @labels ){
-			$other_labels .= " -label $it";
-		}
-		$other_labels .= " -label proto=$proto";
-		$other_labels .= " -label path=$path";
+		my $value = $res ? localtime->epoch : 0;
+		my @labels = @opt_prepends;
+		push( @labels, "proto=$proto" );
+		push( @labels, "path=$path" );
 		if( $opt_header && $header && $opt_publishHeader ){
 			my $header_label = $opt_header;
 			$header_label =~ s/[^a-zA-Z0-9_]//g;
-			$other_labels .= " -label $header_label=$header";
+			push( @labels, "$header_label=$header" );
 		}
-		msgVerbose( "added labels '$other_labels'" );
-		if( $opt_mqtt ){
-			# topic is HOST/telemetry/service/SERVICE/proto/PROTO/path/PATH/url_status
-			$command = "telemetry.pl publish -metric url_status $other_labels -value=$value -mqtt -nohttp";
-			`$command`;
-		}
-		if( $opt_http ){
-			# even escaped, it is impossible to send the full url to the telemetry (unless encoding it as base64)
-			#my $escaped = uri_escape( $opt_url );
-			$command = "telemetry.pl publish -metric ttp_url_status $other_labels -value=".localtime->epoch." -nomqtt -http -httpOption type=counter";
-			`$command`;
-		}
+		push( @labels, @opt_appends );
+		msgVerbose( "added labels [".join( ',', @labels )."]" );
+
+		TTP::Metric->new( $ttp, {
+			name => 'url_status',
+			value => $value,
+			type => 'counter',
+			help => 'The last time the url has been seen alive',
+			labels => \@labels
+		})->publish({
+			mqtt => $opt_mqtt,
+			http => $opt_http,
+			text => $opt_text
+		});
 	}
 	if( $res ){
 		if( $opt_response ){
@@ -177,7 +189,9 @@ if( !GetOptions(
 	"accept=s@"			=> \$opt_accept,
 	"mqtt!"				=> \$opt_mqtt,
 	"http!"				=> \$opt_http,
-	"label=s@"			=> \$opt_label )){
+	"text!"				=> \$opt_text,
+	"prepend=s@"		=> \@opt_prepends,
+	"append=s@"			=> \@opt_appends )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -199,8 +213,11 @@ msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
 msgVerbose( "found accept='".join( ',', @{$opt_accept} )."'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
 msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
-@labels = split( /,/, join( ',', @{$opt_label} ));
-msgVerbose( "found labels='".join( ',', @labels )."'" );
+msgVerbose( "found text='".( $opt_text ? 'true':'false' )."'" );
+@opt_prepends = split( /,/, join( ',', @opt_prepends ));
+msgVerbose( "found prepends='".join( ',', @opt_prepends )."'" );
+@opt_appends = split( /,/, join( ',', @opt_appends ));
+msgVerbose( "found appends='".join( ',', @opt_appends )."'" );
 
 # url is mandatory
 msgErr( "url is required, but is not specified" ) if !$opt_url;
