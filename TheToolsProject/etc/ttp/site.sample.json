@@ -88,7 +88,17 @@
 				}
 			}
 		},
-		"credentialsDir": "[eval:File::Spec->catdir( $ENV{TTP_CONFDIR}, 'credentials' )]",
+
+		"credentialsDirs_comments": [
+			"The directories to be searched for credentials, passwords and other secrets",
+			"Defaults to (successively searched for) subdirectories of TTP_ROOTS:",
+			" - 'etc/credentials'",
+			" - 'credentials'",
+			" - 'etc/private'",
+			" - 'private'",
+			""
+		],
+		"credentialsDirs": "etc/private",
 
 		"daemonsDirs_comments": [
 			"The directories where are written the daemons JSON configuration files.",

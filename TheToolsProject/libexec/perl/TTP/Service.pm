@@ -112,7 +112,7 @@ sub var {
 	}
 	if( $jsonable ){
 		# search for the service definition in the node
-		unshift( @{$args}, [ 'Services', $name ] );
+		unshift( @{$args}, 'Services', $name );
 		$value = $jsonable->var( $args );
 		# search as the value general to the node
 		if( !defined( $value )){
@@ -157,6 +157,8 @@ sub dirs {
 # - Returns the Const->{finder} specification as an array ref
 
 sub finder {
+	my ( $class ) = @_;
+
 	return $Const->{finder};
 }
 
@@ -196,6 +198,7 @@ sub new {
 
 	} else {
 		msgErr( __PACKAGE__."::new() expects an 'args->{service}' key, which has not been found" );
+		$self = undef;
 	}
 
 	return $self;

@@ -52,6 +52,20 @@ my $Const = {
 };
 
 # ------------------------------------------------------------------------------------------------
+# Returns the first found file in credentials directories
+# (I):
+# - the file specs to be searched for
+# (O):
+# - the object found at the given address, or undef
+
+sub find {
+	my ( $file ) = @_;
+	my $finder = TTP::Finder->new( $ttp );
+	my $res = $finder->find({ dirs => [ $Const->{finder}{dirs}, $file ]});
+	return $res && ref( $res ) eq 'ARRAY' ? $res->[0] : undef;
+}
+
+# ------------------------------------------------------------------------------------------------
 # Returns the found credentials
 # Note that we first search in toops/host configuration, and then in a dedicated credentials JSON file with the same key
 # (I):
@@ -61,6 +75,20 @@ my $Const = {
 
 sub get {
 	my ( $keys ) = @_;
+	return getWithFiles( $keys, $Const->{finder}{files} );
+}
+
+# ------------------------------------------------------------------------------------------------
+# Returns the found credentials
+# Note that we first search in toops/host configuration, and then in a dedicated credentials JSON file with the same key
+# (I):
+# - an array ref of the keys to be read
+# - an array ref of the files to be searched for
+# (O):
+# - the object found at the given address, or undef
+
+sub getWithFiles {
+	my ( $keys, $files ) = @_;
 	my $res = undef;
 	if( ref( $keys ) ne 'ARRAY' ){
 		msgErr( __PACKAGE__."::get() expects an array, found '".ref( $keys )."'" );

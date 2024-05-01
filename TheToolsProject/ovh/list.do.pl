@@ -57,36 +57,30 @@ sub listServices {
 
 		# a list of services ids
 		my $count = 0;
-		my @missingDisplayName = ();
-		my @routeUrl = ();
+		my @missingName = ();
+		my @missingRouteUrl = ();
 		my $services = TTP::Ovh::getServices( $api );
-		foreach my $key ( keys %{$services} ){
-			my $first = true;
-			if( $services->{$key}{resource}{displayName} ){
-				if( $first ){
-					print "+ ";
-					$first = false;
-				} else {
-					print "  ";
-				}
-				print "$key: resource.displayName: $services->{$key}{resource}{displayName}".EOL;
+		# build an array of just to-be-displayed fields
+		my $array = [];
+		foreach my $it ( @{$services} ){
+			my $hash = {};
+			$hash->{id} = $it->{id};
+			if( $it->{resource}{name} ){
+				$hash->{resource_name} = $it->{resource}{name};
 			} else {
-				push( @missingDisplayName, $key );
+				push( @missingName, $it->{id} );
 			}
-			if( $services->{$key}{route}{url} ){
-				if( $first ){
-					print "+ ";
-					$first = false;
-				} else {
-					print "  ";
-				}
-				print "$key: route.url: $services->{$key}{route}{url}".EOL;
+			if( $it->{route}{url} ){
+				$hash->{route_URL} = $it->{route}{url};
 			} else {
-				push( @missingRouteUrl, $key );
+				push( @missingRouteUrl, $it->{id} );
 			}
+			$hash->{creationDate} = $it->{creationDate};
+			push( @{$array}, $hash );
 			$count += 1;
 		}
-		msgOut( "$count found subscribed service(s) (".scalar @missingDisplayName." missing display name(s), ".scalar @missingRouteUrl." missing route URL(s))" );
+		TTP::displayTabular( $array );
+		msgOut( "$count found subscribed service(s) (".scalar @missingName." missing display name(s), ".scalar @missingRouteUrl." missing route URL(s))" );
 	} else {
 		msgErr( "NOT OK" );
 	}

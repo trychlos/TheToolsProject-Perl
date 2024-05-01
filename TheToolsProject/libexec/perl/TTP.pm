@@ -211,6 +211,95 @@ sub copyFile {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Display an array of hashes as a (sql-type) table
+# (I):
+# - an array of hashes, or an array of array of hashes if multiple result sets are provided
+# - an optional options hash with following keys:
+#   > display: a ref to an array of keys to be displayed
+# (O):
+# - print on stdout
+
+sub displayTabular {
+	my ( $result, $opts ) = @_;
+	$opts //= {};
+	my $displayable = $opts->{display};
+	my $ref = ref( $result );
+	# expects an array, else just give up
+	if( $ref ne 'ARRAY' ){
+		msgVerbose( __PACKAGE__."::displayTabular() expected an array, but found '$ref', so just give up" );
+		return;
+	}
+	if( !scalar @{$result} ){
+		msgVerbose( __PACKAGE__."::displayTabular() got an empty array, so just give up" );
+		return;
+	}
+	# expects an array of hashes
+	# if we got an array of arrays, then this is a multiple result sets and recurse
+	$ref = ref( $result->[0] );
+	if( $ref eq 'ARRAY' ){
+		foreach my $set ( @{$result} ){
+			displayTabular( $set, $opts );
+		}
+		return;
+	}
+	if( $ref ne 'HASH' ){
+		msgVerbose( __PACKAGE__."::displayTabular() expected an array of hashes, but found an array of '$ref', so just give up" );
+		return;
+	}
+	# first compute the max length of each field name + keep the same field order
+	my $lengths = {};
+	my @fields = ();
+	foreach my $key ( sort keys %{@{$result}[0]} ){
+		if( !$displayable || grep( /$key/, @{$displayable} )){
+			push( @fields, $key );
+			$lengths->{$key} = length $key;
+		} else {
+			msgVerbose( "key='$key' is not included among displayable fields [".join( ', ', @{$displayable} )."]" );
+		}
+	}
+	# and for each field, compute the max length content
+	my $haveWarned = false;
+	foreach my $it ( @{$result} ){
+		foreach my $key ( keys %{$it} ){
+			if( !$displayable || grep( /$key/, @{$displayable} )){
+				if( $lengths->{$key} ){
+					if( defined $it->{$key} && length $it->{$key} > $lengths->{$key} ){
+						$lengths->{$key} = length $it->{$key};
+					}
+				} elsif( !$haveWarned ){
+					msgWarn( "found a row with different result set, do you have omit '--multiple' option ?" );
+					$haveWarned = true;
+				}
+			}
+		}
+	}
+	# and last display the full resulting array
+	# have a carriage return to be aligned on line beginning in log files
+	foreach my $key ( @fields ){
+		print pad( "+", $lengths->{$key}+3, '-' );
+	}
+	print "+".EOL;
+	foreach my $key ( @fields ){
+		print pad( "| $key", $lengths->{$key}+3, ' ' );
+	}
+	print "|".EOL;
+	foreach my $key ( @fields ){
+		print pad( "+", $lengths->{$key}+3, '-' );
+	}
+	print "+".EOL;
+	foreach my $it ( @{$result} ){
+		foreach my $key ( @fields ){
+			print pad( "| ".( defined $it->{$key} ? $it->{$key} : "" ), $lengths->{$key}+3, ' ' );
+		}
+		print "|".EOL;
+	}
+	foreach my $key ( @fields ){
+		print pad( "+", $lengths->{$key}+3, '-' );
+	}
+	print "+".EOL;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Returns the current count of errors
 
 sub errs {

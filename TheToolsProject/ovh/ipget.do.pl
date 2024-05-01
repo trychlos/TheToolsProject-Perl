@@ -5,7 +5,7 @@
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --service=<service>     the relevant applicative service [${service}]
-# @(-) --ip=<name>             the IP OVH service name [${ip}]
+# @(-) --ipfo=<name>           the IP OVH service name [${ipfo}]
 # @(-) --[no]routed            display the currently routed server [${routed}]
 # @(-) --[no]address           display the address block of the IP service [${address}]
 #
@@ -36,13 +36,13 @@ my $defaults = {
 	dummy => 'no',
 	verbose => 'no',
 	service => '',
-	ip => '',
+	ipfo => '',
 	routed => 'no',
 	address => 'no'
 };
 
 my $opt_service = $defaults->{service};
-my $opt_ip = $defaults->{ip};
+my $opt_ipfo = $defaults->{ip};
 my $opt_routed = false;
 my $opt_address = false;
 
@@ -51,31 +51,17 @@ my $opt_address = false;
 # the service must be configured with a 'ovh' entry with 'ip' and 'server' OVH service names
 
 sub doGetIP {
-	msgOut( "display server to which '".( $opt_service || $opt_ip )."' FO IP is attached..." );
+	msgOut( "display server to which '$opt_ipfo' FO IP is attached..." );
 	my $res = false;
 
-	if( $opt_service ){
-		my $serviceConfig = $TTPVars->{$ttp->{run}{command}{name}}{service};
-		if( $serviceConfig->{data}{ovh} ){
-			if( $serviceConfig->{data}{ovh}{ip} ){
-				$opt_ip = $serviceConfig->{data}{ovh}{ip};
-				msgVerbose( "got IP service name '$opt_ip'" );
-			} else {
-				msgErr( "the '$opt_service' service doesn't have any 'ovh.ip' configuration" );
-			}
-		} else {
-			msgErr( "the '$opt_service' service doesn't have any 'ovh' configuration" );
-		}
+	my $api = TTP::Ovh::connect();
+	if( $api ){
+		my $result = TTP::Ovh::getContentByPath( $api, "/ip/service/$opt_ipfo" );
+		print " routedTo: $result->{routedTo}{serviceName}".EOL if $opt_routed;
+		print " address: $result->{ip}".EOL if $opt_address;
+		$res = true;
 	}
-	if( $opt_ip ){
-		my $api = TTP::Ovh::connect();
-		if( $api ){
-			my $result = TTP::Ovh::getContentByPath( $api, "/ip/service/$opt_ip" );
-			print "  routedTo: $result->{routedTo}{serviceName}".EOL if $opt_routed;
-			print "  address: $result->{ip}".EOL if $opt_address;
-			$res = true;
-		}
-	}
+
 	if( $res ){
 		msgOut( "success" );
 	} else {
@@ -93,7 +79,7 @@ if( !GetOptions(
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"service=s"			=> \$opt_service,
-	"ip=s"				=> \$opt_ip,
+	"ipfo=s"			=> \$opt_ipfo,
 	"routed!"			=> \$opt_routed,
 	"address!"			=> \$opt_address )){
 
@@ -110,18 +96,24 @@ msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
-msgVerbose( "found ip='$opt_ip'" );
+msgVerbose( "found ipfo='$opt_ipfo'" );
 msgVerbose( "found routed='".( $opt_routed ? 'true':'false' )."'" );
 msgVerbose( "found address='".( $opt_address ? 'true':'false' )."'" );
 
-# either the IP OVH service name is provided, or it can be found as part of an applicative service definition
+# either the OVH IP FO service name is provided, or it can be found as part of an applicative service definition
 if( $opt_service ){
-	if( $opt_ip ){
+	if( $opt_ipfo ){
 		msgErr( "only one of '--service' or '--ip' must be specified, both found" );
 	} else {
-		TTP::Service::checkServiceOpt( $opt_service );
+		my $service = TTP::Service->new( $ttp, { service => $opt_service });
+		$opt_ipfo = $service->var([ 'failover', 'ovh', 'ip' ]);
+		if( $opt_ipfo ){
+			msgOut( "found failover IP service: $opt_ipfo" );
+		} else {
+			msgErr( "unable to find a failover IP in '$opt_service' configuration" );
+		}
 	}
-} elsif( !$opt_ip ){
+} elsif( !$opt_ipfo ){
 	msgErr( "either '--service' or '--ip' must be specified, none found" );
 }
 

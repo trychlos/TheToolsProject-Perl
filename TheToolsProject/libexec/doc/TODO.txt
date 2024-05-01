@@ -1,11 +1,10 @@
 TODO
 ====
 
-   1 2024- 5- 1 get rid of tabular display in DBMS::execSQLCommand
-
    2 2024- 5- 1 SqlServer::execSql: why a first empty array in the result ?
 
    3 2024- 5- 1 DBMS::hashFromTabular() and displayTabular() should be moved to TTP
+     2024- 5- 1 displayTabular() is done
 
    4 2024- 5- 1 get rid of TTPVars
 
@@ -24,3 +23,6 @@ TODO
 
 DONE
 ====
+
+   1 2024- 5- 1 get rid of tabular display in DBMS::execSQLCommand
+     2024- 5- 1 done

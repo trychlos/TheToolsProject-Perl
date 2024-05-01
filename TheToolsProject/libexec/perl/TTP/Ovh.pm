@@ -28,6 +28,7 @@ use File::Spec;
 
 use TTP;
 use TTP::Constants qw( :all );
+use TTP::Credentials;
 use TTP::Message qw( :all );
 use TTP::OvhApi;
 use TTP::Path;
@@ -39,22 +40,15 @@ use TTP::Path;
 # - an opaque handle on the OVH API connection
 
 sub connect {
-	my $credentials = File::Spec->catdir( TTP::Path::credentialsDir(), "ovh.ini" );
-	msgVerbose( "Ovh::connect() credentials='$credentials'" );
-
-	my $api = TTP::OvhApi->new(
-		timeout => 10,
-		credentials => $credentials
-	);
-
-	#my $identity = $api->get( path => "/me" );
-	#if( !$identity ){
-	#	printf("Failed to retrieve identity: %s\n", $identity);
-	#	return 0;
-	#}
-	#$identity = $identity->content();
-	#printf("Welcome %s\n", $identity->{'firstname'});
-	
+	my $credentials = TTP::Credentials::find( 'ovh.ini' );
+	msgVerbose( "Ovh::connect() credentials='".( $credentials ? $credentials : '(undef)' )."'" );
+	my $api = undef;
+	if( $credentials ){
+		$api = TTP::OvhApi->new(
+			timeout => 10,
+			credentials => $credentials
+		);
+	}
 	return $api;
 }
 
@@ -66,6 +60,7 @@ sub connect {
 #   > printAnswer, defaulting to false
 # (O):
 # - the request answer as a OvhAnswer instance
+
 sub getAnswerByPath {
 	my ( $api, $path, $opts ) = @_;
 	$opts //= {};
@@ -88,6 +83,7 @@ sub getAnswerByPath {
 #   > printAnswer, defaulting to false
 # (O):
 # - a ref to the answer content, or undef
+
 sub getContentByPath {
 	my ( $api, $path, $opts ) = @_;
 	$opts //= {};
@@ -105,21 +101,26 @@ sub getContentByPath {
 
 # ------------------------------------------------------------------------------------------------
 # returns the list of subscribed services
-# Makes use of '/service' API: as of 2024-03-05, '/services' API is in beta mode and returns some garbage
+# Makes use of '/service' API
+# As of 2024-03-05, '/services' API is in beta mode and returns some garbage
 # (I):
 # - the api opaque handle as returned from connect()
 # (O):
-# - a ref to a hash which contains subscribed services
+# - a ref to an array of hashes which contains subscribed services, sorted by ascending ID's
+#   may be empty
+#   suitable to TTP::displayTabular()
+
 sub getServices {
 	my ( $api ) = @_;
-	my $res = undef;
+	my $res = [];
 
 	my $url = '/service';
 	my $list = getContentByPath( $api, $url );
 	if( scalar @{$list} ){
-		$res = {};
-		foreach my $it ( @{$list} ){
-			$res->{$it} = getContentByPath( $api, "$url/$it" );
+		foreach my $it ( sort { $a <=> $b } @{$list} ){
+			my $hash = getContentByPath( $api, "$url/$it" );
+			$hash->{id} = $it;
+			push( @{$res}, $hash );
 		}
 	}
 
@@ -133,6 +134,7 @@ sub getServices {
 # - the post parameters as a hash
 # (O):
 # - the request answer as a OvhAnswer instance
+
 sub postByPath {
 	my ( $api, $path, $params ) = @_;
 	msgVerbose( "Ovh::postByPath() path='$path'" );

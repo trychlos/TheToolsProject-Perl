@@ -136,84 +136,6 @@ sub databaseExists {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Display a variable starting with its reference
-# expects a data variable (not a reference to code, or so)
-# a SqlResult is just an array of hashes, or an array of array of hashes in the case of a multiple
-# result sets
-
-sub displayTabularSql {
-	my ( $self, $result ) = @_;
-	my $ref = ref( $result );
-	# expects an array, else just give up
-	if( $ref ne 'ARRAY' ){
-		msgVerbose( __PACKAGE__."::displayTabularSql() expected an array, but found '$ref', so just give up" );
-		return;
-	}
-	if( !scalar @{$result} ){
-		msgVerbose( __PACKAGE__."::displayTabularSql() got an empty array, so just give up" );
-		return;
-	}
-	# expects an array of hashes
-	# if we got an array of arrays, then this is a multiple result sets and recurse
-	$ref = ref( $result->[0] );
-	if( $ref eq 'ARRAY' ){
-		foreach my $set ( @{$result} ){
-			$self->displayTabularSql( $set );
-		}
-		return;
-	}
-	if( $ref ne 'HASH' ){
-		msgVerbose( __PACKAGE__."::displayTabularSql() expected an array of hashes, but found an array of '$ref', so just give up" );
-		return;
-	}
-	# first compute the max length of each field name + keep the same field order
-	my $lengths = {};
-	my @fields = ();
-	foreach my $key ( keys %{@{$result}[0]} ){
-		push( @fields, $key );
-		$lengths->{$key} = length $key;
-	}
-	# and for each field, compute the max length content
-	my $haveWarned = false;
-	foreach my $it ( @{$result} ){
-		foreach my $key ( keys %{$it} ){
-			if( $lengths->{$key} ){
-				if( defined $it->{$key} && length $it->{$key} > $lengths->{$key} ){
-					$lengths->{$key} = length $it->{$key};
-				}
-			} elsif( !$haveWarned ){
-				msgWarn( "found a row with different result set, do you have omit '--multiple' option ?" );
-				$haveWarned = true;
-			}
-		}
-	}
-	# and last display the full resulting array
-	# have a carriage return to be aligned on line beginning in log files
-	foreach my $key ( @fields ){
-		print TTP::pad( "+", $lengths->{$key}+3, '-' );
-	}
-	print "+".EOL;
-	foreach my $key ( @fields ){
-		print TTP::pad( "| $key", $lengths->{$key}+3, ' ' );
-	}
-	print "|".EOL;
-	foreach my $key ( @fields ){
-		print TTP::pad( "+", $lengths->{$key}+3, '-' );
-	}
-	print "+".EOL;
-	foreach my $it ( @{$result} ){
-		foreach my $key ( @fields ){
-			print TTP::pad( "| ".( defined $it->{$key} ? $it->{$key} : "" ), $lengths->{$key}+3, ' ' );
-		}
-		print "|".EOL;
-	}
-	foreach my $key ( @fields ){
-		print TTP::pad( "+", $lengths->{$key}+3, '-' );
-	}
-	print "+".EOL;
-}
-
-# -------------------------------------------------------------------------------------------------
 # execute a sql command
 # (I):
 # - the command string to be executed
@@ -239,7 +161,7 @@ sub execSqlCommand {
 		my $tabular = true;
 		$tabular = $opts->{tabular} if exists $opts->{tabular};
 		if( $tabular ){
-			$self->displayTabularSql( $result->{result} );
+			TTP::displayTabular( $result->{result} );
 		} else {
 			msgVerbose( "do not display tabular result as opts->{tabular}='false'" );
 		}
@@ -284,7 +206,7 @@ sub getDatabaseTables {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Converts back the output of displayTabularSql() function to an array of hashes
+# Converts back the output of TTP::displayTabular() function to an array of hashes
 # as the only way for an external command to get the output of a sql batch is to pass through a tabular display output and re-interpretation
 # (I):
 # - an array of the lines outputed by a 'dbms.pl sql -tabular' command, which may contains several result sets

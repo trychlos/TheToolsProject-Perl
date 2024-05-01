@@ -51,14 +51,16 @@
 			},
 			"workloads": {
 			},
-			"monitor": {
+			"failover": {
 				"ovh": {
 					"ip": "ip-87.98.189.58"
-				},
-				"url": "http://canal33.sysnrg.com",
-				"switch": {
-					"scheduled": "\\Inlingua\\tom17.backup.startup"
 				}
+			},
+			"monitor": {
+				"url": "http://canal33.sysnrg.com"
+			},
+			"switch": {
+				"scheduled": "\\Inlingua\\tom17.backup.startup"
 			}
 		},
 		"Dom.2008": {
