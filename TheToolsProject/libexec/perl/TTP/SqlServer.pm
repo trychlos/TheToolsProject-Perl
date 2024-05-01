@@ -165,9 +165,9 @@ sub apiGetDatabaseTables {
 	my $result = { ok => false, output => [] };
 	if( $parms->{database} ){
 		msgVerbose( __PACKAGE__."::apiGetDatabaseTables() entering with instance='".$dbms->instance()."', database='$parms->{database}'" );
-		$result = _sqlExec( $dbms,  "SELECT TABLE_SCHEMA,TABLE_NAME FROM $parms->{database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_SCHEMA,TABLE_NAME" );
-		if( $result->{ok} ){
-			foreach my $it ( @{$result->{result}} ){
+		my $sqlres = _sqlExec( $dbms,  "SELECT TABLE_SCHEMA,TABLE_NAME FROM $parms->{database}.INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE' ORDER BY TABLE_SCHEMA,TABLE_NAME" );
+		if( $sqlres->{ok} ){
+			foreach my $it ( @{$sqlres->{result}} ){
 				if( !grep( /^$it->{TABLE_NAME}$/, @{$Const->{systemTables}} )){
 					push( @{$result->{output}}, "$it->{TABLE_SCHEMA}.$it->{TABLE_NAME}" );
 				}
