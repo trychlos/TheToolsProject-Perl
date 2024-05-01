@@ -7,7 +7,6 @@
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
 # @(-) --bname=<name>          the JSON file basename [${bname}]
 # @(-) --port=<port>           the port number to address [${port}]
-# @(-) --[no]http              whether to publish an HTTP telemetry [${http}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -31,9 +30,6 @@ use File::Spec;
 
 use TTP::Daemon;
 use TTP::Finder;
-use TTP::Path;
-
-my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -42,15 +38,13 @@ my $defaults = {
 	verbose => 'no',
 	json => '',
 	bname => '',
-	port => '',
-	http => 'no'
+	port => ''
 };
 
 my $opt_json = $defaults->{json};
 my $opt_bname = $defaults->{bname};
 my $opt_port = -1;
 my $opt_port_set = false;
-my $opt_http = false;
 
 # -------------------------------------------------------------------------------------------------
 # get a daemon status
@@ -64,17 +58,6 @@ sub doStatus {
 	my $res = `$cmd`;
 	msgVerbose( "res='$res'" );
 	my $result = ( $res && length $res && $? == 0 );
-
-	if( $opt_http ){
-		my $value = $result ? "1" : "0";
-		my $command = "telemetry.pl publish -value $value ".join( ' ', @ARGV )." -nomqtt -http -nocolored $dummy $verbose";
-		msgVerbose( $command );
-		my $stdout = `$command`;
-		my $rc = $?;
-		msgVerbose( $stdout );
-		msgVerbose( "rc=$rc" );
-	}
-
 	if( $result ){
 		print "$res";
 		msgOut( "done" );
@@ -99,8 +82,7 @@ if( !GetOptions(
 		my( $opt_name, $opt_value ) = @_;
 		$opt_port = $opt_value;
 		$opt_port_set = true;
-	},
-	"http!"				=> \$opt_http )){
+	} )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -118,7 +100,6 @@ msgVerbose( "found json='$opt_json'" );
 msgVerbose( "found bname='$opt_bname'" );
 msgVerbose( "found port='$opt_port'" );
 msgVerbose( "found port_set='".( $opt_port_set ? 'true':'false' )."'" );
-msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
 
 # either the json or the basename or the port must be specified (and not both)
 my $count = 0;
