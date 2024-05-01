@@ -29,8 +29,6 @@ use Time::Piece;
 
 use TTP::MQTT;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
@@ -51,6 +49,7 @@ my $count = 0;
 
 # -------------------------------------------------------------------------------------------------
 # get and output the retained messages
+
 sub doGetRetained {
 	msgOut( "getting the retained messages..." );
 

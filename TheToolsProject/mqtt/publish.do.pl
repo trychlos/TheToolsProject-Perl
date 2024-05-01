@@ -2,7 +2,7 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
-# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --topic=<name>          the topic to publish in [${topic}]
 # @(-) --payload=<name>        the message to be published [${payload}]
@@ -30,8 +30,6 @@
 
 use TTP::MQTT;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
@@ -44,25 +42,31 @@ my $defaults = {
 
 my $opt_topic = $defaults->{topic};
 my $opt_payload = undef;
+my $opt_retain = false;
 
 # -------------------------------------------------------------------------------------------------
 # publish the message
+
 sub doPublish {
 	msgOut( "publishing '$opt_topic [$opt_payload]'..." );
+	my $result = false;
 
-	my $mqtt = TTP::MQTT::connect();
-	if( $mqtt ){
-		$opt_payload //= "";
-		if( $opt_retain ){
-			$mqtt->retain( $opt_topic, $opt_payload );
-		} else {
-			$mqtt->publish( $opt_topic, $opt_payload );
+	if( $running->dummy()){
+		msgDummy( "considering publication successful" );
+		$result = true;
+	} else {
+		my $mqtt = TTP::MQTT::connect();
+		if( $mqtt ){
+			$opt_payload //= "";
+			if( $opt_retain ){
+				$mqtt->retain( $opt_topic, $opt_payload );
+			} else {
+				$mqtt->publish( $opt_topic, $opt_payload );
+			}
+			TTP::MQTT::disconnect( $mqtt );
+			$result = true;
 		}
-		TTP::MQTT::disconnect( $mqtt );
 	}
-
-	my $result = true;
-
 	if( $result ){
 		msgOut( "success" );
 	} else {
