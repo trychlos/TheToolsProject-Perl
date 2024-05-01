@@ -31,6 +31,16 @@
 # - listeningInterval: the interval in ms. between two listening loops, defaulting to 1000 ms
 # - messagingInterval: either zero (do not advertize to messaging system), or the advertizing interval in ms,
 #   defaulting to 60000 ms (1 mn)
+# - httpingInterval: either zero (do not advertize to http-based telemetry system), or the advertizing interval in ms,
+#   defaulting to 60000 ms (1 mn)
+# - httpName: the name of the metric published to the http-based telemetry system
+#   optional, no default, override the 'nameRE' regular expression if provided
+# - textingInterval: either zero (do not advertize to text-based telemetry system), or the advertizing interval in ms,
+#   defaulting to 60000 ms (1 mn)
+# - textName: the name of the metric published to the text-based telemetry system
+#   optional, no default, override the 'nameRE' regular expression if provided
+# - nameRE: the regular expression to apply to the daemon name when computing the metric name
+#   defaulting to 's/-/_/g'
 #
 # Also the daemon writer mmust be conscious of the dynamic character of TheToolsProject.
 # In particular and at least, many output directories (logs, temp files and so on) may be built on a daily basis.
@@ -66,6 +76,7 @@ with 'TTP::IEnableable', 'TTP::IAcceptable', 'TTP::IFindable', 'TTP::IHelpable',
 use TTP;
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
+use TTP::Metric;
 use TTP::MQTT;
 
 use constant {
@@ -74,6 +85,10 @@ use constant {
 	DEFAULT_LISTEN_INTERVAL => 1000,
 	MIN_MESSAGING_INTERVAL => 5000,
 	DEFAULT_MESSAGING_INTERVAL => 60000,
+	MIN_HTTPING_INTERVAL => 5000,
+	DEFAULT_HTTPING_INTERVAL => 60000,
+	MIN_TEXTING_INTERVAL => 5000,
+	DEFAULT_TEXTING_INTERVAL => 60000,
 	OFFLINE => "offline"
 };
 
@@ -94,7 +109,9 @@ my $Const = {
 			'daemons'
 		],
 		sufix => '.json'
-	}
+	},
+	# when publishing the status as a telemetry
+	nameRE => 's/-/_/g'
 };
 
 ### Private functions
@@ -163,7 +180,7 @@ sub _do_terminate {
 # ------------------------------------------------------------------------------------------------
 # the daemon advertize of its status every 'messagingInterval' seconds (defaults to 60)
 
-sub _advertize {
+sub _mqtt_advertize {
 	my ( $self ) = @_;
 	if( $self->{_mqtt} ){
 		my $topic = $self->_topic();
@@ -228,6 +245,32 @@ sub _daemonize {
 }
 
 # ------------------------------------------------------------------------------------------------
+# the daemon advertize of its status every 'httpingInterval' seconds (defaults to 60)
+# the metric advertizes the last time we have seen the daemon alive
+
+sub _http_advertize {
+	my ( $self ) = @_;
+	# compute the metric name
+	my $name = $self->name();
+	my $data = $self->jsonData();
+	if( exists( $data->{httpName} )){
+		$name = $data->{httpName};
+	} else {
+		my $re = $Const->{nameRE};
+		$re = $data->{nameRE} if exists $data->{nameRE};
+		$name =~ $re;
+	}
+	TTP::Metric->new( $ttp, {
+		name => $name,
+		value => localtime->epoch,
+		type => 'counter',
+		help => 'The last epoch time the daemon has been seen alive',
+	})->publish({
+		http => true
+	});
+}
+
+# ------------------------------------------------------------------------------------------------
 # build and returns the last will MQTT message for the daemon
 
 sub _lastwill {
@@ -245,6 +288,14 @@ sub _running {
 	my ( $self ) = @_;
 
 	return "running since ".$self->runnableStarted()->strftime( '%Y-%m-%d %H:%M:%S.%5N' );
+}
+
+# ------------------------------------------------------------------------------------------------
+# the daemon advertize of its status every 'textingInterval' seconds (defaults to 60)
+
+sub _text_advertize {
+	my ( $self ) = @_;
+	msgVerbose( "text-based telemetry not honored at the moment" );
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -280,8 +331,12 @@ sub declareSleepables {
 
 	$self->sleepableDeclareFn( sub => sub { $self->listen( $commands ); }, interval => $self->listeningInterval() );
 
-	my $msgInterval = $self->messagingInterval();
-	$self->sleepableDeclareFn( sub => sub { $self->_advertize(); }, interval => $msgInterval ) if $msgInterval > 0;
+	my $mqttInterval = $self->messagingInterval();
+	$self->sleepableDeclareFn( sub => sub { $self->_mqtt_advertize(); }, interval => $mqttInterval ) if $mqttInterval > 0;
+	my $httpInterval = $self->httpingInterval();
+	#$self->sleepableDeclareFn( sub => sub { $self->_http_advertize(); }, interval => $httpInterval ) if $httpInterval > 0;
+	my $textInterval = $self->textingInterval();
+	#$self->sleepableDeclareFn( sub => sub { $self->_text_advertize(); }, interval => $textInterval ) if $textInterval > 0;
 
 	$self->sleepableDeclareStop( sub => sub { return $self->terminating(); });
 
@@ -354,6 +409,27 @@ sub execPath {
 	my ( $self ) = @_;
 
 	return $self->jsonData()->{execPath};
+}
+
+# ------------------------------------------------------------------------------------------------
+# Returns the interval in sec. between two advertizings to http-based telemetry system.
+# May be set to false in the configuration file to disable that.
+# (I):
+# - none
+# (O):
+# - returns the http-ing interval, which may be zero if disabled
+
+sub httpingInterval {
+	my ( $self ) = @_;
+
+	my $interval = $self->jsonData()->{httpingInterval};
+	$interval = DEFAULT_HTTPING_INTERVAL if !defined $interval;
+	if( $interval && $interval < MIN_HTTPING_INTERVAL ){
+		msgVerbose( "defined httpingInterval=$interval less than minimum accepted ".MIN_HTTPING_INTERVAL.", ignored" );
+		$interval = DEFAULT_HTTPING_INTERVAL;
+	}
+
+	return $interval;
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -627,6 +703,27 @@ sub terminating {
 	my ( $self ) = @_;
 
 	return $self->{_terminating};
+}
+
+# ------------------------------------------------------------------------------------------------
+# Returns the interval in sec. between two advertizings to text-based telemetry system.
+# May be set to false in the configuration file to disable that.
+# (I):
+# - none
+# (O):
+# - returns the text-ing interval, which may be zero if disabled
+
+sub textingInterval {
+	my ( $self ) = @_;
+
+	my $interval = $self->jsonData()->{textingInterval};
+	$interval = DEFAULT_TEXTING_INTERVAL if !defined $interval;
+	if( $interval && $interval < MIN_TEXTING_INTERVAL ){
+		msgVerbose( "defined textingInterval=$interval less than minimum accepted ".MIN_TEXTING_INTERVAL.", ignored" );
+		$interval = DEFAULT_TEXTING_INTERVAL;
+	}
+
+	return $interval;
 }
 
 ### Class methods
