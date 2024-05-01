@@ -2,7 +2,7 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
-# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
 # @(-) --bname=<name>          the JSON file basename [${bname}]

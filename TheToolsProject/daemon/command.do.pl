@@ -2,7 +2,7 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
-# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
 # @(-) --bname=<name>          the JSON file basename [${bname}]
@@ -37,8 +37,6 @@ $| = 1;
 use TTP::Daemon;
 use TTP::Finder;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
@@ -60,30 +58,39 @@ my $opt_command = $defaults->{command};
 # send a command to the daemon
 
 sub doSend {
-	# connect
-	# triggers an error if the daemon is not active
-	my $socket = new IO::Socket::INET(
-		PeerHost => 'localhost',
-		PeerPort => $opt_port,
-		Proto => 'tcp',
-		Type => SOCK_STREAM
-	) or msgErr( "unable to connect: $!" ) if !$socket;
+	# in dummy mode, just simulate and output the acknowledge
+	if( $running->dummy()){
+		msgDummy( "OK" );
 
-	# send the command
-	if( $socket ){
-		my $size = $socket->send( $opt_command );
-		msgVerbose( "sent '$opt_command' to the server ($size bytes)" );
-		# notify server that request has been sent
-		$socket->shutdown( SHUT_WR );
-		# receive a response of up to 4096 characters from server
-		my $response = "";
-		while( !isOk( $response )){
-			$socket->recv( $response, 4096 );
-			chomp $response;
-			print "$response".EOL;
-			msgLog( $response );
+	# connect, triggering an error if the daemon is not active
+	} else {
+		my $socket = new IO::Socket::INET(
+			PeerHost => 'localhost',
+			PeerPort => $opt_port,
+			Proto => 'tcp',
+			Type => SOCK_STREAM
+		) or msgErr( "unable to connect: $!" ) if !$socket;
+
+		# send the command
+		if( $socket ){
+			my $size = $socket->send( $opt_command );
+			msgVerbose( "sent '$opt_command' to the server ($size bytes)" );
+			# notify server that request has been sent
+			$socket->shutdown( SHUT_WR );
+			# receive a response of up to 4096 characters from server
+			my $response = "";
+			while( !isOk( $response )){
+				$socket->recv( $response, 4096 );
+				chomp $response;
+				print "$response".EOL;
+				msgLog( $response );
+			}
+			$socket->close();
 		}
-		$socket->close();
+	}
+	if( TTP::errs()){
+		msgErr( "NOT OK" );
+	} else {
 		msgOut( "success" );
 	}
 }

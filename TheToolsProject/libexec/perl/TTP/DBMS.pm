@@ -233,6 +233,8 @@ sub execSqlCommand {
 		opts => $opts
 	};
 	my $result = $self->toPackage( 'apiExecSqlCommand', $parms );
+	#print Dumper( $parms );
+	#print Dumper( $result );
 	if( $result && $result->{ok} ){
 		my $tabular = true;
 		$tabular = $opts->{tabular} if exists $opts->{tabular};

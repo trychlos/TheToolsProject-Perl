@@ -1,0 +1,23 @@
+TODO
+====
+
+   1 2024- 5- 1 get rid of tabular display in DBMS::execSQLCommand
+
+   2 2024- 5- 1 SqlServer::execSql: why a first empty array in the result ?
+
+   3 2024- 5- 1 DBMS::hashFromTabular() and displayTabular() should be moved to TTP
+
+   4 2024- 5- 1 get rid of TTPVars
+
+   5 2024- 5- 1 get rid of 'ttp'-prefixed TTP functions
+
+   6 2024- 5- 1 IRunnable::filter() when called with direct command execution, only get the first line
+                as in $running->filter( `$command` );
+				while having my $res = `$command`; $running->filter( $res ) is fine
+
+   7 2024- 5- 1 
+
+# -------------------------------------------------------------------------------------------------
+
+DONE
+====

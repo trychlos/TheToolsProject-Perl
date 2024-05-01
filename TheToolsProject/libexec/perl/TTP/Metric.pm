@@ -293,6 +293,7 @@ sub _http_publish {
 		$res = HTTP_DISABLED_BY_CONFIGURATION;
 	}
 
+	msgVerbose( __PACKAGE__."::_http_publish() returning res='$res'" );
 	return $res;
 }
 
@@ -324,6 +325,7 @@ sub _mqtt_publish {
 				# have a payload
 				my $value = $self->value();
 				# manage macros
+				#print "name='$name' value='$value'".EOL;
 				$command =~ s/<TOPIC>/$topic/;
 				$command =~ s/<PAYLOAD>/$value/;
 				# and run the command
@@ -350,6 +352,7 @@ sub _mqtt_publish {
 		$res = MQTT_DISABLED_BY_CONFIGURATION;
 	}
 
+	msgVerbose( __PACKAGE__."::_mqtt_publish() returning res='$res'" );
 	return $res;
 }
 
@@ -395,6 +398,7 @@ sub _text_publish {
 		$res = TEXT_DISABLED_BY_CONFIGURATION;
 	}
 
+	msgVerbose( __PACKAGE__."::_text_publish() returning res='$res'" );
 	return $res;
 }
 

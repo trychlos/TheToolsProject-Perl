@@ -492,6 +492,7 @@ sub name {
 
 # -------------------------------------------------------------------------------------------------
 # Set the configuration path
+# Honors the '--dummy' verb option by using msgWarn() instead of msgErr() when checking the configuration
 # (I):
 # - a hash argument with following keys:
 #   > json: the path to the JSON configuration file
@@ -522,12 +523,13 @@ sub setConfig {
 			my $checkConfig = true;
 			$checkConfig = $args->{checkConfig} if exists $args->{checkConfig};
 			if( $checkConfig ){
+				my $msgRef = $self->ttp()->runner()->dummy() ? \&msgWarn : \&msgErr;
 				# must have a listening port
-				msgErr( "$args->{json}: daemon configuration must define a 'listeningPort' value, not found" ) if !$self->listeningPort();
+				$msgRef->( "$args->{json}: daemon configuration must define a 'listeningPort' value, not found" ) if !$self->listeningPort();
 				# must have an exec path
 				my $program = $self->execPath();
-				msgErr( "$args->{json}: daemon configuration must define an 'execPath' value, not found" ) if !$program;
-				msgErr( "$args->{json}: execPath='$program' not found or not readable" ) if ! -r $program;
+				$msgRef->( "$args->{json}: daemon configuration must define an 'execPath' value, not found" ) if !$program;
+				$msgRef->( "$args->{json}: execPath='$program' not found or not readable" ) if ! -r $program;
 			} else {
 				msgVerbose( "not checking daemon config as checkConfig='false'" );
 			}
@@ -568,9 +570,18 @@ sub start {
 	my ( $self ) = @_;
 
 	my $program = $self->execPath();
-	my $proc = Proc::Background->new( "perl $program -json ".$self->jsonPath()." -ignoreInt ".join( ' ', @ARGV ));
+	my $command = "perl $program -json ".$self->jsonPath()." -ignoreInt ".join( ' ', @ARGV );
+	my $res = undef;
 
-	return $proc;
+	if( $self->ttp()->runner()->dummy()){
+		msgDummy( $command );
+		msgDummy( "considering startup as 'true'" );
+		$res = true;
+	} else {
+		$res = Proc::Background->new( $command );
+	}
+
+	return $res;
 }
 
 # ------------------------------------------------------------------------------------------------

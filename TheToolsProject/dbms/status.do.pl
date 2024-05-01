@@ -8,9 +8,9 @@
 # @(-) --instance=<name>       acts on the named instance [${instance}]
 # @(-) --database=<name>       database name [${database}]
 # @(-) --[no]state             get state [${state}]
-# @(-) --[no]mqtt              publish the metrics to the messaging MQTT-based system [${mqtt}]
-# @(-) --[no]http              publish the metrics to the PushGateway HTTP-based system [${http}]
-# @(-) --[no]text              publish the metrics to the TextFile Collector system [${text}]
+# @(-) --[no]mqtt              publish the metrics to the (MQTT-based) messaging system [${mqtt}]
+# @(-) --[no]http              publish the metrics to the (HTTP-based) Prometheus PushGateway system [${http}]
+# @(-) --[no]text              publish the metrics to the (text-based) Prometheus TextFile Collector system [${text}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -101,19 +101,16 @@ sub doState {
 	my $result = undef;
 	foreach my $db ( @{$databases} ){
 		msgOut( "database '$db'" );
-		$command = "dbms.pl sql -instance $opt_instance -command \"select state, state_desc from sys.databases where name='$db';\" -tabular -nocolored $dummy $verbose";
+		$sql = "select state, state_desc from sys.databases where name='$db'";
 		if( $running->dummy()){
-			msgDummy( $command );
+			msgDummy( $sql );
 			$result = {
 				state => 0,
 				state_desc => 'DUMMY_ONLINE'
 			}
 		} else {
-			msgVerbose( $command );
-			my $res = `$command`;
-			my $rc = $?;
-			my $hash = $dbms->hashFromTabular( $running->filter( $res ));
-			$result = @{$hash}[0];
+			my $sqlres = $dbms->execSqlCommand( $sql, { tabular => false });
+			$result = $sqlres->{ok} ? $sqlres->{result}->[0];
 		}
 		# due to the differences between the two publications contents, publish separately
 		# -> stdout
@@ -122,7 +119,7 @@ sub doState {
 		}
 		# -> mqtt: publish a single string metric
 		#    e.g. state: online
-		my $rc = TTP::Metric->new( $ttp, {
+		TTP::Metric->new( $ttp, {
 			name => 'state',
 			value => $result->{state_desc},
 			type => 'gauge',
@@ -134,11 +131,10 @@ sub doState {
 		})->publish({
 			mqtt => $opt_mqtt
 		});
-		msgVerbose( "got rc=$rc" );
 		# -> http/text: publish a metric per known sqlState
 		#    e.g. state=emergency 0
 		foreach my $key ( keys( %{$sqlStates} )){
-			my $rc = TTP::Metric->new( $ttp, {
+			TTP::Metric->new( $ttp, {
 				name => 'dbms_database_state',
 				value => "$key" eq "$result->{state}" ? 1 : 0,
 				type => 'gauge',
@@ -152,31 +148,7 @@ sub doState {
 				http => $opt_http,
 				text => $opt_text
 			});
-			msgVerbose( "got rc=$rc" );
 		}
-		#	print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$opt_instance -label database=$db -label state=$states->{$key} -nomqtt -http -nocolored $dummy $verbose`;
-		#	my $rc = $?;	
-		#	msgVerbose( "doState() HTTP key='$key' state='$states->{$key}' got rc=$rc" );
-		#	$code += $rc;
-		#}
-		#if( $opt_mqtt ){
-		#	# -> MQTT: only publish the label as state=<label>
-		#	print `telemetry.pl publish -metric state -value $row->{state_desc} -label instance=$opt_instance -label database=$db -mqtt -nohttp -nocolored $dummy $verbose`;
-		#	my $rc = $?;
-		#	msgVerbose( "doState() MQTT key='$key' got rc=$rc" );
-		#}
-		#if( $opt_http ){
-			# -> HTTP
-		# contrarily to what is said in the doc, seems that push gateway requires the TYPE line
-		#	foreach my $key ( keys( %{$states} )){
-		#		my $value = 0;
-		#		$value = 1 if "$key" eq "$row->{state}";
-		#		print `telemetry.pl publish -metric ttp_dbms_database_state -value $value -label instance=$opt_instance -label database=$db -label state=$states->{$key} -nomqtt -http -nocolored $dummy $verbose`;
-		#		my $rc = $?;	
-		#		msgVerbose( "doState() HTTP key='$key' state='$states->{$key}' got rc=$rc" );
-		#		$code += $rc;
-		#	}
-		#}
 	}
 	if( $code ){
 		msgErr( "NOT OK" );

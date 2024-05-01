@@ -2,16 +2,12 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
-# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
 # @(-) --bname=<name>          the JSON file basename [${bname}]
 # @(-) --port=<port>           the port number to address [${port}]
 # @(-) --[no]http              whether to publish an HTTP telemetry [${http}]
-#
-# @(@) The Tools Project is able to manage any daemons with these very same verbs.
-# @(@) Each separate daemon is characterized by its own JSON properties which uniquely identifies it from the TTP point of view.
-# @(@) This script accepts other options, after a '--' double dash, which will be passed to 'telemetry.pl publish' verb.
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -78,6 +74,7 @@ sub doStatus {
 		msgVerbose( $stdout );
 		msgVerbose( "rc=$rc" );
 	}
+
 	if( $result ){
 		print "$res";
 		msgOut( "done" );

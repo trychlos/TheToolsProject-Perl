@@ -2,7 +2,7 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
-# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --json=<name>           the JSON file which characterizes this daemon [${json}]
 # @(-) --bname=<name>          the JSON file basename [${bname}]
@@ -10,10 +10,6 @@
 # @(-) --[no]ignore            ignore the return code if the daemon was not active [${ignore}]
 # @(-) --[no]wait              wait for actual termination [${wait}]
 # @(-) --timeout=<timeout>     timeout when waiting for termination [${termination}]
-# @(-) --sleep=<sleep>         sleep for seconds before exiting [${sleep}]
-#
-# @(@) The Tools Project is able to manage any daemons with these very same verbs.
-# @(@) Each separate daemon is characterized by its own JSON properties which uniquely identifies it from the TTP point of view.
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -50,8 +46,7 @@ my $defaults = {
 	port => '',
 	ignore => 'yes',
 	wait => 'yes',
-	timeout => 60,
-	sleep => 0
+	timeout => 60
 };
 
 my $opt_json = $defaults->{json};
@@ -61,7 +56,6 @@ my $opt_port_set = false;
 my $opt_ignore = true;
 my $opt_wait = true;
 my $opt_timeout = $defaults->{timeout};
-my $opt_sleep = $defaults->{sleep};
 
 # -------------------------------------------------------------------------------------------------
 # stop the daemon
@@ -82,10 +76,6 @@ sub doStop {
 		if( $opt_wait ){
 			$result = doWait( $res );
 		}
-		if( $opt_sleep > 0 ){
-			msgOut( "sleeping $opt_sleep sec." );
-			sleep $opt_sleep;
-		}
 		if( $result ){
 			msgOut( "success" );
 		} else {
@@ -105,22 +95,28 @@ sub doStop {
 # -------------------------------------------------------------------------------------------------
 # wait for the daemon actual termination
 # return true if the daemon is terminated, false else
+# In dummy mode, just considers that the daemon has exited immediately
 
 sub doWait {
 	my ( $answer ) = @_;
-	# get the pid of the answering daemon (first word of each line)
-	my @w = split( /\s+/, $answer->[0] );
-	my $pid = $w[0];
-	msgLog( "waiting for '$pid' termination" );
-	my $start = localtime;
 	my $alive = true;
-	my $timedout = false;
-	while( $alive && !$timedout ){
-		$alive = kill( 0, $pid );
-		if( $alive ){
-			sleep( 1 );
-			my $now = localtime;
-			$timedout = ( $now - $start > $opt_timeout );
+	if( $running->dummy()){
+		msgDummy( "considering the daemon has immediately exited" );
+		$alive = false,;
+	} else {
+		# get the pid of the answering daemon (first word of each line)
+		my @w = split( /\s+/, $answer->[0] );
+		my $pid = $w[0];
+		msgLog( "waiting for '$pid' termination" );
+		my $start = localtime;
+		my $timedout = false;
+		while( $alive && !$timedout ){
+			$alive = kill( 0, $pid );
+			if( $alive ){
+				sleep( 1 );
+				my $now = localtime;
+				$timedout = ( $now - $start > $opt_timeout );
+			}
 		}
 	}
 	return !$alive;
@@ -144,8 +140,7 @@ if( !GetOptions(
 	},
 	"ignore!"			=> \$opt_ignore,
 	"wait!"				=> \$opt_wait,
-	"timeout=i"			=> \$opt_timeout,
-	"sleep=i"			=> \$opt_sleep )){
+	"timeout=i"			=> \$opt_timeout )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -166,7 +161,6 @@ msgVerbose( "found port_set='".( $opt_port_set ? 'true':'false' )."'" );
 msgVerbose( "found ignore='".( $opt_ignore ? 'true':'false' )."'" );
 msgVerbose( "found wait='".( $opt_wait ? 'true':'false' )."'" );
 msgVerbose( "found timeout='$opt_timeout'" );
-msgVerbose( "found sleep='$opt_sleep'" );
 
 # either the json or the basename or the port must be specified (and not both)
 my $count = 0;

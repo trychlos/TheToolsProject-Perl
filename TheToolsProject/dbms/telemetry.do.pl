@@ -4,17 +4,17 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
-# @(-) --service=<name>        service name [${service}]
-# @(-) --instance=<name>       Sql Server instance name [${instance}]
+# @(-) --service=<name>        acts on the named service [${service}]
+# @(-) --instance=<name>       acts on the named instance [${instance}]
 # @(-) --database=<name>       database name [${database}]
 # @(-) --[no]dbsize            get databases size for the specified instance [${dbsize}]
 # @(-) --[no]tabcount          get tables rows count for the specified database [${tabcount}]
-# @(-) --limit=<limit>         limit the MQTT published messages [${limit}]
-# @(-) --[no]mqtt              publish the metrics to the messaging MQTT-based system [${mqtt}]
-# @(-) --[no]http              publish the metrics to the PushGateway HTTP-based system [${http}]
-# @(-) --[no]text              publish the metrics to the TextFile Collector system [${text}]
+# @(-) --limit=<limit>         limit the count of published metrics [${limit}]
+# @(-) --[no]mqtt              publish the metrics to the (MQTT-based) messaging system [${mqtt}]
+# @(-) --[no]http              publish the metrics to the (HTTP-based) Prometheus PushGateway system [${http}]
+# @(-) --[no]text              publish the metrics to the (text-based) Prometheus TextFile Collector system [${text}]
 #
-# @(@) When limiting the published messages, be conscious that the '--dbsize' option provides 6 messages per database.
+# @(@) When limiting the published messages, be conscious that the '--dbsize' option provides 6 metrics per database.
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -35,8 +35,8 @@
 # see <http://www.gnu.org/licenses/>.
 
 use TTP::DBMS;
+use TTP::Metric;
 use TTP::Service;
-use TTP::Telemetry;
 
 my $defaults = {
 	help => 'no',
@@ -49,9 +49,9 @@ my $defaults = {
 	dbsize => 'no',
 	tabcount => 'no',
 	limit => -1,
-	mqtt => 1,
-	http => 1,
-	text => 1
+	mqtt => 'no',
+	http => 'no',
+	text => 'no'
 };
 
 my $opt_service = $defaults->{service};
@@ -73,8 +73,8 @@ my $dbms = undef;
 my $databases = [];
 
 # note that the sp_spaceused stored procedure returns:
-# - TWO resuts sets
-# - and that units are in the data: we move them to the column names
+# - two resuts sets, that we concatenate
+# - and that units are in the data, so we move them to the column names
 # below a sample of the got result from "dbms.pl sql -tabular -multiple" command
 =pod
 +---------------+---------------+-------------------+
@@ -92,6 +92,7 @@ my $databases = [];
 # -------------------------------------------------------------------------------------------------
 # get the two result sets from sp_spaceused stored procedure
 # returns a ready-to-be-published consolidated result set
+
 sub _interpretDbResultSet {
 	my ( $sets ) = @_;
 	my $result = {};
@@ -111,74 +112,115 @@ sub _interpretDbResultSet {
 }
 
 # -------------------------------------------------------------------------------------------------
-# publish all databases sizes for the specified instance
+# publish the databases sizes
 # if a service has been specified, only consider the databases of this service
-# if only an instance has been specified, then search for all databases of this instance
-# at the moment, a service is stucked to a single instance
+# if only an instance has been specified, then all databases of this instance are considered
+
 sub doDbSize {
-	msgOut( "publishing databases size on '$hostConfig->{name}\\$opt_instance'..." );
-	my $mqttCount = 0;
-	my $httpCount = 0;
-	my $list = [];
-	my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
-	my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-	if( $opt_service ){
-		$list = \@databases;
-	} elsif( !$opt_database ){
-		$list = ttpFilter( `dbms.pl list -instance $opt_instance -listdb -nocolored $dummy $verbose` );
-	} else {
-		push( @{$list}, $opt_database );
-	}
-	foreach my $db ( @{$list} ){
-		last if $mqttCount >= $opt_limit && $opt_limit >= 0;
-		msgOut( "  database '$db'" );
+	msgOut( "publishing databases size on '$opt_instance'..." );
+	my $count = 0;
+	my $dummy = $running->dummy() ? "-dummy" : "-nodummy";
+	my $verbose = $running->verbose() ? "-verbose" : "-noverbose";
+	foreach my $db ( @{$databases} ){
+		last if $count >= $opt_limit && $opt_limit >= 0;
+		msgOut( "database '$db'" );
 		# sp_spaceused provides two results sets, where each one only contains one data row
-		my $resultSets = TTP::DBMS::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; exec sp_spaceused;\" -tabular -multiple -nocolored $dummy $verbose` ));
-		my $set = _interpretDbResultSet( $resultSets );
+		my $sqlres = $dbms->execSqlCommand( "use $db; exec sp_spaceused;", { tabular => false, multiple => true });
+		#print Dumper( $sqlres );
+		my $set = _interpretDbResultSet( $sqlres->{result} );
+		#print Dumper( $set );
+		# we got so six metrics for each database
+		# that we publish separately as mqtt-based names are slightly different from Prometheus ones
 		foreach my $key ( keys %{$set} ){
-			`telemetry.pl publish -metric $key -value $set->{$key} -label instance=$opt_instance -label database=$db -httpPrefix ttp_dbms_database_size_ -mqttPrefix dbsize/ -nocolored $dummy $verbose`;
-			my $rc = $?;
-			msgVerbose( "doDbSize() got rc=$rc" );
-			$mqttCount += 1 if !$rc;
-			$httpCount += 1 if !$rc;
+			# -> mqtt
+			TTP::Metric->new( $ttp, {
+				name => "dbsize_$key",
+				value => $set->{$key},
+				type => 'gauge',
+				help => 'Database used space',
+				labels => [
+					"instance=$opt_instance",
+					"database=$db"
+				]
+			})->publish({
+				mqtt => $opt_mqtt
+			});
+			# -> http/text
+			TTP::Metric->new( $ttp, {
+				name => "dbms_database_size_$key",
+				value => $set->{$key},
+				type => 'gauge',
+				help => 'Database used space',
+				labels => [
+					"instance=$opt_instance",
+					"database=$db"
+				]
+			})->publish({
+				http => $opt_http,
+				text => $opt_text
+			});
+			$count += 1;
+			last if $count >= $opt_limit && $opt_limit >= 0;
 		}
 	}
-	msgOut( "$mqttCount message(s) published on MQTT bus, $httpCount metric(s) published to HTTP gateway" );
+	msgOut( "$count published metric(s)" );
 }
 
 # -------------------------------------------------------------------------------------------------
 # publish all tables rows count for the specified database
 #  this is an error if no database has been specified on the command-line
 #  if we have asked for a service, we may have several databases
+
 sub doTablesCount {
-	my $mqttCount = 0;
-	my $httpCount = 0;
-	if( !scalar @databases ){
-		msgErr( "no database specified, unable to count rows in tables.." );
-	} else {
-		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
-		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
-		foreach my $db ( @databases ){
-			msgOut( "publishing tables rows count on '$hostConfig->{name}\\$opt_instance\\$db'..." );
-			last if $mqttCount >= $opt_limit && $opt_limit >= 0;
-			my $tables = ttpFilter( `dbms.pl list -instance $opt_instance -database $db -listtables -nocolored $dummy $verbose` );
-			foreach my $tab ( @{$tables} ){
-				last if $mqttCount >= $opt_limit && $opt_limit >= 0;
-				msgOut( "  table '$tab'" );
-				my $resultSet = TTP::DBMS::hashFromTabular( ttpFilter( `dbms.pl sql -instance $opt_instance -command \"use $db; select count(*) as rows_count from $tab;\" -tabular -nocolored $dummy $verbose` ));
-				my $set = $resultSet->[0];
-				$set->{rows_count} = 0 if !defined $set->{rows_count};
-				foreach my $key ( keys %{$set} ){
-					`telemetry.pl publish -metric $key -value $set->{$key} -label instance=$opt_instance -label database=$db -label table=$tab -httpPrefix ttp_dbms_database_table_ -nocolored $dummy $verbose`;
-					my $rc = $?;
-					msgVerbose( "doTablesCount() got rc=$rc" );
-					$mqttCount += 1 if !$rc;
-					$httpCount += 1 if !$rc;
-				}
+	my $count = 0;
+	my $dummy = $running->dummy() ? "-dummy" : "-nodummy";
+	my $verbose = $running->verbose() ? "-verbose" : "-noverbose";
+	foreach my $db ( @{$databases} ){
+		msgOut( "publishing tables rows count on '$opt_instance\\$db'..." );
+		last if $count >= $opt_limit && $opt_limit >= 0;
+		my $command = "dbms.pl list -instance $opt_instance -database $db -listtables -nocolored $dummy $verbose";
+		my $tables = `$command`;
+		$tables = $running->filter( $tables );
+		foreach my $tab ( @{$tables} ){
+			last if $count >= $opt_limit && $opt_limit >= 0;
+			msgOut( " table '$tab'" );
+			my $sqlres = $dbms->execSqlCommand( "use $db; select count(*) as rows_count from $tab;", { tabular => false });
+			if( $sqlres->{ok} ){
+				# -> mqtt
+				TTP::Metric->new( $ttp, {
+					name => 'rows_count',
+					value => $sqlres->{result}->[0]->{rows_count} || 0,
+					type => 'gauge',
+					help => 'Table rows count',
+					labels => [
+						"instance=$opt_instance",
+						"database=$db",
+						"table=$tab"
+					]
+				})->publish({
+					mqtt => $opt_mqtt
+				});
+				# -> http/text
+				TTP::Metric->new( $ttp, {
+					name => 'dbms_database_table_rows_count',
+					value => $sqlres->{result}->[0]->{rows_count} || 0,
+					type => 'gauge',
+					help => 'Table rows count',
+					labels => [
+						"instance=$opt_instance",
+						"database=$db",
+						"table=$tab"
+					]
+				})->publish({
+					http => $opt_http,
+					text => $opt_text
+				});
+				$count += 1;
+				last if $count >= $opt_limit && $opt_limit >= 0;
 			}
 		}
 	}
-	msgOut( "$mqttCount message(s) published on MQTT bus, $httpCount metric(s) published to HTTP gateway" );
+	msgOut( "$count published metric(s)" );
 }
 
 # =================================================================================================

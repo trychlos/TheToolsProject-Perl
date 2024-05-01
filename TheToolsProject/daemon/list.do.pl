@@ -2,10 +2,14 @@
 #
 # @(-) --[no]help              print this message, and exit [${help}]
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
-# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]dummy             dummy run [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --[no]json              display available JSON configuration files [${json}]
 # @(-) --[no]check             whether to check the loaded configurations [${check}]
+#
+# @(@) Dummy mode is honored here by using msgWarn() instead of msgErr() when checking the JSON daemon configurations
+# @(@) (if '--check' option has been set). Please be conscious that any of these two options may so return a different
+# @(@) result set of the one returned by the standard (default) run.
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)

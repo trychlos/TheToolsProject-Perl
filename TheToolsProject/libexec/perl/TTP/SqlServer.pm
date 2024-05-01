@@ -416,7 +416,11 @@ sub _sqlExec {
 	my ( $dbms, $sql, $opts ) = @_;
 	$opts //= {};
 	msgErr( __PACKAGE__."::_sqlExec() sql is mandatory, but is not specified" ) if !$sql;
-	my $result = { ok => false, stdout => [] };
+	my $res = {
+		ok => false,
+		result => [],
+		stdout => []
+	};
 	my $sqlsrv = undef;
 	if( !TTP::errs()){
 		$sqlsrv = _connect( $dbms );
@@ -425,14 +429,13 @@ sub _sqlExec {
 		msgVerbose( __PACKAGE__."::_sqlExec() executing '$sql'" );
 		if( $dbms->ttp()->runner()->dummy()){
 			msgDummy( $sql );
-			$result->{ok} = true;
-			$result->{result} = [];
+			$res->{ok} = true;
 		} else {
 			my $printStdout = true;
 			$printStdout = $opts->{printStdout} if exists $opts->{printStdout};
 			my $resultStyle = Win32::SqlServer::SINGLESET;
 			$resultStyle = $opts->{resultStyle} if exists $opts->{resultStyle};
-			my $merged = capture_merged { $result->{result} = $sqlsrv->sql( $sql, $resultStyle )};
+			my $merged = capture_merged { $res->{result} = $sqlsrv->sql( $sql, $resultStyle )};
 			my @merged = split( /[\r\n]/, $merged );
 			foreach my $line ( @merged ){
 				chomp( $line );
@@ -440,15 +443,18 @@ sub _sqlExec {
 				$line =~ s/\s*$//;
 				if( length $line ){
 					print " $line".EOL if $printStdout;
-					push( @{$result->{stdout}}, $line );
+					push( @{$res->{stdout}}, $line );
 				}
 			}
-			$result->{ok} = $sqlsrv->sql_has_errors() ? false : true;
+			$res->{ok} = $sqlsrv->sql_has_errors() ? false : true;
 			delete $sqlsrv->{ErrInfo}{Messages};
 		}
 	}
-	msgVerbose( __PACKAGE__."::_sqlExec() returns '".( $result->{ok} ? 'true':'false' )."'" );
-	return $result;
+	#print Dumper( $sql );
+	#print Dumper( $opts );
+	#print Dumper( $res );
+	msgVerbose( __PACKAGE__."::_sqlExec() returns '".( $res->{ok} ? 'true':'false' )."'" );
+	return $res;
 }
 
 1;
