@@ -14,6 +14,9 @@
 # @(-) --rc=<name>             the name of the environment variable which holds the return codes [${rc}]
 # @(-) --count=<count>         the count of commands to deal with [${count}]
 #
+# @(@) This script is mostly written like a TTP verb but is not.
+# @(@) This is an example of how to take advantage of TTP to write your own (rather pretty and efficient) scripts.
+#
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
 # Copyright (©) 2023-2024 PWI Consulting
@@ -31,9 +34,6 @@
 # You should have received a copy of the GNU General Public License
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
-#
-# This script is mostly written like a TTP verb but is not. This is an example of how to take advantage of TTP
-# to write your own (rather pretty and efficient) scripts.
 
 use Data::Dumper;
 use Getopt::Long;
@@ -41,11 +41,12 @@ use Path::Tiny;
 
 use TTP;
 use TTP::Constants qw( :all );
+use TTP::Extern;
 use TTP::Message qw( :all );
 use vars::global qw( $ttp );
 
 # TTP initialization
-my $TTPVars = TTP::initExtern();
+my $extern = TTP::Extern->new();
 
 my $defaults = {
 	help => 'no',
@@ -66,12 +67,6 @@ my $opt_start = $defaults->{start};
 my $opt_end = $defaults->{end};
 my $opt_rc = $defaults->{rc};
 my $opt_count = $defaults->{count};
-
-# -------------------------------------------------------------------------------------------------
-# pad the provided string until the specified length
-sub _pad {
-	return TTP::pad( @_ );
-}
 
 =pod
 +=============================================================================================================================+
@@ -113,29 +108,29 @@ sub printSummary {
 	# display the summary
 	my $totLength = $maxLength + 63;
 	my $stdout = "";
-	$stdout .= _pad( "+", $totLength-1, '=' )."+".EOL;
-	$stdout .= _pad( "| WORKLOAD SUMMARY for <$opt_workload>", $totLength-1, ' ' )."|".EOL;
-	$stdout .= _pad( "|", $maxLength+8, ' ' )._pad( "started at", 25, ' ' )._pad( "ended at", 25, ' ' )." RC |".EOL;
-	$stdout .= _pad( "+", $maxLength+6, '-' )._pad( "+", 25, '-' )._pad( "+", 25, '-' )."+-----+".EOL;
+	$stdout .= TTP::pad( "+", $totLength-1, '=' )."+".EOL;
+	$stdout .= TTP::pad( "| WORKLOAD SUMMARY for <$opt_workload>", $totLength-1, ' ' )."|".EOL;
+	$stdout .= TTP::pad( "|", $maxLength+8, ' ' ).TTP::pad( "started at", 25, ' ' ).TTP::pad( "ended at", 25, ' ' )." RC |".EOL;
+	$stdout .= TTP::pad( "+", $maxLength+6, '-' ).TTP::pad( "+", 25, '-' ).TTP::pad( "+", 25, '-' )."+-----+".EOL;
 	# display the result or an empty output
 	if( $opt_count > 0 ){
 		my $i = 0;
 		foreach my $it ( @results ){
 			$i += 1;
 			msgVerbose( "printing i=$i execution report" );
-			$stdout .= _pad( "| $it->{command}", $maxLength+6, ' ' )._pad( "| $it->{start}", 25, ' ' )._pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
+			$stdout .= TTP::pad( "| $it->{command}", $maxLength+6, ' ' ).TTP::pad( "| $it->{start}", 25, ' ' ).TTP::pad( "| $it->{end}", 25, ' ' ).sprintf( "| %3d |", $it->{rc} ).EOL;
 		}
 	} else {
-		#print _pad( "|", $totLength-1, ' ' )."|".EOL;
-		$stdout .= _pad( "|", $totLength/2 - 6, ' ' )._pad( "EMPTY OUTPUT", $totLength/2 + 5, ' ' )."|".EOL;
-		#print _pad( "|", $totLength-1, ' ' )."|".EOL;
+		#print TTP::pad( "|", $totLength-1, ' ' )."|".EOL;
+		$stdout .= TTP::pad( "|", $totLength/2 - 6, ' ' ).TTP::pad( "EMPTY OUTPUT", $totLength/2 + 5, ' ' )."|".EOL;
+		#print TTP::pad( "|", $totLength-1, ' ' )."|".EOL;
 	}
-	$stdout .= "+"._pad( "", $totLength-2, '=' )."+".EOL;
+	$stdout .= "+".TTP::pad( "", $totLength-2, '=' )."+".EOL;
 	# both send the summary to the log (here to stdout) and execute the provided command
 	# must manage SUBJECT and OPTIONS macros
 	my $command = $TTPVars->{config}{site}{workloadSummary}{command};
 	if( $command ){
-		my $host = TTP::host();
+		my $host = $ttp->node()->name();
 		my $textfname = TTP::getTempFileName();
 		my $fh = path( $textfname );
 		$fh->spew( $stdout );
@@ -170,18 +165,19 @@ if( !GetOptions(
 	"rc=s"				=> \$opt_rc,
 	"count=i"			=> \$opt_count	)){
 
-		msgOut( "try '$ttp->{run}{command}{basename} --help' to get full usage syntax" );
+		msgOut( "try '".$extern->command()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 
-if( $running->help()){
-	$daemon->helpExtern( $defaults );
+#print Dumper( $ttp->{run} );
+if( $extern->help()){
+	$extern->helpExtern( $defaults );
 	TTP::exit();
 }
 
-msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
-msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $extern->colored() ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $extern->dummy() ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $extern->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found workload='$opt_workload'" );
 msgVerbose( "found commands='$opt_commands'" );
 msgVerbose( "found start='$opt_start'" );

@@ -46,7 +46,7 @@ use TTP::Message qw( :all );
 use vars::global qw( $ttp );
 
 # TTP initialization
-my $TTPVars = TTP::initExtern();
+my $extern = TTP::Extern->new();
 
 my $defaults = {
 	help => 'no',
@@ -73,8 +73,8 @@ sub doSwitch {
 
 	# get and execute the commands for this target state
 	my $tokey = $opt_live ? 'to_live' : 'to_backup';
-	my $dummy = $running->dummy() ? "-dummy" : "-nodummy";
-	my $verbose = $running->verbose() ? "-verbose" : "-noverbose";
+	my $dummy = $extern->dummy() ? "-dummy" : "-nodummy";
+	my $verbose = $extern->verbose() ? "-verbose" : "-noverbose";
 	my $command = "ssh inlingua-user\@$opt_to services.pl vars -service $opt_service -key switch,$tokey,commands -nocolored $dummy $verbose";
 	msgVerbose( $command );
 	my $stdout = `$command`;
@@ -251,18 +251,18 @@ if( !GetOptions(
 	"backup!"			=> \$opt_backup,
 	"force!"			=> \$opt_force )){
 
-		msgOut( "try '$ttp->{run}{command}{basename} --help' to get full usage syntax" );
+		msgOut( "try '".$extern->command()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
 }
 
-if( $running->help()){
-	$daemon->helpExtern( $defaults );
+if( $extern->help()){
+	$extern->helpExtern( $defaults );
 	TTP::exit();
 }
 
-msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
-msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
-msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
+msgVerbose( "found colored='".( $extern->colored() ? 'true':'false' )."'" );
+msgVerbose( "found dummy='".( $extern->dummy() ? 'true':'false' )."'" );
+msgVerbose( "found verbose='".( $extern->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
 msgVerbose( "found to='$opt_to'" );
 msgVerbose( "found live='".( $opt_live ? 'true':'false' )."'" );

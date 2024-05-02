@@ -616,11 +616,13 @@ sub getHostConfig {
 
 # -------------------------------------------------------------------------------------------------
 # returns a new unique temp filename
+
 sub getTempFileName {
-	my $fname = $ttp->{run}{command}{name};
-	$fname .= "-$ttp->{run}{verb}{name}" if $ttp->{run}{verb}{name};
-	my $random = TTP::random();
-	my $tempfname = File::Spec->catdir( TTP::Path::logsDailyDir(), "$fname-$random.tmp" );
+	my $fname = $ttp->runner()->runnableBNameShort();
+	my $qualifier = $ttp->runner()->runnableQualifier();
+	$fname .= "-$qualifier" if $qualifier;
+	my $random = random();
+	my $tempfname = File::Spec->catfile( logsCommands(), "$fname-$random.tmp" );
 	msgVerbose( "getTempFileName() tempfname='$tempfname'" );
 	return $tempfname;
 }

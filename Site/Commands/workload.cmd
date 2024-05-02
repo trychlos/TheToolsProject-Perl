@@ -1,4 +1,4 @@
-@echo off
+rem @echo off
 	rem this .cmd is expected to be called with the workload name as unique argument, may have until 8 additional arguments to be passed to underlying commands
 	rem e.g. "C:\INLINGUA\Scripts\cmds\workload.cmd daily.morning -dummy"
 	rem Note 1: this workload.cmd adds itself the -nocolored option to every run command. You should take care that the run commands accept (if not honor) this command-line option.

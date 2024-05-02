@@ -98,14 +98,14 @@
 						]
 					}
 				],
-				"test1": [
+				"Test1": [
 					{
 						"label": "test workload",
-						"commands_x": [
+						"commands": [
 							"dbms.pl backup -nocolored -instance DEV -database Dom1 -diff",
 							"ttp.pl list -nocolored -services"
 						],
-						"commands": [
+						"commands0": [
 							"daemon.pl start -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -- -remote NS3232346"
 						]
 					}
