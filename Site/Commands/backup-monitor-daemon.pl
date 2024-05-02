@@ -333,6 +333,21 @@ sub locallySearchLastFull_wanted {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Let publish some topics on MQTT-based messaging system
+# The Daemon expects an array ref, so returns it even if empty
+
+sub mqttMessaging {
+	my ( $daemon ) = @_;
+	my $topic = $daemon->topic();
+	my $array = [];
+	push( @{$array}, {
+		topic => "$topic/remoteExecReportsDir",
+		payload => computeMonitoredShare()
+	});
+	return $array;
+}
+
+# -------------------------------------------------------------------------------------------------
 # search for last full backup starting by scanning remote execution reports
 # return the transferred last full if possible;
 my $_remote = [];
@@ -586,6 +601,7 @@ if( TTP::errs()){
 	TTP::exit();
 }
 
+$daemon->messagingSub( \&mqttMessaging );
 $daemon->declareSleepables( $commands );
 
 $daemon->sleepableDeclareFn( sub => \&works, interval => configScanInterval() );

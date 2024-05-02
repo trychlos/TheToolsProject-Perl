@@ -172,21 +172,6 @@ sub _do_terminate {
 ### Private methods
 
 # ------------------------------------------------------------------------------------------------
-# the daemon advertize of its status every 'messagingInterval' seconds (defaults to 60)
-# topic is 'WS22PROD1/daemon/tom17-backup-monitor-daemon/status'
-# payload is 'running since 2024-05-02 18:44:44.37612'
-
-sub _mqtt_advertize {
-	my ( $self ) = @_;
-	if( $self->{_mqtt} ){
-		my $topic = $self->_topic();
-		my $payload = $self->_running();
-		msgLog( "$topic [$payload]" );
-		$self->{_mqtt}->retain( $topic, $payload );
-	}
-}
-
-# ------------------------------------------------------------------------------------------------
 # initialize the TTP daemon
 # when entering here, the JSON config has been successfully read, evaluated and checked
 # (I):
@@ -244,28 +229,29 @@ sub _daemonize {
 # the daemon advertize of its status every 'httpingInterval' seconds (defaults to 60)
 # the metric advertizes the last time we have seen the daemon alive
 # (I):
-# - the value to be advertized, set to false at the daemon termination
+# - set to true at the daemon termination, undefined else
 
 sub _http_advertize {
 	my ( $self, $value ) = @_;
-	$value = '1' if !defined $value;
-	# compute the metric name
-	my $name = $self->name();
-	my $data = $self->jsonData();
-	if( exists( $data->{httpName} )){
-		$name = $data->{httpName};
+	if( false ){
+		# compute the metric name
+		my $name = $self->name();
+		my $data = $self->jsonData();
+		if( exists( $data->{httpName} )){
+			$name = $data->{httpName};
+		}
+		# make sure dashes '-' are replaced with undescores '_'
+		$name =~ s/-/_/g;
+		# and provide the metrics
+		TTP::Metric->new( $ttp, {
+			name => $name,
+			value => $value,
+			type => 'counter',
+			help => 'The last epoch time the daemon has been seen alive',
+		})->publish({
+			http => true
+		});
 	}
-	# make sure dashes '-' are replaced with undescores '_'
-	$name =~ s/-/_/g;
-	# and provide the metrics
-	TTP::Metric->new( $ttp, {
-		name => $name,
-		value => $value,
-		type => 'counter',
-		help => 'The last epoch time the daemon has been seen alive',
-	})->publish({
-		http => true
-	});
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -281,6 +267,45 @@ sub _lastwill {
 }
 
 # ------------------------------------------------------------------------------------------------
+# the daemon advertize of its status every 'messagingInterval' seconds (defaults to 60)
+# topic is 'WS22PROD1/daemon/tom17-backup-monitor-daemon/status'
+# payload is 'running since 2024-05-02 18:44:44.37612'
+
+sub _mqtt_advertize {
+	my ( $self ) = @_;
+	if( $self->{_mqtt} ){
+		# let the daemon have its own topics
+		if( $self->{_mqtt_sub} ){
+			my $array = $self->{_mqtt_sub}->( $self );
+			if( $array ){
+				if( ref( $array ) eq 'ARRAY' ){
+					foreach my $it ( @{$array} ){
+						if( $it->{topic} && exists(  $it->{payload} )){
+							if( $it->{retain} ){
+								$self->{_mqtt}->retain( $it->{topic}, $it->{payload} );
+							} else {
+								$self->{_mqtt}->publish( $it->{topic}, $it->{payload} );
+							}
+						} else {
+							msgErr( __PACKAGE__."::_mqtt_advertize() expects a hash { topic, payload }, found $it" );
+						}
+					}
+				} else {
+					msgErr( __PACKAGE__."::_mqtt_advertize() expects an array, got '".ref( $array )."'" );
+				}
+			} else {
+				msgLog( __PACKAGE__."::_mqtt_advertize() got undefined value, nothing to do" );
+			}
+		}
+		# and publish ours
+		my $topic = $self->_topic();
+		my $payload = $self->_running();
+		msgLog( "$topic [$payload]" );
+		$self->{_mqtt}->retain( $topic, $payload );
+	}
+}
+
+# ------------------------------------------------------------------------------------------------
 
 sub _running {
 	my ( $self ) = @_;
@@ -291,7 +316,7 @@ sub _running {
 # ------------------------------------------------------------------------------------------------
 # the daemon advertize of its status every 'textingInterval' seconds (defaults to 60)
 # (I):
-# - the value to be advertized, defaulting to '1'
+# - set to true at the daemon termination, undefined else
 
 sub _text_advertize {
 	my ( $self, $value ) = @_;
@@ -303,10 +328,10 @@ sub _text_advertize {
 
 sub _topic {
 	my ( $self ) = @_;
-	my $topic = $ttp->node()->name();
-	$topic .= "/daemon";
-	$topic .= "/".$self->name();
+
+	my $topic = $self->topic();
 	$topic .= "/status";
+
 	return $topic;
 }
 
@@ -556,6 +581,29 @@ sub messagingInterval {
 }
 
 # ------------------------------------------------------------------------------------------------
+# Set a sub to be called each time the daemon is about to mqtt-publish
+# The provided sub:
+# - will receive this TTP::Daemon as single argument,
+# - must return a ref to an array of hashes { topic, payload )
+#   the returned hash may have a 'retain' key, with true|false value, defaulting to false
+# (I):
+# - a code ref to be called at mqtt-advertizing time
+# (O):
+# - this same object
+
+sub messagingSub {
+	my ( $self, $sub ) = @_;
+
+	if( ref( $sub ) eq 'CODE' ){
+		$self->{_mqtt_sub} = $sub;
+	} else {
+		msgErr( __PACKAGE__."::messagingSub() expects a code ref, got '".ref( $sub )."'" );
+	}
+
+	return $self;
+}
+
+# ------------------------------------------------------------------------------------------------
 # Returns the canonical name of the daemon
 #  which happens to be the basename of its configuration file without the extension
 # This name is set as soon as the JSON has been successfully loaded, whether the daemon itself
@@ -677,8 +725,8 @@ sub terminate {
 	TTP::MQTT::disconnect( $self->{_mqtt} ) if $self->{_mqtt};
 
 	# advertize http and text-based telemetry
-	$self->_http_advertize( false ) if $self->httpingInterval() > 0;
-	$self->_text_advertize( false ) if $self->textingInterval() > 0;
+	$self->_http_advertize( true ) if $self->httpingInterval() > 0;
+	$self->_text_advertize( true ) if $self->textingInterval() > 0;
 
 	# close TCP connection
 	$self->{_socket}->close();
@@ -735,6 +783,23 @@ sub textingInterval {
 	}
 
 	return $interval;
+}
+
+# ------------------------------------------------------------------------------------------------
+# Getter
+# (I):
+# - none
+# (O):
+# - returns the base of the topics to be published
+
+sub topic {
+	my ( $self ) = @_;
+
+	my $topic = $ttp->node()->name();
+	$topic .= "/daemon";
+	$topic .= "/".$self->name();
+
+	return $topic;
 }
 
 ### Class methods

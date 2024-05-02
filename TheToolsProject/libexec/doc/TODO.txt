@@ -24,7 +24,7 @@ TODO
 
   12 2024- 5- 2 daemon telemetry run since in sec, memory consumed
 
-  13 2024- 5- 2 
+  14 2024- 5- 2 
 
 # -------------------------------------------------------------------------------------------------
 
@@ -42,4 +42,7 @@ DONE
      2024- 5- 2 done
 
    5 2024- 5- 1 get rid of 'ttp'-prefixed TTP functions
+     2024- 5- 2 done
+
+  13 2024- 5- 2 the daemon should be able to add its own mqtt topics
      2024- 5- 2 done
