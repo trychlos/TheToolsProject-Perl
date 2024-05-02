@@ -4,9 +4,10 @@
 # @(-) --[no]colored           color the output depending of the message level [${colored}]
 # @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
 # @(-) --[no]verbose           run verbosely [${verbose}]
-# @(-) --service=<name>        display informations about the named service [${service}]
-# @(-) --host=<name>           search for the service in the given host [${host}]
+# @(-) --service=<name>        acts on the named service [${service}]
 # @(-) --key=<name[,...]>      the key to be searched for in JSON configuration file, may be specified several times or as a comma-separated list [${key}]
+#
+# @(@) The specified keys must eventually address an array of the to-be-executed commands or a single command string.
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -28,62 +29,67 @@
 
 use TTP::Service;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
 	dummy => 'no',
 	verbose => 'no',
 	service => '',
-	host => TTP::host(),
 	key => ''
 };
 
 my $opt_service = $defaults->{service};
-my $opt_host = $defaults->{host};
-my $opt_keys = [];
+my @opt_keys = ();
 
 # -------------------------------------------------------------------------------------------------
-# execute the commands registered for the service
-# manage macros:
-# - HOST
-# - SERVICE
+# execute the commands registered for the service for the specified key(s)
+
+my $count = 0;
+
 sub executeCommands {
-	msgOut( "executing '$opt_service [".join( ',', @{$opt_keys} )."]' commands from '$opt_host' host..." );
+	msgOut( "executing '$opt_service [".join( ',', @opt_keys )."]' commands..." );
 	my $cmdCount = 0;
-	my $host = $opt_host || TTP::host();
-	my $hostConfig = TTP::getHostConfig( $host );
-	my $serviceConfig = TTP::Service::serviceConfig( $hostConfig, $opt_service );
-	if( $serviceConfig ){
-		my $hash = TTP::var( $opt_keys, { config => $serviceConfig });
-		if( $hash && ref( $hash ) eq 'HASH' ){
-			my $commands = $hash->{commands};
-			if( $commands && ref( $commands ) eq 'ARRAY' && scalar @{$commands} > 0 ){
-				foreach my $cmd ( @{$commands} ){
-					$cmdCount += 1;
-					$cmd =~ s/<HOST>/$host/g;
-					$cmd =~ s/<SERVICE>/$opt_service/g;
-					if( $running->dummy() ){
-						msgDummy( $cmd );
-					} else {
-						msgOut( "+ $cmd" );
-						my $stdout = `$cmd`;
-						my $rc = $?;
-						msgLog( "stdout='$stdout'" );
-						msgLog( "got rc=$rc" );
-					}
-				}
-			} else {
-				msgWarn( "serviceConfig->[".join( ',', @{$opt_keys} )."] is not defined, or not an array, or is empty" );
-			}
+	my $service = TTP::Service->new( $ttp, { service => $opt_service });
+	if( $service ){
+		# addressed value can be a scalar or an array of scalars
+		my $value = $service->var( \@opt_keys );
+		if( $value ){
+			_execute( $service, $value );
 		} else {
-			msgWarn( "serviceConfig->[".join( ',', @{$opt_keys} )."] is not defined (or not a hash)" );
+			msgErr( "unable to find the requested information" );
 		}
-	} else {
-		msgErr( "unable to find '$opt_service' service configuration on '$opt_host'" );
 	}
-	msgOut( "$cmdCount executed command(s)" );
+	if( TTP::errs()){
+		msgErr( "NOT OK" );
+	} else {
+		msgOut( "$count executed command(s)" );
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# execute the commands registered for the service for the specified key(s)
+
+sub _execute {
+	my ( $service, $value ) = @_;
+	my $ref = ref( $value );
+	if( $ref eq 'ARRAY' ){
+		foreach my $it ( @{$value} ){
+			_execute( $service, $it );
+		}
+	} elsif( !$ref ){
+		if( $running->dummy() ){
+			msgDummy( $value );
+		} else {
+			msgOut( " $value" );
+			my $stdout = `$value`;
+			my $rc = $?;
+			msgLog( "stdout='$stdout'" );
+			msgLog( "got rc=$rc" );
+		}
+		$count += 1;
+	} else {
+		msgErr( "unmanaged reference '$ref'" );
+	}
 }
 
 # =================================================================================================
@@ -96,8 +102,7 @@ if( !GetOptions(
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"service=s"			=> \$opt_service,
-	"host=s"			=> \$opt_host,
-	"key=s@"			=> \$opt_keys )){
+	"key=s@"			=> \@opt_keys )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -112,15 +117,14 @@ msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
-msgVerbose( "found host='$opt_host'" );
-msgVerbose( "found keys='".join( ',', @{$opt_keys} )."'" );
+@opt_keys = split( /,/, join( ',', @opt_keys ));
+msgVerbose( "found keys='".join( ',', @opt_keys )."'" );
 
 msgErr( "'--service' service name is required, but not found" ) if !$opt_service;
-msgErr( "'--host' host name is required, but not found" ) if !$opt_host;
-msgErr( "at least a key is required, but none found" ) if !scalar( @{$opt_keys} );
+msgErr( "at least a key is required, but none found" ) if !scalar( @opt_keys );
 
 if( !TTP::errs()){
-	executeCommands() if $opt_service && scalar( @{$opt_keys} );
+	executeCommands() if $opt_service && scalar( @opt_keys );
 }
 
 TTP::exit();

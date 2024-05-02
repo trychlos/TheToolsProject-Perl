@@ -64,13 +64,12 @@ sub filter {
 	my ( $self, $output ) = @_;
 	my @result = ();
 	my @lines = split( /[\r\n]/, $output );
-	my $command = $self->command();
 	foreach my $it ( @lines ){
 		chomp $it;
 		$it =~ s/^\s*//;
 		$it =~ s/\s*$//;
 		#push( @result, $it ) if !grep( /^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, $it ) && $it !~ /\(WAR\)/ && $it !~ /\(ERR\)/;
-		push( @result, $it ) if $it !~ m/^\[$command/;
+		push( @result, $it ) if $it !~ m/^\[/;
 	}
 	return \@result;
 }

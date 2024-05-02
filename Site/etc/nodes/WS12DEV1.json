@@ -36,7 +36,7 @@
 		"  > a 'label'",
 		"  > an array of 'commands'",
 		"  > the order as an optional integer",
-		"    A word of caution: due to the way Perl::JSON interprets the zero integer of the '0' string, do not use these values!",
+		"    A word of caution: due to the way Perl::JSON interprets the zero integer or the '0' string, do not use these values!",
 		"    For consistency reasons, you should rather use only strings.",
 		"    Due to the above Perl 'not-a-bug-but-a-feature', do not use single zero, either as a string nor an integer.",
 		"- ...",
@@ -49,8 +49,6 @@
 					"Canal33"
 				]
 			},
-			"workloads": {
-			},
 			"failover": {
 				"ovh": {
 					"ip": "ip-87.98.189.58"
@@ -59,7 +57,7 @@
 			"monitor": {
 				"url": "http://canal33.sysnrg.com"
 			},
-			"switch": {
+			"switch0": {
 				"scheduled": "\\Inlingua\\tom17.backup.startup"
 			}
 		},
@@ -96,7 +94,7 @@
 					{
 						"label": "Advertize at startup",
 						"commands": [
-							"call [eval:File::Spec->catfile( $TTPVars->{config}{site}{commandsDir}, 'startup.cmd' )]"
+							"call [eval:File::Spec->catfile( TTP::var([ 'site', 'commandsDir' ]), 'startup.cmd' )]"
 						]
 					}
 				],

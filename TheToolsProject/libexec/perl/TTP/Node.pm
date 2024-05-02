@@ -73,6 +73,22 @@ sub _hostname {
 ### Public methods
 
 # -------------------------------------------------------------------------------------------------
+# Getter
+# Returns the environment to which this node is attached
+# (I):
+# - none
+# (O):
+# - the environment, may be undef
+
+sub environment {
+	my ( $self ) = @_;
+
+	my $env = $self->jsonData()->{Environment}{type};
+
+	return $env;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Check if the provided service is defined and not disabled in this node
 # (I):
 # - name of the service

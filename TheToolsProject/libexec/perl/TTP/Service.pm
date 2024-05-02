@@ -59,7 +59,60 @@ my $Const = {
 
 ### Private methods
 
+# ------------------------------------------------------------------------------------------------
+# Manage the macros in the evaluated JSON data
+# At the moment:
+# - <HOST> the current execution node
+# - <SERVICE> this service name
+# (I):
+# - none
+# (O):
+# - substituted data
+
+sub _substMacros {
+	my ( $self, $data ) = @_;
+
+	$data = $self->jsonData() if !defined $data;
+	my $ref = ref( $data );
+	if( $ref ){
+		if( $ref eq 'ARRAY' ){
+			for( my $i=0 ; $i<scalar @{$data} ; ++$i ){
+				$data->[$i] = $self->_substMacros( $data->[$i] );
+			}
+		} elsif( $ref eq 'HASH' ){
+			foreach my $it ( sort keys %{$data} ){
+				$data->{$it} = $self->_substMacros( $data->{$it} );
+			}
+		} else {
+			msgErr( __PACKAGE__."::_substMacros() unmanaged ref '$ref'" );
+		}
+	} else {
+		my $node = $self->ttp()->node()->name();
+		my $service = $self->name();
+		$data =~ s/<HOST>/$node/g;
+		$data =~ s/<SERVICE>/$service/g;
+	}
+
+	return $data;
+}
+
 ### Public methods
+
+# ------------------------------------------------------------------------------------------------
+# Getter
+# (I):
+# -none
+# (O):
+# - returns true|false, whether the service is hidden, defaulting to false
+
+sub hidden {
+	my ( $self ) = @_;
+
+	my $hidden = $self->var([ 'hidden' ]);
+	$hidden = false if !defined $hidden;
+
+	return $hidden;
+}
 
 # ------------------------------------------------------------------------------------------------
 # Returns the name of the service
@@ -150,6 +203,58 @@ sub dirs {
 }
 
 # -------------------------------------------------------------------------------------------------
+# Enumerate the services defined on the node
+# - in ascii-sorted order [0-9A-Za-z]
+# - considering the 'hidden' option
+# - and call the provided sub for each found
+# (I):
+# - an arguments hash with following keys:
+#   > node, the node name or the TTP::Node instance on which the enumeration must be done, defaulting to current execution node
+#   > cb, a code reference to be called on each enumerated service with:
+#     - the TTP::Service instance
+#     - this same arguments object
+#   > hidden, whether to also return hidden services, defaulting to false
+# (O):
+# - returns a count of enumerated services
+
+sub enumerate {
+	my ( $class, $args ) = @_;
+	$args //= {};
+	my $count = 0;
+	my $withHiddens = false;
+	$withHiddens = $args->{hidden} if exists $args->{hidden};
+	my $node = $ttp->node();
+	if( exists( $args->{node} )){
+		my $ref = ref( $args->{node} );
+		if( $ref ){
+			if( $ref eq 'TTP::Node' ){
+				$node = $args->{node};
+			} else {
+				msgErr( __PACKAGE__."::enumerate() expects a 'TTP::Node', found '$ref'" );
+			}
+		} else {
+			$node = TTP::Node->new( $ttp, { node => $args->{node}, abortOnError => false });
+			$node = $ttp->node() if !$node;
+		}
+	}
+	my $cb = $args->{cb};
+	if( $cb ){
+		my $services = $node->jsonData()->{Services};
+		my @list = sort keys %{$services};
+		foreach my $it ( @list ){
+			my $service = TTP::Service->new( $ttp, { service => $it });
+			if( !$service->hidden() || $withHiddens ){
+				$cb->( $service, $args );
+				$count += 1;
+			}
+		}
+	} else {
+		msgErr( __PACKAGE__."::enumerate() expects a 'cb' callback code ref, not found" );
+	}
+	return $count;
+}
+
+# -------------------------------------------------------------------------------------------------
 # Returns the list of dirs where nodes are to be found
 # (I]:
 # - none
@@ -194,7 +299,10 @@ sub new {
 				type => 'JSON'
 			}
 		};
-		$self->jsonLoad({ findable => $findable, acceptable => $acceptable });
+		if( $self->jsonLoad({ findable => $findable, acceptable => $acceptable })){
+			$self->evaluate();
+			$self->_substMacros();
+		}
 
 	} else {
 		msgErr( __PACKAGE__."::new() expects an 'args->{service}' key, which has not been found" );

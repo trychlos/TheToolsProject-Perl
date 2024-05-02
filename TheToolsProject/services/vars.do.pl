@@ -27,8 +27,6 @@
 
 use TTP::Service;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
@@ -39,56 +37,20 @@ my $defaults = {
 };
 
 my $opt_service = $defaults->{service};
-my $opt_keys = [];
+my @opt_keys = ();
 
 # -------------------------------------------------------------------------------------------------
+
 sub displayVar {
-	msgOut( "displaying '".join( ',', @{$opt_keys} )."' variable..." );
+	msgOut( "displaying '".join( ',', @opt_keys )."' variable..." );
 	#print Dumper( $opt_keys );
-	my $hostConfig = TTP::getHostConfig();
-	my @initialKeys = @{$opt_keys};
-	my $serviceConfig = TTP::Service::serviceConfig( $hostConfig, $opt_service );
-	my $last = undef;
-	my $hash = $serviceConfig;
-	if( $serviceConfig ){
-		my $found = false;
-		$last = pop( @{$opt_keys} );
-		msgVerbose( "last='$last'" );
-		my $count = 0;
-		foreach my $key ( @{$opt_keys} ){
-			msgVerbose( "key='$key'" );
-			if( ref( $hash ) eq 'HASH' && exists $hash->{$key} ){
-				$hash = $hash->{$key};
-			} elsif( !exists( $hash->{$key} )){
-				msgErr( "'$key' key doesn't exist" );
-				last;
-			} else {
-				msgErr( "not a hash to address '$key' key" );
-				last;
-			}
-		}
-	} else {
-		msgErr( "unable to find '$opt_service' service configuration on this host" );
+	my @initialKeys = @opt_keys;
+	my $service = TTP::Service->new( $ttp, { service => $opt_service });
+	if( !TTP::errs()){
+		TTP::print( ' '.join( ',', @opt_keys ), $service->var( \@opt_keys ));
 	}
 	if( !TTP::errs()){
-		if( exists( $hash->{$last} )){
-			if( !ref( $hash->{$last} )){
-				print "  ".join( ',', @initialKeys ).": $hash->{$last}".EOL;
-				$count += 1;
-			} elsif( ref( $hash->{$last} ) eq 'ARRAY' ){
-				foreach my $it ( @{$hash->{$last}} ){
-					print "  ".join( ',', @initialKeys ).": $it".EOL;
-					$count += 1;
-				}
-			} else {
-				msgErr( "'$last' key doesn't address a scalar nor an array value" );
-			}
-		} else {
-			msgWarn( "'$last' key doesn't exist" );
-		}
-	}
-	if( !TTP::errs()){
-		msgOut( "$count displayed value(s)" );
+		msgOut( "done" );
 	} else {
 		msgErr( "NOT OK" );
 	}
@@ -104,7 +66,7 @@ if( !GetOptions(
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"service=s"			=> \$opt_service,
-	"key=s@"			=> \$opt_keys )){
+	"key=s@"			=> \@opt_keys )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -119,13 +81,14 @@ msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found service='$opt_service'" );
-msgVerbose( "found keys='".join( ',', @{$opt_keys} )."'" );
+@opt_keys = split( /,/, join( ',', @opt_keys ));
+msgVerbose( "found keys='".join( ',', @opt_keys )."'" );
 
 msgErr( "a service is required, but not found" ) if !$opt_service;
-msgErr( "at least a key is required, but none found" ) if !scalar( @{$opt_keys} );
+msgErr( "at least a key is required, but none found" ) if !scalar( @opt_keys );
 
 if( !TTP::errs()){
-	displayVar() if $opt_service && scalar( @{$opt_keys} );
+	displayVar() if $opt_service && scalar( @opt_keys );
 }
 
 TTP::exit();

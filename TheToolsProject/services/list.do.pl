@@ -45,8 +45,6 @@
 
 use TTP::Service;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
@@ -75,14 +73,57 @@ my $opt_environment = false;
 my $opt_type = $defaults->{type};
 my $opt_machines = false;
 
-# the host configuration
-my $hostConfig = TTP::getHostConfig();
+# -------------------------------------------------------------------------------------------------
+# returns the worktasks defined for the specified workload in the order:
+#  - specified by "order" key of the work task 
+#  - defaulting to the service names
+# (I):
+# - wanted workload name
+# - optional options hash with the following keys:
+#   > hidden: whether to also scan for hidden services, defaulting to false
+# (O):
+# - an array of task objects in the above canonical order
+
+sub getDefinedWorktasks {
+	my ( $workload, $opts ) = @_;
+	$opts //= {};
+	my $displayHiddens = false;
+	$displayHiddens = $opts->{hidden} if exists $opts->{hidden};
+	my $command = "services.pl list -services -nocolored";
+	$command .= " -hidden" if $displayHiddens;
+	my $services = `$command`;
+	$services = $running->filter( $services );
+	# build here the to-be-sorted array and a hash which will be used to build the result
+	my @list = ();
+	foreach my $it ( @{$services} ){
+		my $service = TTP::Service->new( $ttp, { service => $it });
+		if( !$service->hidden() || $displayHiddens ){
+			my $workloads = $service->var([ 'workloads' ]);
+			#print Dumper( $workloads );
+			if( exists( $workloads->{$workload} )){
+				my @tasks = @{$workloads->{$workload}};
+				foreach my $t ( @tasks ){
+					$t->{service} = $service->name();
+				}
+				@list = ( @list, @tasks );
+			}
+		}
+	}
+	return sort { _taskOrder( $a ) cmp _taskOrder( $b ) } @list;
+}
+
+# sort tasks in their specified order, defaulting to the added service name
+sub _taskOrder {
+	my( $it ) = @_;
+	return exists $it->{order} ? $it->{order} : $it->{service};
+}
 
 # -------------------------------------------------------------------------------------------------
 # display the environment for this machine (may be 0 or 1)
+
 sub listEnvironment {
-	msgOut( "displaying environment for '$hostConfig->{name}' machine..." );
-	my $env = $hostConfig->{Environment}{type};
+	msgOut( "displaying environment for ".$ttp->node()->name()." node..." );
+	my $env = $ttp->node()->environment();
 	my $count = 0;
 	if( !$env ){
 		msgOut( "no environment registered with this machine" );
@@ -95,6 +136,7 @@ sub listEnvironment {
 
 # -------------------------------------------------------------------------------------------------
 # display the machines which provides the service, maybe in a specified environment type
+
 sub listServiceMachines {
 	if( $opt_type ){
 		msgOut( "displaying machines which provide '$opt_service' service in '$opt_type' environment..." );
@@ -102,13 +144,15 @@ sub listServiceMachines {
 		msgOut( "displaying machines which provide '$opt_service' service..." );
 	}
 	my $count = 0;
-	my @hosts = TTP::getDefinedHosts();
-	msgVerbose( "found ".scalar @hosts." host(s)" );
-	foreach my $host ( @hosts ){
+	my $command = "ttp.pl list -nodes -nocolored";
+	my $hosts = `$command`;
+	$hosts = $running->filter( $hosts );
+	msgVerbose( "found ".scalar @{$hosts}." node(s)" );
+	foreach my $host ( @{$hosts} ){
 		msgVerbose( "examining '$host'" );
-		my $hostConfig = TTP::getHostConfig( $host );
-		if(( !$opt_type || $hostConfig->{Environment}{type} eq $opt_type ) && exists( $hostConfig->{Services}{$opt_service} )){
-			print "  $hostConfig->{Environment}{type}: $host".EOL;
+		my $node = TTP::Node->new( $ttp, { node => $host });
+		if(( !$opt_type || $node->environment() eq $opt_type ) && $node->hasService( $opt_service )){
+			print " ".( $node->environment() || '' ).": $host".EOL;
 			$count += 1;
 		}
 	}
@@ -116,37 +160,34 @@ sub listServiceMachines {
 }
 
 # -------------------------------------------------------------------------------------------------
-# list all the defined services on this host
-# note: this is  design decision that this sort of display at the beginning and at the end of the verb
-# execution must be done in the verb script.
-# in this particular case of listing services, which is handled both as services.pl list and as ttp.pl list,
-# this code is so duplicated..
+# list all the services defined on this host
+
 sub listServices {
-	msgOut( "displaying services defined on $hostConfig->{name}..." );
-	my @list = TTP::Service::getDefinedServices( $hostConfig, { hidden => $opt_hidden });
-	foreach my $it ( @list ){
+	msgOut( "displaying services defined on ".$ttp->node()->name()."..." );
+	my $list = [];
+	TTP::Service->enumerate({
+		cb => \&_listServices_cb,
+		hidden => $opt_hidden,
+		result => $list
+	});
+	foreach my $it ( @{$list} ){
 		print " $it".EOL;
 	}
-	msgOut( scalar @list." found defined service(s)" );
+	msgOut( scalar @{$list}." found defined service(s)" );
 }
 
-# -------------------------------------------------------------------------------------------------
-# list all the workloads used by a service on this host with names sorted in ascii order
-sub listWorkloads {
-	msgOut( "displaying workloads used on $hostConfig->{name}..." );
-	my @list = TTP::Service::getUsedWorkloads( $hostConfig, { hidden => $opt_hidden });
-	foreach my $it ( @list ){
-		print " $it".EOL;
-	}
-	msgOut( scalar @list." found used workload(s)" );
+sub _listServices_cb {
+	my ( $service, $args ) = @_;
+	push( @{$args->{result}}, $service->name());
 }
 
 # -------------------------------------------------------------------------------------------------
 # list all (but only) the commands in this workload
 # the commands are listed in the order of their service name
+
 sub listWorkloadCommands {
-	msgOut( "displaying workload commands defined in $hostConfig->{name}\\$opt_workload..." );
-	my @list = TTP::Service::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
+	msgOut( "displaying workload commands defined in '".$ttp->node()->name()."\\$opt_workload'..." );
+	my @list = getDefinedWorktasks( $opt_workload, { hidden => $opt_hidden });
 	my $count = 0;
 	foreach my $it ( @list ){
 		if( exists( $it->{commands} )){
@@ -162,9 +203,10 @@ sub listWorkloadCommands {
 # -------------------------------------------------------------------------------------------------
 # list the detailed tasks for the specified workload
 # They are displayed in the order of their service name
+
 sub listWorkloadDetails {
-	msgOut( "displaying detailed workload tasks defined in $hostConfig->{name}\\$opt_workload..." );
-	my @list = TTP::Service::getDefinedWorktasks( $hostConfig, $opt_workload, { hidden => $opt_hidden });
+	msgOut( "displaying detailed workload tasks defined in ".$ttp->node()->name()."\\$opt_workload..." );
+	my @list = getDefinedWorktasks( $opt_workload, { hidden => $opt_hidden });
 	foreach my $it ( @list ){
 		printWorkloadTask( $it );
 	}
@@ -174,6 +216,7 @@ sub listWorkloadDetails {
 # -------------------------------------------------------------------------------------------------
 # print the detail of a task
 # - begin with preferably a name, defaulting to a label, defaulting to 'unnamed'
+
 sub printWorkloadTask {
 	my ( $task ) = @_;
 	# if we have a name or label, make it the first line
@@ -200,6 +243,7 @@ sub printWorkloadTask {
 # -------------------------------------------------------------------------------------------------
 # recursively print arrays/hashes
 # item is a hash and we want print the value associated with the key in the item hash
+
 sub printWorkloadTaskData {
 	my ( $key, $value, $recData ) = @_;
 	my $type = ref( $value );
@@ -225,6 +269,35 @@ sub printWorkloadTaskData {
 		}
 	} else {
 		print "  $key: <object reference>".EOL;
+	}
+}
+
+# -------------------------------------------------------------------------------------------------
+# list all the workloads used by a service on this host with names sorted in ascii order
+
+sub listWorkloads {
+	msgOut( "displaying workloads used on ".$ttp->node()->name()."..." );
+	my $list = {};
+	my $count = 0;
+	TTP::Service->enumerate({
+		cb => \&_listWorkloads_cb,
+		hidden => $opt_hidden,
+		result => $list
+	});
+	foreach my $it ( sort keys %${list} ){
+		print " $it".EOL;
+		$count += 1;
+	}
+	msgOut( "$count found used workload(s)" );
+}
+
+sub _listWorkloads_cb {
+	my ( $service, $args ) = @_;
+	my $value = $service->var([ 'workloads' ]);
+	if( $value ){
+		foreach my $workload ( keys %{$value} ){
+			$args->{result}{$workload} = 1;
+		}
 	}
 }
 
@@ -283,11 +356,11 @@ if( $opt_workload && !$opt_commands && !$opt_details ){
 
 if( !TTP::errs()){
 	listEnvironment() if $opt_environment;
-	listServiceMachines() if $opt_service && $opt_machines;
 	listServices() if $opt_services;
+	listServiceMachines() if $opt_service && $opt_machines;
+	listWorkloads() if $opt_workloads;
 	listWorkloadCommands() if $opt_workload && $opt_commands;
 	listWorkloadDetails() if $opt_workload && $opt_details;
-	listWorkloads() if $opt_workloads;
 }
 
 TTP::exit();

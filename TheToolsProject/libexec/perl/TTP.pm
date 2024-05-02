@@ -39,7 +39,9 @@ use vars::global create => qw( $ttp );
 
 use TTP::Constants qw( :all );
 use TTP::EP;
+use TTP::Finder;
 use TTP::Message qw( :all );
+use TTP::Node;
 use TTP::Path;
 
 # autoflush STDOUT
@@ -583,27 +585,6 @@ sub getAvailableCommands {
 }
 
 # -------------------------------------------------------------------------------------------------
-# returns the list of defined hosts, reading the hosts configuration directory
-# do not return the hosts whose configuration file is disabled
-sub getDefinedHosts {
-	my @hosts = ();
-	my $dir = TTP::Path::hostsConfigurationsDir();
-	opendir my $dh, $dir or msgErr( "cannot open '$dir' directory: $!" );
-	if( !errs()){
-		my @entries = readdir $dh;
-		closedir $dh;
-		foreach my $entry ( @entries ){
-			if( $entry ne '.' && $entry ne '..' ){
-				$entry =~ s/\.[^.]+$//;
-				my $hash = hostConfigRead( $entry, { ignoreDisabled => true });
-				push( @hosts, $entry ) if defined $hash;
-			}
-		}
-	}
-	return @hosts;
-}
-
-# -------------------------------------------------------------------------------------------------
 # read and evaluate the host configuration
 # if host is not specified, then return the configuration of the current host from TTPVars
 # send an error message if the top key of the read json is not the requested host name
@@ -928,12 +909,53 @@ sub pad {
 
 # -------------------------------------------------------------------------------------------------
 # returns a random identifier
+# (I):
+# - none
+# (O):
+# - a random (UUID-based) string of 32 hexa lowercase characters
 
 sub random {
 	my $ug = new Data::UUID;
 	my $uuid = lc $ug->create_str();
 	$uuid =~ s/-//g;
 	return $uuid;
+}
+
+# -------------------------------------------------------------------------------------------------
+# print a value on stdout
+# (I):
+# - the value to be printed, maybe undef
+# (O):
+# - printed on stdout or nothing
+
+sub print {
+	my ( $prefix, $value ) = @_;
+	if( defined( $prefix ) && defined( $value )){
+		print_rec( $prefix, $value );
+	} else {
+		msgErr( "TTP::print() undefined prefix" ) if !defined $prefix;
+		msgErr( "TTP::print() undefined value" ) if !defined $value;
+	}
+}
+
+sub print_rec {
+	my ( $prefix, $value ) = @_;
+	my $ref = ref( $value );
+	if( $ref ){
+		if( $ref eq 'ARRAY' ){
+			foreach my $it ( @{$value} ){
+				print_rec( $prefix, $it );
+			}
+		} elsif( $ref eq 'HASH' ){
+			foreach my $it ( sort keys %{$value} ){
+				print_rec( "$prefix.$it", $value->{$it} );
+			}
+		} else {
+			msgErr( "TTP::print() unmanaged reference '$ref'" );
+		}
+	} else {
+		print "$prefix: $value".EOL;
+	}
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -1091,30 +1113,6 @@ sub ttpFilter {
 		push( @result, $it ) if !grep( /^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, $it ) && $it !~ /\(WAR\)/ && $it !~ /\(ERR\)/;
 	}
 	return \@result;
-}
-
-# -------------------------------------------------------------------------------------------------
-# returns the content of a var, read from toops.json, maybe overriden in host configuration
-# (I):
-# - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
-#   each provided key (but maybe the last one) is expected to address a JSON hash object
-# - an optional options hash with following keys:
-#   > config: host configuration (useful when searching for a remote host), defaulting to current host config
-# (O):
-# - the evaluated value of this variable, which may be undef
-sub TTP::var_x {
-	my ( $keys, $opts ) = @_;
-	$opts //= {};
-	# get the toops-level result if any
-	my $result = varSearch( $keys, $TTPVars->{config}{toops} );
-	# get a host-level result if any searching for in currently evaluating, defaulting to execution host
-	my $config = $TTPVars->{evaluating};
-	$config = $TTPVars->{config}{host} if !defined $config;
-	$config = $opts->{config} if exists $opts->{config};
-	my $hostValue = varSearch( $keys, $config );
-	# host value overrides the toops one if defined
-	$result = $hostValue if defined $hostValue;
-	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------
