@@ -46,7 +46,7 @@
 # - localDir: the directory of the current node into which remote found backup files must be copied, mandatory
 # - scanInterval, the scan interval, defaulting to 10000 ms (10 sec.)
 #
-# known macros here are:
+# Known macros here are:
 # - REMOTEHOST
 # - REMOTESHARE
 

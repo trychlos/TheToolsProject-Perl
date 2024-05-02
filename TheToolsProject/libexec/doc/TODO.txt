@@ -15,9 +15,6 @@ TODO
 
    8 2024- 5- 2 jsonRead should be only available through IJSONable (not in TTP)
 
-   9 2024- 5- 2 [backup-monitor-daemon.pl tom59-backup-monitor-daemon] (WAR) TTP::Metric::_http_publish() Code: 400 MSG: text format parsing error in line 1: invalid metric name in comment
-                line is "# HELP ttp_tom17-backup-monitor-daemon The last epoch time the daemon has been seen alive"
-
   12 2024- 5- 2 daemon telemetry run since in sec, memory consumed
 
   14 2024- 5- 2 
@@ -39,6 +36,10 @@ DONE
 
    5 2024- 5- 1 get rid of 'ttp'-prefixed TTP functions
      2024- 5- 2 done
+
+   9 2024- 5- 2 [backup-monitor-daemon.pl tom59-backup-monitor-daemon] (WAR) TTP::Metric::_http_publish() Code: 400 MSG: text format parsing error in line 1: invalid metric name in comment
+                line is "# HELP ttp_tom17-backup-monitor-daemon The last epoch time the daemon has been seen alive"
+	 2024- 5- 2 done (fix regexes)
 
   10 2024- 5- 2 backup-monitor-daemon.pl should advertize the remoteExecReportsDir but not as a msgVerbose as this later is too frequent
      2024- 5- 2 done (see #13)

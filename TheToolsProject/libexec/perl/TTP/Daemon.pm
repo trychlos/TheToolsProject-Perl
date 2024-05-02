@@ -30,12 +30,8 @@
 #   defaulting to 60000 ms (1 mn)
 # - httpingInterval: either <0 (do not advertize to http-based telemetry system), or the advertizing interval in ms,
 #   defaulting to 60000 ms (1 mn)
-# - httpName: the name of the metric published to the http-based telemetry system
-#   optional, no default, override the 'nameRE' regular expression if provided
 # - textingInterval: either <0 (do not advertize to text-based telemetry system), or the advertizing interval in ms,
 #   defaulting to 60000 ms (1 mn)
-# - textName: the name of the metric published to the text-based telemetry system
-#   optional, no default, override the 'nameRE' regular expression if provided
 #
 # Also the daemon writer mmust be conscious of the dynamic character of TheToolsProject.
 # In particular and at least, many output directories (logs, temp files and so on) may be built on a daily basis.
@@ -239,26 +235,7 @@ sub _daemonize {
 sub _http_advertize {
 	my ( $self, $value ) = @_;
 	msgVerbose( __PACKAGE__."::_http_advertize() value='".( defined $value ? $value : '(undef)' )."'" );
-
-	if( false ){
-		# compute the metric name
-		my $name = $self->name();
-		my $data = $self->jsonData();
-		if( exists( $data->{httpName} )){
-			$name = $data->{httpName};
-		}
-		# make sure dashes '-' are replaced with undescores '_'
-		$name =~ s/-/_/g;
-		# and provide the metrics
-		TTP::Metric->new( $ttp, {
-			name => $name,
-			value => $value,
-			type => 'counter',
-			help => 'The last epoch time the daemon has been seen alive',
-		})->publish({
-			http => true
-		});
-	}
+	$self->_metrics({ http => true });
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -271,6 +248,52 @@ sub _lastwill {
 		payload => OFFLINE,
 		retain => true
 	};
+}
+
+# ------------------------------------------------------------------------------------------------
+# provides metrics to telemetry
+# (I):
+# - the hash to be provided for TTP::Metric->publish()
+
+sub _metrics {
+	my ( $self, $publish ) = @_;
+
+	# running since x.xxxxx sec.
+	#my $since = sprintf( "%.5f", scalar(  localtime ) - scalar( $self->runnableStarted()));
+	my $since = $self->runnableStarted()->delta_microseconds( Time::Moment->now ) / 1000000;
+	print "since='$since'".EOL;
+	my $labels = [ "daemon=".$self->name() ];
+	my $rc = TTP::Metric->new( $ttp, {
+		name => 'ttp_backup_daemon_since_s',
+		value => $since,
+		type => 'gauge',
+		help => 'Backup daemon running since',
+	})->publish( $publish );
+	foreach my $it ( sort keys %{$rc} ){
+		msgVerbose( __PACKAGE__."::_metrics() got rc->{$it}='$rc->{$it}'" );
+	}
+
+	# used memory
+	if( false ){
+		my $rc = TTP::Metric->new( $ttp, {
+			name => 'ttp_backup_daemon_memory_KB',
+			value => $self->_metrics_memory(),
+			type => 'gauge',
+			help => 'Backup daemon used memory',
+		})->publish( $publish );
+		foreach my $it ( sort keys %{$rc} ){
+			msgVerbose( __PACKAGE__."::_metrics() got rc->{$it}='$rc->{$it}'" );
+		}
+	}
+}
+
+sub _metrics_memory {
+	my $t = new Proc::ProcessTable;
+    foreach my $got  (@{$t->table} ){
+        next unless $got->pid eq $$;
+		print Dumper( $got );
+        return $got->size;
+    }
 }
 
 # ------------------------------------------------------------------------------------------------
