@@ -14,5 +14,7 @@
 	"listeningPort": 14392,
 
 	"monitoredService": "Tom17",
-	"localDir": "[eval:File::Spec->catdir( TTP::var([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), '<REMOTEHOST>' )]"
+	"localDir": "[eval:File::Spec->catdir( TTP::var([ 'DBMS', 'backupsRoot' ]), localtime->strftime( '%y%m%d' ), '<REMOTEHOST>' )]",
+
+	"textingInterval": -1
 }

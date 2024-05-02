@@ -28,11 +28,11 @@
 # - listeningInterval: the interval in ms. between two listening loops, defaulting to 1000 ms
 # - messagingInterval: either zero (do not advertize to messaging system), or the advertizing interval in ms,
 #   defaulting to 60000 ms (1 mn)
-# - httpingInterval: either zero (do not advertize to http-based telemetry system), or the advertizing interval in ms,
+# - httpingInterval: either <0 (do not advertize to http-based telemetry system), or the advertizing interval in ms,
 #   defaulting to 60000 ms (1 mn)
 # - httpName: the name of the metric published to the http-based telemetry system
 #   optional, no default, override the 'nameRE' regular expression if provided
-# - textingInterval: either zero (do not advertize to text-based telemetry system), or the advertizing interval in ms,
+# - textingInterval: either <0 (do not advertize to text-based telemetry system), or the advertizing interval in ms,
 #   defaulting to 60000 ms (1 mn)
 # - textName: the name of the metric published to the text-based telemetry system
 #   optional, no default, override the 'nameRE' regular expression if provided
@@ -187,6 +187,11 @@ sub _daemonize {
 	my $messagingInterval = $self->messagingInterval();
 	msgVerbose( "listeningPort='$listeningPort' listeningInterval='$listeningInterval' messagingInterval='$messagingInterval'" );
 
+	my $httpingInterval = $self->httpingInterval();
+	msgVerbose( "httpingInterval='$httpingInterval'" );
+	my $textingInterval = $self->textingInterval();
+	msgVerbose( "textingInterval='$textingInterval'" );
+
 	# create a listening socket
 	if( !TTP::errs()){
 		$self->{_socket} = new IO::Socket::INET(
@@ -233,6 +238,8 @@ sub _daemonize {
 
 sub _http_advertize {
 	my ( $self, $value ) = @_;
+	msgVerbose( __PACKAGE__."::_http_advertize() value='".( defined $value ? $value : '(undef)' )."'" );
+
 	if( false ){
 		# compute the metric name
 		my $name = $self->name();
@@ -273,6 +280,8 @@ sub _lastwill {
 
 sub _mqtt_advertize {
 	my ( $self ) = @_;
+	msgVerbose( __PACKAGE__."::_mqtt_advertize()" );
+
 	if( $self->{_mqtt} ){
 		# let the daemon have its own topics
 		if( $self->{_mqtt_sub} ){
@@ -320,7 +329,8 @@ sub _running {
 
 sub _text_advertize {
 	my ( $self, $value ) = @_;
-	$value = '1' if !defined $value;
+	msgVerbose( __PACKAGE__."::_text_advertize() value='".( defined $value ? $value : '(undef)' )."'" );
+
 	msgVerbose( "text-based telemetry not honored at the moment" );
 }
 
@@ -366,9 +376,9 @@ sub declareSleepables {
 	my $mqttInterval = $self->messagingInterval();
 	$self->sleepableDeclareFn( sub => sub { $self->_mqtt_advertize(); }, interval => $mqttInterval ) if $mqttInterval > 0;
 	my $httpInterval = $self->httpingInterval();
-	#$self->sleepableDeclareFn( sub => sub { $self->_http_advertize(); }, interval => $httpInterval ) if $httpInterval > 0;
+	$self->sleepableDeclareFn( sub => sub { $self->_http_advertize(); }, interval => $httpInterval ) if $httpInterval > 0;
 	my $textInterval = $self->textingInterval();
-	#$self->sleepableDeclareFn( sub => sub { $self->_text_advertize(); }, interval => $textInterval ) if $textInterval > 0;
+	$self->sleepableDeclareFn( sub => sub { $self->_text_advertize(); }, interval => $textInterval ) if $textInterval > 0;
 
 	$self->sleepableDeclareStop( sub => sub { return $self->terminating(); });
 
@@ -456,7 +466,7 @@ sub httpingInterval {
 
 	my $interval = $self->jsonData()->{httpingInterval};
 	$interval = DEFAULT_HTTPING_INTERVAL if !defined $interval;
-	if( $interval && $interval < MIN_HTTPING_INTERVAL ){
+	if( $interval && $interval > 0 && $interval < MIN_HTTPING_INTERVAL ){
 		msgVerbose( "defined httpingInterval=$interval less than minimum accepted ".MIN_HTTPING_INTERVAL.", ignored" );
 		$interval = DEFAULT_HTTPING_INTERVAL;
 	}
@@ -524,7 +534,7 @@ sub listeningInterval {
 
 	my $interval = $self->jsonData()->{listeningInterval};
 	$interval = DEFAULT_LISTEN_INTERVAL if !defined $interval;
-	if( $interval < MIN_LISTEN_INTERVAL ){
+	if( $interval > 0 && $interval < MIN_LISTEN_INTERVAL ){
 		msgVerbose( "defined listeningInterval=$interval less than minimum accepted ".MIN_LISTEN_INTERVAL.", ignored" );
 		$interval = DEFAULT_LISTEN_INTERVAL;
 	}
@@ -777,7 +787,7 @@ sub textingInterval {
 
 	my $interval = $self->jsonData()->{textingInterval};
 	$interval = DEFAULT_TEXTING_INTERVAL if !defined $interval;
-	if( $interval && $interval < MIN_TEXTING_INTERVAL ){
+	if( $interval && $interval > 0 && $interval < MIN_TEXTING_INTERVAL ){
 		msgVerbose( "defined textingInterval=$interval less than minimum accepted ".MIN_TEXTING_INTERVAL.", ignored" );
 		$interval = DEFAULT_TEXTING_INTERVAL;
 	}

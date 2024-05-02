@@ -18,10 +18,6 @@ TODO
    9 2024- 5- 2 [backup-monitor-daemon.pl tom59-backup-monitor-daemon] (WAR) TTP::Metric::_http_publish() Code: 400 MSG: text format parsing error in line 1: invalid metric name in comment
                 line is "# HELP ttp_tom17-backup-monitor-daemon The last epoch time the daemon has been seen alive"
 
-  10 2024- 5- 2 backup-monitor-daemon.pl should advertize the remoteExecReportsDir but not as a msgVerbose as this later is too frequent
-
-  11 2024- 5- 2 check that httpMessaging and textMessaging can be disabled in daemon configuration (zero is it valid ?)
-
   12 2024- 5- 2 daemon telemetry run since in sec, memory consumed
 
   14 2024- 5- 2 
@@ -43,6 +39,12 @@ DONE
 
    5 2024- 5- 1 get rid of 'ttp'-prefixed TTP functions
      2024- 5- 2 done
+
+  10 2024- 5- 2 backup-monitor-daemon.pl should advertize the remoteExecReportsDir but not as a msgVerbose as this later is too frequent
+     2024- 5- 2 done (see #13)
+
+  11 2024- 5- 2 check that httpMessaging and textMessaging can be disabled in daemon configuration (zero is it valid ?)
+     2024- 5- 2 OK - needs interval be set to -1
 
   13 2024- 5- 2 the daemon should be able to add its own mqtt topics
      2024- 5- 2 done
