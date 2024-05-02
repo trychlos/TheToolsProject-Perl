@@ -319,9 +319,15 @@ sub _topic {
 
 # ------------------------------------------------------------------------------------------------
 # returns common commands
-# (useful when the daeon wants override a standard answer)
+# (useful when the daemon wants override a standard answer)
+# (I):
+# - none
+# (O):
+# - returns the common commands as a hash ref
 
 sub commonCommands {
+	my ( $self ) = @_;
+
 	return $Const->{commonCommands};
 }
 
