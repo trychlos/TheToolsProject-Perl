@@ -182,7 +182,6 @@ sub computeMonitoredShare {
 	my( $local_vol, $local_dirs, $local_file ) = File::Spec->splitpath( $dir );
 	my( $remote_vol, $no_dirs, $no_file ) = File::Spec->splitpath( configRemoteShare());
 	my $share = File::Spec->catpath( $remote_vol, $local_dirs, $local_file );
-	msgVerbose( "monitoredShare='$share'" );
 	return $share;
 }
 
