@@ -34,8 +34,6 @@ use Path::Tiny;
 
 use TTP::SMTP;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
@@ -60,6 +58,7 @@ my $opt_debug = undef;
 
 # -------------------------------------------------------------------------------------------------
 # send the email
+
 sub doSend {
 	msgOut( "sending an email to $opt_to..." );
 	my @to = split( /,/, $opt_to );

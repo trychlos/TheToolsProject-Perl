@@ -420,7 +420,7 @@ sub type {
 		if( grep( /$arg/, @{$Const->{types}} )){
 			$self->{_metric}{type} = $arg;
 		} else {
-			msgErr( __PACKAGE__."::type() '$arg' is not referenced among [".join( ',', @{$Const->types} )."]" );
+			msgErr( __PACKAGE__."::type() '$arg' is not referenced among [".join( ',', @{$Const->{types}} )."]" );
 		}
 	}
 

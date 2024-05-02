@@ -17,7 +17,9 @@ TODO
    7 2024- 5- 1 Daemon.pm let the daeon advertize its status to http-based and text-based telemetry
                 provides labels through json configuration
 
-   8 2024- 5- 1 
+   8 2024- 5- 2 honors text-based telemetry
+
+   8 2024- 5- 2 
 
 # -------------------------------------------------------------------------------------------------
 

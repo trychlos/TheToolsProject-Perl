@@ -1,21 +1,21 @@
 # @(#) publish a metric
 #
-# @(-) --[no]help                  print this message, and exit [${help}]
-# @(-) --[no]colored               color the output depending of the message level [${colored}]
-# @(-) --[no]dummy                 dummy run (ignored here) [${dummy}]
-# @(-) --[no]verbose               run verbosely [${verbose}]
-# @(-) --metric=<name>             the metric to be published [${metric}]
-# @(-) --label <name=value>        a name=value label, may be specified several times or with a comma-separated list [${label}]
-# @(-) --value=<value>             the metric's value [${value}]
-# @(-) --[no]http                  publish to HTTP gateway [${http}]
-# @(-) --httpPrefix=<prefix>       a prefix to be set on HTTP metrics name [${httpPrefix}]
-# @(-) --httpOption <name=value>   an option to be passed to HTTP publication, may be specified several times or with a comma-separated list [${httpOption}]
-# @(-) --[no]mqtt                  publish to MQTT bus [${mqtt}]
-# @(-) --mqttPrefix=<prefix>       a prefix to be set on MQTT metrics name [${mqttPrefix}]
-# @(-) --mqttOption <name=value>   an option to be passed to MQTT publication, may be specified several times or with a comma-separated list [${mqttOption}]
+# @(-) --[no]help              print this message, and exit [${help}]
+# @(-) --[no]colored           color the output depending of the message level [${colored}]
+# @(-) --[no]dummy             dummy run (ignored here) [${dummy}]
+# @(-) --[no]verbose           run verbosely [${verbose}]
+# @(-) --metric=<name>         the metric to be published [${metric}]
+# @(-) --value=<value>         the metric's value [${value}]
+# @(-) --description=<string>  a one-line help description [${description}]
+# @(-) --type=<type>           the metric type [${type}]
+# @(-) --[no]mqtt              publish the metrics to the (MQTT-based) messaging system [${mqtt}]
+# @(-) --[no]http              publish the metrics to the (HTTP-based) Prometheus PushGateway system [${http}]
+# @(-) --[no]text              publish the metrics to the (text-based) Prometheus TextFile Collector system [${text}]
+# @(-) --prepend=<name=value>  label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${prepend}]
+# @(-) --append=<name=value>   label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${append}]
 #
-# @(@) This verb let you publish a metric to any enabled medium, among messaging-based (MQTT), or http-based (Prometheus PushGateway) or
-# @(@) text-based (Prometheus TextFile Collector).
+# @(@) This verb let you publish a metric to any enabled medium, among (MQTT-based) messaging system, or (http-based) Prometheus PushGateway or
+# @(@) (text-based) Prometheus TextFile Collector.
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -35,7 +35,7 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 
-use TTP::Telemetry;
+use TTP::Metric;
 
 my $defaults = {
 	help => 'no',
@@ -43,54 +43,52 @@ my $defaults = {
 	dummy => 'no',
 	verbose => 'no',
 	metric => '',
-	label => '',
 	value => '',
-	httpPrefix => '',
-	httpOption => '',
-	mqttPrefix => '',
-	mqttOption => ''
+	description => '',
+	type => 'untyped',
+	mqtt => 'no',
+	http => 'no',
+	text => 'no',
+	prepend => '',
+	append => ''
 };
 
 my $opt_metric = $defaults->{metric};
-my $opt_label = $defaults->{label};
 my $opt_value = undef;
+my $opt_description = $defaults->{description};
+my $opt_type = $defaults->{type};
 my $opt_mqtt = TTP::var([ 'Telemetry', 'withMqtt', 'enabled' ]);
 my $opt_http = TTP::var([ 'Telemetry', 'withHttp', 'enabled' ]);
-my $opt_httpPrefix = $defaults->{httpPrefix};
-my $opt_httpOption = $defaults->{httpOption};
-my $opt_mqttPrefix = $defaults->{mqttPrefix};
-my $opt_mqttOption = $defaults->{mqttOption};
+my $opt_text = TTP::var([ 'Telemetry', 'withText', 'enabled' ]);
+my @opt_prepends = ();
+my @opt_appends = ();
 
 $defaults->{mqtt} = $opt_mqtt ? 'yes' : 'no';
 $defaults->{http} = $opt_http ? 'yes' : 'no';
-
-# lists of name=value pairs
-my @labels = ();
-my @httpOptions = ();
-my @mqttOptions = ();
+$defaults->{text} = $opt_text ? 'yes' : 'no';
 
 # -------------------------------------------------------------------------------------------------
-# send the metric
-# this requires a telemetry gateway, which is handle by the Telemetry package
-sub doHttpPublish {
-	msgOut( "publishing '$opt_metric' metric to HTTP gateway..." );
-	my $res = TTP::Telemetry::httpPublish( $opt_metric, $opt_value, \@labels, { httpPrefix => $opt_httpPrefix, httpOptions => \@httpOptions });
-	if( $res ){
-		msgOut( "success" );
-	} else {
-		msgErr( "NOT OK" );
-	}
-}
+# create and publish the desired metric
 
-# -------------------------------------------------------------------------------------------------
-# send the metric
-sub doMqttPublish {
-	msgOut( "publishing '$opt_metric' metric to MQTT bus..." );
-	my $res = TTP::Telemetry::mqttPublish( $opt_metric, $opt_value, \@labels, { mqttPrefix => $opt_mqttPrefix, mqttOptions => \@mqttOptions });
-	if( $res ){
-		msgOut( "success" );
-	} else {
+sub doPublish {
+	msgOut( "publishing '$opt_metric' metric..." );
+	my $metric = {
+		name => $opt_metric,
+		value => $opt_value
+	};
+	$metric->{help} = $opt_description if $opt_description;
+	$metric->{type} = $opt_type if $opt_type;
+	my @labels = ( @opt_prepends, @opt_appends );
+	$metric->{labels} = \@labels if scalar @labels;
+	TTP::Metric->new( $ttp, $metric )->publish({
+		mqtt => $opt_mqtt,
+		http => $opt_http,
+		text => $opt_text
+	});
+	if( TTP::errs()){
 		msgErr( "NOT OK" );
+	} else {
+		msgOut( "done" );
 	}
 }
 
@@ -104,14 +102,14 @@ if( !GetOptions(
 	"dummy!"			=> \$ttp->{run}{dummy},
 	"verbose!"			=> \$ttp->{run}{verbose},
 	"metric=s"			=> \$opt_metric,
-	"label=s@"			=> \$opt_label,
 	"value=s"			=> \$opt_value,
+	"description=s"		=> \$opt_description,
+	"type=s"			=> \$opt_type,
 	"mqtt!"				=> \$opt_mqtt,
 	"http!"				=> \$opt_http,
-	"httpPrefix=s"		=> \$opt_httpPrefix,
-	"httpOption=s@"		=> \$opt_httpOption,
-	"mqttPrefix=s"		=> \$opt_mqttPrefix,
-	"mqttOption=s@"		=> \$opt_mqttOption	)){
+	"text!"				=> \$opt_text,
+	"prepend=s@"		=> \@opt_prepends,
+	"append=s@"			=> \@opt_appends	)){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -126,34 +124,38 @@ msgVerbose( "found colored='".( $running->colored() ? 'true':'false' )."'" );
 msgVerbose( "found dummy='".( $running->dummy() ? 'true':'false' )."'" );
 msgVerbose( "found verbose='".( $running->verbose() ? 'true':'false' )."'" );
 msgVerbose( "found metric='$opt_metric'" );
-@labels = split( /,/, join( ',', @{$opt_label} ));
-msgVerbose( "found labels='".join( ',', @labels )."'" );
 msgVerbose( "found value='".( defined $opt_value ? $opt_value : '(undef)' )."'" );
-msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
-msgVerbose( "found httpPrefix='$opt_httpPrefix'" );
-@httpOptions = split( /,/, join( ',', @{$opt_httpOption} ));
-msgVerbose( "found httpOptions='".join( ',', @httpOptions )."'" );
+msgVerbose( "found description='$opt_description'" );
+msgVerbose( "found type='$opt_type'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
-msgVerbose( "found mqttPrefix='$opt_mqttPrefix'" );
-@mqttOptions = split( /,/, join( ',', @{$opt_mqttOption} ));
-msgVerbose( "found mqttOptions='".join( ',', @mqttOptions )."'" );
+msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
+msgVerbose( "found text='".( $opt_text ? 'true':'false' )."'" );
+@opt_prepends = split( /,/, join( ',', @opt_prepends ));
+msgVerbose( "found prepends='".join( ',', @opt_prepends )."'" );
+@opt_appends = split( /,/, join( ',', @opt_appends ));
+msgVerbose( "found appends='".join( ',', @opt_appends )."'" );
 
 # metric and values are mandatory
-msgErr( "'--metric' metric option is required, but is not specified" ) if !$opt_metric;
-msgErr( "'--value' value option is required, but is not specified" ) if !defined $opt_value;
+msgErr( "'--metric' option is required, but is not specified" ) if !$opt_metric;
+msgErr( "'--value' option is required, but is not specified" ) if !defined $opt_value;
 
 # if labels are specified, check that each one is of the 'name=value' form
-foreach my $label ( @labels ){
+foreach my $label ( @opt_prepends ){
 	my @words = split( /=/, $label );
 	if( scalar @words != 2 || !$words[0] || !$words[1] ){
 		msgErr( "label '$label' doesn't appear of the 'name=value' form" );
 	}
 }
-msgOut( "do not publish anything as neither '--mqtt' nor '--http' are set" ) if !$opt_mqtt && !$opt_http;
+foreach my $label ( @opt_appends ){
+	my @words = split( /=/, $label );
+	if( scalar @words != 2 || !$words[0] || !$words[1] ){
+		msgErr( "label '$label' doesn't appear of the 'name=value' form" );
+	}
+}
+msgWarn( "do not publish anything as neither '--mqtt', '--http' nor '--text' are set" ) if !$opt_mqtt && !$opt_http && !$opt_text;
 
 if( !TTP::errs()){
-	doMqttPublish() if $opt_mqtt;
-	doHttpPublish() if $opt_http;
+	doPublish() if $opt_mqtt || $opt_http || $opt_text;
 }
 
 TTP::exit();
