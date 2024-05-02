@@ -42,7 +42,7 @@ my $defaults = {
 	colored => 'no',
 	dummy => 'no',
 	verbose => 'no',
-	emitter => TTP::host(),
+	emitter => $ttp->node()->name(),
 	level => 'INFO',
 	message => ''
 };
@@ -68,9 +68,9 @@ $defaults->{sms} = $opt_sms ? 'yes' : 'no';
 
 sub doJsonAlert {
 	msgOut( "creating a new '$opt_level' json alert..." );
-	my $command = TTP::var([ 'alerts', 'withFile', 'command' ]);
+	my $command = $ttp->var([ 'alerts', 'withFile', 'command' ]);
 	if( $command ){
-		my $dir = TTP::var([ 'alerts', 'withFile', 'dropDir' ]);
+		my $dir = $ttp->var([ 'alerts', 'withFile', 'dropDir' ]);
 		if( $dir ){
 			TTP::Path::makeDirExist( $dir );
 			my $data = {
@@ -111,10 +111,10 @@ sub doJsonAlert {
 
 sub doMqttAlert {
 	msgOut( "publishing a '$opt_level' alert on MQTT bus..." );
-	my $command = TTP::var([ 'alerts', 'withMqtt', 'command' ]);
+	my $command = $ttp->var([ 'alerts', 'withMqtt', 'command' ]);
 	my $res = false;
 	if( $command ){
-		my $topic = TTP::host()."/alert";
+		my $topic = $ttp->node()->name()."/alert";
 		my $data = {
 			emitter => $opt_emitter,
 			level => $opt_level,
@@ -151,7 +151,7 @@ sub doMqttAlert {
 sub doSmsAlert {
 	msgOut( "sending a '$opt_level' alert by SMS..." );
 	my $res = false;
-	my $command = TTP::var([ 'alerts', 'withSms', 'command' ]);
+	my $command = $ttp->var([ 'alerts', 'withSms', 'command' ]);
 	if( $command ){
 		my $text = "Hi,
 An alert has been raised:
@@ -185,10 +185,11 @@ Best regards.
 # managed macros:
 # - SUBJECT
 # - OPTIONS
+
 sub doSmtpAlert {
 	msgOut( "publishing a '$opt_level' alert by SMTP..." );
 	my $res = false;
-	my $command = TTP::var([ 'alerts', 'withSmtp', 'command' ]);
+	my $command = $ttp->var([ 'alerts', 'withSmtp', 'command' ]);
 	if( $command ){
 		my $subject = "[$opt_level] Alert";
 		my $text = "Hi,

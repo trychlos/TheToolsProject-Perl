@@ -9,8 +9,11 @@
 # @(-) --description=<string>  a one-line help description [${description}]
 # @(-) --type=<type>           the metric type [${type}]
 # @(-) --[no]mqtt              publish the metrics to the (MQTT-based) messaging system [${mqtt}]
+# @(-) --mqttPrefix=<prefi>    prefix the metric name when publishing to the (MQTT-based) messaging system [${mqttPrefix}]
 # @(-) --[no]http              publish the metrics to the (HTTP-based) Prometheus PushGateway system [${http}]
+# @(-) --httpPrefix=<prefi>    prefix the metric name when publishing to the (HTTP-based) Prometheus PushGateway system [${httpPrefix}]
 # @(-) --[no]text              publish the metrics to the (text-based) Prometheus TextFile Collector system [${text}]
+# @(-) --textPrefix=<prefi>    prefix the metric name when publishing to the (text-based) Prometheus TextFile Collector system [${textPrefix}]
 # @(-) --prepend=<name=value>  label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${prepend}]
 # @(-) --append=<name=value>   label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${append}]
 #
@@ -47,8 +50,11 @@ my $defaults = {
 	description => '',
 	type => 'untyped',
 	mqtt => 'no',
+	mqttPrefix => '',
 	http => 'no',
+	httpPrefix => '',
 	text => 'no',
+	textPrefix => '',
 	prepend => '',
 	append => ''
 };
@@ -58,8 +64,11 @@ my $opt_value = undef;
 my $opt_description = $defaults->{description};
 my $opt_type = $defaults->{type};
 my $opt_mqtt = TTP::var([ 'Telemetry', 'withMqtt', 'enabled' ]);
+my $opt_mqttPrefix = $defaults->{mqttPrefix};
 my $opt_http = TTP::var([ 'Telemetry', 'withHttp', 'enabled' ]);
+my $httpPrefix = $defaults->{httpPrefix};
 my $opt_text = TTP::var([ 'Telemetry', 'withText', 'enabled' ]);
+my $opt_textPrefix = $defaults->{textPrefix};
 my @opt_prepends = ();
 my @opt_appends = ();
 
@@ -82,8 +91,11 @@ sub doPublish {
 	$metric->{labels} = \@labels if scalar @labels;
 	TTP::Metric->new( $ttp, $metric )->publish({
 		mqtt => $opt_mqtt,
+		mqttPrefix => $opt_mqttPrefix,
 		http => $opt_http,
-		text => $opt_text
+		httpPrefix => $opt_httpPrefix,
+		text => $opt_text,
+		textPrefix => $opt_textPrefix
 	});
 	if( TTP::errs()){
 		msgErr( "NOT OK" );
@@ -106,10 +118,13 @@ if( !GetOptions(
 	"description=s"		=> \$opt_description,
 	"type=s"			=> \$opt_type,
 	"mqtt!"				=> \$opt_mqtt,
+	"mqttPrefix=s"		=> \$opt_mqttPrefix,
 	"http!"				=> \$opt_http,
+	"httpPrefix=s"		=> \$opt_httpPrefix,
 	"text!"				=> \$opt_text,
+	"textPrefix=s"		=> \$opt_textPrefix,
 	"prepend=s@"		=> \@opt_prepends,
-	"append=s@"			=> \@opt_appends	)){
+	"append=s@"			=> \@opt_appends )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -128,8 +143,11 @@ msgVerbose( "found value='".( defined $opt_value ? $opt_value : '(undef)' )."'" 
 msgVerbose( "found description='$opt_description'" );
 msgVerbose( "found type='$opt_type'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+msgVerbose( "found mqttPrefix='$opt_mqttPrefix'" );
 msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
+msgVerbose( "found httpPrefix='$opt_httpPrefix'" );
 msgVerbose( "found text='".( $opt_text ? 'true':'false' )."'" );
+msgVerbose( "found textPrefix='$opt_textPrefix'" );
 @opt_prepends = split( /,/, join( ',', @opt_prepends ));
 msgVerbose( "found prepends='".join( ',', @opt_prepends )."'" );
 @opt_appends = split( /,/, join( ',', @opt_appends ));

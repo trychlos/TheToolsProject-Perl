@@ -104,8 +104,10 @@ sub commandByOs {
 			$result->{evaluated} =~ s/<$key>/$args->{macros}{$key}/;
 		}
 		msgVerbose( "Toops::commandByOs() evaluated to '$result->{evaluated}'" );
-		msgDummy( $result->{evaluated} );
-		if( !wantsDummy()){
+		if( $ttp->runner()->dummy()){
+			msgDummy( $result->{evaluated} );
+			$result->{result} = true;
+		} else {
 			my $out = `$result->{evaluated}`;
 			print $out;
 			msgLog( $out );
@@ -121,8 +123,6 @@ sub commandByOs {
 				$result->{result} = ( $res <= 7 ) ? true : false;
 				msgVerbose( "Toops::commandByOs() robocopy specific interpretation res=$res result=$result->{result}" );
 			}
-		} else {
-			$result->{result} = true;
 		}
 	}
 	msgVerbose( "Toops::commandByOs() result=$result->{result}" );
@@ -135,6 +135,7 @@ sub commandByOs {
 # Toops allows to provide a system-specific command in its configuration file
 # well suited for example to move big files to network storage
 # return true|false
+
 sub copyDir {
 	my ( $source, $target ) = @_;
 	my $result = false;
@@ -153,16 +154,15 @@ sub copyDir {
 	if( defined $cmdres->{command} ){
 		$result = $cmdres->{result};
 		msgVerbose( "Toops::copyDir() commandByOs() result=$result" );
-	} else {
+	} elsif( $ttp->runner()->dummy()){
 		msgDummy( "dircopy( $source, $target )" );
-		if( !wantsDummy()){
-			# https://metacpan.org/pod/File::Copy::Recursive
-			# This function returns true or false: for true in scalar context it returns the number of files and directories copied,
-			# whereas in list context it returns the number of files and directories, number of directories only, depth level traversed.
-			my $res = dircopy( $source, $target );
-			$result = $res ? true : false;
-			msgVerbose( "Toops::copyDir() dircopy() res=$res result=$result" );
-		}
+	} else {
+		# https://metacpan.org/pod/File::Copy::Recursive
+		# This function returns true or false: for true in scalar context it returns the number of files and directories copied,
+		# whereas in list context it returns the number of files and directories, number of directories only, depth level traversed.
+		my $res = dircopy( $source, $target );
+		$result = $res ? true : false;
+		msgVerbose( "Toops::copyDir() dircopy() res=$res result=$result" );
 	}
 	msgVerbose( "Toops::copyDir() returns result=$result" );
 	return $result;
@@ -177,6 +177,7 @@ sub copyDir {
 # - target :the target volume and directory
 # (O):
 # return true|false
+
 sub copyFile {
 	my ( $source, $target ) = @_;
 	my $result = false;
@@ -195,17 +196,16 @@ sub copyFile {
 	if( defined $cmdres->{command} ){
 		$result = $cmdres->{result};
 		msgVerbose( "Toops::copyFile() commandByOs() result=$result" );
-	} else {
+	} elsif( $ttp->runner()->dummy()){
 		msgDummy( "copy( $source, $target )" );
-		if( !wantsDummy()){
-			# https://metacpan.org/pod/File::Copy
-			# This function returns true or false
-			$result = copy( $source, $target );
-			if( $result ){
-				msgVerbose( "Toops::copyFile() result=true" );
-			} else {
-				msgErr( "Toops::copyFile() $!" );
-			}
+	} else {
+		# https://metacpan.org/pod/File::Copy
+		# This function returns true or false
+		$result = copy( $source, $target );
+		if( $result ){
+			msgVerbose( "Toops::copyFile() result=true" );
+		} else {
+			msgErr( "Toops::copyFile() $!" );
 		}
 	}
 	msgVerbose( "Toops::copyFile() returns result=$result" );
@@ -1154,12 +1154,6 @@ sub varSearch {
 		}
 	}
 	return $found ? $base : undef;
-}
-
-# -------------------------------------------------------------------------------------------------
-# whether we are running in dummy mode
-sub wantsDummy {
-	return $ttp->{run}{dummy};
 }
 
 1;

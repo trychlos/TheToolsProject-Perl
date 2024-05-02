@@ -19,11 +19,11 @@
 # A telemetry metric.
 #
 # Properties are:
-# - a one-line description
-# - a name
-# - a type
-# - a value
-# - an ordered list of 'name=value' labels
+# - help: a one-line description
+# - name
+# - type
+# - value
+# - labels: an ordered list of 'name=value' labels
 #
 # Notes:
 #
@@ -198,8 +198,11 @@ sub props {
 # (I]:
 # - an arguments hash ref with following keys:
 #   > mqtt, whether to publish to (MQTT-based) messaging system, defaulting to false
+#   > mqttPrefix, a prefix to the metric name on MQTT publication
 #   > http, whether to publish to (HTTP-based) Prometheus PushGateway, defaulting to false
+#   > httpPrefix, a prefix to the metric name on HTTP publication
 #   > text, whether to publish to (text-based) Prometheus TextFile Collector, defaulting to false
+#   > textPrefix, a prefix to the metric name on text publication
 # (O):
 # - a result hash ref, which may be empty, or with a key foreach 'truethy' medium specified on entering:
 #   <medium>: either zero if the metric has been actually and successfully published, or the reason code
@@ -211,15 +214,21 @@ sub publish {
 
 	my $mqtt = false;
 	$mqtt = $args->{mqtt} if exists $args->{mqtt};
-	$result->{mqtt} = $self->_mqtt_publish() if $mqtt;
+	my $mqttPrefix = '';
+	$mqttPrefix = $args->{mqttPrefix} if exists $args->{mqttPrefix};
+	$result->{mqtt} = $self->_mqtt_publish( $mqttPrefix ) if $mqtt;
 
 	my $http = false;
 	$http = $args->{http} if exists $args->{http};
-	$result->{http} = $self->_http_publish() if $http;
+	my $httpPrefix = '';
+	$httpPrefix = $args->{httpPrefix} if exists $args->{httpPrefix};
+	$result->{http} = $self->_http_publish( $httpPrefix ) if $http;
 
 	my $text = false;
 	$text = $args->{text} if exists $args->{text};
-	$result->{text} = $self->_text_publish() if $text;
+	my $textPrefix = '';
+	$textPrefix = $args->{textPrefix} if exists $args->{textPrefix};
+	$result->{text} = $self->_text_publish( $textPrefix ) if $text;
 
 	return $result;
 }
@@ -228,7 +237,7 @@ sub publish {
 # only publish numeric values
 
 sub _http_publish {
-	my ( $self ) = @_;
+	my ( $self, $prefix ) = @_;
 	my $res = 0;
 
 	my $ttp = $self->ttp();
@@ -246,6 +255,7 @@ sub _http_publish {
 						# do we run in dummy mode ?
 						my $dummy = $ttp->runner()->dummy();
 						# make sure the name has the correct prefix
+						$name = "$prefix$name";
 						$name = "$Const->{prefix}$name" if $Const->{prefix} && $name !~ m/^$Const->{prefix}/;
 						# pwi 2024- 5- 1 do not remember the reason why ?
 						#$name =~ s/\./_/g;
@@ -301,7 +311,7 @@ sub _http_publish {
 # prepend the topic with the hostname
 
 sub _mqtt_publish {
-	my ( $self ) = @_;
+	my ( $self, $prefix ) = @_;
 	my $res = 0;
 
 	my $ttp = $self->ttp();
@@ -313,6 +323,7 @@ sub _mqtt_publish {
 		if( $command ){
 			my $name = $self->name();
 			if( $name ){
+				$name = "$prefix$name";
 				# built the topic, starting with the host name
 				my $topic = $ttp->node()->name();
 				$topic .= '/telemetry';
@@ -361,7 +372,7 @@ sub _mqtt_publish {
 # the collector filename is ?
 
 sub _text_publish {
-	my ( $self ) = @_;
+	my ( $self, $prefix ) = @_;
 	my $res = 0;
 
 	my $ttp = $self->ttp();
@@ -373,6 +384,7 @@ sub _text_publish {
 		if( $dropdir ){
 			my $name = $self->name();
 			if( $name ){
+				$name = "$prefix$name";
 				my $value = $self->value();
 				if( defined( $value )){
 					if( looks_like_number( $value )){

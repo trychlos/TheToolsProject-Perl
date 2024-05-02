@@ -8,8 +8,11 @@
 # @(-) --name=<name>           acts on the named service [${name}]
 # @(-) --[no]state             query the service state [${state}]
 # @(-) --[no]mqtt              publish the metrics to the (MQTT-based) messaging system [${mqtt}]
+# @(-) --mqttPrefix=<prefi>    prefix the metric name when publishing to the (MQTT-based) messaging system [${mqttPrefix}]
 # @(-) --[no]http              publish the metrics to the (HTTP-based) Prometheus PushGateway system [${http}]
+# @(-) --httpPrefix=<prefi>    prefix the metric name when publishing to the (HTTP-based) Prometheus PushGateway system [${httpPrefix}]
 # @(-) --[no]text              publish the metrics to the (text-based) Prometheus TextFile Collector system [${text}]
+# @(-) --textPrefix=<prefi>    prefix the metric name when publishing to the (text-based) Prometheus TextFile Collector system [${textPrefix}]
 # @(-) --prepend=<name=value>  label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${prepend}]
 # @(-) --append=<name=value>   label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${append}]
 #
@@ -42,8 +45,11 @@ my $defaults = {
 	name => '',
 	state => 'no',
 	mqtt => 'no',
+	mqttPrefix => '',
 	http => 'no',
+	httpPrefix => '',
 	text => 'no',
+	textPrefix => '',
 	prepend => '',
 	append => ''
 };
@@ -52,8 +58,11 @@ my $opt_list = false;
 my $opt_name = $defaults->{name};
 my $opt_state = false;
 my $opt_mqtt = false;
+my $opt_mqttPrefix = $defaults->{mqttPrefix};
 my $opt_http = false;
+my $httpPrefix = $defaults->{httpPrefix};
 my $opt_text = false;
+my $opt_textPrefix = $defaults->{textPrefix};
 my @opt_prepends = ();
 my @opt_appends = ();
 
@@ -145,7 +154,8 @@ sub doServiceState {
 			value => $res ? $label : $error,
 			labels => \@labels
 		})->publish({
-			mqtt => $opt_mqtt
+			mqtt => $opt_mqtt,
+			mqttPrefix => $opt_mqttPrefix
 		});
 		foreach my $key ( keys( %{$serviceStates} )){
 			my @labels = ( @opt_prepends, "role=$opt_name", "state=$serviceStates->{$key}", @opt_appends );
@@ -157,7 +167,9 @@ sub doServiceState {
 				labels => \@labels
 			})->publish({
 				http => $opt_http,
-				text => $opt_text
+				httpPrefix => $opt_httpPrefix,
+				text => $opt_text,
+				textPrefix => $opt_textPrefix
 			});
 		}
 	}
@@ -181,8 +193,11 @@ if( !GetOptions(
 	"name=s"			=> \$opt_name,
 	"state!"			=> \$opt_state,
 	"mqtt!"				=> \$opt_mqtt,
+	"mqttPrefix=s"		=> \$opt_mqttPrefix,
 	"http!"				=> \$opt_http,
+	"httpPrefix=s"		=> \$opt_httpPrefix,
 	"text!"				=> \$opt_text,
+	"textPrefix=s"		=> \$opt_textPrefix,
 	"prepend=s@"		=> \@opt_prepends,
 	"append=s@"			=> \@opt_appends )){
 
@@ -202,8 +217,11 @@ msgVerbose( "found list='".( $opt_list ? 'true':'false' )."'" );
 msgVerbose( "found name='$opt_name'" );
 msgVerbose( "found state='".( $opt_state ? 'true':'false' )."'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
+msgVerbose( "found mqttPrefix='$opt_mqttPrefix'" );
 msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
+msgVerbose( "found httpPrefix='$opt_httpPrefix'" );
 msgVerbose( "found text='".( $opt_text ? 'true':'false' )."'" );
+msgVerbose( "found textPrefix='$opt_textPrefix'" );
 @opt_prepends = split( /,/, join( ',', @opt_prepends ));
 msgVerbose( "found prepends='".join( ',', @opt_prepends )."'" );
 @opt_appends = split( /,/, join( ',', @opt_appends ));

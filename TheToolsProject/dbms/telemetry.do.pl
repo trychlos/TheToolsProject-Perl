@@ -17,6 +17,7 @@
 # @(-) --append=<name=value>   label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${append}]
 #
 # @(@) When limiting the published messages, be conscious that the '--dbsize' option provides 6 metrics per database.
+# @(@) This verb manages itself different telemetry prefixes depending of the targeted system.
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -137,26 +138,19 @@ sub doDbSize {
 		# that we publish separately as mqtt-based names are slightly different from Prometheus ones
 		my @labels = ( @opt_prepends, "instance=$opt_instance", "database=$db", @opt_appends );
 		foreach my $key ( keys %{$set} ){
-			# -> mqtt
 			TTP::Metric->new( $ttp, {
-				name => "dbsize_$key",
+				name => $key,
 				value => $set->{$key},
 				type => 'gauge',
 				help => 'Database used space',
 				labels => \@labels
 			})->publish({
-				mqtt => $opt_mqtt
-			});
-			# -> http/text
-			TTP::Metric->new( $ttp, {
-				name => "dbms_database_size_$key",
-				value => $set->{$key},
-				type => 'gauge',
-				help => 'Database used space',
-				labels => \@labels
-			})->publish({
+				mqtt => $opt_mqtt,
+				mqttPrefix => 'dbsize_',
 				http => $opt_http,
-				text => $opt_text
+				httpPrefix => 'dbms_database_size_',
+				text => $opt_text,
+				textPrefix => 'dbms_database_size_'
 			});
 			$count += 1 if $opt_mqtt || $opt_http || $opt_text;
 			last if $count >= $opt_limit && $opt_limit >= 0;
@@ -186,7 +180,6 @@ sub doTablesCount {
 			my $sqlres = $dbms->execSqlCommand( "use $db; select count(*) as rows_count from $tab;", { tabular => false });
 			if( $sqlres->{ok} ){
 				my @labels = ( @opt_prepends, "instance=$opt_instance", "database=$db", "table=$tab", @opt_appends );
-				# -> mqtt
 				TTP::Metric->new( $ttp, {
 					name => 'rows_count',
 					value => $sqlres->{result}->[0]->{rows_count} || 0,
@@ -194,18 +187,12 @@ sub doTablesCount {
 					help => 'Table rows count',
 					labels => \@labels
 				})->publish({
-					mqtt => $opt_mqtt
-				});
-				# -> http/text
-				TTP::Metric->new( $ttp, {
-					name => 'dbms_database_table_rows_count',
-					value => $sqlres->{result}->[0]->{rows_count} || 0,
-					type => 'gauge',
-					help => 'Table rows count',
-					labels => \@labels
-				})->publish({
+					mqtt => $opt_mqtt,
+					mqttPrefix => '',
 					http => $opt_http,
-					text => $opt_text
+					httpPrefix => 'dbms_database_table_',
+					text => $opt_text,
+					textPrefix => 'dbms_database_table_'
 				});
 				$count += 1 if $opt_mqtt || $opt_http || $opt_text;
 				last if $count >= $opt_limit && $opt_limit >= 0;

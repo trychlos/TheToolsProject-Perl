@@ -6,8 +6,11 @@
 # @(-) --[no]verbose           run verbosely [${verbose}]
 # @(-) --dirpath=s             the source path [${dirpath}]
 # @(-) --dircmd=s              the command which will give the source path [${dircmd}]
-# @(-) --[no]mqtt              publish the result as a MQTT payload [${mqtt}]
-# @(-) --[no]http              publish the result as a HTTP telemetry [${http}]
+# @(-) --[no]mqtt              publish the metrics to the (MQTT-based) messaging system [${mqtt}]
+# @(-) --[no]http              publish the metrics to the (HTTP-based) Prometheus PushGateway system [${http}]
+# @(-) --[no]text              publish the metrics to the (text-based) Prometheus TextFile Collector system [${text}]
+# @(-) --prepend=<name=value>  label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${prepend}]
+# @(-) --append=<name=value>   label to be appended to the telemetry metrics, may be specified several times or as a comma-separated list [${append}]
 #
 # The Tools Project: a Tools System and Paradigm for IT Production
 # Copyright (©) 1998-2023 Pierre Wieser (see AUTHORS)
@@ -33,9 +36,8 @@ use File::Find;
 
 use TTP::Constants qw( :all );
 use TTP::Message qw( :all );
+use TTP::Metric;
 use TTP::Path;
-
-my $TTPVars = TTP::TTPVars();
 
 my $defaults = {
 	help => 'no',
@@ -45,13 +47,19 @@ my $defaults = {
 	dirpath => '',
 	dircmd => '',
 	mqtt => 'no',
-	http => 'no'
+	http => 'no',
+	text => 'no',
+	prepend => '',
+	append => ''
 };
 
 my $opt_dirpath = $defaults->{dirpath};
 my $opt_dircmd = $defaults->{dircmd};
 my $opt_mqtt = false;
 my $opt_http = false;
+my $opt_text = false;
+my @opt_prepends = ();
+my @opt_appends = ();
 
 # global variables here
 my $dirCount = 0;
@@ -77,23 +85,57 @@ sub compute {
 sub doComputeSize {
 	msgOut( "computing the '$opt_dirpath' content size" );
 	find ( \&compute, $opt_dirpath );
-	msgOut( "  directories: $dirCount" );
-	msgOut( "  files: $fileCount" );
-	msgOut( "  size: $totalSize" );
+	print " directories: $dirCount".EOL;
+	print " files: $fileCount".EOL;
+	print " size: $totalSize".EOL;
 	my $code = 0;
-	if( $opt_mqtt || $opt_http ){
-		my $dummy = $opt_dummy ? "-dummy" : "-nodummy";
-		my $verbose = $opt_verbose ? "-verbose" : "-noverbose";
+	if( $opt_mqtt || $opt_http || $opt_text ){
 		my $path = $opt_dirpath;
-		$path =~ s/[:\/\\]+/_/g;
-		my $withMqtt = $opt_mqtt ? "-mqtt" : "-nomqtt";
-		my $withHttp = $opt_http ? "-http" : "-nohttp";
-		print `telemetry.pl publish -metric dirs_count -value $dirCount -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose $withMqtt $withHttp`;
-		$code += $?;
-		print `telemetry.pl publish -metric files_count -value $fileCount -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose $withMqtt $withHttp`;
-		$code += $?;
-		print `telemetry.pl publish -metric content_size -value $totalSize -label path=$path -httpPrefix ttp_filesystem_sizedir_ -mqttPrefix sizedir/ -nocolored $dummy $verbose $withMqtt $withHttp`;
-		$code += $?;
+		$path =~ s/\//_/g;
+		$path =~ s/\\/_/g;
+		my @labels = ( @opt_prepends, "path=$path", @opt_appends );
+		TTP::Metric->new( $ttp, {
+			name => 'dirs_count',
+			value => $dirCount,
+			type => 'gauge',
+			help => 'Directories count',
+			labels => \@labels
+		})->publish({
+			mqtt => $opt_mqtt,
+			mqttPrefix => 'sizedir/',
+			http => $opt_http,
+			httpPrefix => 'ttp_filesystem_sizedir_',
+			text => $opt_text,
+			textPrefix => 'ttp_filesystem_sizedir_'
+		});
+		TTP::Metric->new( $ttp, {
+			name => 'files_count',
+			value => $fileCount,
+			type => 'gauge',
+			help => 'Files count',
+			labels => \@labels
+		})->publish({
+			mqtt => $opt_mqtt,
+			mqttPrefix => 'sizedir/',
+			http => $opt_http,
+			httpPrefix => 'ttp_filesystem_sizedir_',
+			text => $opt_text,
+			textPrefix => 'ttp_filesystem_sizedir_'
+		});
+		TTP::Metric->new( $ttp, {
+			name => 'content_size',
+			value => $totalSize,
+			type => 'gauge',
+			help => 'Total size',
+			labels => \@labels
+		})->publish({
+			mqtt => $opt_mqtt,
+			mqttPrefix => 'sizedir/',
+			http => $opt_http,
+			httpPrefix => 'ttp_filesystem_sizedir_',
+			text => $opt_text,
+			textPrefix => 'ttp_filesystem_sizedir_'
+		});
 	}
 	if( $code ){
 		msgErr( "NOT OK" );
@@ -114,7 +156,10 @@ if( !GetOptions(
 	"dirpath=s"			=> \$opt_dirpath,
 	"dircmd=s"			=> \$opt_dircmd,
 	"mqtt!"				=> \$opt_mqtt,
-	"http!"				=> \$opt_http )){
+	"http!"				=> \$opt_http,
+	"text!"				=> \$opt_text,
+	"prepend=s@"		=> \@opt_prepends,
+	"append=s@"			=> \@opt_appends )){
 
 		msgOut( "try '".$running->command()." ".$running->verb()." --help' to get full usage syntax" );
 		TTP::exit( 1 );
@@ -132,6 +177,11 @@ msgVerbose( "found dirpath='$opt_dirpath'" );
 msgVerbose( "found dircmd='$opt_dircmd'" );
 msgVerbose( "found mqtt='".( $opt_mqtt ? 'true':'false' )."'" );
 msgVerbose( "found http='".( $opt_http ? 'true':'false' )."'" );
+msgVerbose( "found text='".( $opt_text ? 'true':'false' )."'" );
+@opt_prepends = split( /,/, join( ',', @opt_prepends ));
+msgVerbose( "found prepends='".join( ',', @opt_prepends )."'" );
+@opt_appends = split( /,/, join( ',', @opt_appends ));
+msgVerbose( "found appends='".join( ',', @opt_appends )."'" );
 
 # dircmd and dirpath options are not compatible
 my $count = 0;

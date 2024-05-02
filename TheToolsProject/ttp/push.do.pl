@@ -54,11 +54,12 @@ sub doPublish {
 		$asked += 1;
 		my @dirs = File::Spec->splitdir( $dir );
 		my $srcdir = File::Spec->rel2abs( File::Spec->catdir( File::Spec->curdir(), $dirs[scalar @dirs - 1] ));
-		msgOut( "  to $dir" );
-		msgVerbose( "from $srcdir" );
-		msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
-		if( !$running->dummy()){
-			my $removeTree = TTP::var([ 'deployments', 'before', 'removeTree' ]);
+		msgOut( " from $srcdir" );
+		msgOut( " to $dir" );
+		if( $running->dummy()){
+			msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
+		} else {
+			my $removeTree = $ttp->var([ 'deployments', 'before', 'removeTree' ]);
 			$removeTree = true if !defined $removeTree;
 			if( $removeTree ){
 				my $rc = pathrmdir( $dir );
@@ -82,7 +83,12 @@ sub doPublish {
 		msgOut( "tagging the git repository" );
 		my $now = localtime->strftime( '%Y%m%d_%H%M%S' );
 		my $message = $running->command()." ".$running->verb();
-		print `git tag -am "$message" $now`;
+		my $command = "git tag -am \"$message\" $now";
+		if( $running->dummy()){
+			msgDummy( $command );
+		} else {
+			print `$command`;
+		}
 	}
 	my $str = "$done/$asked subdirs copied";
 	if( $done == $asked && !TTP::errs()){
