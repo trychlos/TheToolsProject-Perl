@@ -54,7 +54,7 @@ sub doPublish {
 		$asked += 1;
 		my @dirs = File::Spec->splitdir( $dir );
 		my $srcdir = File::Spec->rel2abs( File::Spec->catdir( File::Spec->curdir(), $dirs[scalar @dirs - 1] ));
-		msgOut( " from $srcdir" );
+		msgVerbose( " from $srcdir" );
 		msgOut( " to $dir" );
 		if( $running->dummy()){
 			msgDummy( "File::Copy::Recursive->dircopy( $srcdir, $dir )" );
