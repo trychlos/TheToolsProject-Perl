@@ -87,6 +87,7 @@ sub doPublish {
 		if( $running->dummy()){
 			msgDummy( $command );
 		} else {
+			msgVerbose( $command );
 			print `$command`;
 		}
 	}
