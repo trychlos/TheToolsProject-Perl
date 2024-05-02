@@ -80,7 +80,6 @@
 		"deployments": {
 			"sourceDirs": [
 				"[eval:File::Spec->catdir( TTP::nodeRoot(), 'Site' )]",
-				"[eval:File::Spec->catdir( TTP::nodeRoot(), 'SiteResources' )]",
 				"[eval:File::Spec->catdir( TTP::nodeRoot(), 'TheToolsProject' )]"
 			],
 			"excludes": [
