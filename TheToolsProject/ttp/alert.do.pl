@@ -34,7 +34,6 @@ use JSON;
 use Path::Tiny;
 use Time::Moment;
 
-use TTP::Path;
 use TTP::SMTP;
 
 my $defaults = {
@@ -72,7 +71,7 @@ sub doJsonAlert {
 	if( $command ){
 		my $dir = $ttp->var([ 'alerts', 'withFile', 'dropDir' ]);
 		if( $dir ){
-			TTP::Path::makeDirExist( $dir );
+			TTP::makeDirExist( $dir );
 			my $data = {
 				emitter => $opt_emitter,
 				level => $opt_level,

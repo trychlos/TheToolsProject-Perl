@@ -42,7 +42,6 @@ use TTP::EP;
 use TTP::Finder;
 use TTP::Message qw( :all );
 use TTP::Node;
-use TTP::Path;
 
 # autoflush STDOUT
 $| = 1;
@@ -579,7 +578,7 @@ sub jsonAppend {
 	my $json = JSON->new;
 	my $str = $json->encode( $hash );
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
-	TTP::Path::makeDirExist( File::Spec->catdir( $vol, $dirs ));
+	TTP::makeDirExist( File::Spec->catdir( $vol, $dirs ));
 	# some daemons may monitor this file in order to be informed of various executions - make sure each record has an EOL
 	my $res = path( $path )->append_utf8( $str.EOL );
 	msgVerbose( "jsonAppend() returns ".Dumper( $res ));
@@ -633,7 +632,7 @@ sub jsonWrite {
 	my $json = JSON->new;
 	my $str = $json->encode( $hash );
 	my ( $vol, $dirs, $file ) = File::Spec->splitpath( $path );
-	TTP::Path::makeDirExist( File::Spec->catdir( $vol, $dirs ));
+	TTP::makeDirExist( File::Spec->catdir( $vol, $dirs ));
 	# some daemons may monitor this file in order to be informed of various executions - make sure each record has an EOL
 	# '$res' is an array with the original path and an interpreted one - may also return true
 	my $res = path( $path )->spew_utf8( $str.EOL );
@@ -850,6 +849,91 @@ sub filter {
 		push( @result, $it ) if !grep( /^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, $it ) && $it !~ /\(WAR\)/ && $it !~ /\(ERR\)/;
 	}
 	return \@result;
+}
+
+# -------------------------------------------------------------------------------------------------
+# returns the path requested by the given command
+# (I):
+# - the command to be executed
+# - an optional options hash with following keys:
+#   > makeExist, defaulting to false
+# ((O):
+# - returns a path of undef if an error has occured
+
+sub fromCommand {
+	my( $cmd, $opts ) = @_;
+	$opts //= {};
+	msgErr( "fromCommand() command is not specified" ) if !$cmd;
+	my $path = undef;
+	if( !TTP::errs()){
+		$path = `$cmd`;
+		msgErr( "fromCommand() command doesn't output anything" ) if !$path;
+	}
+	if( !TTP::errs()){
+		my @words = split( /\s+/, $path );
+		if( scalar @words < 2 ){
+			msgErr( "fromCommand() expect at least two words" );
+		} else {
+			$path = $words[scalar @words - 1];
+			msgErr( "fromCommand() found an empty path" ) if !$path;
+		}
+	}
+	if( !TTP::errs()){
+		my $makeExist = false;
+		$makeExist = $opts->{makeExist} if exists $opts->{makeExist};
+		if( $makeExist ){
+			my $rc = makeDirExist( $path );
+			$path = undef if !$rc;
+		}
+	}
+	$path = undef if TTP::errs();
+	return $path;
+}
+
+# -------------------------------------------------------------------------------------------------
+# make sure a directory exist
+# note that this does NOT honor the '-dummy' option as creating a directory is easy and a work may
+# be blocked without that
+# (I):
+# - the directory to be created if not exists
+# - an optional options hash with following keys:
+#   > allowVerbose whether you can call msgVerbose() function (false to not create infinite loop
+#     when called from msgXxx()), defaulting to true
+# (O):
+# returns true|false
+
+sub makeDirExist {
+	my ( $dir, $opts ) = @_;
+	$opts //= {};
+	my $allowVerbose = true;
+	$allowVerbose = $opts->{allowVerbose} if exists $opts->{allowVerbose};
+	my $result = false;
+	if( -d $dir ){
+		#msgVerbose( "makeDirExist() dir='$dir' exists" );
+		$result = true;
+	} else {
+		msgVerbose( "makeDirExist() make_path() dir='$dir'" ) if $allowVerbose;
+		my $error;
+		$result = true;
+		make_path( $dir, {
+			verbose => $ttp->runner()->verbose(),
+			error => \$error
+		});
+		# https://perldoc.perl.org/File::Path#make_path%28-%24dir1%2C-%24dir2%2C-....-%29
+		if( $error && @$error ){
+			for my $diag ( @$error ){
+				my ( $file, $message ) = %$diag;
+				if( $file eq '' ){
+					msgErr( $message );
+				} else {
+					msgErr( "$file: $message" );
+				}
+			}
+			$result = false;
+		}
+		msgVerbose( "makeDirExist() dir='$dir' result=$result" ) if $allowVerbose;
+	}
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------

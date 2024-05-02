@@ -31,7 +31,6 @@ use TTP::Constants qw( :all );
 use TTP::Credentials;
 use TTP::Message qw( :all );
 use TTP::OvhApi;
-use TTP::Path;
 
 # ------------------------------------------------------------------------------------------------
 # (I):

@@ -34,7 +34,6 @@ use TTP;
 use TTP::Constants qw( :all );
 use TTP::Credentials;
 use TTP::Message qw( :all );
-use TTP::Path;
 
 my $Const = {
 	# the list of system databases to be excluded

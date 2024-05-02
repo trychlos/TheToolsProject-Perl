@@ -31,7 +31,6 @@ use TTP;
 use TTP::Constants qw( :all );
 use TTP::Finder;
 use TTP::Message qw( :all );
-use TTP::Path;
 
 my $Const = {
 	# hardcoded subpaths to find the <service>.json files

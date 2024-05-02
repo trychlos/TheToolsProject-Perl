@@ -32,8 +32,6 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 
-use TTP::Path;
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',

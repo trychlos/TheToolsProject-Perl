@@ -14,7 +14,9 @@ TODO
 
    8 2024- 5- 2 honors text-based telemetry
 
-   8 2024- 5- 2 
+   8 2024- 5- 2 jsonRead should be only available through IJSONable (not in TTP)
+
+   9 2024- 5- 2 
 
 # -------------------------------------------------------------------------------------------------
 

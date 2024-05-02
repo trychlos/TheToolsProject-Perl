@@ -32,8 +32,6 @@
 use Config;
 use File::Spec;
 
-use TTP::Path;
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
@@ -98,7 +96,7 @@ sub doMoveDirs {
 				}
 			}
 			# and move the rest, making sure the initial path at least exists
-			TTP::Path::makeDirExist( $opt_targetpath );
+			TTP::makeDirExist( $opt_targetpath );
 			foreach my $it ( @list ){
 				my $source = _sourcePath( $it );
 				my $target = _targetPath( $it );
@@ -205,10 +203,10 @@ msgErr( "one of '--targetpath' and '--targetcmd' options must be specified" ) if
 
 # if we have a source cmd, get the path and check it exists
 # no need to make the dir exist: if not exist, then there is just nothing to move
-$opt_sourcepath = TTP::Path::fromCommand( $opt_sourcecmd ) if $opt_sourcecmd;
+$opt_sourcepath = TTP::fromCommand( $opt_sourcecmd ) if $opt_sourcecmd;
 
 # if we have a target cmd, get the path
-$opt_targetpath = TTP::Path::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
+$opt_targetpath = TTP::fromCommand( $opt_targetcmd ) if $opt_targetcmd;
 
 # --dirs option must be specified at the moment
 msgErr( "--dirs' option must be specified (at the moment)" ) if !$opt_dirs;
