@@ -62,6 +62,7 @@ use Proc::ProcessTable;
 use Role::Tiny::With;
 use Time::Piece;
 use vars::global qw( $ttp );
+use if $Config{osname} eq 'MSWin32', 'Win32::OLE';
 
 with 'TTP::IEnableable', 'TTP::IAcceptable', 'TTP::IFindable', 'TTP::IHelpable', 'TTP::IJSONable', 'TTP::IOptionable', 'TTP::ISleepable', 'TTP::IRunnable';
 
@@ -259,40 +260,78 @@ sub _metrics {
 	my ( $self, $publish ) = @_;
 
 	# running since x.xxxxx sec.
-	#my $since = sprintf( "%.5f", scalar(  localtime ) - scalar( $self->runnableStarted()));
-	my $since = $self->runnableStarted()->delta_microseconds( Time::Moment->now ) / 1000000;
-	print "since='$since'".EOL;
+	my $since = sprintf( "%.5f", $self->runnableStarted()->delta_microseconds( Time::Moment->now ) / 1000000 );
 	my $labels = [ "daemon=".$self->name() ];
+	push( @{$labels}, @{$self->{_labels}} ) if exists $self->{_labels};
 	my $rc = TTP::Metric->new( $ttp, {
-		name => 'ttp_backup_daemon_since_s',
+		name => 'ttp_backup_daemon_since',
 		value => $since,
 		type => 'gauge',
 		help => 'Backup daemon running since',
+		labels => $labels
 	})->publish( $publish );
 	foreach my $it ( sort keys %{$rc} ){
 		msgVerbose( __PACKAGE__."::_metrics() got rc->{$it}='$rc->{$it}'" );
 	}
 
 	# used memory
-	if( false ){
-		my $rc = TTP::Metric->new( $ttp, {
-			name => 'ttp_backup_daemon_memory_KB',
-			value => $self->_metrics_memory(),
-			type => 'gauge',
-			help => 'Backup daemon used memory',
-		})->publish( $publish );
-		foreach my $it ( sort keys %{$rc} ){
-			msgVerbose( __PACKAGE__."::_metrics() got rc->{$it}='$rc->{$it}'" );
-		}
+	$rc = TTP::Metric->new( $ttp, {
+		name => 'ttp_backup_daemon_memory_KB',
+		value => sprintf( "%.1f", $self->_metrics_memory()),
+		type => 'gauge',
+		help => 'Backup daemon used memory',
+	})->publish( $publish );
+	foreach my $it ( sort keys %{$rc} ){
+		msgVerbose( __PACKAGE__."::_metrics() got rc->{$it}='$rc->{$it}'" );
+	}
+
+	# page faults
+	$rc = TTP::Metric->new( $ttp, {
+		name => 'ttp_backup_daemon_page_faults_count',
+		value => $self->_metrics_page_faults(),
+		type => 'gauge',
+		help => 'Backup daemon page faults count',
+	})->publish( $publish );
+	foreach my $it ( sort keys %{$rc} ){
+		msgVerbose( __PACKAGE__."::_metrics() got rc->{$it}='$rc->{$it}'" );
+	}
+
+	# page file usage
+	$rc = TTP::Metric->new( $ttp, {
+		name => 'ttp_backup_daemon_page_file_usage_KB',
+		value => sprintf( "%.1f", $self->_metrics_page_file_usage()),
+		type => 'gauge',
+		help => 'Backup daemon page file usage',
+	})->publish( $publish );
+	foreach my $it ( sort keys %{$rc} ){
+		msgVerbose( __PACKAGE__."::_metrics() got rc->{$it}='$rc->{$it}'" );
 	}
 }
 
+# https://stackoverflow.com/questions/1115743/how-can-i-programmatically-determine-my-perl-programs-memory-usage-under-window
+# https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-process?redirectedfrom=MSDN
+
 sub _metrics_memory {
-	my $t = new Proc::ProcessTable;
-    foreach my $got  (@{$t->table} ){
-        next unless $got->pid eq $$;
-		print Dumper( $got );
-        return $got->size;
+	my $objWMI = Win32::OLE->GetObject( 'winmgmts:\\\\.\\root\\cimv2' );
+    my $processes = $objWMI->ExecQuery( "select * from Win32_Process where ProcessId=$$" );
+    foreach my $proc ( Win32::OLE::in( $processes )){
+        return $proc->{WorkingSetSize} / 1024;
+    }
+}
+
+sub _metrics_page_faults {
+	my $objWMI = Win32::OLE->GetObject( 'winmgmts:\\\\.\\root\\cimv2' );
+    my $processes = $objWMI->ExecQuery( "select * from Win32_Process where ProcessId=$$" );
+    foreach my $proc ( Win32::OLE::in( $processes )){
+       return $proc->{PageFaults};
+    }
+}
+
+sub _metrics_page_file_usage {
+	my $objWMI = Win32::OLE->GetObject( 'winmgmts:\\\\.\\root\\cimv2' );
+    my $processes = $objWMI->ExecQuery( "select * from Win32_Process where ProcessId=$$" );
+    foreach my $proc ( Win32::OLE::in( $processes )){
+        return $proc->{PageFileUsage};
     }
 }
 
@@ -631,6 +670,27 @@ sub messagingSub {
 		$self->{_mqtt_sub} = $sub;
 	} else {
 		msgErr( __PACKAGE__."::messagingSub() expects a code ref, got '".ref( $sub )."'" );
+	}
+
+	return $self;
+}
+
+# ------------------------------------------------------------------------------------------------
+# Add a 'name=value' label to the published metrics
+# (I):
+# - the name
+# - the value
+# (O):
+# - this same object
+
+sub metricLabelAppend {
+	my ( $self, $name, $value ) = @_;
+
+	if( $name && defined $value ){
+		$self->{_labels} = [] if !exists $self->{_labels};
+		push( @{$self->{_labels}}, "$name=$value" );
+	} else {
+		msgErr( __PACKAGE__."::metricLabelAppend() got name='$name' value='$value'" );
 	}
 
 	return $self;

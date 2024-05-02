@@ -576,6 +576,7 @@ if( !TTP::errs()){
 		if( $remoteService ){
 			msgVerbose( "monitored service '$monitoredService' successfully found in remote host '$opt_remote' configuration file" );
 			$daemon->{monitoredService} = TTP::Service->new( $ttp, { service => $monitoredService });
+			$daemon->metricLabelAppend( 'service', $monitoredService );
 		} else {
 			msgErr( "monitored service '$monitoredService' doesn't exist in remote host '$opt_remote' configuration file" );
 		}
