@@ -54,27 +54,6 @@ sub command {
 }
 
 # -------------------------------------------------------------------------------------------------
-# given a command output, extracts the [command.pl verb] lines, returning the rest as an array
-# (I):
-# - the command output
-# (O):
-# - the filtered command output as an array ref
-
-sub filter {
-	my ( $self, $output ) = @_;
-	my @result = ();
-	my @lines = split( /[\r\n]/, $output );
-	foreach my $it ( @lines ){
-		chomp $it;
-		$it =~ s/^\s*//;
-		$it =~ s/\s*$//;
-		#push( @result, $it ) if !grep( /^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, $it ) && $it !~ /\(WAR\)/ && $it !~ /\(ERR\)/;
-		push( @result, $it ) if $it !~ m/^\[/;
-	}
-	return \@result;
-}
-
-# -------------------------------------------------------------------------------------------------
 # A placeholder run() method which does nothing but may be called even if the implementation doesn't
 # need it - Let Optionable auto-initialize
 # (I):

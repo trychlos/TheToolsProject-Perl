@@ -90,6 +90,7 @@ sub alertsDir {
 # - evaluated: the evaluated command after macros replacements
 # - return: original exit code of the command
 # - result: true|false
+
 sub commandByOs {
 	my ( $args ) = @_;
 	my $result = {};
@@ -309,89 +310,6 @@ sub errs {
 }
 
 # -------------------------------------------------------------------------------------------------
-# recursively interpret the provided data for variables and computings
-#  and restart until all references have been replaced
-sub evaluate {
-	my ( $value ) = @_;
-	my %prev = ();
-	my $result = _evaluateRec( $value );
-	if( $result ){
-		while( !eq_deeply( $result, \%prev )){
-			%prev = %{$result};
-			$result = _evaluateRec( $result );
-		}
-	}
-	return $result;
-}
-
-sub _evaluateRec {
-	my ( $value ) = @_;
-	my $result = '';
-	my $type = ref( $value );
-	if( !$type ){
-		$result = _evaluateScalar( $value );
-	} elsif( $type eq 'ARRAY' ){
-		$result = [];
-		foreach my $it ( @{$value} ){
-			push( @{$result}, _evaluateRec( $it ));
-		}
-	} elsif( $type eq 'HASH' ){
-		$result = {};
-		foreach my $key ( keys %{$value} ){
-			$result->{$key} = _evaluateRec( $value->{$key} );
-		}
-	} else {
-		$result = $value;
-	}
-	return $result;
-}
-
-sub _evaluateScalar {
-	my ( $value ) = @_;
-	my $type = ref( $value );
-	my $evaluate = true;
-	if( $type ){
-		msgErr( "Toops::evaluateScalar() scalar expected, but '$type' found" );
-		$evaluate = false;
-	}
-	my $result = $value || '';
-	if( $evaluate ){
-		my $re = qr/
-			[^\[]*	# anything which doesn't contain any '['
-			|
-			[^\[]* \[(?>[^\[\]]|(?R))*\] [^\[]*
-		/x;
-		
-		if( false ){
-			my @matches = $result =~ /\[eval:($re)\]/g;
-			print "line='$result'".EOL;
-			print Dumper( @matches );
-		}
-		
-		# this weird code to let us manage some level of pseudo recursivity
-		$result =~ s/\[eval:($re)\]/_evaluatePrint( $1 )/eg;
-		$result =~ s/\[_eval:/[eval:/g;
-		$result =~ s/\[__eval:/[_eval:/g;
-		$result =~ s/\[___eval:/[__eval:/g;
-		$result =~ s/\[____eval:/[___eval:/g;
-		$result =~ s/\[_____eval:/[____eval:/g;
-	}
-	return $result;
-}
-
-sub _evaluatePrint {
-	my ( $value ) = @_;
-	my $result = eval $value;
-	# we cannot really emit a warning here as it is possible that we are in the way of resolving
-	# a still-undefined value. so have to wait until the end to resolve all values, but too late
-	# to emit a warning ?
-	#msgWarn( "something is wrong with '$value' as evaluation result is undefined" ) if !defined $result;
-	$result = $result || '(undef)';
-	#print "value='$value' result='$result'".EOL;
-	return $result;
-}
-
-# -------------------------------------------------------------------------------------------------
 # report an execution
 # The exact data, the target to report to and the used medium are up to the caller.
 # But at the moment we manage a) a JSON execution report file and b) a MQTT message.
@@ -432,7 +350,6 @@ sub executionReport {
 	}
 }
 
-# -------------------------------------------------------------------------------------------------
 # Complete the provided data with the data collected by TTP
 
 sub _executionReportCompleteData {
@@ -449,7 +366,6 @@ sub _executionReportCompleteData {
 	return $data;
 }
 
-# -------------------------------------------------------------------------------------------------
 # write an execution report to a file
 # the needed command is expected to be configured
 # managed macros:
@@ -491,7 +407,6 @@ sub _executionReportToFile {
 	return $res;
 }
 
-# -------------------------------------------------------------------------------------------------
 # send an execution report on the MQTT bus if Toops is configured for
 # managed macros:
 # - SUBJECT
@@ -567,52 +482,6 @@ sub exit {
 }
 
 # -------------------------------------------------------------------------------------------------
-# returns array with the pathname of the available commands
-# if the user has added a tree of its own besides of Toops, it should have set a TTP_ROOT environment
-# variable - else just stay in this current tree...
-sub getAvailableCommands {
-	# compute a TTP_ROOT array of directories
-	my @roots = ();
-	if( $ENV{TTP_ROOT} ){
-		@roots = split( ':', $ENV{TTP_ROOT} );
-	} else {
-		push( @roots, $ttp->{run}{command}{directory} );
-	}
-	my @commands = glob( File::Spec->catdir( $ttp->{run}{command}{directory}, "*.pl" ));
-	return @commands;
-}
-
-# -------------------------------------------------------------------------------------------------
-# read and evaluate the host configuration
-# if host is not specified, then return the configuration of the current host from TTPXXVars
-# send an error message if the top key of the read json is not the requested host name
-# eat this top key, adding a 'name' key to the data with the canonical (uppercase)  host name
-# (I):
-# - an optional hostname
-# - an optional options hash with following keys:
-#   > withEvaluate: default to true
-# (O):
-# - returns a reference to the (evaluated) host configuration with its new 'name' key
-sub getHostConfig {
-	#my ( $host, $opts ) = @_;
-	#if( !$host ){
-	#	return $TTPVars->{config}{host};
-	#}
-	#$opts //= {};
-	#my $hash = hostConfigRead( $host );
-	#if( $hash ){
-	#	$TTPVars->{evaluating} = $hash;
-	#	my $withEvaluate = true;
-	#	$withEvaluate = $opts->{withEvaluate} if exists $opts->{withEvaluate};
-	#	if( $withEvaluate ){
-	#		$hash = evaluate( $TTPVars->{evaluating} );
-	#	}
-	#	$TTPVars->{evaluating} = undef;
-	#}
-	#return $hash;
-}
-
-# -------------------------------------------------------------------------------------------------
 # returns a new unique temp filename
 
 sub getTempFileName {
@@ -630,7 +499,7 @@ sub getTempFileName {
 # as the only way for an external command to get the output of a sql batch is to pass through a tabular display output and re-interpretation
 # (I):
 # - an array of the lines outputed by a 'dbms.pl sql -tabular' command, which may contains several result sets
-#   it is expected the output has already be filtered through Toops::ttpFilter()
+#   it is expected the output has already be filtered through TTP::filter()
 # (O):
 # returns:
 # - an array of hashes if we have found a single result set
@@ -697,98 +566,13 @@ sub host {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Substitute the macros in a host configuration file
-# (I):
-# - the raw JSON hash
-# - an options hash with following keys:
-#   > host: the hostname being treated
-# (O):
-# - the same with substituted macros:
-#   > HOST
-sub hostConfigMacrosRec {
-	my ( $hash, $opts ) = @_;
-	my $ref = ref( $hash );
-	if( $ref eq 'HASH' ){
-		foreach my $key ( keys %{$hash} ){
-			$hash->{$key} = hostConfigMacrosRec( $hash->{$key}, $opts );
-		}
-	} elsif( $ref eq 'ARRAY' ){
-		my @array = ();
-		foreach my $it ( @{$hash} ){
-			push( @array, hostConfigMacrosRec( $it, $opts ));
-		}
-		$hash = \@array;
-	} elsif( !$ref ){
-		my $host = $opts->{host};
-		$hash =~ s/<HOST>/$host/g;
-	} else {
-		msgVerbose( "Toops::hostConfigMacrosRec() unmanaged ref: '$ref'" );
-	}
-	return $hash;
-}
-
-# -------------------------------------------------------------------------------------------------
-# read the host configuration without evaluation
-# (I):
-# - the hostname
-# - an optional options hash with following keys:
-#   > ignoreDisabled, defaulting to false
-# (O):
-# - returns the found data
-#   with a new 'name' key which contains this same hostname
-# or undef in case of an error
-# Manage macros:
-# - HOST
-sub hostConfigRead {
-	my ( $host, $opts ) = @_;
-	$opts //= {};
-	my $result = undef;
-	if( !$host ){
-		msgErr( "Toops::hostConfigRead() hostname expected" );
-	} else {
-		$result = jsonRead( TTP::Path::hostConfigurationPath( $host ));
-		if( exists( $result->{enabled} ) && !$result->{enabled} ){
-			my $ignoreDisabled = false;
-			$ignoreDisabled = $opts->{ignoreDisabled} if exists $opts->{ignoreDisabled};
-			msgErr( "Host configuration file is disabled, aborting" ) if !$ignoreDisabled;
-			$result = undef;
-		} else {
-			$result->{name} = $host;
-		}
-	}
-	$result = hostConfigMacrosRec( $result, { host => $host }) if defined $result;
-	return $result;
-}
-
-# -------------------------------------------------------------------------------------------------
-# Initialize an external script (i.e. a script which is not part of TTP, but would like take advantage of it)
-# (I):
-# (O):
-# - TTPVars hash ref
-sub initExtern {
-	#_bootstrap();
-
-	# Runnable role
-	#my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
-	#$ttp->{run}{command}{path} = $0;
-	#$ttp->{run}{command}{started} = Time::Moment->now;
-	#$ttp->{run}{command}{args} = \@ARGV;
-	#$ttp->{run}{command}{basename} = $file;
-	#$file =~ s/\.[^.]+$//;
-	#$ttp->{run}{command}{name} = $file;
-	
-	#$ttp->{run}{help} = scalar @ARGV ? false : true;
-
-	#return $TTPVars;
-}
-
-# -------------------------------------------------------------------------------------------------
 # Append a JSON element to a file
 # (I):
 # - the hash to be written into
 # - the full path to be created
 # (O):
 # - returns true|false
+
 sub jsonAppend {
 	my ( $hash, $path ) = @_;
 	msgVerbose( "jsonAppend() to '$path'" );
@@ -811,6 +595,7 @@ sub jsonAppend {
 #   > ignoreIfNotExist: defaulting to false
 # (O):
 # returns the read hash, or undef
+
 sub jsonRead {
 	my ( $conf, $opts ) = @_;
 	$opts //= {};
@@ -841,6 +626,7 @@ sub jsonRead {
 # - the full path to be created
 # (O):
 # - returns true|false
+
 sub jsonWrite {
 	my ( $hash, $path ) = @_;
 	msgVerbose( "jsonWrite() to '$path'" );
@@ -900,35 +686,6 @@ sub logsMain {
 
 sub logsRoot {
 	my $result = $ttp->node() ? ( $ttp->var( 'logsRoot' ) || tempDir()) : undef;
-	return $result;
-}
-
-# -------------------------------------------------------------------------------------------------
-# (recursively) move a directory and its content from a source to a target
-# this is a design decision to make this recursive copy file by file in order to have full logs
-# Toops allows to provide a system-specific command in its configuration file
-# well suited for example to move big files to network storage
-sub moveDir {
-	my ( $source, $target ) = @_;
-	my $result = false;
-	msgVerbose( "Toops::moveDir() source='$source' target='$target'" );
-	if( ! -d $source ){
-		msgWarn( "$source: directory doesn't exist" );
-		return true;
-	}
-	my $cmdres = commandByOs({
-		command => $ttp->var([ 'moveDir', 'byOS', $Config{osname}, 'command' ]),
-		macros => {
-			SOURCE => $source,
-			TARGET => $target
-		}
-	});
-	if( defined $cmdres->{command} ){
-		$result = $cmdres->{result};
-	} else {
-		$result = copyDir( $source, $target ) && removeTree( $source );
-	}
-	msgVerbose( "Toops::moveDir() result=$result" );
 	return $result;
 }
 
@@ -1019,6 +776,7 @@ sub print_rec {
 
 # -------------------------------------------------------------------------------------------------
 # delete a directory and all its content
+
 sub removeTree {
 	my ( $dir ) = @_;
 	my $result = true;
@@ -1056,67 +814,6 @@ sub run {
 }
 
 # -------------------------------------------------------------------------------------------------
-# Recursively search the provided array to find all occurrences of provided key
-# (E):
-# - array to be searched for
-# - searched key
-# - an optional options hash, which may have following keys:
-#   > none at the moment
-# (S):
-# returns a hash whose keys are the found workload names, values being arrays of key paths
-sub searchRecArray {
-	my ( $array, $searched, $opts, $recData ) = @_;
-	$opts //= {};
-	$recData //= {};
-	$recData->{path} = [] if !exists $recData->{path};
-	$recData->{result} = {} if !exists $recData->{path};
-	foreach my $it ( @{$array} ){
-		my $type = ref( $it );
-		if( $type eq 'ARRAY' ){
-			push( @{$recData->{path}}, '' );
-			TTP::searchRecArray( $it, $searched, $opts, $recData );
-		} elsif( $type eq 'HASH' ){
-			push( @{$recData->{path}}, '' );
-			TTP::searchRecHash( $it, $searched, $opts, $recData );
-		}
-	}
-	return $recData;
-}
-
-# -------------------------------------------------------------------------------------------------
-# Recursively search the provided hash to find all occurrences of provided key
-# (E):
-# - hash to be searched for
-# - searched key
-# - an optional options hash, which may have following keys:
-#   > none at the moment
-# (S):
-# returns a hash whose keys are the found names, values being arrays of key paths
-sub searchRecHash {
-	my ( $hash, $searched, $opts, $recData ) = @_;
-	$opts //= {};
-	$recData //= {};
-	$recData->{path} = [] if !exists $recData->{path};
-	$recData->{result} = [] if !exists $recData->{path};
-	foreach my $key ( keys %{$hash} ){
-		if( $key eq $searched ){
-			push( @{$recData->{result}}, { path => $recData->{path}, data => $hash->{$key} });
-		} else {
-			my $ref = $hash->{$key};
-			my $type = ref( $ref );
-			if( $type eq 'ARRAY' ){
-				push( @{$recData->{path}}, $key );
-				TTP::searchRecArray( $ref, $searched, $opts, $recData );
-			} elsif( $type eq 'HASH' ){
-				push( @{$recData->{path}}, $key );
-				TTP::searchRecHash( $ref, $searched, $opts, $recData );
-			}
-		}
-	}
-	return $recData;
-}
-
-# -------------------------------------------------------------------------------------------------
 # print a stack trace
 # https://stackoverflow.com/questions/229009/how-can-i-get-a-call-stack-listing-in-perl
 
@@ -1137,32 +834,13 @@ sub tempDir {
 }
 
 # -------------------------------------------------------------------------------------------------
-# re-evaluate both toops and (execution) host configurations
-# Rationale: we could have decided to systematically reevaluate the configuration data at each use
-# with the benefit that the data is always up to date
-# with the possible inconvenient of a rare condition where a command+verb execution will be logged
-# in two different log files, for example if executed between 23:59:59 and 00:00:01 and logs are daily.
-# So this a design decision to only evaluate the logs once at initialization of the standard 
-# command+verb execution.
-# The daemons which make use of TheToolsProject have their own decisions to be taken, but habits
-# want that daemons writes in the current log, not in an old one..
-sub ttpEvaluate {
-	# first initialize the targets so that the evaluations have values to replace with
-	#foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
-	#	$TTPVars->{config}{$key} = $TTPVars->{raw}{$key};
-	#}
-	# then evaluate
-	#foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
-	#	$TTPVars->{config}{$key} = evaluate( $TTPVars->{config}{$key} );
-	#}
-	# and reevaluates the logs too
-	#$ttp->{run}{logsMain} = File::Spec->catdir( TTP::Path::logsDailyDir(), 'main.log' );
-}
-
-# -------------------------------------------------------------------------------------------------
 # given a command output, extracts the [command.pl verb] lines, returning the rest as an array
+# (I):
+# - the output of a command, as a string
+# (O):
+# - a ref to an array of output lines, having removed the "[command.pl verb]" lines
 
-sub ttpFilter {
+sub filter {
 	my @lines = @_;
 	my @result = ();
 	foreach my $it ( @lines ){
@@ -1186,27 +864,6 @@ sub ttpFilter {
 
 sub var {
 	return $ttp->var( @_ );
-}
-
-# -------------------------------------------------------------------------------------------------
-# returns the content of a var, read from the provided base
-# (I):
-# - a reference to an array of keys to be read from (e.g. [ 'moveDir', 'byOS', 'MSWin32' ])
-# - the hash ref to be searched for
-# (O):
-# - the evaluated value of this variable, which may be undef
-sub varSearch {
-	my ( $keys, $base ) = @_;
-	my $found = true;
-	for my $k ( @{$keys} ){
-		if( exists( $base->{$k} )){
-			$base = $base->{$k};
-		} else {
-			$found = false;
-			last;
-		}
-	}
-	return $found ? $base : undef;
 }
 
 1;

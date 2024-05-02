@@ -68,7 +68,7 @@ sub doStop {
 	# rc is zero if OK
 	my $rc = $?;
 	if( $res && length $res && !$rc ){
-		$res = $running->filter( $res );
+		$res = TTP::filter( $res );
 		print join( '\n', @{$res} ).EOL;
 		my $result = true;
 		if( $opt_wait ){

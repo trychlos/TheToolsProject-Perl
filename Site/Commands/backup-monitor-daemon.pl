@@ -441,7 +441,7 @@ sub doWithNew {
 					msgVerbose( $command );
 					my $res = `$command`;
 					my $rc = $?;
-					$res = $daemon->filter( $res );
+					$res = TTP::filter( $res );
 					print join( '\n', @{$res} ).EOL;
 				} else {
 					msgWarn( "result is undefined, unable to restore" );

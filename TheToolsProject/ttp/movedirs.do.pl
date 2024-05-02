@@ -29,6 +29,7 @@
 # along with The Tools Project; see the file COPYING. If not,
 # see <http://www.gnu.org/licenses/>.
 
+use Config;
 use File::Spec;
 
 use TTP::Path;
@@ -102,7 +103,7 @@ sub doMoveDirs {
 				my $source = _sourcePath( $it );
 				my $target = _targetPath( $it );
 				msgOut( " moving '$source' to '$target'" );
-				my $res = TTP::moveDir( $source, $target );
+				my $res = _moveDir( $source, $target );
 				if( $res ){
 					$count += 1;
 				} else {
@@ -114,6 +115,35 @@ sub doMoveDirs {
 		msgOut( "'$opt_sourcepath' doesn't exist: nothing to move" );
 	}
 	msgOut( "$count moved directory(ies)" );
+}
+
+# (recursively) move a directory and its content from a source to a target
+# this is a design decision to make this recursive copy file by file in order to have full logs
+# Toops allows to provide a system-specific command in its configuration file
+# well suited for example to move big files to network storage
+
+sub _moveDir {
+	my ( $source, $target ) = @_;
+	my $result = false;
+	msgVerbose( "_moveDir() source='$source' target='$target'" );
+	if( ! -d $source ){
+		msgWarn( "$source: directory doesn't exist" );
+		return true;
+	}
+	my $cmdres = TTP::commandByOs({
+		command => $ttp->var([ 'moveDir', 'byOS', $Config{osname}, 'command' ]),
+		macros => {
+			SOURCE => $source,
+			TARGET => $target
+		}
+	});
+	if( defined $cmdres->{command} ){
+		$result = $cmdres->{result};
+	} else {
+		$result = TTP::copyDir( $source, $target ) && removeTree( $source );
+	}
+	msgVerbose( "_moveDir() result=$result" );
+	return $result;
 }
 
 sub _sourcePath {

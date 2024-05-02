@@ -173,7 +173,7 @@ sub doTablesCount {
 		last if $count >= $opt_limit && $opt_limit >= 0;
 		my $command = "dbms.pl list -instance $opt_instance -database $db -listtables -nocolored $dummy $verbose";
 		my $tables = `$command`;
-		$tables = $running->filter( $tables );
+		$tables = TTP::filter( $tables );
 		foreach my $tab ( @{$tables} ){
 			last if $count >= $opt_limit && $opt_limit >= 0;
 			msgOut( " table '$tab'" );

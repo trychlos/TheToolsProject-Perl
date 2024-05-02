@@ -77,7 +77,7 @@ sub doJsonAlert {
 				emitter => $opt_emitter,
 				level => $opt_level,
 				message => $opt_message,
-				host => TTP::host(),
+				host => $ttp->node()->name(),
 				stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
 			};
 			my $json = JSON->new;
@@ -119,7 +119,7 @@ sub doMqttAlert {
 			emitter => $opt_emitter,
 			level => $opt_level,
 			message => $opt_message,
-			host => TTP::host(),
+			host => $ttp->node()->name(),
 			stamp => localtime->strftime( "%Y-%m-%d %H:%M:%S" )
 		};
 		my $json = JSON->new;
