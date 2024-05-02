@@ -85,11 +85,11 @@ my $Const = {
 	],
 	# labels must match this regex
 	# https://prometheus.io/docs/concepts/data_model/
-	labelNameRE => '[a-zA-Z_][a-zA-Z0-9_]*',
+	labelNameRE => '^[a-zA-Z_][a-zA-Z0-9_]*$',
 	labelValueRE => '[^/]*',
 	# names must match this regex
 	# https://prometheus.io/docs/concepts/data_model/
-	nameRE => '[a-zA-Z_:][a-zA-Z0-9_:]*'
+	nameRE => '^[a-zA-Z_:][a-zA-Z0-9_:]*$'
 };
 
 ### Private methods
