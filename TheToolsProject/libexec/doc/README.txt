@@ -7,28 +7,15 @@ Toops for Windows:
 	> Win32::SqlServer https://www.sommarskog.se/MSSQL/index.html
 - install and configure Toops for your site:
 	> set the PERL5LIB global environment variable to address the Toops directory
-	> set a TTP_CONFDIR global environment variable to address the directory which contains your site configuration
+	> set a TTP_ROOTS global environment variable to address the directory which contains your site configuration
 	> update the PATH to address all your Toops/bin directories
 	> install CPAN packages
 	  Data::UUID
 	  Devel::StackTrace
 	  Net::MQTT::Simple
 	  Proc::Background
-
-Site configuration:
-Install in TTP_CONFDIR/:
-- a copy of TOOPS_ROOT/Mods/etc/toops.json.default as TTP_CONFDIR/toops.json
-- update it according your needs and preferences
-
-Host configuration:
-Install in TTP_CONFDIR/ as <hostname>.json:
-- describe your services
-  A service is characterized by the fact that we want describe in this configuration file the difference for *this* service between several environments
-  e.g. TOM59 service is referenced in DEV and in PROD/. It is most probably closely tied to a business concept.
-
-Windows Note:
-	We do not know at the moment how to ssh into a remote host to exec a remote script.
-	We so get stuck in our machine.
+	  Proc::ProcessTable
+	  vars::global
 
 # when writing and using new commands or verbs
 # --------------------------------------------

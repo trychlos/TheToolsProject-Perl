@@ -18,10 +18,7 @@
 #
 # Daemons management
 #
-# A daemon is identified by:
-# - its JSON configuration (we are sure there is one)
-# - maybe the service name it is registered with (but this registration is optional)
-# As a runtime option, we can also use a concatenation of the hostname and the json basename.
+# A daemon is identified by its JSON configuration (we are sure there is one).
 #
 # JSON configuration:
 #
@@ -39,8 +36,6 @@
 #   defaulting to 60000 ms (1 mn)
 # - textName: the name of the metric published to the text-based telemetry system
 #   optional, no default, override the 'nameRE' regular expression if provided
-# - nameRE: the regular expression to apply to the daemon name when computing the metric name
-#   defaulting to 's/-/_/g'
 #
 # Also the daemon writer mmust be conscious of the dynamic character of TheToolsProject.
 # In particular and at least, many output directories (logs, temp files and so on) may be built on a daily basis.
@@ -67,6 +62,7 @@ use Data::Dumper;
 use File::Spec;
 use IO::Socket::INET;
 use Proc::Background;
+use Proc::ProcessTable;
 use Role::Tiny::With;
 use Time::Piece;
 use vars::global qw( $ttp );
@@ -109,13 +105,11 @@ my $Const = {
 			'daemons'
 		],
 		sufix => '.json'
-	},
-	# when publishing the status as a telemetry
-	nameRE => 's/-/_/g'
+	}
 };
 
 ### Private functions
-### Must be explicitely called with $self as first argument
+### Must be explicitely called with $daemon as first argument
 
 # ------------------------------------------------------------------------------------------------
 # answers to 'help' command
@@ -179,6 +173,8 @@ sub _do_terminate {
 
 # ------------------------------------------------------------------------------------------------
 # the daemon advertize of its status every 'messagingInterval' seconds (defaults to 60)
+# topic is 'WS22PROD1/daemon/tom17-backup-monitor-daemon/status'
+# payload is 'running since 2024-05-02 18:44:44.37612'
 
 sub _mqtt_advertize {
 	my ( $self ) = @_;
@@ -248,7 +244,7 @@ sub _daemonize {
 # the daemon advertize of its status every 'httpingInterval' seconds (defaults to 60)
 # the metric advertizes the last time we have seen the daemon alive
 # (I):
-# - the value to be advertized, defaulting to '1'
+# - the value to be advertized, set to false at the daemon termination
 
 sub _http_advertize {
 	my ( $self, $value ) = @_;
@@ -258,11 +254,10 @@ sub _http_advertize {
 	my $data = $self->jsonData();
 	if( exists( $data->{httpName} )){
 		$name = $data->{httpName};
-	} else {
-		my $re = $Const->{nameRE};
-		$re = $data->{nameRE} if exists $data->{nameRE};
-		$name =~ $re;
 	}
+	# make sure dashes '-' are replaced with undescores '_'
+	$name =~ s/-/_/g;
+	# and provide the metrics
 	TTP::Metric->new( $ttp, {
 		name => $name,
 		value => $value,
@@ -682,11 +677,8 @@ sub terminate {
 	TTP::MQTT::disconnect( $self->{_mqtt} ) if $self->{_mqtt};
 
 	# advertize http and text-based telemetry
-	$self->_http_advertize( 0 ) if $self->httpingInterval() > 0;
-	$self->_text_advertize( 0 ) if $self->textingInterval() > 0;
-
-	# close MQTT connection
-	TTP::MQTT::disconnect( $self->{_mqtt} ) if $self->{_mqtt};
+	$self->_http_advertize( false ) if $self->httpingInterval() > 0;
+	$self->_text_advertize( false ) if $self->textingInterval() > 0;
 
 	# close TCP connection
 	$self->{_socket}->close();
