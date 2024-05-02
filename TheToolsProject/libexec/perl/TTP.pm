@@ -63,8 +63,6 @@ my $Const = {
 	}
 };
 
-my $TTPVars = {};
-
 # -------------------------------------------------------------------------------------------------
 # Returns the configured alertsDir (when alerts are sent by file), defaultin gto tempDir()
 # (I):
@@ -556,7 +554,7 @@ sub _executionReportToMqtt {
 
 # -------------------------------------------------------------------------------------------------
 # exit the command
-# Return code is optional, defaulting to TTPVars->{run}{exitCode}
+# Return code is optional, defaulting to IRunnable count of errors
 
 sub exit {
 	my $rc = shift || $ttp->runner()->runnableErrs();
@@ -586,7 +584,7 @@ sub getAvailableCommands {
 
 # -------------------------------------------------------------------------------------------------
 # read and evaluate the host configuration
-# if host is not specified, then return the configuration of the current host from TTPVars
+# if host is not specified, then return the configuration of the current host from TTPXXVars
 # send an error message if the top key of the read json is not the requested host name
 # eat this top key, adding a 'name' key to the data with the canonical (uppercase)  host name
 # (I):
@@ -596,22 +594,22 @@ sub getAvailableCommands {
 # (O):
 # - returns a reference to the (evaluated) host configuration with its new 'name' key
 sub getHostConfig {
-	my ( $host, $opts ) = @_;
-	if( !$host ){
-		return $TTPVars->{config}{host};
-	}
-	$opts //= {};
-	my $hash = hostConfigRead( $host );
-	if( $hash ){
-		$TTPVars->{evaluating} = $hash;
-		my $withEvaluate = true;
-		$withEvaluate = $opts->{withEvaluate} if exists $opts->{withEvaluate};
-		if( $withEvaluate ){
-			$hash = evaluate( $TTPVars->{evaluating} );
-		}
-		$TTPVars->{evaluating} = undef;
-	}
-	return $hash;
+	#my ( $host, $opts ) = @_;
+	#if( !$host ){
+	#	return $TTPVars->{config}{host};
+	#}
+	#$opts //= {};
+	#my $hash = hostConfigRead( $host );
+	#if( $hash ){
+	#	$TTPVars->{evaluating} = $hash;
+	#	my $withEvaluate = true;
+	#	$withEvaluate = $opts->{withEvaluate} if exists $opts->{withEvaluate};
+	#	if( $withEvaluate ){
+	#		$hash = evaluate( $TTPVars->{evaluating} );
+	#	}
+	#	$TTPVars->{evaluating} = undef;
+	#}
+	#return $hash;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -625,6 +623,65 @@ sub getTempFileName {
 	my $tempfname = File::Spec->catfile( logsCommands(), "$fname-$random.tmp" );
 	msgVerbose( "getTempFileName() tempfname='$tempfname'" );
 	return $tempfname;
+}
+
+# -------------------------------------------------------------------------------------------------
+# Converts back the output of TTP::displayTabular() function to an array of hashes
+# as the only way for an external command to get the output of a sql batch is to pass through a tabular display output and re-interpretation
+# (I):
+# - an array of the lines outputed by a 'dbms.pl sql -tabular' command, which may contains several result sets
+#   it is expected the output has already be filtered through Toops::ttpFilter()
+# (O):
+# returns:
+# - an array of hashes if we have found a single result set
+# - an array of arrays of hashes if we have found several result sets
+
+sub hashFromTabular {
+	my ( $self, $output ) = @_;
+	my $result = [];
+	my $multiple = false;
+	my $array = [];
+	my $sepCount = 0;
+	my @columns = ();
+	foreach my $line ( @{$output} ){
+		if( $line =~ /^\+---/ ){
+			$sepCount += 1;
+			next;
+		}
+		# found another result set
+		if( $sepCount == 4 ){
+			$multiple = true;
+			push( @{$result}, $array );
+			$array = [];
+			@columns = ();
+			$sepCount = 1;
+		}
+		# header line -> provide column names
+		if( $sepCount == 1 ){
+			@columns = split( /\s*\|\s*/, $line );
+			shift @columns;
+		}
+		# get data
+		if( $sepCount == 2 ){
+			my @data = split( /\s*\|\s*/, $line );
+			shift @data;
+			my $row = {};
+			for( my $i=0 ; $i<scalar @columns ; ++$i ){
+				$row->{$columns[$i]} = $data[$i];
+			}
+			push( @{$array}, $row );
+		}
+		# end of the current result set
+		#if( $sepCount == 3 ){
+		#}
+	}
+	# at the end, either push the current array, or set it
+	if( $multiple ){
+		push( @{$result}, $array );
+	} else {
+		$result = $array;
+	}
+	return $result;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -709,7 +766,7 @@ sub hostConfigRead {
 # (O):
 # - TTPVars hash ref
 sub initExtern {
-	_bootstrap();
+	#_bootstrap();
 
 	# Runnable role
 	#my( $vol, $dirs, $file ) = File::Spec->splitpath( $0 );
@@ -720,9 +777,9 @@ sub initExtern {
 	#$file =~ s/\.[^.]+$//;
 	#$ttp->{run}{command}{name} = $file;
 	
-	$ttp->{run}{help} = scalar @ARGV ? false : true;
+	#$ttp->{run}{help} = scalar @ARGV ? false : true;
 
-	return $TTPVars;
+	#return $TTPVars;
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -1091,15 +1148,15 @@ sub tempDir {
 # want that daemons writes in the current log, not in an old one..
 sub ttpEvaluate {
 	# first initialize the targets so that the evaluations have values to replace with
-	foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
-		$TTPVars->{config}{$key} = $TTPVars->{raw}{$key};
-	}
+	#foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
+	#	$TTPVars->{config}{$key} = $TTPVars->{raw}{$key};
+	#}
 	# then evaluate
-	foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
-		$TTPVars->{config}{$key} = evaluate( $TTPVars->{config}{$key} );
-	}
+	#foreach my $key ( @{$TTPVars->{Toops}{ConfigKeys}} ){
+	#	$TTPVars->{config}{$key} = evaluate( $TTPVars->{config}{$key} );
+	#}
 	# and reevaluates the logs too
-	$ttp->{run}{logsMain} = File::Spec->catdir( TTP::Path::logsDailyDir(), 'main.log' );
+	#$ttp->{run}{logsMain} = File::Spec->catdir( TTP::Path::logsDailyDir(), 'main.log' );
 }
 
 # -------------------------------------------------------------------------------------------------
@@ -1115,12 +1172,6 @@ sub ttpFilter {
 		push( @result, $it ) if !grep( /^\[|\(ERR|\(DUM|\(VER|\(WAR|^$/, $it ) && $it !~ /\(WAR\)/ && $it !~ /\(ERR\)/;
 	}
 	return \@result;
-}
-
-# -------------------------------------------------------------------------------------------------
-# Used by verbs to access our global variables
-sub TTPVars {
-	return $TTPVars;
 }
 
 # -------------------------------------------------------------------------------------------------

@@ -129,7 +129,6 @@ sub mqttPublish {
 		$command =~ s/<SUBJECT>/$topic/;
 		$command =~ s/<DATA>/$value/;
 		$command =~ s/<OPTIONS>//;
-		my $TTPVars = TTP::TTPVars();
 		my $dummy = $ttp->{run}{dummy} ? "-dummy" : "-nodummy";
 		my $verbose = $ttp->{run}{verbose} ? "-verbose" : "-noverbose";
 		print `$command -nocolored $dummy $verbose`;

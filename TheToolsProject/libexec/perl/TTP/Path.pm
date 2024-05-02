@@ -225,7 +225,7 @@ sub makeDirExist {
 		my $error;
 		$result = true;
 		make_path( $dir, {
-			verbose => TTP::TTPVars()->{run}{verbose},
+			verbose => $ttp->runner()->verbose(),
 			error => \$error
 		});
 		# https://perldoc.perl.org/File::Path#make_path%28-%24dir1%2C-%24dir2%2C-....-%29

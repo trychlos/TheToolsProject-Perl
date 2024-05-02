@@ -106,7 +106,7 @@
 							"ttp.pl list -nocolored -services"
 						],
 						"commands0": [
-							"daemon.pl start -nocolored -json [eval:File::Spec->catfile( $TTPVars->{config}{site}{daemonsDir}, 'tom59-backup-monitor-daemon.json' )] -- -remote NS3232346"
+							"daemon.pl start -nocolored -json [eval:File::Spec->catfile( TTP::var([ 'site', 'daemonsDir' ]), 'tom59-backup-monitor-daemon.json' )] -- -remote NS3232346"
 						]
 					}
 				]

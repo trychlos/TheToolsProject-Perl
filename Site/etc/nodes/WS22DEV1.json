@@ -26,7 +26,7 @@
 					{
 						"label": "Advertize at startup",
 						"commands": [
-							"call [eval:File::Spec->catfile( $TTPVars->{config}{site}{commandsDir}, 'startup.cmd' )]"
+							"call [eval:File::Spec->catfile( TTP::var([ 'site', 'commandsDir' ]), 'startup.cmd' )]"
 						]
 					}
 				]

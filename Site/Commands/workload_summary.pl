@@ -128,7 +128,7 @@ sub printSummary {
 	$stdout .= "+".TTP::pad( "", $totLength-2, '=' )."+".EOL;
 	# both send the summary to the log (here to stdout) and execute the provided command
 	# must manage SUBJECT and OPTIONS macros
-	my $command = $TTPVars->{config}{site}{workloadSummary}{command};
+	my $command = $ttp->var([ 'site', 'workloadSummary', 'command' ]);
 	if( $command ){
 		my $host = $ttp->node()->name();
 		my $textfname = TTP::getTempFileName();

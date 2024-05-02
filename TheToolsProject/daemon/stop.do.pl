@@ -34,8 +34,6 @@ use Time::Piece;
 
 use TTP::Daemon;
 
-my $TTPVars = TTP::TTPVars();
-
 my $defaults = {
 	help => 'no',
 	colored => 'no',
