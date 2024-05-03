@@ -11,8 +11,6 @@ TODO
 
   16 2024- 5- 2 on ws12dev1, startup doesn't send alerts
 
-  17 2024- 5- 3 ns332346 tasks didn't execute this morning 
-
   18 2024- 5- 3 ws22prod1
                 Can't stat //ns3232346.ovh.net/C/INLINGUA/dailyLogs/240503/execReports: No such file or directory
                  at C:\INLINGUA\Site\Commands\backup-monitor-daemon.pl line 507.
@@ -21,11 +19,8 @@ TODO
 				One line is normal as long as there is not yet any execution report to create the directory
 				Why this second line ?
 
-  19 2024- 5- 3 ws22prod1 tasks didn't execute to purge the logs directories
-
-  23 2024- 5- 3 [smtp.pl send] (ERR) Mail::send() expect smtp gateway, not found
-
-  25 2024- 5- 3 
+  25 2024- 5- 3 ttp->var() and others should be able to return a composite data (not only a scalar)
+                and ttp.pl vars and others should be able to display them
 
   26 2024- 5- 3 
 
@@ -73,6 +68,12 @@ DONE
   13 2024- 5- 2 the daemon should be able to add its own mqtt topics
      2024- 5- 2 done
 
+  17 2024- 5- 3 ns332346 tasks didn't execute this morning 
+	 2024- 5- 3 fixed with #24
+
+  19 2024- 5- 3 ws22prod1 tasks didn't execute to purge the logs directories
+	 2024- 5- 3 fixed with #24
+
   20 2024- 5- 3 ttp.pl vars -logsCommands -nocolored
                 ws12dev1 Can't call method "verbose" on an undefined value at C:\INLINGUA\dev\scripts\TheToolsProject\libexec\perl/TTP.pm line 774.
 				ns3232346 Can't call method "verbose" on an undefined value at C:\INLINGUA\TheToolsProject\libexec\perl/TTP.pm line 918.
@@ -83,6 +84,9 @@ DONE
 
   22 2024- 5- 3 Type of arg 1 to Try::Tiny::catch must be block or sub {} (not reference constructor) at C:\INLINGUA\TheToolsProject\libexec\perl/TTP/SMTP.pm line 99, near "};"
 	 2024- 5- 3 fixed
+
+  23 2024- 5- 3 [smtp.pl send] (ERR) Mail::send() expect smtp gateway, not found
+     2024- 5- 3 fixed
 
   24 2024- 5- 3 ns3232346 C:\Users\inlingua-user>services.pl list -workload daily.morning -commands -hidden -nocolored
                 [services.pl list] displaying workload commands defined in 'NS3232346\daily.morning'...

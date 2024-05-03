@@ -44,15 +44,9 @@ sub send {
 	msgErr( "Mail::send() expect subject, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{subject};
 	msgErr( "Mail::send() expect a content, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{text} && !$msg->{html};
 	msgErr( "Mail::send() expect at least one target email address, not found" ) if $msg && ref( $msg ) eq 'HASH' && !$msg->{to};
-	my $gateway = undef;
 	if( !TTP::errs()){
-		$gateway = $ttp->var([ 'SMTPGateway' ]);
-		msgErr( "Mail::send() expect smtp gateway, not found" ) if !$gateway;
-		msgErr( "Mail::send() password is mandatory if a username is specified" ) if $gateway && $gateway->{username} && !$gateway->{password};
-	}
-	if( !TTP::errs()){
-		my $sender = 'me@localhost';
-		$sender = $gateway->{mailfrom} if exists $gateway->{mailfrom};
+		my $sender = $ttp->var([ 'SMTPGateway', 'mailfrom' ]);
+		$sender = 'me@localhost' if !$sender;
 		$sender = $msg->{from} if exists $msg->{from};
 
 		my $email = Email::Stuffer->new({
@@ -63,15 +57,15 @@ sub send {
 		$email->text_body( $msg->{text} ) if $msg->{text};
 		$email->html_body( $msg->{html} ) if $msg->{html};
 
-		my $debug = false;
-		$debug = $gateway->{debug} if exists $gateway->{debug};
-		$debug = $msg->{debug} if exists $msg->{debug} && defined $msg->{debug};
+		my $debug = $ttp->var([ 'SMTPGateway', 'debug' ]);
+		$debug = false if !defined $debug;
+		$debug = $msg->{debug} if exists $msg->{debug};
 
 		# Email::Sender::Transport::SMTP is able to choose a default port if we set the 'ssl' option to 'ssl' or true
 		# but is not able to set a default ssl option starting from the port - fix that here
 		my $opts = {};
-		$opts->{host} = $gateway->{host} || 'localhost';
-		$opts->{port} = $gateway->{port} if $gateway->{port};
+		$opts->{host} = $ttp->var([ 'SMTPGateway', 'host' ]) || 'localhost';
+		$opts->{port} = $ttp->var([ 'SMTPGateway', 'port' ]);
 		#$opts->{sasl_authenticator} = $sasl;
 		
 		# use Credentials package to manage username and password (if any)
@@ -80,13 +74,13 @@ sub send {
 		$opts->{sasl_username} = $username if $username;
 		$opts->{sasl_password} = $password if $username;
 
-		$opts->{helo} = $gateway->{helo} || TTP::host();
-		$opts->{ssl} = $gateway->{security} if $gateway->{security};
-		if( $gateway->{port} && !$gateway->{security} ){
-			$opts->{ssl} = 'ssl' if $gateway->{port} == 465;
-			$opts->{ssl} = 'starttls' if $gateway->{port} == 587;
+		$opts->{helo} = $ttp->var([ 'SMTPGateway', 'helo' ]) || $ttp->node()->name();
+		$opts->{ssl} = $ttp->var([ 'SMTPGateway', 'security' ]);
+		if( $opts->{port} && !$opts->{ssl} ){
+			$opts->{ssl} = 'ssl' if $opts->{port} == 465;
+			$opts->{ssl} = 'starttls' if $opts->{port} == 587;
 		}
-		$opts->{timeout} = $gateway->{timeout} || 60;
+		$opts->{timeout} = $ttp->var([ 'SMTPGateway', 'timeout' ]) || 60;
 		$opts->{debug} = $debug;
 		$opts->{ssl_options} = { SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE };
 		my $transport = Email::Sender::Transport::SMTP->new( $opts );
