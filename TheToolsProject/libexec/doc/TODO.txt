@@ -8,6 +8,7 @@ TODO
   14 2024- 5- 2 jsonRead should be only available through IJSONable (not in TTP)
 
   15 2024- 1-29 Toops::getOptions doesn't work as we do not know how to pass arguments to GetOptions()
+     2024- 5- 2 these are called 'named options' and are got in the function through a hash though I don't know at the moment how to dintinguish between a hash and a hash ref
 
   16 2024- 5- 2 on ws12dev1, startup doesn't send alerts
 
@@ -22,7 +23,11 @@ TODO
   25 2024- 5- 3 ttp->var() and others should be able to return a composite data (not only a scalar)
                 and ttp.pl vars and others should be able to display them
 
-  26 2024- 5- 3 
+  26 2024- 5- 3 upgrade Canal33 backups from every.5h to every.2h (like the Tom's)
+
+  27 2024- 5- 3 archivesBackups should be set when purging dailyBackups so that we keep for example 5 days in daily Backups and move the 6th to the archives
+
+  29 2024- 5- 3 
 
 # -------------------------------------------------------------------------------------------------
 
@@ -92,3 +97,6 @@ DONE
                 [services.pl list] displaying workload commands defined in 'NS3232346\daily.morning'...
                 [services.pl list] 0 found defined command(s)
 	 2024- 5- 3 fixed with #6
+
+  28 2024- 5- 3 services.pl list -commands: tasks of any workload hide tasks of other workloads
+     2024- 5- 3 fixed by requiring the exact wanted workload

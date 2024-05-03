@@ -97,14 +97,12 @@ sub getDefinedWorktasks {
 	foreach my $it ( @{$services} ){
 		my $service = TTP::Service->new( $ttp, { service => $it });
 		if( !$service->hidden() || $displayHiddens ){
-			my $workloads = $service->var([ 'workloads' ]);
-			#print Dumper( $workloads );
-			if( exists( $workloads->{$workload} )){
-				my @tasks = @{$workloads->{$workload}};
-				foreach my $t ( @tasks ){
+			my $tasks = $service->var([ 'workloads', $workload ]);
+			if( $tasks ){
+				foreach my $t ( @{$tasks} ){
 					$t->{service} = $service->name();
 				}
-				@list = ( @list, @tasks );
+				@list = ( @list, @{$tasks} );
 			}
 		}
 	}
