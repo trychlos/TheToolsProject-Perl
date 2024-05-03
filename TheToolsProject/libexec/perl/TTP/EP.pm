@@ -154,68 +154,6 @@ sub var {
 	return $value;
 }
 
-sub var_old {
-	my ( $self, $keys, $base ) = @_;
-	#$varDebug = grep( 'executionReports', @{$keys} );
-	print __PACKAGE__."::var() entering with keys='$keys' base='".( defined $base ? $base : '(undef)' )."'".EOL if $varDebug;
-	my $found = undef;
-	if( defined( $base )){
-		$found = $self->_var_rec( $keys, $base );
-	} else {
-		# search in node if it is defined
-		my $object = $self->node();
-		$found = $self->var( $keys, $object->jsonData()) if !defined( $found ) && defined( $object );
-		print  __PACKAGE__."::var() node is not set".EOL if $varDebug && !$object;
-		print  __PACKAGE__."::var() after node found='".( defined $found ? $found : '(undef)' )."'".EOL if $varDebug;
-		# or search in the site for all known historical keys
-		$object = $self->site();
-		my @newKeys = ref $keys eq 'ARRAY' ? @{$keys} : ( $keys );
-		unshift( @newKeys, [ '', 'toops', 'TTP' ] );
-		$found = $self->var( \@newKeys, $object->jsonData()) if !defined( $found ) && defined( $object );
-		print  __PACKAGE__."::var() site is not set".EOL if $varDebug && !$object;
-		print  __PACKAGE__."::var() after site found='".( defined $found ? $found : '(undef)' )."'".EOL if $varDebug && $object;
-	}
-	return $found;
-}
-
-# keys is a scalar, or an array of scalars, or an array of arrays of scalars
-sub _var_rec {
-	my ( $self, $keys, $base, $startBase ) = @_;
-	print __PACKAGE__."::_var_rec() entering with keys='$keys' base='".( defined $base ? $base : '(undef)' )."'".EOL if $varDebug;
-	return $base if !defined( $base ) || ref( $base ) ne 'HASH';
-	$startBase = $startBase || $base;
-	my $ref = ref( $keys );
-	#print "keys=[".( ref( $keys ) eq 'ARRAY' ? join( ',', @{$keys} ) : $keys )."] base=$base".EOL;
-	if( $ref eq 'ARRAY' ){
-		for( my $i=0 ; $i<scalar @{$keys} ; ++$i ){
-			my $k = $keys->[$i];
-			$ref = ref( $k );
-			if( $ref eq 'ARRAY' ){
-				my @newKeys = @{$keys};
-				for( my $j=0 ; $j<scalar @{$k} ; ++$j ){
-					$newKeys[$i] = $k->[$j];
-					$base = $startBase;
-					$base = $self->_var_rec( \@newKeys, $base, $startBase );
-					last if defined( $base );
-				}
-			} elsif( $ref ){
-				msgErr( __PACKAGE__."::_var_rec() unexpected intermediate ref='$ref'" );
-			} else {
-				#print __PACKAGE__."::_var_rec() searching for '$k' key in $base".EOL;
-				$base = $self->_var_rec( $k, $base, $startBase );
-			}
-		}
-	} elsif( $ref ){
-		msgErr( __PACKAGE__."::_var_rec() unexpected final ref='$ref'" );
-	} else {
-		# the key here may be empty when targeting the top of the hash
-		$base = $keys ? $base->{$keys} : $base;
-		#print __PACKAGE__."::_var_rec() keys='$keys' found '".( defined $base ? $base : '(undef)' )."'".EOL;
-	}
-	print __PACKAGE__."::_var_rec() returning '".( defined $base ? $base : '(undef)' )."'".EOL if $varDebug;
-	return $base;
-}
-
 ### Class methods
 
 # -------------------------------------------------------------------------------------------------

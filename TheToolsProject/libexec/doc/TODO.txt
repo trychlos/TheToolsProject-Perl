@@ -28,7 +28,11 @@ TODO
 
   19 2024- 5- 3 ws22prod1 tasks didn't execute to purge the logs directories
 
-  21 2024- 5- 3 
+  21 2024- 5- 3 C:\INLINGUA\TheToolsProject\smtp\send.do.pl: Global symbol "$ttp" requires explicit package name (did you forget to declare "my $ttp"?) at C:\INLINGUA\TheToolsProject\libexec\perl/TTP/SMTP.pm line 48.
+
+  22 2024- 5- 3 Type of arg 1 to Try::Tiny::catch must be block or sub {} (not reference constructor) at C:\INLINGUA\TheToolsProject\libexec\perl/TTP/SMTP.pm line 99, near "};"
+
+  23 2024- 5- 3 
 
 # -------------------------------------------------------------------------------------------------
 
