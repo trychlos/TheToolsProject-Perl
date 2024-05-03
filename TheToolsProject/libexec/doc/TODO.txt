@@ -28,10 +28,6 @@ TODO
 
   19 2024- 5- 3 ws22prod1 tasks didn't execute to purge the logs directories
 
-  21 2024- 5- 3 C:\INLINGUA\TheToolsProject\smtp\send.do.pl: Global symbol "$ttp" requires explicit package name (did you forget to declare "my $ttp"?) at C:\INLINGUA\TheToolsProject\libexec\perl/TTP/SMTP.pm line 48.
-
-  22 2024- 5- 3 Type of arg 1 to Try::Tiny::catch must be block or sub {} (not reference constructor) at C:\INLINGUA\TheToolsProject\libexec\perl/TTP/SMTP.pm line 99, near "};"
-
   23 2024- 5- 3 
 
 # -------------------------------------------------------------------------------------------------
@@ -75,4 +71,10 @@ DONE
   20 2024- 5- 3 ttp.pl vars -logsCommands -nocolored
                 ws12dev1 Can't call method "verbose" on an undefined value at C:\INLINGUA\dev\scripts\TheToolsProject\libexec\perl/TTP.pm line 774.
 				ns3232346 Can't call method "verbose" on an undefined value at C:\INLINGUA\TheToolsProject\libexec\perl/TTP.pm line 918.
+	 2024- 5- 3 fixed
+
+  21 2024- 5- 3 C:\INLINGUA\TheToolsProject\smtp\send.do.pl: Global symbol "$ttp" requires explicit package name (did you forget to declare "my $ttp"?) at C:\INLINGUA\TheToolsProject\libexec\perl/TTP/SMTP.pm line 48.
+	 2024- 5- 3 fixed
+
+  22 2024- 5- 3 Type of arg 1 to Try::Tiny::catch must be block or sub {} (not reference constructor) at C:\INLINGUA\TheToolsProject\libexec\perl/TTP/SMTP.pm line 99, near "};"
 	 2024- 5- 3 fixed

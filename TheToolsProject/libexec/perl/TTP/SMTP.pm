@@ -18,11 +18,12 @@ use Data::Dumper;
 use Email::Stuffer;
 use Email::Sender::Transport::SMTP;
 use Try::Tiny;
+use vars::global qw( $ttp );
 
+use TTP;
 use TTP::Constants qw( :all );
 use TTP::Credentials;
 use TTP::Message qw( :all );
-use TTP;
 
 # ------------------------------------------------------------------------------------------------
 # send a mail through the addressed SMTP gateway
