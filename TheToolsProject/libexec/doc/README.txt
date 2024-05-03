@@ -22,9 +22,6 @@ Toops for Windows:
 For debugging purposes workload.cmd may take additional arguments, say for example -dummy, -verbose, -nocolored
 As these additional arguments will be passed to each and every executed TTP command/verb, all these must at least *support* (if not honor) these standard arguments.
 
-TODO
-    1 24- 1-29 Toops::getOptions doesn't work as we do not know how to pass arguments to GetOptions()
-
 Topics tree
 
   published
@@ -66,3 +63,7 @@ DBMS
 		- the service configuration as a 'DBMS.byInstance.<instance>.package' key (acts as a default for all hosts which define this service)
 		- the site configuration as a 'DBMS.byInstance.<instance>.package' key (acts as a default for all services and hosts)
 		First (non empty) found wins, which doesn't imply that the found package exists and is valid.
+
+Journal
+=======
+ 2024- 5- 2 livraison v3.0

@@ -763,16 +763,16 @@ sub makeDirExist {
 	$opts //= {};
 	my $allowVerbose = true;
 	$allowVerbose = $opts->{allowVerbose} if exists $opts->{allowVerbose};
+	$allowVerbose = false if !$ttp || !$ttp->runner();
 	my $result = false;
 	if( -d $dir ){
-		#msgVerbose( "makeDirExist() dir='$dir' exists" );
 		$result = true;
 	} else {
 		msgVerbose( "makeDirExist() make_path() dir='$dir'" ) if $allowVerbose;
 		my $error;
 		$result = true;
 		make_path( $dir, {
-			verbose => $ttp->runner()->verbose(),
+			verbose => $allowVerbose && $ttp->runner()->verbose(),
 			error => \$error
 		});
 		# https://perldoc.perl.org/File::Path#make_path%28-%24dir1%2C-%24dir2%2C-....-%29

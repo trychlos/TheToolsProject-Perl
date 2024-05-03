@@ -12,7 +12,23 @@ TODO
 
   14 2024- 5- 2 jsonRead should be only available through IJSONable (not in TTP)
 
-  15 2024- 5- 2 
+  15 2024- 1-29 Toops::getOptions doesn't work as we do not know how to pass arguments to GetOptions()
+
+  16 2024- 5- 2 on ws12dev1, startup doesn't send alerts
+
+  17 2024- 5- 3 ns332346 tasks didn't execute this morning 
+
+  18 2024- 5- 3 ws22prod1
+                Can't stat //ns3232346.ovh.net/C/INLINGUA/dailyLogs/240503/execReports: No such file or directory
+                 at C:\INLINGUA\Site\Commands\backup-monitor-daemon.pl line 507.
+                Can't stat //ns3232346.ovh.net/C/INLINGUA/dailyLogs/240503/execReports: No such file or directory
+                 at C:\INLINGUA\Site\Commands\backup-monitor-daemon.pl line 493.
+				One line is normal as long as there is not yet any execution report to create the directory
+				Why this second line ?
+
+  19 2024- 5- 3 ws22prod1 tasks didn't execute to purge the logs directories
+
+  21 2024- 5- 3 
 
 # -------------------------------------------------------------------------------------------------
 
@@ -51,3 +67,8 @@ DONE
 
   13 2024- 5- 2 the daemon should be able to add its own mqtt topics
      2024- 5- 2 done
+
+  20 2024- 5- 3 ttp.pl vars -logsCommands -nocolored
+                ws12dev1 Can't call method "verbose" on an undefined value at C:\INLINGUA\dev\scripts\TheToolsProject\libexec\perl/TTP.pm line 774.
+				ns3232346 Can't call method "verbose" on an undefined value at C:\INLINGUA\TheToolsProject\libexec\perl/TTP.pm line 918.
+	 2024- 5- 3 fixed
