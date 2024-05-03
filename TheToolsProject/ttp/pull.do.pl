@@ -74,7 +74,7 @@ sub doPull {
 	} else {
 		msgErr( "remoteShare is not specified in '$opt_fromhost' host configuration" );
 	}
-	my $str = "$done/$asked subdirs copied";
+	my $str = "$done/$asked copied subdir(s)";
 	if( $done == $asked && !TTP::errs()){
 		msgOut( "success ($str)" );
 	} else {

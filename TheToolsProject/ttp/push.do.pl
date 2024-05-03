@@ -91,7 +91,7 @@ sub doPublish {
 			print `$command`;
 		}
 	}
-	my $str = "$done/$asked subdirs copied";
+	my $str = "$done/$asked copied subdir(s)";
 	if( $done == $asked && !TTP::errs()){
 		msgOut( "success ($str)" );
 	} else {
