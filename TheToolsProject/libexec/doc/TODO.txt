@@ -3,11 +3,6 @@ TODO
 
    2 2024- 5- 1 SqlServer::execSql: why a first empty array in the result ?
 
-   6 2024- 5- 1 IRunnable::filter() when called with direct command execution, only get the first line
-                as in $running->filter( `$command` );
-				while having my $res = `$command`; $running->filter( $res ) is fine
-	 2024- 5- 2 is move to TTP:;:filter() -> to be retested
-
    8 2024- 5- 2 implements and honors text-based telemetry
 
   14 2024- 5- 2 jsonRead should be only available through IJSONable (not in TTP)
@@ -28,7 +23,11 @@ TODO
 
   19 2024- 5- 3 ws22prod1 tasks didn't execute to purge the logs directories
 
-  23 2024- 5- 3 
+  23 2024- 5- 3 [smtp.pl send] (ERR) Mail::send() expect smtp gateway, not found
+
+  25 2024- 5- 3 
+
+  26 2024- 5- 3 
 
 # -------------------------------------------------------------------------------------------------
 
@@ -47,6 +46,12 @@ DONE
 
    5 2024- 5- 1 get rid of 'ttp'-prefixed TTP functions
      2024- 5- 2 done
+
+   6 2024- 5- 1 IRunnable::filter() when called with direct command execution, only get the first line
+                as in $running->filter( `$command` );
+				while having my $res = `$command`; $running->filter( $res ) is fine
+	 2024- 5- 2 is move to TTP:;:filter() -> to be retested
+	 2024- 5- 3 happened that the arguments format depends of the call mode -> fixed
 
    7 2024- 5- 1 Daemon.pm let the daemon advertize its status to http-based and text-based telemetry
                 provides labels through json configuration
@@ -78,3 +83,8 @@ DONE
 
   22 2024- 5- 3 Type of arg 1 to Try::Tiny::catch must be block or sub {} (not reference constructor) at C:\INLINGUA\TheToolsProject\libexec\perl/TTP/SMTP.pm line 99, near "};"
 	 2024- 5- 3 fixed
+
+  24 2024- 5- 3 ns3232346 C:\Users\inlingua-user>services.pl list -workload daily.morning -commands -hidden -nocolored
+                [services.pl list] displaying workload commands defined in 'NS3232346\daily.morning'...
+                [services.pl list] 0 found defined command(s)
+	 2024- 5- 3 fixed with #6

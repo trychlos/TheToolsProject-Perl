@@ -482,13 +482,17 @@ sub exit {
 
 # -------------------------------------------------------------------------------------------------
 # given a command output, extracts the [command.pl verb] lines, returning the rest as an array
+# Note:
+# - we receive an array of EOL-terminated strings when called as $result = TTP::filter( `$command` );
+# - but we receive a single concatenated string when called as $result = `$command`; $result = TTP:filter( $result );
 # (I):
-# - the output of a command, as a string
+# - the output of a command, as a string or an array of strings
 # (O):
 # - a ref to an array of output lines, having removed the "[command.pl verb]" lines
 
 sub filter {
-	my @lines = @_;
+	my $single = join( '', @_ );
+	my @lines = split( /[\r\n]/, $single );
 	my @result = ();
 	foreach my $it ( @lines ){
 		chomp $it;

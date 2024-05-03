@@ -70,8 +70,7 @@ sub doSwitchIP {
 
 	# check that the requested desired server is not already the routed one
 	my $command = "ovh.pl ipget -ipfo $opt_ipfo -routed -nocolored $dummy $verbose";
-	my $stdout = `$command`;
-	$stdout = TTP::filter( $stdout );
+	my $stdout = TTP::filter( `$command` );
 	my @words = split( /\s+/, $stdout->[0] );
 	my $current = $words[1];
 	if( $current eq $opt_to ){
@@ -83,8 +82,7 @@ sub doSwitchIP {
 		if( $api ){
 			# we need the IP block
 			$command = "ovh.pl ipget -ip $opt_ipfo -address -nocolored $dummy $verbose";
-			$stdout = `$command`;
-			$stdout = TTP::filter( $stdout );
+			$stdout = TTP::filter( `$command` );
 			@words = split( /\s+/, $stdout->[0] );
 			my $ipAddress = $words[1];
 			msgVerbose( "IP address is '$ipAddress'" );
@@ -132,8 +130,7 @@ sub _switchAndWait {
 				print ".";
 				sleep 1;
 				my $command = "ovh.pl ipget -ip $opt_ipfo -routed -nocolored $dummy $verbose";
-				my $stdout = `$command`;
-				$stdout = TTP::filter( $stdout );
+				my $stdout = TTP::filter( `$command` );
 				msgLog( "filter() returns: '".Dumper( $stdout )."'" );
 				my @words = split( /\s+/, $out->[0] );
 				my $current = $words[1];
@@ -153,8 +150,7 @@ sub _switchAndWait {
 						print ".";
 						sleep 1;
 						my $command = "http.pl get -url $opt_url -header X-Sent-By -accept [1-3].. -nocolored $dummy $verbose";
-						my $stdout = `$command`;
-						$stdout = TTP::filter( $stdout );
+						my $stdout = TTP::filter( `$command` );
 						msgLog( "filter() returns: '".Dumper( $stdout )."'" );
 						my @words = split( /\s+/, $out->[0] );
 						my $line = $words[1];

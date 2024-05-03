@@ -453,9 +453,8 @@ sub doWithNew {
 					$command .= " -full $result->{full}";
 					$command .= " -diff $result->{diff}" if $result->{diff};
 					msgVerbose( $command );
-					my $res = `$command`;
+					my $res = TTP::filter( `$command` );
 					my $rc = $?;
-					$res = TTP::filter( $res );
 					print join( '\n', @{$res} ).EOL;
 				} else {
 					msgWarn( "result is undefined, unable to restore" );

@@ -62,13 +62,11 @@ sub doStop {
 	msgOut( "requesting the daemon for termination..." );
 	my $dummy = $running->dummy() ? "-dummy" : "-nodummy";
 	my $verbose = $running->verbose() ? "-verbose" : "-noverbose";
-	my $cmd = "daemon.pl command -nocolored $dummy $verbose -command terminate -port $opt_port";
-	msgVerbose( $cmd );
-	my $res = `$cmd`;
-	# rc is zero if OK
+	my $command = "daemon.pl command -nocolored $dummy $verbose -command terminate -port $opt_port";
+	msgVerbose( $command );
+	my $res = TTP::filter( `$command` );
 	my $rc = $?;
-	if( $res && length $res && !$rc ){
-		$res = TTP::filter( $res );
+	if( $res && scalar @{$res} && !$rc ){
 		print join( '\n', @{$res} ).EOL;
 		my $result = true;
 		if( $opt_wait ){

@@ -172,8 +172,7 @@ sub doTablesCount {
 		msgOut( "publishing tables rows count on '$opt_instance\\$db'..." );
 		last if $count >= $opt_limit && $opt_limit >= 0;
 		my $command = "dbms.pl list -instance $opt_instance -database $db -listtables -nocolored $dummy $verbose";
-		my $tables = `$command`;
-		$tables = TTP::filter( $tables );
+		my $tables = TTP::filter( `$command` );
 		foreach my $tab ( @{$tables} ){
 			last if $count >= $opt_limit && $opt_limit >= 0;
 			msgOut( " table '$tab'" );
