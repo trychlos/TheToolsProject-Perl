@@ -14,7 +14,7 @@ rem
 rem So, here all tasks required for "live" and "backup" are defined and default to be disabled. and this script can be safely run on both sides.
 rem This script must be run with Administrator privileges in an Administrator command prompt session.
 
-set WORKLOAD=C:\INLINGUA\SiteResources\Commands\workload.cmd
+set WORKLOAD=C:\INLINGUA\Site\Commands\workload.cmd
 set RUNNER=/RU %COMPUTERNAME%\inlingua-user /RP GRlCvlNazmGcvRL0a3Ow
 
 rem TOM17

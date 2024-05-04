@@ -1,7 +1,7 @@
 @echo off
 rem Standard workloads on all machines
 
-set WORKLOAD=C:\INLINGUA\SiteResources\Commands\workload.cmd
+set WORKLOAD=C:\INLINGUA\Site\Commands\workload.cmd
 set RUNNER=/RU %COMPUTERNAME%\inlingua-user /RP GRlCvlNazmGcvRL0a3Ow
 
 set JOB=daily.user
