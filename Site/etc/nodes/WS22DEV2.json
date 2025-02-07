@@ -11,7 +11,8 @@
 							"ttp.pl pull -nocolored",
 							"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -nocolored -backupsRoot\" -keep 5",
 							"ttp.pl purgedirs -nocolored -dircmd \"dbms.pl vars -nocolored -archivesRoot\" -keep 5",
-							"ttp.pl purgedirs -nocolored -dircmd \"ttp.pl vars -nocolored -logsRoot\" -keep 10"
+							"ttp.pl purgedirs -nocolored -dircmd \"ttp.pl vars -nocolored -logsRoot\" -keep 10",
+							"robocopy [eval:File::Spec->catdir( TTP::nodeRoot(), 'Site', 'NetworkShortcuts' )] C:\\Users\\Public\\Desktop\\NetworkShortcuts /MIR"
 						]
 					}
 				],
