@@ -20,6 +20,7 @@ package TTP;
 
 use strict;
 use warnings;
+use utf8;
 
 use Config;
 use Data::Dumper;
@@ -921,6 +922,7 @@ sub removeTree {
 # and @ARGV the command-line arguments
 
 sub run {
+	$ENV{TTP_DEBUG} && print STDERR Dumper( @ARGV );
 	$ep = TTP::EP->new();
 	$ep->bootstrap();
 	$ep->runCommand();

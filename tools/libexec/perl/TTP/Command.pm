@@ -46,7 +46,7 @@ use TTP::Message qw( :all );
 
 my $Const = {
 	# reserved words: the commands must be named outside of this array
-	#  either because they are folders of the Toops installation tree
+	#  because they are current or historic folders of the Toops installation tree
 	reservedWords => [
 		'bin',
 		'libexec',
@@ -54,8 +54,11 @@ my $Const = {
 		'Toops',
 		'TTP'
 	],
-	verbSed => '\.do\.pl$',
-	verbSufix => '.do.pl',
+	verbSed => '\.do\.pl$|\.do\.ksh$',
+	verbSufixes => {
+		perl => '.do.pl',
+		sh => '.do.ksh'
+	},
 	# these constants are needed to 'ttp.pl list --commands'
 	finder => {
 		dirs => [
@@ -77,7 +80,7 @@ sub _getVerbs {
 	# get all available verbs
 	my $findable = {
 		dirs => [ $self->runnableBNameShort() ],
-		glob => '*'.$Const->{verbSufix}
+		glob => '*'.$Const->{verbSufixes}{$self->runnableRunMode()}
 	};
 	my $verbs = $self->find( $findable );
 	# get only unique available verbs
@@ -108,7 +111,7 @@ sub _init {
 	# make sure the command is not a reserved word
 	my $command = $self->runnableBNameShort();
 	if( grep( /^$command$/, @{$Const->{reservedWords}} )){
-		msgErr( "command '$command' is a Toops reserved word. Aborting." );
+		msgErr( "command '$command' is a TTP reserved word. Aborting." );
 		TTP::exit();
 	}
 
@@ -156,7 +159,7 @@ sub commandHelp {
 
 # -------------------------------------------------------------------------------------------------
 # run the command
-# (I]:
+# (I):
 # - none
 # (O):
 # - this object
@@ -164,6 +167,7 @@ sub commandHelp {
 sub run {
 	my ( $self ) = @_;
 
+	#print STDERR Dumper( $self );
 	try {
 		# first argument is supposed to be the verb
 		my @command_args = @ARGV;
@@ -174,7 +178,7 @@ sub run {
 
 			# search for the verb
 			my $findable = {
-				dirs => [ $self->runnableBNameShort(), $verb.$Const->{verbSufix} ],
+				dirs => [ $self->runnableBNameShort(), $verb.$Const->{verbSufixes}{$self->runnableRunMode()} ],
 				wantsAll => false
 			};
 			$self->{_verb}{path} = $self->find( $findable );
