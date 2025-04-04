@@ -1,0 +1,82 @@
+# @(#) Core (main) function
+#
+# The Tools Project: a Tools System and Paradigm for IT Production
+# Copyright (©) 2003-2021 Pierre Wieser (see AUTHORS)
+#
+# The Tools Project is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# The Tools Project is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with The Tools Project; see the file COPYING. If not,
+# see <http://www.gnu.org/licenses/>.
+#
+# Synopsis:
+#
+#   Logs the call in the main.log file of the logs directory.
+#   Set the following variables, available in all other functions
+#   and verbs:
+#
+#   See also the output of 'ttp.sh list --variables'
+#
+# First argument is supposed to be the pathname of the calling script
+# (the command). If the calling script is addressed via the PATH
+# variable, the pathname is a full pathname:
+#  - Linux ksh 2008 (CentOS 5): ok
+#  - Linux ksh 2012 (Fedora 18): ok
+#  - Aix 6.1 ksh-88: ok
+#
+# pwi 1998-10-21 creation
+# pwi 1999- 4- 2 always set GEDLOGJ
+# pwi 2001-10-17 remove GEDTOOL variable
+# xle 2001-12-18 temporarily set _EXIT variable
+# pwi 2002- 2-28 tools are now installed on the physical host
+# pwi 2002- 5-17 set _GEC_VERBOSE and _GEC_DATE variables
+# pwi 2002- 6-22 remove shebang line
+# pwi 2006-10-27 tools become The Tools Project, released under GPL
+# pwi 2012- 7-12 tools target a virtual boxes environment
+# pwi 2013- 5- 1 Aix 6.1 port
+# pwi 2013- 6-27 logicals .ini file are found in ttp_nodesdir
+# pwi 2013- 7- 5 configuration file is loaded in an in-memory array
+# pwi 2013- 7-29 review errors count and exit code management
+# pwi 2017- 6-21 publish the release at last
+# pwi 2021- 5-21 fix typo
+# pwi 2021- 5-25 get rid of ttp_node
+# pwi 2025- 2- 9 get rid of ttp_roots
+# pwi 2025- 4- 3 starting with v4, shell part takes advantage of Perl environment
+# pwi 2025- 4- 3 starting with v4, VERBOSE environment variable is replaced with TTP_DEBUG
+
+function ttpf_main
+{
+	[ "${TTP_DEBUG}" = "1" ] && echo "ttpf_main() 0=$0 #=$# *=$*" >&2
+
+	ttp_code=0
+	ttp_command="TTP"
+
+	trap 'trap_int'  INT
+	trap 'trap_exit' EXIT
+
+	# check for in-process invocation
+	#  this should never happen because even the ". ttp.sh switch" command
+	#  is run as a standard ksh command from the sh_switch script
+	[ "${0:0:1}" = "-" -o "${0}" = "${SHELL##*/}" ] \
+		&& { echo "[${ttp_command}] in-process invocation only allowed in '. ttp.sh switch' command" >&2; let ttp_errs+=1; let ttp_code+=1; return ${ttp_code}; }
+
+	# when setting the initial execution node, there is not yet any TTP_NODE
+	#  in the user environment; the first command to be executed must be one of
+	#  ". ttp.sh switch --default" or ". ttp.sh switch --node <nodename>"
+	#  usually from the user profile
+	[ -z "${NOTTP}" -a -z "${TTP_NODE}" ] \
+		&& { echo "[${ttp_command}] no current execution node, aborting" >&2; let ttp_errs+=1; let ttp_code+=1; return ${ttp_code}; }
+
+	# sub-contract to new Perl version which returns the exit code of TTP::run()
+	ttp_me="sh/ttpf_main" perl -MTTP -e 'TTP::run();' -- $*
+	ttp_code=$?
+	#echo $? 1>&2
+}
